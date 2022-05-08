@@ -346,6 +346,7 @@ stringLastIndexOfStr(const char *str, const char *c)
                     return indexStr;
                 indexStr--;
                 indexC--;
+                continue;
             }
             else if (found) {
                 indexC += elements;
