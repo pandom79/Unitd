@@ -1,0 +1,40 @@
+# *-*-shell-*-*
+
+msg() {
+    # bold
+    printf "\033[1m$@\033[m\n"
+}
+
+msg_ok() {
+    # bold/green
+    printf "\033[1m\033[32m OK\033[m\n"
+}
+
+msg_error() {
+    # bold/red
+    printf "\033[1m\033[31mERROR: $@\033[m\n"
+}
+
+msg_warn() {
+    # bold/yellow
+    printf "\033[1m\033[33mWARNING: $@\033[m\n"
+}
+
+deactivate_vgs() {
+   _group=${1:-All}
+   if [ -x /sbin/vgchange -o -x /bin/vgchange ]; then
+       vgs=$(vgs|wc -l)
+       if [ $vgs -gt 0 ]; then
+           vgchange -an
+       fi
+   fi
+}
+
+deactivate_crypt() {
+   if [ -x /sbin/dmsetup -o -x /bin/dmsetup ]; then
+       for v in $(dmsetup ls --target crypt --exec "dmsetup info -c --noheadings -o open,name"); do
+           [ ${v%%:*} = "0" ] && cryptsetup close ${v##*:}
+       done
+       deactivate_vgs "Crypt"
+   fi
+}

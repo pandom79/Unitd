@@ -1,0 +1,11 @@
+[Unit]
+Description = Mounting file system
+Requires = udev
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/init.state/scripts/filesystems.sh
+
+[State]
+WantedBy = init
+

@@ -1,0 +1,38 @@
+- Init process development
+    - Fix stringLastIndexOfStr stringLastIndexOfStr (string_wrapper.c:342) DONE
+
+    - Get and set default state developing
+
+    - Evaluate which functions defined in unitd.h have to be of public domain (GUI)
+
+    - Create Unitd-wrapper project (library) to use it when unitlogd and unitlogctl will be developed.
+
+    - Release the oneshot initialization unit. (optimizing unitd daemon memory usage)
+
+    - Review initialization and finalization scripts.
+      Void Linux runit has been updated (virtualization, seed, wtmp and utmp management)
+      Predict unitddatapath for the "run" property in the initial and final units.
+      Replace it with unitddatapath macro value from meson
+
+    - In debug mode, you fix the stackoverflow error
+
+- Unitd: Must I develop the "switch state" functionality ????
+
+- Unitlogd development
+
+- Unitlogctl development
+
+Notes:
+- REBOOT
+    stopping units, sync and reboot(RB_AUTOBOOT)
+- REBOOT force
+    sync and reboot(RB_AUTOBOOT)
+- POWEROFF
+    stopping units, sync and reboot(RB_POWER_OFF)
+- POWEROFF force
+    sync and reboot(RB_POWER_OFF)
+- HALT
+    stopping units, sync and reboot(RB_HALT_SYSTEM)
+- HALT force
+    sync and reboot(RB_HALT_SYSTEM)
+

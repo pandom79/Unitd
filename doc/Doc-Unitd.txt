@@ -1,0 +1,93 @@
+UNITD DOCUMENTATION
+
+
+- CONFIGURATION AND BUILD
+
+To configure the build, run this command:
+
+meson setup build
+
+which will set the following default values
+
+UNITS_PATH "/usr/lib/unitd/units"
+UNITS_ENAB_PATH "/etc/unitd/units"
+UNITD_LOG "/var/log/unitd.log"
+
+If you need to change them, then run :
+
+Attention : we always regenarate the build folder because meson seems to keep them in cache
+meson setup build
+
+Just an example...
+configure -Dprefix=/usr -DUNITS_PATH=your/path -DUNITS_ENAB_PATH=your/path -DUNITD_LOG=your/path/unitd.log
+
+Build
+meson compile
+Install
+meson install
+
+
+- IMPLEMENTATION
+
+In the units path (/usr/lib/unitd/units), there will be our units.
+
+NetworkManager.unit
+sddm.unit
+serviio.unit
+
+Each unit will has a template similar at the following:
+
+[Unit]											    (required)
+Description = Serviio        						(required)
+Require = NetworkManager    						(optional and repeatable)
+Require = ...
+Type = oneshot										(optional and not repeatable. Default is daemon)
+RestartOnFail = true								(optional and not repeatable. Default is false)
+Conflict = dhcpcd									(optional and repeatable)
+Conflict = ......
+
+[Command]
+run = /usr/share/serviio/bin/serviio				(required)
+stop = /usr/share/serviio/bin/serviio -stop			(optional)
+
+[State]												(required)
+WantedBy = multi-user.state							(required and repeatable)
+
+In the enabled unit's path (/etc/unitd/units) will have instead the following folders
+which represent the state:
+
+0 - poweroff
+1 - single-user
+2 - multi-user
+3 - multi-user-net
+4 - custom
+5 - graphical
+6 - reboot
+default.state is a symlink to a state between {1-5}. It's not possible set "poweroff.state" or "reboot.state" as default
+
+
+"Requires" represents the dependencies of the unit. That means that in the state will have to be present all the units defined
+otherwise fails immediately at to start!
+"WantedBy" represents the name of  the state in which has to be present this unit.
+"Type" actually represents the return type of the call. In the oneshot case, it will return the exit code of the process, in the daemon case
+represents the process Id instead.
+RestartOnFail represents what we have to do if a process kills (not stopped) for some reasons. If it is equal to true, we have to restart it.
+This is not true if we are doing a reboot or a poweroff.
+Probably for these processes we'll have need of a signal handler.
+
+
+- INIT PROCESS
+1) Create the folders tree if there aren't
+2) Read all the units in UNITS_PATH via parser
+3) Read all the units in UNITS_ENAB_PATH setting only status property to ENABLED
+4) we check if all the data are well-formed
+5) Starting the threads
+	Create units len threads
+
+
+
+
+
+
+
+

@@ -1,0 +1,164 @@
+/*
+(C) 2021 by Domenico Panella <pandom79@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 3.
+See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
+*/
+
+#include "../../core/unitd_impl.h"
+
+bool UNITCTL_DEBUG = false;
+
+static void __attribute__((noreturn))
+usage(bool fail)
+{
+    fprintf(stdout,
+        "Usage: unitctl [COMMAND] [OPTION] ... \n\n"
+
+        "COMMAND\n"
+        "enable          Enable the unit\n"
+        "disable         Disable the unit\n"
+        "restart         Restart the unit\n"
+        "start           Start the unit\n"
+        "stop            Stop the unit\n"
+        "status          Get the unit status\n"
+        "get-requires    List all the unit dependencies\n"
+        "get-conflicts   List all the unit conflicts\n"
+        "get-states      List all the unit wanted states\n"
+        "get-default     Get the default state\n"
+        "set-default     Set the default state\n"
+        "list            List all the units\n"
+        "reboot          Reboot the machine\n"
+        "poweroff        Power off the machine\n"
+        "halt            Halt the machine\n\n"
+
+        "OPTION\n"
+        "-r, --run       Run the operation\n"
+        "-f, --force     Force the operation\n"
+        "-d, --debug     Enable the debug\n"
+        "-h, --help      Show usage\n\n"
+
+    );
+    exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
+}
+
+int main(int argc, char **argv) {
+    int c, rv;
+    bool force, run;
+    const char *shortopts = "hrfd";
+    Command command = NO_COMMAND;
+    const char *commandName, *unitName;
+    SockMessageOut *sockMessageOut = NULL;
+    const struct option longopts[] = {
+        { "help", no_argument, NULL, 'h' },
+        { "run", optional_argument, NULL, 'r' },
+        { "force", optional_argument, NULL, 'f' },
+        { "debug", optional_argument, NULL, 'd' },
+        { 0, 0, 0, 0 }
+    };
+
+    c = rv = 0;
+    commandName = unitName = NULL;
+    force = run = false;
+
+    //FIXME get root password
+    if (getuid() != 0) {
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as root\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* Get options */
+    while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+        switch (c) {
+            case 'h':
+                usage(false);
+                break;
+            case 'r':
+                run = true;
+                break;
+            case 'f':
+                force = true;
+                break;
+            case 'd':
+                UNITCTL_DEBUG = true;
+                break;
+            default:
+                usage(true);
+        }
+    }
+
+    /* Get the command */
+    if ((commandName = argv[optind]))
+        command = getCommand(commandName);
+
+    /* Command handling */
+    switch (command) {
+        case NO_COMMAND:
+            if ((argc == 2 && UNITCTL_DEBUG) || argc == 1)
+                /* List command as default */
+                rv = showUnitList(&sockMessageOut);
+            else
+                usage(true);
+            break;
+        case REBOOT_COMMAND:
+        case POWEROFF_COMMAND:
+        case HALT_COMMAND:
+            if (argc > 2) {
+                if ((argv[2] && !force && !UNITCTL_DEBUG) ||
+                    (argv[3] && (!force || !UNITCTL_DEBUG)))
+                    usage(true);
+            }
+            rv = unitdShutdown(command, force);
+            break;
+        case LIST_COMMAND:
+        case GET_DEFAULT_STATE_COMMAND:
+            if (argc > 2 && !UNITCTL_DEBUG)
+                usage(true);
+            if (command == LIST_COMMAND)
+                rv = showUnitList(&sockMessageOut);
+            else
+                rv = showUnit(command, &sockMessageOut, NULL, false, false, false);
+            break;
+        case STATUS_COMMAND:
+        case STOP_COMMAND:
+        case GET_REQUIRES_COMMAND:
+        case GET_CONFLICTS_COMMAND:
+        case GET_STATES_COMMAND:
+            if (argc == 2 || (argc > 3 && !UNITCTL_DEBUG))
+                usage(true);
+            if (argc > 3)
+                unitName = argv[3];
+            else
+                unitName = argv[2];
+            if (command == STATUS_COMMAND)
+                rv = showUnitStatus(&sockMessageOut, unitName);
+            else
+                rv = showUnit(command, &sockMessageOut, unitName, false, false, false);
+            break;
+        case START_COMMAND:
+        case RESTART_COMMAND:
+            if (argc == 2 || (argc > 3 && !force && !UNITCTL_DEBUG))
+                usage(true);
+            unitName = argv[argc - 1];
+            if (command == START_COMMAND)
+                rv = showUnit(command, &sockMessageOut, unitName, force, false, false);
+            else
+                rv = showUnit(command, &sockMessageOut, unitName, force, true, false);
+            break;
+        case DISABLE_COMMAND:
+            if (argc == 2 || (argc > 3 && !run && !UNITCTL_DEBUG))
+                usage(true);
+            unitName = argv[argc - 1];
+            rv = showUnit(command, &sockMessageOut, unitName, false, false, run);
+            break;
+        case ENABLE_COMMAND:
+            if (argc == 2 || (argc > 3 && !run && !force && !UNITCTL_DEBUG))
+                usage(true);
+            unitName = argv[argc - 1];
+            rv = showUnit(command, &sockMessageOut, unitName, force, false, run);
+            break;
+        }
+
+    return rv;
+}

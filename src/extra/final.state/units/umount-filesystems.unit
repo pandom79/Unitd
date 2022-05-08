@@ -1,0 +1,11 @@
+[Unit]
+Description = Unmounting filesystems
+Requires = send-sigkill
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/final.state/scripts/umount-filesystems.sh
+
+[State]
+WantedBy = final
+

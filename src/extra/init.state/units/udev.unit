@@ -1,0 +1,11 @@
+[Unit]
+Description = Starting udev
+Requires = kmods
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/init.state/scripts/udev.sh
+
+[State]
+WantedBy = init
+

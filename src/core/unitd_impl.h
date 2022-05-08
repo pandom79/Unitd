@@ -1,0 +1,396 @@
+#ifndef UNITD_IMPL_H
+#define UNITD_IMPL_H
+
+#include "../include/unitd.h"
+
+/* UNITD */
+#define PROJECT_NAME                "Unitd init system"
+#define DEF_STATE_SYML_NAME         "default.state"
+//FIXME test
+//#define PROC_CMDLINE_PATH           "/proc/cmdline"
+#define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
+#define PROC_CMDLINE_DEBUG_ARG      "unitd_debug=true"
+
+extern pid_t UNITD_PID;
+extern UnitdData *UNITD_DATA;
+extern bool UNITD_DEBUG;
+extern bool UNITCTL_DEBUG;
+extern Command SHUTDOWN_COMMAND;
+extern Array *UNITD_ENV_VARS;
+extern State STATE_DEFAULT;
+extern State STATE_CMDLINE;
+extern State STATE_SHUTDOWN;
+extern char *STATE_CMDLINE_DIR;
+extern bool LISTEN_SOCK_REQUEST;
+extern bool ENABLE_RESTART;
+int parseProcCmdLine();
+
+/* UNITCTL commands */
+typedef enum {
+    NO_OPTION = -1,
+    FORCE_OPT = 0,
+    RESTART_OPT = 1,
+    RUN_OPT = 2,
+    REQUIRES_OPT = 3,
+    CONFLICTS_OPT = 4,
+    STATES_OPT = 5
+} Option;
+
+typedef struct OptionData {
+    Option option;
+    const char *name;
+} OptionData;
+extern OptionData OPTIONS_DATA[];
+extern int OPTIONS_LEN;
+
+typedef struct CommandData {
+    Command command;
+    const char *name;
+} CommandData;
+extern CommandData COMMANDS_DATA[];
+extern int COMMANDS_LEN;
+/*********************************************************************************/
+
+/* LOGGER */
+#define RED_COLOR "\033[1;31m"
+#define YELLOW_COLOR "\033[1;33m"
+#define GREEN_COLOR "\033[1;32m"
+#define LIGHT_WHITE_COLOR "\033[0;37m"
+#define WHITE_COLOR "\033[1;37m"
+#define GREY_COLOR "\033[30;1m"
+#define DEFAULT_COLOR "\033[0m"
+#define WHITE_UNDERLINE_COLOR "\033[37;4m"
+
+#define LOG_UNITD_CONSOLE   0x0001
+#define LOG_UNITD_BOOT      0x0010
+#define LOG_UNITD_ALL       0x1111
+
+extern FILE *UNITD_LOG_FILE;
+
+int unitdOpenLog(const char *);
+int unitdCloseLog();
+void unitdLogInfo(int options, const char *format, ...);
+void unitdLogWarning(int options, const char *format, ...);
+void unitdLogError(int options, const char *transUnit, const char *funcName, int returnValue,
+                   const char *errDesc, const char *format, ...);
+void unitdLogErrorStr(int options, const char *format, ...);
+void unitdLogSuccess(int options, const char *format, ...);
+/*********************************************************************************/
+
+/* WRAPPER */
+/* String */
+char* stringNew(const char *);
+char* stringSet(char **, const char *);
+const char* stringGet(char *str);
+bool stringStartsWithChr(const char *, const char);
+bool stringStartsWithStr(const char *, const char *);
+bool stringEndsWithChr(const char *, const char);
+bool stringEndsWithStr(const char *, const char *);
+bool stringContainsChr(const char *str, const char c);
+bool stringContainsStr(const char *, const char *);
+void stringToupper(char *);
+void stringTolower(char *);
+bool stringAppendChr(char **, const char);
+bool stringAppendStr(char **, const char *);
+bool stringConcat(char **, const char *);
+bool stringPrependChr(char **, const char);
+bool stringPrependStr(char **, const char *);
+bool stringInsertChrAt(char **, const char, int);
+bool stringInsertStrAt(char **, const char *, int);
+char* stringLtrim(char *, const char *);
+char* stringRtrim(char *, const char *);
+char* stringTrim(char *, const char *);
+int stringIndexOfChr(const char *, const char);
+int stringIndexOfStr(const char *, const char *);
+int stringLastIndexOfChr(const char *, const char);
+int stringLastIndexOfStr(const char *, const char *);
+char* stringSub(const char *, int, int);
+void stringReplaceChr(char **, const char, const char);
+void stringReplaceAllChr(char **, const char, const char);
+void stringReplaceStr(char **, const char *, const char *);
+void stringReplaceAllStr(char **, const char *, const char *);
+void objectRelease(void **);
+Array* stringSplit(char *str, const char *sep, bool);
+void stringSetDateTime(char **, bool);
+void printTimeStamp(int);
+
+/* Array */
+Array* arrayNew(void (*)(void **));
+Array* arrayNewWithAmount(int, void (*)(void **));
+bool arrayAdd(Array *, void *);
+bool arrayAddFirst(Array *, void *);
+bool arrayRemoveAt(Array *array, int idx);
+bool arrayRemove(Array *array, void *);
+bool arrayRelease(Array **);
+bool arraySet(Array *, void *, int);
+bool arrayContainsStr(Array *, const char *);
+Array* arrayStrCopy(Array *);
+void* arrayGet(Array *, int);
+int arrayGetIdx(Array *, void *element);
+void arrayPrint(int options, Array **, bool);
+/*********************************************************************************/
+
+/* PARSER */
+typedef enum {
+    NO_FUNC = -1,
+    PARSE_UNIT = 0,
+    PARSE_SOCK_REQUEST = 1,
+    PARSE_SOCK_RESPONSE_UNITLIST = 2,
+    PARSE_SOCK_RESPONSE = 3
+} ParserFuncType;
+
+/* STATIC DATA */
+#define NO_SECTION -1
+
+/* Generic Errors */
+typedef enum {
+    FIRST_CHARACTER_ERR = 0,
+    UNRECOGNIZED_ERR = 1,
+    OCCURRENCES_ERR = 2,
+    PROPERTY_SECTION_ERR = 3,
+    ACCEPTED_VALUE_ERR = 4,
+    DUPLICATE_VALUE_ERR = 5,
+    REQUIRED_VALUE_ERR = 6,
+    NUMERIC_ERR = 7,
+    OCCURRENCES_EQUAL_ERR = 8,
+} ErrorsEnum;
+
+typedef struct {
+    ErrorsEnum errorEnum;
+    const char *desc;
+} ErrorsData;
+
+/* DYNAMIC DATA which will be built from translation
+ * unit that will include this header */
+
+/* Sections */
+typedef struct SectionName {
+    int sectionNameEnum;
+    const char *desc;
+} SectionName;
+
+typedef struct SectionData {
+    SectionName sectionName;
+    bool repeatable;
+    bool required;
+    int sectionCount;
+} SectionData;
+
+extern int UNITS_SECTIONS_ITEMS_LEN;
+extern SectionData UNITS_SECTIONS_ITEMS[];
+
+/* Properties */
+typedef struct PropertyName {
+    int propertyNameEnum;
+    const char *desc;
+} PropertyName;
+
+typedef struct PropertyData {
+    int idxSectionItem;
+    PropertyName propertyName;
+    bool repeatable;
+    bool required;
+    bool numeric;
+    int propertyCount;
+    const char **acceptedValues;
+    Array *notDupValues;
+} PropertyData;
+
+extern int UNITS_PROPERTIES_ITEMS_LEN;
+extern PropertyData UNITS_PROPERTIES_ITEMS[];
+
+/* Functions */
+void parserInit(ParserFuncType funcType);
+int parseLine(char *, int, Array **keyVal, PropertyData **);
+char* checkKeyVal(char *key, char *value, int numLine, PropertyData **);
+bool isValidNumber(const char *);
+char* getMsg(int numLine, const char *message, ...);
+void parserEnd(Array **, bool);
+/*********************************************************************************/
+
+/* UNITS */
+
+/* Specific Errors */
+typedef enum {
+    UNABLE_OPEN_UNIT_ERR = 0,
+    REQUIRE_ITSELF_ERR = 1,
+    CONFLICT_ITSELF_ERR = 2,
+    UNSATISFIED_DEP_ERR = 3,
+    BIDIRECTIONAL_DEP_ERR = 4,
+    DEPS_ERR = 5,
+    CONFLICT_DEP_ERROR = 6,
+    CONFLICT_EXEC_ERROR = 7,
+    WANTEDBY_ERR = 8,
+    WANTEDBY_INIT_FINAL_ERR = 9,
+    UNIT_PATH_INIT_FINAL_ERR = 10,
+    UNIT_PATH_ERR = 11,
+    UNIT_NOT_EXIST = 12,
+    UNIT_TIMEOUT_ERR = 13,
+    UNIT_DIED_ERR = 14,
+    UNIT_START_ERR = 15,
+    UNIT_DISABLED_ERR = 16,
+    UNIT_ENABLED_ERR = 17,
+    UNIT_CONFLICT_FORCE_ERR = 18,
+} UnitsErrorsEnum;
+typedef struct {
+    UnitsErrorsEnum errorEnum;
+    const char *desc;
+} UnitsErrorsData;
+extern const UnitsErrorsData UNITS_ERRORS_ITEMS[];
+
+/* Specific Messages */
+typedef enum {
+    UNIT_START_MSG = 0,
+    UNIT_FORCE_START_CONFLICT_MSG = 1,
+    UNIT_REMOVED_SYML_MSG = 2,
+    UNIT_CREATED_SYML_MSG = 3
+} UnitsMessagesEnum;
+typedef struct {
+    UnitsMessagesEnum errorEnum;
+    const char *desc;
+} UnitsMessagesData;
+extern const UnitsMessagesData UNITS_MESSAGES_ITEMS[];
+
+/* Functions */
+Unit* unitCreate(Unit *, ParserFuncType);
+void unitRelease(Unit **);
+ProcessData* processDataCreate(ProcessData *, ParserFuncType);
+void processDataRelease(ProcessData **);
+int loadUnits(Array **, const char *, const char *, State,
+              bool, const char *, ParserFuncType, bool);
+int parseUnit(Array **units, Unit **, bool);
+int checkConflicts(Unit **, const char *, bool);
+int checkRequires(Array **, Unit **, bool);
+int checkWantedBy(Unit **, State, bool);
+int checkAndSetUnitPath(Unit **, State);
+bool isEnabledUnit(const char *);
+char* getUnitName(const char *);
+Unit* getUnitByName(Array *, const char *);
+Unit* getUnitByPid(Array *, pid_t pid);
+PType getPTypeByPTypeStr(const char *);
+Pipe* pipeCreate();
+void pipeRelease(Pipe **);
+bool hasUnitError(const char *);
+/*********************************************************************************/
+
+/* COMMANDS */
+#define TIMEOUT_INC_MS            250
+//Start
+#define TIMEOUT_MS              15000
+#define MIN_TIMEOUT_MS           3500
+//Stop
+#define TIMEOUT_STOP_MS          1000
+
+int execScript(const char *, const char *, char **);
+int execProcess(const char *, char **, Unit **);
+char** cmdlineSplit(const char *);
+void cmdlineRelease(char **);
+int stopDaemon(const char *, char **, Unit **);
+/*********************************************************************************/
+
+/* PROCESSES */
+#define SHOW_MAX_RESULTS        10
+#define PIPE_THREAD_EXIT        -1
+typedef struct {
+    pthread_t thread;
+    Unit *unit;
+    Array *units;
+    bool showResult;
+} UnitThreadData;
+
+int startProcesses(Array **, Unit *);
+void* startProcess(void *);
+Array* getDaemonUnits(Array **);
+int stopProcesses(Array **, Unit *);
+void* stopProcess(void *);
+void listenPipe(Unit *);
+void* listenPipeThread(void *);
+bool hasPipe(Unit *);
+Array* getRestartableUnits(Array **);
+int openPipes(Array **, Unit *);
+void* openPipe(void *);
+Array* getUnitsPipes(Array **);
+int closePipes(Array **, Unit *);
+void* closePipe(void *);
+/*********************************************************************************/
+
+/* INIT */
+int unitdInit(UnitdData **, bool);
+void unitdEnd(UnitdData **);
+/*********************************************************************************/
+
+/* HANDLERS */
+int signalsHandler(int, siginfo_t *, void *);
+/*********************************************************************************/
+
+/* SOCKET */
+#define SOCKET_NAME             "/run/unitd.sock"
+#define MAX_CLIENT_SUPPORTED    32
+#define BACK_LOG                20
+#define INITIAL_SIZE            512
+#define TOKEN                   "|"
+#define ASSIGNER                "="
+#define NONE                    "none"
+#define SYML_REMOVE_OP          "remove"
+#define SYML_ADD_OP             "add"
+
+typedef struct {
+    char *unitName;
+    Command command;
+    Array *options;
+} SockMessageIn;
+
+/* Common */
+Command getCommand(const char *command);
+int initSocket(struct sockaddr_un *);
+int unitdSockConn(int *, struct sockaddr_un *);
+int readMessage(int *, char **, int *);
+SockMessageIn* sockMessageInCreate();
+void sockMessageInRelease(SockMessageIn **);
+SockMessageOut* sockMessageOutCreate();
+int sortUnitsByName(const void *, const void *);
+void setValueForBuffer(char **, int);
+Array* getScriptParams(const char *, const char *, const char *);
+
+/* Server */
+int listenSocketRequest();
+int socketDispatchRequest(char *, int *);
+int getUnitListServer(int *, SockMessageOut **);
+int getUnitStatusServer(int *, SockMessageIn *, SockMessageOut **);
+int stopUnitServer(int *, SockMessageIn *, SockMessageOut **, bool);
+int startUnitServer(int *, SockMessageIn *, SockMessageOut **, bool);
+int disableUnitServer(int *, SockMessageIn *, SockMessageOut **, const char *, bool);
+int enableUnitServer(int *, SockMessageIn *, SockMessageOut **);
+int getUnitDataServer(int *, SockMessageIn *, SockMessageOut **);
+int getDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
+
+/* Client */
+int showUnitList(SockMessageOut **);
+int showUnitStatus(SockMessageOut **, const char *unitName);
+int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool);
+
+/* Request */
+extern int SOCKREQ_PROPERTIES_ITEMS_LEN;
+extern PropertyData SOCKREQ_PROPERTIES_ITEMS[];
+char* marshallRequest(SockMessageIn *);
+int unmarshallRequest(char *, SockMessageIn **);
+
+/* Response */
+extern int SOCKRES_SECTIONS_ITEMS_LEN;
+extern SectionData SOCKRES_SECTIONS_ITEMS[];
+extern int SOCKRES_PROPERTIES_ITEMS_LEN;
+extern PropertyData SOCKRES_PROPERTIES_ITEMS[];
+char* marshallResponse(SockMessageOut *, ParserFuncType);
+int unmarshallResponse(char *, SockMessageOut **);
+/*********************************************************************************/
+
+/* COMMON */
+bool checkStateStr(const char *);
+int readSymLink(const char *, char **);
+int msleep(long);
+void addEnvVar(const char *, const char *);
+State getStateByStr(char *);
+int getDefaultStateStr(char **);
+/*********************************************************************************/
+
+#endif // UNITD_IMPL_H

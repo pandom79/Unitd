@@ -1,0 +1,10 @@
+[Unit]
+Description = Deactivating devices
+Requires = umount-filesystems
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/final.state/scripts/deactivate-devices.sh
+
+[State]
+WantedBy = final

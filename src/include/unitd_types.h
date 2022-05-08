@@ -1,0 +1,208 @@
+/*
+(C) 2021 by Domenico Panella <pandom79@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 3.
+See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
+*/
+
+#ifndef UNITD_TYPES_H
+#define UNITD_TYPES_H
+
+#include <stdbool.h>
+#include <getopt.h>
+#include <errno.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <glob.h>
+#include <signal.h>
+#include <syslog.h>
+#include <limits.h>
+#include <fcntl.h>
+#include <time.h>
+#include <sys/time.h>
+//FIXME remove from here
+#include <bits/types/siginfo_t.h>
+#include <bits/sigaction.h>
+#include <bits/siginfo-consts.h>
+//to here
+#include <sys/select.h>
+#include <sys/un.h>
+#include <sys/socket.h>
+#include <sys/reboot.h>
+#include <arpa/inet.h>
+
+#define UNUSED __attribute__((unused))
+
+/* Types */
+typedef struct {
+    void **arr;
+    int size;
+    void (*release_fn)(void **);
+} Array;
+
+/* Process */
+typedef enum {
+    DIED = 0,
+    EXITED = 1,
+    KILLED = 2,
+    RUNNING = 3,
+    STOPPED = 4,
+    RESTARTING = 5
+} PState;
+
+typedef struct PStateData {
+    PState pState;
+    const char *desc;
+} PStateData;
+
+static const struct PStateData PSTATE_DATA_ITEMS[] = {
+    { DIED, "Died" },
+    { EXITED, "Exited" },
+    { KILLED, "Killed" },
+    { RUNNING, "Running" },
+    { STOPPED, "Stopped" },
+    { RESTARTING, "Restarting" }
+};
+
+typedef enum {
+    NO_PROCESS_TYPE = -1,
+    DAEMON = 0,
+    ONESHOT = 1
+} PType;
+
+typedef struct PTypeData {
+    PType pType;
+    const char *desc;
+} PTypeData;
+
+static const struct PTypeData PTYPE_DATA_ITEMS[] = {
+    { DAEMON, "daemon" },
+    { ONESHOT, "oneshot" },
+};
+
+typedef enum {
+    FINAL_STATUS_NOT_READY = -2,
+    FINAL_STATUS_READY = -1,
+    FINAL_STATUS_SUCCESS = 0,
+    FINAL_STATUS_FAILURE = 1
+} FinalStatusEnum;
+
+typedef struct {
+    pid_t *pid;
+    int *exitCode;
+    PStateData *pStateData;
+    int *signalNum;
+    int *finalStatus;
+    char *dateTimeStart;
+    char *dateTimeStop;
+} ProcessData;
+
+/* States */
+static const int STATE_DATA_ITEMS_LEN = 9;
+
+typedef enum {
+    NO_STATE = -1,
+    INIT = 0,
+    POWEROFF = 1,
+    SINGLE_USER = 2,
+    MULTI_USER = 3,
+    MULTI_USER_NET = 4,
+    CUSTOM = 5,
+    GRAPHICAL = 6,
+    REBOOT = 7,
+    FINAL = 8
+} State;
+
+typedef struct StateData {
+    State state;
+    const char *desc;
+} StateData;
+
+static const struct StateData STATE_DATA_ITEMS[] = {
+    { INIT, "init" },
+    { POWEROFF, "poweroff" },
+    { SINGLE_USER, "single-user" },
+    { MULTI_USER, "multi-user" },
+    { MULTI_USER_NET, "multi-user-net" },
+    { CUSTOM, "custom" },
+    { GRAPHICAL, "graphical" },
+    { REBOOT, "reboot" },
+    { FINAL, "final" }
+};
+
+/* Units */
+typedef struct {
+    int fds[2];
+    pthread_mutex_t *mutex;
+} Pipe;
+
+typedef struct {
+    char *desc;
+    Array *requires;
+    PType type;
+    bool restart;
+    int restartMax;
+    Array *conflicts;
+    char *runCmd;
+    char *stopCmd;
+    Array *wantedBy;
+    int restartNum;
+    char *name;
+    char *path;
+    bool enabled;
+    Array *errors;
+    pthread_cond_t *cv;
+    pthread_mutex_t *mutex;
+    Array *processDataHistory;
+    ProcessData *processData;
+    Pipe *pipe;
+    bool showResult;
+    bool isStopping;
+} Unit;
+
+typedef struct {
+    Array *initUnits;
+    Array *units;
+    Array *shutDownUnits;
+    Array *finalUnits;
+} UnitdData;
+
+/* Commands */
+typedef enum {
+    NO_COMMAND = -1,
+    REBOOT_COMMAND = 0,
+    POWEROFF_COMMAND = 1,
+    HALT_COMMAND = 2,
+    LIST_COMMAND = 3,
+    STATUS_COMMAND = 4,
+    STOP_COMMAND = 5,
+    START_COMMAND = 6,
+    RESTART_COMMAND = 7,
+    DISABLE_COMMAND = 8,
+    ENABLE_COMMAND = 9,
+    GET_REQUIRES_COMMAND = 10,
+    GET_CONFLICTS_COMMAND = 11,
+    GET_STATES_COMMAND = 12,
+    GET_DEFAULT_STATE_COMMAND = 13
+} Command;
+
+/* Socket */
+typedef struct {
+    Array *unitsDisplay;
+    Array *errors;
+    Array *messages;
+} SockMessageOut;
+
+
+#endif //UNITD_TYPES_H

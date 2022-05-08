@@ -1,0 +1,11 @@
+[Unit]
+Description = Cleaning up
+Requires = filesystems
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/init.state/scripts/cleanup.sh
+
+[State]
+WantedBy = init
+

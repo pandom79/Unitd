@@ -1,0 +1,12 @@
+[Unit]
+Description = Loading kernel modules
+Requires = static-devnodes
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/init.state/scripts/kmods.sh
+
+[State]
+WantedBy = init
+
+

@@ -1,0 +1,7 @@
+Unitd
+
+https://linuxhint.com/signal_handlers_c_programming_language/
+
+Unitlogd
+
+https://www.geeksforgeeks.org/how-to-create-binary-file-from-the-existing-text-file/

@@ -1,0 +1,10 @@
+[Unit]
+Description = Set hardware clock
+Type = oneshot
+
+[Command]
+Run = /usr/share/unitd/final.state/scripts/hw-clock.sh
+
+[State]
+WantedBy = final
+

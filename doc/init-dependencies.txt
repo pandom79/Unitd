@@ -1,0 +1,26 @@
+pseudofs.unit
+    - console-setup
+    - static-devnodes
+        - kmods
+            - udev
+                - filesystems
+                    - swap
+                    - misc
+                    - sysctl
+                    - cleanup
+                    - unitd-check
+                    - dmesg-log
+
+
+1) pseudofs OK
+2) console-setup OK
+3) static-devnodes OK
+4) kmods OK
+5) udev OK
+6) filesystems OK
+7) swap OK
+8) misc OK
+9) sysctl OK
+10) cleanup OK
+11) unitd-check
+12) dmesg-log

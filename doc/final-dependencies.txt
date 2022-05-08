@@ -1,0 +1,21 @@
+1) Udev as oneshot process.
+   It will be stopped by udev-stop.unit in the final state
+
+hw-clock
+random-seed
+udev-stop
+    send-sigterm
+        send-sigkill
+            umount-filesystems
+                deactivate-devices
+
+
+2) Udev as daemon.
+   It will be stopped by stop command in udev.unit after the stop of the shutdown units (reboot or poweroff)
+
+hw-clock
+random-seed
+    send-sigterm
+        send-sigkill
+            umount-filesystems
+                deactivate-devices
