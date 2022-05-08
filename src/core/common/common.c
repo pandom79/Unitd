@@ -142,12 +142,12 @@ getDefaultStateStr(char **destDefStateSyml)
     if ((rv = readSymLink(defStateSymlPath, destDefStateSyml)) != 0) {
         /* These errors would have to never happen */
         if (rv == 1) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "getDefaultStateStr", 1,
-                          "The '%s' symlink is missing", defStateSymlPath);
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "getDefaultStateStr", EPERM,
+                          strerror(EPERM), "The '%s' symlink is missing", defStateSymlPath);
         }
         else if (rv == 2) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "getDefaultStateStr", 2,
-                          "The '%s' doesn't look like a symlink", defStateSymlPath);
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "getDefaultStateStr", EPERM,
+                          strerror(EPERM), "The '%s' doesn't look like a symlink", defStateSymlPath);
         }
     }
 

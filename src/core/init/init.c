@@ -126,14 +126,23 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     else {
         /* Get the default state as string */
         if (getDefaultStateStr(&destDefStateSyml) != 0) {
+            /* If we are here then the symlink is not valid or missing */
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
             unitdCloseLog();
-            goto out;
+            /* Set the default shutdown command */
+            SHUTDOWN_COMMAND = REBOOT_COMMAND;
+            goto shutdown;
         }
         STATE_DEFAULT = getStateByStr(destDefStateSyml);
         if (STATE_DEFAULT == NO_STATE) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink is not valid\n");
+            /* If we are here then the symlink points to a bad destination */
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
+                                                destDefStateSyml);
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
             unitdCloseLog();
-            goto out;
+            /* Set the default shutdown command */
+            SHUTDOWN_COMMAND = REBOOT_COMMAND;
+            goto shutdown;
         }
         if (UNITD_DEBUG)
             unitdLogInfo(LOG_UNITD_BOOT, "The default.state symlink points to %s",
@@ -144,7 +153,10 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     /* Zero units are not allowed in this state */
     if (rv == GLOB_NOMATCH) {
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
-        goto out;
+        unitdCloseLog();
+        /* Set the default shutdown command */
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
+        goto shutdown;
     }
     assert((STATE_CMDLINE && STATE_DEFAULT == NO_STATE) ||
            (STATE_CMDLINE == NO_STATE && STATE_DEFAULT));

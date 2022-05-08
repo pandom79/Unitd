@@ -570,7 +570,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
         /* Zero units are allowed only for Reboot and Poweroff State otherwise we show the errors */
         if (currentState != REBOOT && currentState != POWEROFF)
             unitdLogError(LOG_UNITD_CONSOLE, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
-                          "GLOB_NOMATCH", "Zero units found for %s", dirName);
+                          "GLOB_NOMATCH", "Zero units found for %s state", STATE_DATA_ITEMS[currentState].desc);
         else {
             if (UNITD_DEBUG)
                 unitdLogWarning(LOG_UNITD_BOOT, "Zero units found for %s state\n",
