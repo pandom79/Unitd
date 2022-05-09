@@ -1,5 +1,7 @@
 - Init process development
-    - Fix stringLastIndexOfStr stringLastIndexOfStr (string_wrapper.c:342) DONE
+    - Enable func: checkrequires and dependencies
+
+    - Enable func: on the top, you add the check about the states. (default/cmdline, reboot and poweroff)
 
     - Get and set default state developing
 

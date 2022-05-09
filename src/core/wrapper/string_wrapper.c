@@ -20,15 +20,16 @@ stringNew(const char *str)
     return ret;
 }
 
-char*
+bool
 stringSet(char **str, const char *value)
 {
     if (value) {
         if (*str)
             objectRelease(str);
         *str = stringNew(value);
+        return true;
     }
-    return *str;
+    return false;
 }
 
 const char*

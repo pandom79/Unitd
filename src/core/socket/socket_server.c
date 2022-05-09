@@ -794,6 +794,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     else
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
 
+    /* Check if unitname exists */
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
@@ -803,6 +804,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
 
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
+    /* Check if it is already enabled */
     if (unitDisplay->enabled) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
@@ -899,29 +901,27 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         stringAppendStr(&stateStr, ".state");
         State state = getStateByStr(stateStr);
         assert(state != NO_STATE);
-        if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT || state == POWEROFF) {
-            /* Get script parameter array */
-            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP);
-            from = arrayGet(scriptParams, 2);
-            to = arrayGet(scriptParams, 3);
-            /* Execute the script */
-            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
-            if (rv != 0) {
-                /* We don't put this error into response because it should never occurred */
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
-                                             "ExecScript func has returned %d = %s", rv, strerror(rv));
-            }
-            else {
-                if (unit)
-                    unit->enabled = true;
-                /* Put the result into response */
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
-                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,
-                                           to, from));
-            }
-            arrayRelease(&scriptParams);
+        /* Get script parameter array */
+        scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP);
+        from = arrayGet(scriptParams, 2);
+        to = arrayGet(scriptParams, 3);
+        /* Execute the script */
+        rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
+        if (rv != 0) {
+            /* We don't put this error into response because it should never occurred */
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
+                                         "ExecScript func has returned %d = %s", rv, strerror(rv));
         }
+        else {
+            if (unit)
+                unit->enabled = true;
+            /* Put the result into response */
+            if (!(*messages))
+                *messages = arrayNew(objectRelease);
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,
+                                       to, from));
+        }
+        arrayRelease(&scriptParams);
         objectRelease(&stateStr);
     }
     /* If 'run' = true then start it */

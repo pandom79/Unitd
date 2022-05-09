@@ -158,8 +158,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
-    assert((STATE_CMDLINE && STATE_DEFAULT == NO_STATE) ||
-           (STATE_CMDLINE == NO_STATE && STATE_DEFAULT));
+    assert((STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) ||
+           (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE));
     /* we open eventual pipes and start the processes */
     openPipes(units, NULL);
     startProcesses(units, NULL);

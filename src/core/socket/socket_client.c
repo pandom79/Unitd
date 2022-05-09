@@ -928,7 +928,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
         sockErrors = (*sockMessageOut)->errors;
         lenErrors = (sockErrors ? sockErrors->size : 0);
         for (int i = 0; i < lenErrors; i++) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, arrayGet(sockErrors, i));
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "[%d] %s", i + 1, arrayGet(sockErrors, i));
             printf("\n");
         }
         /* Display the messages */

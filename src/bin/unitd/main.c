@@ -121,15 +121,17 @@ int main() {
         assert(unitdData);
         UNITD_DATA = unitdData;
         //FIXME test
+        /* Init */
         unitdInit(&unitdData, false);
 //        unitdInit(&unitdData, true);
-
         /* Release all */
         unitdEnd(&unitdData);
 
         /* The system is going down */
 //FIXME test
 //        sync();
+//        if (SHUTDOWN_COMMAND == NO_COMMAND)
+//            SHUTDOWN_COMMAND = REBOOT_COMMAND;
 //        switch (SHUTDOWN_COMMAND) {
 //            case REBOOT_COMMAND:
 //                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...");

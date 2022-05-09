@@ -80,7 +80,7 @@ void unitdLogSuccess(int options, const char *format, ...);
 /* WRAPPER */
 /* String */
 char* stringNew(const char *);
-char* stringSet(char **, const char *);
+bool stringSet(char **, const char *);
 const char* stringGet(char *str);
 bool stringStartsWithChr(const char *, const char);
 bool stringStartsWithStr(const char *, const char *);
