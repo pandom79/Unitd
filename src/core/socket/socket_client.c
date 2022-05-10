@@ -780,16 +780,16 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
     if (requires) {
         arrayAdd(options, stringNew(OPTIONS_DATA[REQUIRES_OPT].name));
         /* Get SockMessageIn struct */
-        rv = getSockMessageIn(&sockMessageIn, &socketConnection, GET_REQUIRES_COMMAND, unitName, options);
+        rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_REQUIRES_COMMAND, unitName, options);
     }
     else if (conflicts) {
         arrayAdd(options, stringNew(OPTIONS_DATA[CONFLICTS_OPT].name));
         /* Get SockMessageIn struct */
-        rv = getSockMessageIn(&sockMessageIn, &socketConnection, GET_CONFLICTS_COMMAND, unitName, options);
+        rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_CONFLICTS_COMMAND, unitName, options);
     }
     else if (states) {
         /* Get SockMessageIn struct */
-        rv = getSockMessageIn(&sockMessageIn, &socketConnection, GET_STATES_COMMAND, unitName, options);
+        rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_STATES_COMMAND, unitName, options);
         arrayAdd(options, stringNew(OPTIONS_DATA[STATES_OPT].name));
     }
     if (rv != 0)
@@ -907,14 +907,14 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
         case ENABLE_COMMAND:
             rv = enableUnit(sockMessageOut, unitName, force, run);
             break;
-        case GET_REQUIRES_COMMAND:
-        case GET_CONFLICTS_COMMAND:
-        case GET_STATES_COMMAND:
-            if (command == GET_REQUIRES_COMMAND)
+        case LIST_REQUIRES_COMMAND:
+        case LIST_CONFLICTS_COMMAND:
+        case LIST_STATES_COMMAND:
+            if (command == LIST_REQUIRES_COMMAND)
                 rv = getUnitData(sockMessageOut, unitName, true, false, false);
-            else if (command == GET_CONFLICTS_COMMAND)
+            else if (command == LIST_CONFLICTS_COMMAND)
                 rv = getUnitData(sockMessageOut, unitName, false, true, false);
-            else if (command == GET_STATES_COMMAND)
+            else if (command == LIST_STATES_COMMAND)
                 rv = getUnitData(sockMessageOut, unitName, false, false, true);
             break;
         case GET_DEFAULT_STATE_COMMAND:
@@ -928,7 +928,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
         sockErrors = (*sockMessageOut)->errors;
         lenErrors = (sockErrors ? sockErrors->size : 0);
         for (int i = 0; i < lenErrors; i++) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "[%d] %s", i + 1, arrayGet(sockErrors, i));
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, arrayGet(sockErrors, i));
             printf("\n");
         }
         /* Display the messages */
@@ -940,7 +940,10 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
         }
         /* If there are not errors then show the unit detail */
         if (lenErrors == 0) {
-            if (command != GET_REQUIRES_COMMAND && command != GET_CONFLICTS_COMMAND && command != GET_STATES_COMMAND) {
+            if (command != LIST_REQUIRES_COMMAND &&
+                command != LIST_CONFLICTS_COMMAND &&
+                command != LIST_STATES_COMMAND &&
+                command != GET_DEFAULT_STATE_COMMAND) {
                 /* Redirect to showUnitStatus to show the unit detail */
                 sockMessageOutRelease(sockMessageOut);
                 showUnitStatus(sockMessageOut, unitName);

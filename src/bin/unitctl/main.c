@@ -17,28 +17,27 @@ usage(bool fail)
         "Usage: unitctl [COMMAND] [OPTION] ... \n\n"
 
         "COMMAND\n"
-        "enable          Enable the unit\n"
-        "disable         Disable the unit\n"
-        "restart         Restart the unit\n"
-        "start           Start the unit\n"
-        "stop            Stop the unit\n"
-        "status          Get the unit status\n"
-        "get-requires    List all the unit dependencies\n"
-        "get-conflicts   List all the unit conflicts\n"
-        "get-states      List all the unit wanted states\n"
-        "get-default     Get the default state\n"
-        "set-default     Set the default state\n"
-        "list            List all the units\n"
-        "reboot          Reboot the machine\n"
-        "poweroff        Power off the machine\n"
-        "halt            Halt the machine\n\n"
+        "enable             Enable the unit\n"
+        "disable            Disable the unit\n"
+        "restart            Restart the unit\n"
+        "start              Start the unit\n"
+        "stop               Stop the unit\n"
+        "status             Get the unit status\n"
+        "list-requires      List all the unit dependencies\n"
+        "list-conflicts     List all the unit conflicts\n"
+        "list-states        List all the unit wanted states\n"
+        "get-default        Get the default state\n"
+        "set-default        Set the default state\n"
+        "list               List all the units\n"
+        "reboot             Reboot the machine\n"
+        "poweroff           Power off the machine\n"
+        "halt               Halt the machine\n\n"
 
         "OPTION\n"
-        "-r, --run       Run the operation\n"
-        "-f, --force     Force the operation\n"
-        "-d, --debug     Enable the debug\n"
-        "-h, --help      Show usage\n\n"
-
+        "-r, --run          Run the operation\n"
+        "-f, --force        Force the operation\n"
+        "-d, --debug        Enable the debug\n"
+        "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
@@ -122,9 +121,9 @@ int main(int argc, char **argv) {
             break;
         case STATUS_COMMAND:
         case STOP_COMMAND:
-        case GET_REQUIRES_COMMAND:
-        case GET_CONFLICTS_COMMAND:
-        case GET_STATES_COMMAND:
+        case LIST_REQUIRES_COMMAND:
+        case LIST_CONFLICTS_COMMAND:
+        case LIST_STATES_COMMAND:
             if (argc == 2 || (argc > 3 && !UNITCTL_DEBUG))
                 usage(true);
             if (argc > 3)

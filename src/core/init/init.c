@@ -30,9 +30,9 @@ CommandData COMMANDS_DATA[] = {
     { RESTART_COMMAND, "restart" },
     { DISABLE_COMMAND, "disable" },
     { ENABLE_COMMAND, "enable" },
-    { GET_REQUIRES_COMMAND, "get-requires" },
-    { GET_CONFLICTS_COMMAND, "get-conflicts" },
-    { GET_STATES_COMMAND, "get-states" },
+    { LIST_REQUIRES_COMMAND, "list-requires" },
+    { LIST_CONFLICTS_COMMAND, "list-conflicts" },
+    { LIST_STATES_COMMAND, "list-states" },
     { GET_DEFAULT_STATE_COMMAND, "get-default" },
 };
 int COMMANDS_LEN = 14;
@@ -177,7 +177,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
         assert(!UNITD_LOG_FILE);
         unitdOpenLog("a");
-        assert(SHUTDOWN_COMMAND != NO_COMMAND);
+        if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;
         if (SHUTDOWN_COMMAND == HALT_COMMAND) {
             shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);
             stringAppendStr(&shutDownStateStr, ".state");

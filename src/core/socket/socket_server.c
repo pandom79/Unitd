@@ -223,9 +223,9 @@ socketDispatchRequest(char *buffer, int *socketFd)
             case ENABLE_COMMAND:
                 enableUnitServer(socketFd, sockMessageIn, &sockMessageOut);
                 break;
-            case GET_REQUIRES_COMMAND:
-            case GET_CONFLICTS_COMMAND:
-            case GET_STATES_COMMAND:
+            case LIST_REQUIRES_COMMAND:
+            case LIST_CONFLICTS_COMMAND:
+            case LIST_STATES_COMMAND:
                 getUnitDataServer(socketFd, sockMessageIn, &sockMessageOut);
                 break;
             case GET_DEFAULT_STATE_COMMAND:
@@ -1039,21 +1039,60 @@ int
 getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    char *buffer = NULL;
-    Array **messages = NULL;
+    char *buffer, *msg, *destDefStateSyml, *error;
+    Array **messages, **errors;
+    State defaultState = NO_STATE;
+
+    buffer = msg = destDefStateSyml = error = NULL;
+    messages = errors = NULL;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
+    errors = &(*sockMessageOut)->errors;
+    *errors = arrayNew(objectRelease);
     messages = &(*sockMessageOut)->messages;
     *messages = arrayNew(objectRelease);
 
     if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE) {
-        char *msg = stringNew("Default state : ");
-        stringAppendStr(&msg, stringNew(STATE_DATA_ITEMS[STATE_DEFAULT].desc));
+        msg = stringNew("Default state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_DEFAULT].desc);
         arrayAdd(*messages, msg);
     }
     else if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) {
-//FIXME continue...
+        rv = getDefaultStateStr(&destDefStateSyml);
+        /* Symlink missing */
+        if (rv == 1) {
+            objectRelease(&destDefStateSyml);
+            arrayAdd(*errors, stringNew("The default state symlink is missing!"));
+            goto out;
+        }
+        /* Not a symlink */
+        else if (rv == 2) {
+            objectRelease(&destDefStateSyml);
+            arrayAdd(*errors, stringNew("The default state doesn't look like a symlink!"));
+            goto out;
+        }
+        defaultState = getStateByStr(destDefStateSyml);
+        /* Bad destination */
+        if (defaultState == NO_STATE) {
+            error = stringNew("The default state symlink points to a bad destination: ");
+            stringAppendStr(&error, destDefStateSyml);
+            arrayAdd(*errors, error);
+            objectRelease(&destDefStateSyml);
+            goto out;
+        }
+        objectRelease(&destDefStateSyml);
+
+        /* Default state */
+        msg = stringNew("Default state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
+        arrayAdd(*messages, stringNew(msg));
+        objectRelease(&msg);
+
+        /* Current state */
+        msg = stringNew("Current state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_CMDLINE].desc);
+        arrayAdd(*messages, msg);
     }
 
     out:
@@ -1069,5 +1108,6 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         }
 
         objectRelease(&buffer);
+
         return rv;
 }
