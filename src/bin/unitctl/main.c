@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     bool force, run;
     const char *shortopts = "hrfd";
     Command command = NO_COMMAND;
-    const char *commandName, *unitName;
+    const char *commandName, *arg;
     SockMessageOut *sockMessageOut = NULL;
     const struct option longopts[] = {
         { "help", no_argument, NULL, 'h' },
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     };
 
     c = rv = 0;
-    commandName = unitName = NULL;
+    commandName = arg = NULL;
     force = run = false;
 
     //FIXME get root password
@@ -124,38 +124,39 @@ int main(int argc, char **argv) {
         case LIST_REQUIRES_COMMAND:
         case LIST_CONFLICTS_COMMAND:
         case LIST_STATES_COMMAND:
+        case SET_DEFAULT_STATE_COMMAND:
             if (argc == 2 || (argc > 3 && !UNITCTL_DEBUG))
                 usage(true);
             if (argc > 3)
-                unitName = argv[3];
+                arg = argv[3];
             else
-                unitName = argv[2];
+                arg = argv[2];
             if (command == STATUS_COMMAND)
-                rv = showUnitStatus(&sockMessageOut, unitName);
+                rv = showUnitStatus(&sockMessageOut, arg);
             else
-                rv = showUnit(command, &sockMessageOut, unitName, false, false, false);
+                rv = showUnit(command, &sockMessageOut, arg, false, false, false);
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
             if (argc == 2 || (argc > 3 && !force && !UNITCTL_DEBUG))
                 usage(true);
-            unitName = argv[argc - 1];
+            arg = argv[argc - 1];
             if (command == START_COMMAND)
-                rv = showUnit(command, &sockMessageOut, unitName, force, false, false);
+                rv = showUnit(command, &sockMessageOut, arg, force, false, false);
             else
-                rv = showUnit(command, &sockMessageOut, unitName, force, true, false);
+                rv = showUnit(command, &sockMessageOut, arg, force, true, false);
             break;
         case DISABLE_COMMAND:
             if (argc == 2 || (argc > 3 && !run && !UNITCTL_DEBUG))
                 usage(true);
-            unitName = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, unitName, false, false, run);
+            arg = argv[argc - 1];
+            rv = showUnit(command, &sockMessageOut, arg, false, false, run);
             break;
         case ENABLE_COMMAND:
             if (argc == 2 || (argc > 3 && !run && !force && !UNITCTL_DEBUG))
                 usage(true);
-            unitName = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, unitName, force, false, run);
+            arg = argv[argc - 1];
+            rv = showUnit(command, &sockMessageOut, arg, force, false, run);
             break;
         }
 

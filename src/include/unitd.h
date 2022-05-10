@@ -29,21 +29,21 @@ int
 getUnitList(SockMessageOut **sockMessageOut);
 
 /* Get the unit data.
- * The "unit name" parameter can also contain the ".unit" suffix.
+ * The "unit name" argument can also contain the ".unit" suffix.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
 getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName);
 
 /* Stop the unit
- * The "unit name" parameter can also contain the ".unit" suffix.
+ * The "unit name" argument can also contain the ".unit" suffix.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
 stopUnit(SockMessageOut **sockMessageOut, const char *unitName);
 
 /* Start/Restart the unit.
- * The "unit name" parameter can also contain the ".unit" suffix.
+ * The "unit name" argument can also contain the ".unit" suffix.
  * To resolve the eventual conflicts, invoke it with "force" = true.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
@@ -51,7 +51,7 @@ int
 startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool restart);
 
 /* Disable the unit.
- * The "unit name" parameter can also contain the ".unit" suffix.
+ * The "unit name" argument can also contain the ".unit" suffix.
  * You can also stop this unit invoking it with "run" = true.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
@@ -59,7 +59,7 @@ int
 disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run);
 
 /* Enable the unit.
- * The "unit name" parameter can also contain the ".unit" suffix.
+ * The "unit name" argument can also contain the ".unit" suffix.
  * You can also start this unit invoking it with "run" = true and "force" = true
  * to resolve eventual conflicts.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
@@ -68,7 +68,7 @@ int
 enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run);
 
 /* Get the dependencies, conflicts or unit wanted states according the boolean parameters values.
- * The "unit name" parameter can also contain the ".unit" suffix.
+ * The "unit name" argument can also contain the ".unit" suffix.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
@@ -80,5 +80,12 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
 */
 int
 getDefaultState(SockMessageOut **sockMessageOut);
+
+/* Set the default state.
+ * The "state" argument can also contain the ".state" suffix.
+ * SockMessageOut struct must be freed via the sockMessageOutRelease function.
+*/
+int
+setDefaultState(SockMessageOut **sockMessageOut, const char *state);
 
 #endif // UNITD_H

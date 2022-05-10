@@ -1,7 +1,5 @@
 - Init process development
-    - Enable func: checkrequires and dependencies
-
-    - Enable func: on the top, you add the check about the states. (default/cmdline, reboot and poweroff)
+    - Set default developing
 
     - Get and set default state developing
 

@@ -26,7 +26,7 @@ sockMessageInCreate()
     assert(sockMessageIn);
     sockMessageIn->command = NO_COMMAND;
     sockMessageIn->options = NULL;
-    sockMessageIn->unitName = NULL;
+    sockMessageIn->arg = NULL;
     return sockMessageIn;
 }
 
@@ -34,7 +34,7 @@ void
 sockMessageInRelease(SockMessageIn **sockMessageIn)
 {
     if (*sockMessageIn) {
-        objectRelease(&(*sockMessageIn)->unitName);
+        objectRelease(&(*sockMessageIn)->arg);
         arrayRelease(&(*sockMessageIn)->options);
         objectRelease(sockMessageIn);
     }

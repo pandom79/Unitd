@@ -335,7 +335,7 @@ int signalsHandler(int, siginfo_t *, void *);
 #define SYML_ADD_OP             "add"
 
 typedef struct {
-    char *unitName;
+    char *arg;
     Command command;
     Array *options;
 } SockMessageIn;
@@ -363,6 +363,7 @@ int disableUnitServer(int *, SockMessageIn *, SockMessageOut **, const char *, b
 int enableUnitServer(int *, SockMessageIn *, SockMessageOut **);
 int getUnitDataServer(int *, SockMessageIn *, SockMessageOut **);
 int getDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
+int setDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 
 /* Client */
 int showUnitList(SockMessageOut **);
@@ -385,7 +386,6 @@ int unmarshallResponse(char *, SockMessageOut **);
 /*********************************************************************************/
 
 /* COMMON */
-bool checkStateStr(const char *);
 int readSymLink(const char *, char **);
 int msleep(long);
 void addEnvVar(const char *, const char *);

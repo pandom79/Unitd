@@ -63,25 +63,6 @@ readSymLink(const char *symLink, char **wherePoints)
         return rv;
 }
 
-bool
-checkStateStr(const char *stateStr)
-{
-    if (stateStr) {
-        if (strcmp(stateStr, STATE_DATA_ITEMS[POWEROFF].desc) == 0 ||
-            strcmp(stateStr, STATE_DATA_ITEMS[REBOOT].desc) == 0)
-            return false;
-        else {
-            for (State state = SINGLE_USER; state <= GRAPHICAL; state++) {
-                if (strcmp(stateStr, STATE_DATA_ITEMS[state].desc) == 0) {
-                    STATE_CMDLINE = state;
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
 void
 addEnvVar(const char *envVarName, const char *envVarValue)
 {

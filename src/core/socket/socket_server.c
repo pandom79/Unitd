@@ -231,6 +231,9 @@ socketDispatchRequest(char *buffer, int *socketFd)
             case GET_DEFAULT_STATE_COMMAND:
                 getDefaultStateServer(socketFd, sockMessageIn, &sockMessageOut);
                 break;
+            case SET_DEFAULT_STATE_COMMAND:
+                setDefaultStateServer(socketFd, sockMessageIn, &sockMessageOut);
+                break;
             default:
                 break;
         }
@@ -300,12 +303,12 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     assert(sockMessageIn);
     assert(*socketFd != -1);
     /* Unit name could contain ".unit" suffix */
-    unitName = getUnitName(sockMessageIn->unitName);
+    unitName = getUnitName(sockMessageIn->arg);
     if (!unitName)
-        unitName = sockMessageIn->unitName;
+        unitName = sockMessageIn->arg;
     else {
-        objectRelease(&sockMessageIn->unitName);
-        sockMessageIn->unitName = unitName;
+        objectRelease(&sockMessageIn->arg);
+        sockMessageIn->arg = unitName;
     }
     /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);    
@@ -356,12 +359,12 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     assert(sockMessageIn);
     assert(*socketFd != -1);
     /* Unit name could contain ".unit" suffix */
-    unitName = getUnitName(sockMessageIn->unitName);
+    unitName = getUnitName(sockMessageIn->arg);
     if (!unitName)
-        unitName = sockMessageIn->unitName;
+        unitName = sockMessageIn->arg;
     else {
-        objectRelease(&sockMessageIn->unitName);
-        sockMessageIn->unitName = unitName;
+        objectRelease(&sockMessageIn->arg);
+        sockMessageIn->arg = unitName;
     }
     /* Create the array */
     if (!(*unitsDisplay))
@@ -443,12 +446,12 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     assert(sockMessageIn);
     assert(*socketFd != -1);
     /* Unit name could contain ".unit" suffix */
-    unitName = getUnitName(sockMessageIn->unitName);
+    unitName = getUnitName(sockMessageIn->arg);
     if (!unitName)
-        unitName = sockMessageIn->unitName;
+        unitName = sockMessageIn->arg;
     else {
-        objectRelease(&sockMessageIn->unitName);
-        sockMessageIn->unitName = unitName;
+        objectRelease(&sockMessageIn->arg);
+        sockMessageIn->arg = unitName;
     }
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     restart = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESTART_OPT].name);
@@ -618,12 +621,12 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         unitName = stringNew(unitNameArg);
     else {
         /* Unit name could contain ".unit" suffix */
-        unitName = getUnitName(sockMessageIn->unitName);
+        unitName = getUnitName(sockMessageIn->arg);
         if (!unitName)
-            unitName = sockMessageIn->unitName;
+            unitName = sockMessageIn->arg;
         else {
-            objectRelease(&sockMessageIn->unitName);
-            sockMessageIn->unitName = unitName;
+            objectRelease(&sockMessageIn->arg);
+            sockMessageIn->arg = unitName;
         }
     }
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
@@ -766,12 +769,12 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     messages = &(*sockMessageOut)->messages;
 
     /* Unit name could contain ".unit" suffix */
-    unitName = getUnitName(sockMessageIn->unitName);
+    unitName = getUnitName(sockMessageIn->arg);
     if (!unitName)
-        unitName = sockMessageIn->unitName;
+        unitName = sockMessageIn->arg;
     else {
-        objectRelease(&sockMessageIn->unitName);
-        sockMessageIn->unitName = unitName;
+        objectRelease(&sockMessageIn->arg);
+        sockMessageIn->arg = unitName;
     }
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
@@ -941,8 +944,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         }
 
         objectRelease(&buffer);
-
-    return rv;
+        return rv;
 }
 
 int
@@ -975,12 +977,12 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     assert(requires || conflicts || states);
 
     /* Unit name could contain ".unit" suffix */
-    unitName = getUnitName(sockMessageIn->unitName);
+    unitName = getUnitName(sockMessageIn->arg);
     if (!unitName)
-        unitName = sockMessageIn->unitName;
+        unitName = sockMessageIn->arg;
     else {
-        objectRelease(&sockMessageIn->unitName);
-        sockMessageIn->unitName = unitName;
+        objectRelease(&sockMessageIn->arg);
+        sockMessageIn->arg = unitName;
     }
 
     /* Create the array */
@@ -1017,22 +1019,20 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     else if (states)
         *messages = arrayStrCopy(unitDisplay->wantedBy);
 
+    out:
+        /* Marshall response */
+        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
+        if (UNITD_DEBUG)
+            syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitDataServer::Buffer sent (%lu): \n%s",
+                   strlen(buffer), buffer);
+        /* Sending the response */
+        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitDataServer."
+                                         "Send func has returned %d = %s", rv, strerror(rv));
+        }
 
-out:
-    /* Marshall response */
-    buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
-        syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitDataServer::Buffer sent (%lu): \n%s",
-               strlen(buffer), buffer);
-    /* Sending the response */
-    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitDataServer."
-                                     "Send func has returned %d = %s", rv, strerror(rv));
-    }
-
-    objectRelease(&buffer);
-
-    return rv;
+        objectRelease(&buffer);
+        return rv;
 }
 
 int
@@ -1108,6 +1108,83 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         }
 
         objectRelease(&buffer);
-
         return rv;
 }
+
+//FIXME
+int
+setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
+{
+    int rv = 0;
+    char *buffer, *msg, *destDefStateSyml, *error;
+    Array **messages, **errors;
+    State defaultState = NO_STATE;
+
+    buffer = msg = destDefStateSyml = error = NULL;
+    messages = errors = NULL;
+
+    assert(sockMessageIn);
+    assert(*socketFd != -1);
+    errors = &(*sockMessageOut)->errors;
+    *errors = arrayNew(objectRelease);
+    messages = &(*sockMessageOut)->messages;
+    *messages = arrayNew(objectRelease);
+
+    if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE) {
+        msg = stringNew("Default state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_DEFAULT].desc);
+        arrayAdd(*messages, msg);
+    }
+    else if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) {
+        rv = getDefaultStateStr(&destDefStateSyml);
+        /* Symlink missing */
+        if (rv == 1) {
+            objectRelease(&destDefStateSyml);
+            arrayAdd(*errors, stringNew("The default state symlink is missing!"));
+            goto out;
+        }
+        /* Not a symlink */
+        else if (rv == 2) {
+            objectRelease(&destDefStateSyml);
+            arrayAdd(*errors, stringNew("The default state doesn't look like a symlink!"));
+            goto out;
+        }
+        defaultState = getStateByStr(destDefStateSyml);
+        /* Bad destination */
+        if (defaultState == NO_STATE) {
+            error = stringNew("The default state symlink points to a bad destination: ");
+            stringAppendStr(&error, destDefStateSyml);
+            arrayAdd(*errors, error);
+            objectRelease(&destDefStateSyml);
+            goto out;
+        }
+        objectRelease(&destDefStateSyml);
+
+        /* Default state */
+        msg = stringNew("Default state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
+        arrayAdd(*messages, stringNew(msg));
+        objectRelease(&msg);
+
+        /* Current state */
+        msg = stringNew("Current state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_CMDLINE].desc);
+        arrayAdd(*messages, msg);
+    }
+
+    out:
+        /* Marshall response */
+        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
+        if (UNITD_DEBUG)
+            syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
+                   strlen(buffer), buffer);
+        /* Sending the response */
+        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
+                                         "Send func has returned %d = %s", rv, strerror(rv));
+        }
+
+        objectRelease(&buffer);
+        return rv;
+}
+

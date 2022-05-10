@@ -93,7 +93,7 @@ getMaxUnitName(Array *unitsDisplay)
 
 static int
 getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command command,
-                 const char *unitName, Array *options)
+                 const char *arg, Array *options)
 {
     int rv = 0;
     struct sockaddr_un name;
@@ -114,8 +114,8 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
 
     *sockMessageIn = sockMessageInCreate();
     (*sockMessageIn)->command = command;
-    if (unitName)
-        (*sockMessageIn)->unitName = stringNew(unitName);
+    if (arg)
+        (*sockMessageIn)->arg = stringNew(arg);
     if (options)
         (*sockMessageIn)->options = options;
 
@@ -753,13 +753,13 @@ enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bo
         *sockMessageOut = sockMessageOutCreate();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
-out:
-    objectRelease(&bufferReq);
-    objectRelease(&bufferRes);
-    sockMessageInRelease(&sockMessageIn);
-    if (socketConnection != -1)
-        close(socketConnection);
-    return rv;
+    out:
+        objectRelease(&bufferReq);
+        objectRelease(&bufferRes);
+        sockMessageInRelease(&sockMessageIn);
+        if (socketConnection != -1)
+            close(socketConnection);
+        return rv;
 }
 
 int
@@ -823,13 +823,13 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
         *sockMessageOut = sockMessageOutCreate();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
-out:
-    objectRelease(&bufferReq);
-    objectRelease(&bufferRes);
-    sockMessageInRelease(&sockMessageIn);
-    if (socketConnection != -1)
-        close(socketConnection);
-    return rv;
+    out:
+        objectRelease(&bufferReq);
+        objectRelease(&bufferRes);
+        sockMessageInRelease(&sockMessageIn);
+        if (socketConnection != -1)
+            close(socketConnection);
+        return rv;
 }
 
 int
@@ -875,17 +875,89 @@ getDefaultState(SockMessageOut **sockMessageOut)
         *sockMessageOut = sockMessageOutCreate();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
-out:
-    objectRelease(&bufferReq);
-    objectRelease(&bufferRes);
-    sockMessageInRelease(&sockMessageIn);
-    if (socketConnection != -1)
-        close(socketConnection);
-    return rv;
+    out:
+        objectRelease(&bufferReq);
+        objectRelease(&bufferRes);
+        sockMessageInRelease(&sockMessageIn);
+        if (socketConnection != -1)
+            close(socketConnection);
+        return rv;
 }
 
 int
-showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
+setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
+{
+    SockMessageIn *sockMessageIn = NULL;
+    int rv, socketConnection, bufferSize;
+    char *bufferReq, *bufferRes, *defaultStateStr;
+    State defaultState = NO_STATE;
+
+    rv = socketConnection = -1;
+    bufferReq = bufferRes = NULL;
+    bufferSize = INITIAL_SIZE;
+
+    defaultStateStr = stringNew(stateStr);
+    stringReplaceAllStr(&defaultStateStr, ".state", "");
+    defaultState = getStateByStr(defaultStateStr);
+    switch (defaultState) {
+        case NO_STATE:
+        case INIT:
+        case POWEROFF:
+        case REBOOT:
+        case FINAL:
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The '%s' argument is not valid!\n", stateStr);
+            unitdLogInfo(LOG_UNITD_CONSOLE, "Please, use one of the following values :\n"
+                                            "single-user\nmulti-user\nmulti-user-net\ncustom\ngraphical\n");
+            rv = 1;
+            goto out;
+        default:
+            break;
+    }
+
+    /* Get SockMessageIn struct */
+    if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, SET_DEFAULT_STATE_COMMAND, defaultStateStr, NULL)) != 0)
+        goto out;
+
+    /* Marshalling the request */
+    bufferReq = marshallRequest(sockMessageIn);
+
+    if (UNITCTL_DEBUG)
+        syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
+
+    /* Sending the request */
+    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "setDefaultState",
+                      errno, strerror(errno), "Send error");
+        goto out;
+    }
+
+    /* Read the response message */
+    bufferRes = calloc(bufferSize, sizeof(char));
+    assert(bufferRes);
+    if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
+        goto out;
+
+    if (UNITCTL_DEBUG)
+        syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer received (%lu): \n%s",
+               strlen(bufferRes), bufferRes);
+
+    /* Unmarshall the response */
+    if (!(*sockMessageOut))
+        *sockMessageOut = sockMessageOutCreate();
+    rv = unmarshallResponse(bufferRes, sockMessageOut);
+
+    out:
+        objectRelease(&bufferReq);
+        objectRelease(&bufferRes);
+        objectRelease(&defaultStateStr);
+        sockMessageInRelease(&sockMessageIn);
+        if (socketConnection != -1)
+            close(socketConnection);
+        return rv;
+}
+
+int
+showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
          bool force, bool restart, bool run)
 {
     int rv, len, lenErrors;
@@ -895,30 +967,34 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
 
     switch (command) {
         case STOP_COMMAND:
-            rv = stopUnit(sockMessageOut, unitName);
+            rv = stopUnit(sockMessageOut, arg);
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
-            rv = startUnit(sockMessageOut, unitName, force, restart);
+            rv = startUnit(sockMessageOut, arg, force, restart);
             break;
         case DISABLE_COMMAND:
-            rv = disableUnit(sockMessageOut, unitName, run);
+            rv = disableUnit(sockMessageOut, arg, run);
             break;
         case ENABLE_COMMAND:
-            rv = enableUnit(sockMessageOut, unitName, force, run);
+            rv = enableUnit(sockMessageOut, arg, force, run);
             break;
         case LIST_REQUIRES_COMMAND:
         case LIST_CONFLICTS_COMMAND:
         case LIST_STATES_COMMAND:
             if (command == LIST_REQUIRES_COMMAND)
-                rv = getUnitData(sockMessageOut, unitName, true, false, false);
+                rv = getUnitData(sockMessageOut, arg, true, false, false);
             else if (command == LIST_CONFLICTS_COMMAND)
-                rv = getUnitData(sockMessageOut, unitName, false, true, false);
+                rv = getUnitData(sockMessageOut, arg, false, true, false);
             else if (command == LIST_STATES_COMMAND)
-                rv = getUnitData(sockMessageOut, unitName, false, false, true);
+                rv = getUnitData(sockMessageOut, arg, false, false, true);
             break;
         case GET_DEFAULT_STATE_COMMAND:
             rv = getDefaultState(sockMessageOut);
+            break;
+        case SET_DEFAULT_STATE_COMMAND:
+            rv = setDefaultState(sockMessageOut, arg);
+            break;
         default:
             break;
     }
@@ -946,7 +1022,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *unitName,
                 command != GET_DEFAULT_STATE_COMMAND) {
                 /* Redirect to showUnitStatus to show the unit detail */
                 sockMessageOutRelease(sockMessageOut);
-                showUnitStatus(sockMessageOut, unitName);
+                showUnitStatus(sockMessageOut, arg);
             }
         }
     }

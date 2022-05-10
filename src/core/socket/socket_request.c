@@ -11,7 +11,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 /* COMMUNICATION PROTOCOL (REQUEST)
 
 Command=value|          (required and not repeatable)
-UnitName=value|         (optional and not repeatable)
+Arg=value|              (optional and not repeatable)
 Option=value1|          (optional and repeatable)
 Option=value2|
 ....
@@ -24,7 +24,7 @@ Option=valueN|
 /* Properties */
 enum PropertyNameEnum  {
     COMMAND = 0,
-    UNIT_NAME = 1,
+    ARG = 1,
     OPTION = 2,
 };
 
@@ -32,7 +32,7 @@ enum PropertyNameEnum  {
 int SOCKREQ_PROPERTIES_ITEMS_LEN = 3;
 PropertyData SOCKREQ_PROPERTIES_ITEMS[] = {
     { NO_SECTION, { COMMAND, "Command" }, false, true, false, 0, NULL, NULL },
-    { NO_SECTION, { UNIT_NAME, "UnitName" }, false, false, false, 0, NULL, NULL },
+    { NO_SECTION, { ARG, "Arg" }, false, false, false, 0, NULL, NULL },
     { NO_SECTION, { OPTION, "Option" }, true, false, false, 0, NULL, NULL },
 };
 
@@ -42,12 +42,12 @@ char*
 marshallRequest(SockMessageIn *sockMessageIn)
 {
     char *buffer = NULL;
-    const char *unitName, *optionKey;
+    const char *arg, *optionKey;
     char commandStr[10];
     Array *options = NULL;
     int len = 0;
 
-    unitName = optionKey = NULL;
+    arg = optionKey = NULL;
 
     assert(sockMessageIn);
     assert(sockMessageIn->command != NO_COMMAND);
@@ -59,11 +59,11 @@ marshallRequest(SockMessageIn *sockMessageIn)
     stringConcat(&buffer, commandStr);
     stringConcat(&buffer, TOKEN);
     /* Unit name */
-    unitName = sockMessageIn->unitName;
-    if (sockMessageIn->unitName) {
-        stringConcat(&buffer, SOCKREQ_PROPERTIES_ITEMS[UNIT_NAME].propertyName.desc);
+    arg = sockMessageIn->arg;
+    if (sockMessageIn->arg) {
+        stringConcat(&buffer, SOCKREQ_PROPERTIES_ITEMS[ARG].propertyName.desc);
         stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, unitName);
+        stringConcat(&buffer, arg);
         stringConcat(&buffer, TOKEN);
     }
     /* Options */
@@ -119,8 +119,8 @@ unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
                     case COMMAND:
                         (*sockMessageIn)->command = atoi(value);
                         break;
-                    case UNIT_NAME:
-                        (*sockMessageIn)->unitName = stringNew(value);
+                    case ARG:
+                        (*sockMessageIn)->arg = stringNew(value);
                         break;
                     case OPTION:
                         if (!(*options))
