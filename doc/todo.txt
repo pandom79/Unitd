@@ -10,10 +10,6 @@
       Predict unitddatapath for the "run" property in the initial and final units.
       Replace it with unitddatapath macro value from meson
 
-    - In debug mode, you fix the stackoverflow error
-
-- Unitd: Must I develop the "switch state" functionality ????
-
 - Unitlogd development
 
 - Unitlogctl development
