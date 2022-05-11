@@ -61,9 +61,8 @@ int main(int argc, char **argv) {
     commandName = arg = NULL;
     force = run = false;
 
-    //FIXME get root password
     if (getuid() != 0) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as root\n");
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
         exit(EXIT_FAILURE);
     }
 

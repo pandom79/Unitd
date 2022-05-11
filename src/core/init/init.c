@@ -39,6 +39,7 @@ CommandData COMMANDS_DATA[] = {
 int COMMANDS_LEN = 15;
 
 State STATE_DEFAULT;
+State STATE_NEW_DEFAULT;
 State STATE_CMDLINE;
 State STATE_SHUTDOWN;
 char *STATE_CMDLINE_DIR;
@@ -199,6 +200,15 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         stopProcesses(initUnits, NULL);
         assert(UNITD_LOG_FILE);
         unitdCloseLog();
+        /* Set the new default state */
+        if (STATE_NEW_DEFAULT != NO_STATE) {
+            rv = setNewDefaultStateSyml(STATE_NEW_DEFAULT);
+            if (rv != 0) {
+                unitdLogError(LOG_UNITD_CONSOLE, "src/core/init/init.c", "unitdInit", rv, strerror(rv),
+                              "An error has occurred in setNewDefaultStateSyml func", NULL);
+                execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+            }
+        }
 
         //********************* FINAL STATE ************************************
         /* Parsing and starting the finalization units

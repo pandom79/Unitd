@@ -460,27 +460,28 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     if (!(*unitsDisplay))
         *unitsDisplay = arrayNew(unitRelease);
 
-    if ((*unitsDisplay)->size == 0) {
-        /* Try to get the unit from memory */
-        unit = getUnitByName(*units, unitName);
-        if (unit) {
-            if (!restart) {
-                /* Avoid to show the unit detail if the unit is already into memory */
-                if (!(*errors))
-                    *errors = arrayNew(objectRelease);
-                arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_START_ERR].desc, unitName));
+    unit = getUnitByName(*units, unitName);
+    if (unit) {
+        if (!restart) {
+            /* Avoid to show the unit detail if the unit is already into memory */
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_START_ERR].desc, unitName));
+            /* If we are come from enableUnitServer func then we don't add the following msg */
+            if (sendResponse) {
                 if (!(*messages))
                     *messages = arrayNew(objectRelease);
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_START_MSG].desc, unitName));
-                goto out;
             }
-            else if (restart) {
-                assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
-                unit = NULL;
-            }
+            goto out;
         }
-        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
+        else if (restart) {
+            assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
+            unit = NULL;
+        }
     }
+    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
+
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
@@ -904,27 +905,29 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         stringAppendStr(&stateStr, ".state");
         State state = getStateByStr(stateStr);
         assert(state != NO_STATE);
-        /* Get script parameter array */
-        scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP);
-        from = arrayGet(scriptParams, 2);
-        to = arrayGet(scriptParams, 3);
-        /* Execute the script */
-        rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
-        if (rv != 0) {
-            /* We don't put this error into response because it should never occurred */
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
-                                         "ExecScript func has returned %d = %s", rv, strerror(rv));
+        if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT || state == POWEROFF) {
+            /* Get script parameter array */
+            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP);
+            from = arrayGet(scriptParams, 2);
+            to = arrayGet(scriptParams, 3);
+            /* Execute the script */
+            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
+            if (rv != 0) {
+                /* We don't put this error into response because it should never occurred */
+                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
+                                             "ExecScript func has returned %d = %s", rv, strerror(rv));
+            }
+            else {
+                if (unit)
+                    unit->enabled = true;
+                /* Put the result into response */
+                if (!(*messages))
+                    *messages = arrayNew(objectRelease);
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,
+                                           to, from));
+            }
+            arrayRelease(&scriptParams);
         }
-        else {
-            if (unit)
-                unit->enabled = true;
-            /* Put the result into response */
-            if (!(*messages))
-                *messages = arrayNew(objectRelease);
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,
-                                       to, from));
-        }
-        arrayRelease(&scriptParams);
         objectRelease(&stateStr);
     }
     /* If 'run' = true then start it */
@@ -1056,7 +1059,8 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE) {
         msg = stringNew("Default state : ");
         stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_DEFAULT].desc);
-        arrayAdd(*messages, msg);
+        arrayAdd(*messages, stringNew(msg));
+        objectRelease(&msg);
     }
     else if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) {
         rv = getDefaultStateStr(&destDefStateSyml);
@@ -1092,7 +1096,21 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         /* Current state */
         msg = stringNew("Current state : ");
         stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_CMDLINE].desc);
-        arrayAdd(*messages, msg);
+        arrayAdd(*messages, stringNew(msg));
+        objectRelease(&msg);
+    }
+
+    if (STATE_NEW_DEFAULT != NO_STATE) {
+        msg = stringNew("New default state : ");
+        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_NEW_DEFAULT].desc);
+        arrayAdd(*messages, stringNew(msg));
+        objectRelease(&msg);
+
+        msg = stringNew("Warning :\n"
+                        "Please, reboot or power off/halt the system\nwithout '-f' or '--force' option "
+                        "to apply the change.");
+        arrayAdd(*messages, stringNew(msg));
+        objectRelease(&msg);
     }
 
     out:
@@ -1111,17 +1129,17 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         return rv;
 }
 
-//FIXME
 int
 setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    char *buffer, *msg, *destDefStateSyml, *error;
+    char *buffer, *msg, *newDefaultStateStr, *destDefStateSyml;
     Array **messages, **errors;
-    State defaultState = NO_STATE;
+    State newDefaultState = NO_STATE;
+    State defaultState = STATE_DEFAULT;
 
-    buffer = msg = destDefStateSyml = error = NULL;
     messages = errors = NULL;
+    buffer = msg = newDefaultStateStr = NULL;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
@@ -1129,13 +1147,13 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     *errors = arrayNew(objectRelease);
     messages = &(*sockMessageOut)->messages;
     *messages = arrayNew(objectRelease);
+    newDefaultStateStr = sockMessageIn->arg;
 
-    if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE) {
-        msg = stringNew("Default state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_DEFAULT].desc);
-        arrayAdd(*messages, msg);
-    }
-    else if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) {
+    newDefaultState = getStateByStr(newDefaultStateStr);
+    assert(newDefaultState != NO_STATE);
+
+    if (defaultState == NO_STATE) {
+        assert(STATE_CMDLINE != NO_STATE);
         rv = getDefaultStateStr(&destDefStateSyml);
         /* Symlink missing */
         if (rv == 1) {
@@ -1150,25 +1168,29 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
             goto out;
         }
         defaultState = getStateByStr(destDefStateSyml);
-        /* Bad destination */
-        if (defaultState == NO_STATE) {
-            error = stringNew("The default state symlink points to a bad destination: ");
-            stringAppendStr(&error, destDefStateSyml);
-            arrayAdd(*errors, error);
-            objectRelease(&destDefStateSyml);
-            goto out;
-        }
         objectRelease(&destDefStateSyml);
+    }
 
-        /* Default state */
-        msg = stringNew("Default state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
-        arrayAdd(*messages, stringNew(msg));
-        objectRelease(&msg);
-
-        /* Current state */
-        msg = stringNew("Current state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_CMDLINE].desc);
+    if (newDefaultState == defaultState) {
+        if (STATE_NEW_DEFAULT != NO_STATE) {
+            STATE_NEW_DEFAULT = NO_STATE;
+            msg = stringNew("The default state has been restored to '");
+            stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
+            stringAppendStr(&msg, "'.");
+            arrayAdd(*messages, msg);
+        }
+        else {
+            msg = stringNew("The default state is already set to '");
+            stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
+            stringAppendStr(&msg, "'!");
+            arrayAdd(*errors, msg);
+        }
+    }
+    else {
+        STATE_NEW_DEFAULT = newDefaultState;
+        msg = stringNew("Please, reboot or power off/halt the system\n"
+                        "without '-f' or '--force' option "
+                        "to apply the change.");
         arrayAdd(*messages, msg);
     }
 
@@ -1187,4 +1209,3 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         objectRelease(&buffer);
         return rv;
 }
-

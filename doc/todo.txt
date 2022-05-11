@@ -1,8 +1,4 @@
 - Init process development
-    - Set default developing
-
-    - Get and set default state developing
-
     - Evaluate which functions defined in unitd.h have to be of public domain (GUI)
 
     - Create Unitd-wrapper project (library) to use it when unitlogd and unitlogctl will be developed.

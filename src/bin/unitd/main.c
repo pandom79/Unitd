@@ -16,6 +16,7 @@ pid_t UNITD_PID = 0;
 bool UNITD_DEBUG = false;
 FILE *UNITD_LOG_FILE = NULL;
 State STATE_DEFAULT = NO_STATE;
+State STATE_NEW_DEFAULT = NO_STATE;
 State STATE_CMDLINE = NO_STATE;
 State STATE_SHUTDOWN = NO_STATE;
 char *STATE_CMDLINE_DIR = NULL;
@@ -77,6 +78,11 @@ int main() {
     assert(UNITD_LOG_PATH);
     assert(UNITD_DATA_PATH);
     assert(UNITD_CONF_PATH);
+
+    if (getuid() != 0) {
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
+        exit(EXIT_FAILURE);
+    }
 
     if ((rv = parseProcCmdLine()) == 1) {
         hasError = true;

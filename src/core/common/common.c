@@ -135,3 +135,35 @@ getDefaultStateStr(char **destDefStateSyml)
     objectRelease(&defStateSymlPath);
     return rv;
 }
+
+int setNewDefaultStateSyml(State newDefaultState)
+{
+    int rv = 0;
+    Array *scriptParams = arrayNew(objectRelease);
+    char *command, *from, *to;
+
+    command = to = from = NULL;
+
+    /* Building from */
+    from = stringNew(UNITS_ENAB_PATH);
+    stringAppendChr(&from, '/');
+    stringAppendStr(&from, STATE_DATA_ITEMS[newDefaultState].desc);
+    stringAppendStr(&from, ".state");
+    /* Building to */
+    to = stringNew(UNITS_ENAB_PATH);
+    stringAppendChr(&to, '/');
+    stringAppendStr(&to, DEF_STATE_SYML_NAME);
+    /* Building command */
+    command = stringNew(UNITD_DATA_PATH);
+    stringAppendStr(&command, "/scripts/symlink-handle.sh");
+    arrayAdd(scriptParams, command); //0
+    arrayAdd(scriptParams, stringNew(SYML_ADD_OP)); //1
+    arrayAdd(scriptParams, from); //2
+    arrayAdd(scriptParams, to); //3
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL); //4
+    /* Execute the script */
+    rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
+    arrayRelease(&scriptParams);
+    return rv;
+}

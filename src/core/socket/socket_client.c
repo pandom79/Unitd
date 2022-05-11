@@ -961,6 +961,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
          bool force, bool restart, bool run)
 {
     int rv, len, lenErrors;
+    char *message = NULL;
     Array *sockErrors, *unitsDisplay, *unitErrors, *messages;
     rv = len = 0;
     sockErrors = unitsDisplay = unitErrors = messages = NULL;
@@ -1011,15 +1012,17 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
         messages = (*sockMessageOut)->messages;
         len = (messages ? messages->size : 0);
         for (int i = 0; i < len; i++) {
-            unitdLogInfo(LOG_UNITD_CONSOLE, arrayGet(messages, i));
+            message = arrayGet(messages, i);
+            if (stringStartsWithStr(message, "Warning"))
+                unitdLogWarning(LOG_UNITD_CONSOLE, message);
+            else
+                unitdLogInfo(LOG_UNITD_CONSOLE, message);
             printf("\n");
         }
         /* If there are not errors then show the unit detail */
         if (lenErrors == 0) {
-            if (command != LIST_REQUIRES_COMMAND &&
-                command != LIST_CONFLICTS_COMMAND &&
-                command != LIST_STATES_COMMAND &&
-                command != GET_DEFAULT_STATE_COMMAND) {
+            if (command == START_COMMAND || command == RESTART_COMMAND ||
+                command == STOP_COMMAND || run) {
                 /* Redirect to showUnitStatus to show the unit detail */
                 sockMessageOutRelease(sockMessageOut);
                 showUnitStatus(sockMessageOut, arg);

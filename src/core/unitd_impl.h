@@ -18,6 +18,7 @@ extern bool UNITCTL_DEBUG;
 extern Command SHUTDOWN_COMMAND;
 extern Array *UNITD_ENV_VARS;
 extern State STATE_DEFAULT;
+extern State STATE_NEW_DEFAULT;
 extern State STATE_CMDLINE;
 extern State STATE_SHUTDOWN;
 extern char *STATE_CMDLINE_DIR;
@@ -391,6 +392,7 @@ int msleep(long);
 void addEnvVar(const char *, const char *);
 State getStateByStr(char *);
 int getDefaultStateStr(char **);
+int setNewDefaultStateSyml(State);
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H
