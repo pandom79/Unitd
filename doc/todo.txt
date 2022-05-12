@@ -1,8 +1,19 @@
 - Init process development
+    - Wtmp and utmp management
+      - Add 'install -m0664 -o root -g utmp /dev/null /var/run/utmp'
+        in misc.sh. /var/run/utmp and /var/run/wtmp could be a macro path
+      - In misc.sh we can invoke "halt -B" to write in wtmp and utmp (string reboot)
+      - In hwclock we can invoke "halt -w" only wtmp (string shutdown)
+
+    - Change seed generation. See seedrng!
+
+    - Virtualization
+
+    - Wall message
+
     - Release the oneshot initialization unit. (optimizing unitd daemon memory usage)
 
     - Review initialization and finalization scripts.
-      Void Linux runit has been updated (virtualization, seed, wtmp and utmp management)
       Predict unitddatapath for the "run" property in the initial and final units.
       Replace it with unitddatapath macro value from meson
 
@@ -10,17 +21,4 @@
 
 - Unitlogctl development
 
-Notes:
-- REBOOT
-    stopping units, sync and reboot(RB_AUTOBOOT)
-- REBOOT force
-    sync and reboot(RB_AUTOBOOT)
-- POWEROFF
-    stopping units, sync and reboot(RB_POWER_OFF)
-- POWEROFF force
-    sync and reboot(RB_POWER_OFF)
-- HALT
-    stopping units, sync and reboot(RB_HALT_SYSTEM)
-- HALT force
-    sync and reboot(RB_HALT_SYSTEM)
 
