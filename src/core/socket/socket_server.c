@@ -201,6 +201,7 @@ socketDispatchRequest(char *buffer, int *socketFd)
             case POWEROFF_COMMAND:
             case REBOOT_COMMAND:
             case HALT_COMMAND:
+            case KEXEC_COMMAND:
                 IS_SHUTDOWN_COMMAND = true;
                 SHUTDOWN_COMMAND = command;
                 goto out;

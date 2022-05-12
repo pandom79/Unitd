@@ -16,7 +16,7 @@ usage(bool fail)
     fprintf(stdout,
         "Usage: unitctl [COMMAND] [OPTION] ... \n\n"
 
-        "COMMAND\n"
+        WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
         "enable             Enable the unit\n"
         "disable            Disable the unit\n"
         "restart            Restart the unit\n"
@@ -29,11 +29,12 @@ usage(bool fail)
         "get-default        Get the default state\n"
         "set-default        Set the default state\n"
         "list               List all the units\n"
-        "reboot             Reboot the machine\n"
-        "poweroff           Power off the machine\n"
-        "halt               Halt the machine\n\n"
+        "reboot             Shutdown and reboot the system\n"
+        "poweroff           Shutdown and power off the system\n"
+        "halt               Shutdown and halt the system\n"
+        "kexec              Shutdown and reboot the system with kexec\n\n"
 
-        "OPTION\n"
+        WHITE_UNDERLINE_COLOR"OPTION\n"DEFAULT_COLOR
         "-r, --run          Run the operation\n"
         "-f, --force        Force the operation\n"
         "-d, --debug        Enable the debug\n"
@@ -61,11 +62,6 @@ int main(int argc, char **argv) {
     commandName = arg = NULL;
     force = run = false;
 
-    if (getuid() != 0) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
-        exit(EXIT_FAILURE);
-    }
-
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
@@ -86,6 +82,11 @@ int main(int argc, char **argv) {
         }
     }
 
+    if (getuid() != 0) {
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
+        exit(EXIT_FAILURE);
+    }
+
     /* Get the command */
     if ((commandName = argv[optind]))
         command = getCommand(commandName);
@@ -102,6 +103,7 @@ int main(int argc, char **argv) {
         case REBOOT_COMMAND:
         case POWEROFF_COMMAND:
         case HALT_COMMAND:
+        case KEXEC_COMMAND:
             if (argc > 2) {
                 if ((argv[2] && !force && !UNITCTL_DEBUG) ||
                     (argv[3] && (!force || !UNITCTL_DEBUG)))

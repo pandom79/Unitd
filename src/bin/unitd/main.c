@@ -48,22 +48,23 @@ parseProcCmdLine()
         /* If the command line contains the "single" string the we set the state to "SINGLE_USER" */
         if (stringContainsStr(line, stateSingle)) {
             STATE_CMDLINE = SINGLE_USER;
-            break;
+            goto out;
         }
         /* We exclude INIT, SINGLE (already handled and it has the precedence), REBOOT,
          * POWEROFF and FINAL STATE */
         for (State state = MULTI_USER; state <= GRAPHICAL; state++) {
             if (stringContainsStr(line, STATE_DATA_ITEMS[state].desc)) {
                 STATE_CMDLINE = state;
-                break;
+                goto out;
             }
         }
     }
 
-    objectRelease(&line);
-    fclose(fp);
-    fp = NULL;
-    return rv;
+    out:
+        objectRelease(&line);
+        fclose(fp);
+        fp = NULL;
+        return rv;
 }
 
 int main() {
@@ -114,7 +115,7 @@ int main() {
     if (rv == 0 || rv == 1) {
         if (rv == 1)
             addEnvVar("VIRTUALIZATION", "1");
-        /* Adding the macro's path as environment variable */
+        /* Adding the macro's path as environment variables */
         addEnvVar("UNITS_PATH", UNITS_PATH);
         addEnvVar("UNITS_ENAB_PATH", UNITS_ENAB_PATH);
         addEnvVar("UNITD_DATA_PATH", UNITD_DATA_PATH);
@@ -126,10 +127,10 @@ int main() {
         unitdData = calloc(1, sizeof(UnitdData));
         assert(unitdData);
         UNITD_DATA = unitdData;
-        //FIXME test
+
         /* Init */
         unitdInit(&unitdData, false);
-//        unitdInit(&unitdData, true);
+
         /* Release all */
         unitdEnd(&unitdData);
 
@@ -150,6 +151,15 @@ int main() {
 //            case HALT_COMMAND:
 //                unitdLogInfo(LOG_UNITD_CONSOLE, "Halt the system ...");
 //                reboot(RB_HALT_SYSTEM);
+//                break;
+//            case KEXEC_COMMAND:
+//                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system with kexec ...");
+//                if (isKexecLoaded())
+//                    reboot(RB_KEXEC);
+//                else {
+//                    unitdLogWarning(LOG_UNITD_CONSOLE, "\nWarning : kexec is not loaded!");
+//                    reboot(RB_AUTOBOOT);
+//                }
 //                break;
 //            default:
 //                break;

@@ -341,6 +341,7 @@ State getStateByStr(char *);
 int getDefaultStateStr(char **);
 int setNewDefaultStateSyml(State);
 void arrayPrint(int options, Array **, bool);
+bool isKexecLoaded();
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

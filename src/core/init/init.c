@@ -34,9 +34,10 @@ CommandData COMMANDS_DATA[] = {
     { LIST_CONFLICTS_COMMAND, "list-conflicts" },
     { LIST_STATES_COMMAND, "list-states" },
     { GET_DEFAULT_STATE_COMMAND, "get-default" },
-    { SET_DEFAULT_STATE_COMMAND, "set-default" }
+    { SET_DEFAULT_STATE_COMMAND, "set-default" },
+    { KEXEC_COMMAND, "kexec" },
 };
-int COMMANDS_LEN = 15;
+int COMMANDS_LEN = 16;
 
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;

@@ -176,6 +176,7 @@ typedef enum {
     LIST_STATES_COMMAND = 12,
     GET_DEFAULT_STATE_COMMAND = 13,
     SET_DEFAULT_STATE_COMMAND = 14,
+    KEXEC_COMMAND = 15,
 } Command;
 
 /* Socket */

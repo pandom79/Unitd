@@ -139,6 +139,14 @@ unitdShutdown(Command command, bool force)
             case HALT_COMMAND:
                 reboot(RB_HALT_SYSTEM);
                 break;
+            case KEXEC_COMMAND:
+                if (isKexecLoaded())
+                    reboot(RB_KEXEC);
+                else {
+                    unitdLogWarning(LOG_UNITD_CONSOLE, "Warning : kexec is not loaded!\n");
+                    reboot(RB_AUTOBOOT);
+                }
+                break;
             default:
                 break;
         }

@@ -181,3 +181,29 @@ arrayPrint(int options, Array **array, bool hasStrings)
             unitdLogInfo(options, "%p\n", (*array)->arr[i]);
     }
 }
+
+bool
+isKexecLoaded()
+{
+    FILE *fp = NULL;
+    char *line = NULL;
+    bool res = false;
+    size_t len = 0;
+
+    if ((fp = fopen("/sys/kernel/kexec_loaded", "r")) == NULL) {
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded."
+                                     "Unable to open '/sys/kernel/kexec_loaded' file!");
+        return res;
+    }
+
+    /* Only one line must be there */
+    if (getline(&line, &len, fp) != -1) {
+        if (strncmp(line, "1", 1) == 0)
+            res = true;
+    }
+
+    objectRelease(&line);
+    fclose(fp);
+    fp = NULL;
+    return res;
+}
