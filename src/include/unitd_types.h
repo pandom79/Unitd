@@ -8,34 +8,21 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #ifndef UNITD_TYPES_H
 #define UNITD_TYPES_H
-
-#include <stdbool.h>
+#include <libwrapper/wrapper.h>
 #include <getopt.h>
 #include <errno.h>
-#include <ctype.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <glob.h>
 #include <signal.h>
 #include <syslog.h>
 #include <limits.h>
 #include <fcntl.h>
-#include <time.h>
-#include <sys/time.h>
-//FIXME remove from here
-#include <bits/types/siginfo_t.h>
-#include <bits/sigaction.h>
-#include <bits/siginfo-consts.h>
-//to here
 #include <sys/select.h>
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -43,13 +30,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include <arpa/inet.h>
 
 #define UNUSED __attribute__((unused))
-
-/* Types */
-typedef struct {
-    void **arr;
-    int size;
-    void (*release_fn)(void **);
-} Array;
 
 /* Process */
 typedef enum {

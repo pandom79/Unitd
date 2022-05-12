@@ -167,3 +167,17 @@ int setNewDefaultStateSyml(State newDefaultState)
     arrayRelease(&scriptParams);
     return rv;
 }
+
+void
+arrayPrint(int options, Array **array, bool hasStrings)
+{
+    int len = (*array ? (*array)->size : 0);
+    if (hasStrings) {
+        for (int i = 0; i < len; i++)
+            unitdLogInfo(options, "%s\n", (char *)(*array)->arr[i]);
+    }
+    else {
+        for (int i = 0; i < len; i++)
+            unitdLogInfo(options, "%p\n", (*array)->arr[i]);
+    }
+}

@@ -28,12 +28,14 @@ conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
-deps = [dependency('threads')]
+# Find libwrapper
+libwrapper = meson.get_compiler('c').find_library('libwrapper', required : true)
+
+deps = [dependency('threads'), libwrapper]
 
 libunitd = library('unitd',
                    'src/include/unitd.h', 'src/include/unitd_types.h', 'src/core/unitd_impl.h',
                    'src/core/init/init.c', 'src/core/logger/logger.c',
-                   'src/core/wrapper/array_wrapper.c', 'src/core/wrapper/string_wrapper.c',                   
                    'src/core/common/common.c', 'src/core/socket/socket_client.c',
                    'src/core/socket/socket_server.c', 'src/core/socket/socket_common.c',
                    'src/core/socket/socket_request.c', 'src/core/socket/socket_response.c',
@@ -44,6 +46,9 @@ libunitd = library('unitd',
                    version: '1.0.0',
                    soversion: '0', install: true
                    )
+
+install_headers('src/include/unitd.h', subdir : 'unitd')
+install_headers('src/include/unitd_types.h', subdir : 'unitd')
 
 executable('unitd', 'src/bin/unitd/main.c',
            link_with: libunitd,
