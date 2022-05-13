@@ -112,7 +112,7 @@ int main() {
 //    assert(UNITD_PID == 1);
 
     /* Detecting virtualization environment */
-    rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL);
+    rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
     if (rv == 0 || rv == 1) {
         if (rv == 1)
             addEnvVar("VIRTUALIZATION", "1");
@@ -180,7 +180,7 @@ int main() {
         objectRelease(&STATE_CMDLINE_DIR);
         if (hasError) {
             /* Show emergency shell */
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         }
         return 0;
 }

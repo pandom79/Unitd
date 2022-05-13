@@ -176,3 +176,45 @@ getScriptParams(const char *unitName, const char *stateStr, const char *symlOper
 
     return scriptParams;
 }
+
+int
+sendWallMsg(Command command)
+{
+    int rv = 0;
+    char *msg, *cmd;
+
+    msg = cmd = NULL;
+
+    switch (command) {
+        case REBOOT_COMMAND:
+            msg = stringNew("Reboot the system ...");
+           break;
+        case POWEROFF_COMMAND:
+            msg = stringNew("Power off the system ...");
+            break;
+        case HALT_COMMAND:
+            msg = stringNew("Halt the system ...");
+            break;
+        case KEXEC_COMMAND:
+            msg = stringNew("Reboot the system with kexec ...");
+            break;
+        default:
+            break;
+    }
+
+    assert(msg);
+    Array *scriptParams = arrayNew(objectRelease);
+    cmd = stringNew("/usr/bin/wall");
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, msg); //1
+    arrayAdd(scriptParams, NULL); //2
+
+    rv = execScript("/usr/bin", "/wall", scriptParams->arr, NULL);
+    if (rv != 0) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_common.c",
+                      "sendWallMsg", errno, strerror(errno), "ExecScript error");
+    }
+
+    arrayRelease(&scriptParams);
+    return rv;
+}

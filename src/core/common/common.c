@@ -75,7 +75,7 @@ addEnvVar(const char *envVarName, const char *envVarValue)
         UNITD_ENV_VARS = arrayNew(objectRelease);
 
     envVar = stringNew(envVarName);
-    stringAppendChr(&envVar, '=');
+    stringAppendStr(&envVar, ASSIGNER);
     stringAppendStr(&envVar, envVarValue);
     arrayAdd(UNITD_ENV_VARS, envVar);
 }
@@ -163,7 +163,7 @@ int setNewDefaultStateSyml(State newDefaultState)
     /* Must be null terminated */
     arrayAdd(scriptParams, NULL); //4
     /* Execute the script */
-    rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
+    rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
     arrayRelease(&scriptParams);
     return rv;
 }

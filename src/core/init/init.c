@@ -108,11 +108,11 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 //        /* Show unit configuration error and emergency shell */
 //        unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
 //                      "An error has occurred in loadUnits for init.state", NULL);
-//        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+//        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 //        goto out;
 //    }
 //    if ((rv = startProcesses(initUnits, NULL)) != 0) {
-//        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+//        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 //        goto out;
 //    }
 //    if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
@@ -132,7 +132,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Get the default state as string */
         if (getDefaultStateStr(&destDefStateSyml) != 0) {
             /* If we are here then the symlink is not valid or missing */
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             unitdCloseLog();
             /* Set the default shutdown command */
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -143,7 +143,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
             /* If we are here then the symlink points to a bad destination */
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
                                                 destDefStateSyml);
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             unitdCloseLog();
             /* Set the default shutdown command */
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -157,7 +157,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     }
     /* Zero units are not allowed in this state */
     if (rv == GLOB_NOMATCH) {
-        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         unitdCloseLog();
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -209,12 +209,12 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
             if (rv != 0) {
                 unitdLogError(LOG_UNITD_CONSOLE, "src/core/init/init.c", "unitdInit", rv, strerror(rv),
                               "An error has occurred in setNewDefaultStateSyml func", NULL);
-                execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+                execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             }
         }
         /* Write a wtmp record */
         if (!NO_WTMP && writeWtmp(false) != 0)
-            unitdLogWarning(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
 
         //********************* FINAL STATE ************************************
         /* Parsing and starting the finalization units
@@ -229,11 +229,11 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 //            /* Show unit configuration error and emergency shell */
 //            unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
 //                          "An error has occurred in loadUnits for final.state", NULL);
-//            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+//            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 //            goto out;
 //        }
 //        if ((rv = startProcesses(finalUnits, NULL)) != 0)
-//            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
+//            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 
     out:
         assert(!UNITD_LOG_FILE);

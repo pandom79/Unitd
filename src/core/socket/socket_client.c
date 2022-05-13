@@ -127,10 +127,15 @@ int
 unitdShutdown(Command command, bool force, bool noWtmp)
 {
     assert(command != NO_COMMAND);
+
+    /* Write a broadcast message to all users */
+//FIXME add 'no-wall' option to avoid it
+    sendWallMsg(command);
+
     if (force) {
          /* Write a wtmp record */
         if (!noWtmp && writeWtmp(false) != 0)
-            unitdLogWarning(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
 
         sync();
         switch (command) {

@@ -9,7 +9,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitd_impl.h"
 
 int
-execScript(const char *unitdDataDir, const char *relScriptName, char **argv)
+execScript(const char *unitdDataDir, const char *relScriptName, char **argv, char **envVar)
 {
     pid_t child;
     int status;
@@ -27,7 +27,10 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv)
     switch (child) {
         case 0:
             /* Execute the command */
-            (void)execv(command, argv);
+            if (envVar)
+                (void)execve(command, argv, envVar);
+            else
+                (void)execv(command, argv);
             _exit(errno);
         case -1:
             unitdLogError(LOG_UNITD_BOOT, "src/core/commands/commands.c", "execScript", errno,

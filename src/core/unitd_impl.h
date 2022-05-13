@@ -231,7 +231,7 @@ bool hasUnitError(const char *);
 //Stop
 #define TIMEOUT_STOP_MS          1000
 
-int execScript(const char *, const char *, char **);
+int execScript(const char *, const char *, char **, char **);
 int execProcess(const char *, char **, Unit **);
 char** cmdlineSplit(const char *);
 void cmdlineRelease(char **);
@@ -301,6 +301,7 @@ SockMessageOut* sockMessageOutCreate();
 int sortUnitsByName(const void *, const void *);
 void setValueForBuffer(char **, int);
 Array* getScriptParams(const char *, const char *, const char *);
+int sendWallMsg(Command);
 
 /* Server */
 int listenSocketRequest();

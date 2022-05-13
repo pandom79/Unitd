@@ -703,7 +703,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */
-            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
+            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
             if (rv != 0) {
                 /* We don't put this error into response because it should never occurred */
                 syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::disableUnitServer."
@@ -913,7 +913,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */
-            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr);
+            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
             if (rv != 0) {
                 /* We don't put this error into response because it should never occurred */
                 syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
