@@ -212,7 +212,7 @@ sendWallMsg(Command command)
     rv = execScript("/usr/bin", "/wall", scriptParams->arr, NULL);
     if (rv != 0) {
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_common.c",
-                      "sendWallMsg", errno, strerror(errno), "ExecScript error");
+                      "sendWallMsg", rv, strerror(rv), "ExecScript error");
     }
 
     arrayRelease(&scriptParams);
