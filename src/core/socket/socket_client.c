@@ -124,10 +124,14 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
 }
 
 int
-unitdShutdown(Command command, bool force)
+unitdShutdown(Command command, bool force, bool noWtmp)
 {
     assert(command != NO_COMMAND);
     if (force) {
+         /* Write a wtmp record */
+        if (!noWtmp && writeWtmp(false) != 0)
+            unitdLogWarning(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+
         sync();
         switch (command) {
             case REBOOT_COMMAND:
@@ -156,11 +160,17 @@ unitdShutdown(Command command, bool force)
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection;
     char *buffer = NULL;
+    Array *options = NULL;
 
     rv = socketConnection = -1;
 
+    if (noWtmp) {
+        options = arrayNew(objectRelease);
+        arrayAdd(options, stringNew(OPTIONS_DATA[NO_WTMP_OPT].name));
+    }
+
     /* Get SockMessageIn struct */
-    if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, command, NULL, NULL)) != 0)
+    if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, command, NULL, options)) != 0)
         goto out;
 
     /* Marshalling */

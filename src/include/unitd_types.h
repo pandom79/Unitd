@@ -27,7 +27,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <sys/reboot.h>
-#include <arpa/inet.h>
+#include <utmp.h>
+#include <sys/utsname.h>
 
 #define UNUSED __attribute__((unused))
 

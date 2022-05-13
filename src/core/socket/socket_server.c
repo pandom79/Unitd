@@ -204,6 +204,7 @@ socketDispatchRequest(char *buffer, int *socketFd)
             case KEXEC_COMMAND:
                 IS_SHUTDOWN_COMMAND = true;
                 SHUTDOWN_COMMAND = command;
+                NO_WTMP = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[NO_WTMP_OPT].name);
                 goto out;
             case LIST_COMMAND:
                 getUnitListServer(socketFd, &sockMessageOut);

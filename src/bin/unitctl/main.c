@@ -38,6 +38,7 @@ usage(bool fail)
         "-r, --run          Run the operation\n"
         "-f, --force        Force the operation\n"
         "-d, --debug        Enable the debug\n"
+        "-n, --no-wtmp      Don't write a wtmp record\n"
         "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -45,14 +46,15 @@ usage(bool fail)
 
 int main(int argc, char **argv) {
     int c, rv;
-    bool force, run;
-    const char *shortopts = "hrfd";
+    bool force, run, noWtmp;
+    const char *shortopts = "hrfdn";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
     SockMessageOut *sockMessageOut = NULL;
     const struct option longopts[] = {
         { "help", no_argument, NULL, 'h' },
         { "run", optional_argument, NULL, 'r' },
+        { "no-wtmp", optional_argument, NULL, 'n' },
         { "force", optional_argument, NULL, 'f' },
         { "debug", optional_argument, NULL, 'd' },
         { 0, 0, 0, 0 }
@@ -60,7 +62,7 @@ int main(int argc, char **argv) {
 
     c = rv = 0;
     commandName = arg = NULL;
-    force = run = false;
+    force = run = noWtmp = false;
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -73,6 +75,9 @@ int main(int argc, char **argv) {
                 break;
             case 'f':
                 force = true;
+                break;
+            case 'n':
+                noWtmp = true;
                 break;
             case 'd':
                 UNITCTL_DEBUG = true;
@@ -105,15 +110,14 @@ int main(int argc, char **argv) {
         case HALT_COMMAND:
         case KEXEC_COMMAND:
             if (argc > 2) {
-                if ((argv[2] && !force && !UNITCTL_DEBUG) ||
-                    (argv[3] && (!force || !UNITCTL_DEBUG)))
+                if (argc > 5 || (!force && !UNITCTL_DEBUG && !noWtmp))
                     usage(true);
             }
-            rv = unitdShutdown(command, force);
+            rv = unitdShutdown(command, force, noWtmp);
             break;
         case LIST_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
-            if (argc > 2 && !UNITCTL_DEBUG)
+            if ((argc > 2 && !UNITCTL_DEBUG) || argc > 3)
                 usage(true);
             if (command == LIST_COMMAND)
                 rv = showUnitList(&sockMessageOut);

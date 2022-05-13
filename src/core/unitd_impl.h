@@ -16,6 +16,7 @@ extern UnitdData *UNITD_DATA;
 extern bool UNITD_DEBUG;
 extern bool UNITCTL_DEBUG;
 extern Command SHUTDOWN_COMMAND;
+extern bool NO_WTMP;
 extern Array *UNITD_ENV_VARS;
 extern State STATE_DEFAULT;
 extern State STATE_NEW_DEFAULT;
@@ -34,7 +35,8 @@ typedef enum {
     RUN_OPT = 2,
     REQUIRES_OPT = 3,
     CONFLICTS_OPT = 4,
-    STATES_OPT = 5
+    STATES_OPT = 5,
+    NO_WTMP_OPT = 6,
 } Option;
 
 typedef struct OptionData {
@@ -342,6 +344,7 @@ int getDefaultStateStr(char **);
 int setNewDefaultStateSyml(State);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
+int writeWtmp(bool);
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

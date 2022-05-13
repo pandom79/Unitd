@@ -21,6 +21,7 @@ State STATE_CMDLINE = NO_STATE;
 State STATE_SHUTDOWN = NO_STATE;
 char *STATE_CMDLINE_DIR = NULL;
 Command SHUTDOWN_COMMAND = NO_COMMAND;
+bool NO_WTMP = false;
 Array *UNITD_ENV_VARS = NULL;
 bool LISTEN_SOCK_REQUEST = false;
 bool ENABLE_RESTART = false;
@@ -120,6 +121,8 @@ int main() {
         addEnvVar("UNITS_ENAB_PATH", UNITS_ENAB_PATH);
         addEnvVar("UNITD_DATA_PATH", UNITD_DATA_PATH);
         addEnvVar("UNITD_CONF_PATH", UNITD_CONF_PATH);
+        addEnvVar("OUR_UTMP_FILE", OUR_UTMP_FILE);
+        addEnvVar("OUR_WTMP_FILE", OUR_WTMP_FILE);
         /* UNITD_ENV_VARS Array must be null terminated */
         arrayAdd(UNITD_ENV_VARS, NULL);
 

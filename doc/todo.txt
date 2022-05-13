@@ -5,11 +5,11 @@
       - In misc.sh we can invoke "halt -B" to write in wtmp and utmp (string reboot)
       - In hwclock we can invoke "halt -w" only wtmp (string shutdown)
 
+    - Add wall message management in unitdShutdown func
+
     - Change seed generation. See seedrng!
 
     - Virtualization
-
-    - Wall message
 
     - Release the oneshot initialization unit. (optimizing unitd daemon memory usage)
 

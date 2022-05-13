@@ -15,9 +15,10 @@ OptionData OPTIONS_DATA[] = {
     { RUN_OPT, "run"},
     { REQUIRES_OPT, "requires"},
     { CONFLICTS_OPT, "conflicts"},
-    { STATES_OPT, "states"}
+    { STATES_OPT, "states"},
+    { NO_WTMP_OPT, "no-wtmp"},
 };
-int OPTIONS_LEN = 6;
+int OPTIONS_LEN = 7;
 /* Commands */
 CommandData COMMANDS_DATA[] = {
     { REBOOT_COMMAND, "reboot" },
@@ -44,6 +45,7 @@ State STATE_NEW_DEFAULT;
 State STATE_CMDLINE;
 State STATE_SHUTDOWN;
 char *STATE_CMDLINE_DIR;
+bool NO_WTMP;
 
 int
 unitdInit(UnitdData **unitdData, bool isAggregate)
@@ -210,6 +212,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
                 execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL);
             }
         }
+        /* Write a wtmp record */
+        if (!NO_WTMP && writeWtmp(false) != 0)
+            unitdLogWarning(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
 
         //********************* FINAL STATE ************************************
         /* Parsing and starting the finalization units

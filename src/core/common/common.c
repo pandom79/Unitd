@@ -191,7 +191,7 @@ isKexecLoaded()
     size_t len = 0;
 
     if ((fp = fopen("/sys/kernel/kexec_loaded", "r")) == NULL) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded."
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded.\n"
                                      "Unable to open '/sys/kernel/kexec_loaded' file!");
         return res;
     }
@@ -206,4 +206,64 @@ isKexecLoaded()
     fclose(fp);
     fp = NULL;
     return res;
+}
+
+int
+writeWtmp(bool isBooting) {
+    int fd, rv;
+    rv = 0;
+
+    if ((fd = open(OUR_WTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
+        rv = errno;
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
+                                     "Unable to open '%s' file! Rv = %d (%s).", OUR_WTMP_FILE,
+                                     rv, strerror(rv));
+        return rv;
+    }
+
+    struct utmp utmp = {0};
+    struct utsname uname_buf;
+    struct timeval tv;
+
+    gettimeofday(&tv, 0);
+    utmp.ut_tv.tv_sec = tv.tv_sec;
+    utmp.ut_tv.tv_usec = tv.tv_usec;
+
+    utmp.ut_type = isBooting ? BOOT_TIME : RUN_LVL;
+
+    strncpy(utmp.ut_name, isBooting ? "reboot" : "shutdown", sizeof(utmp.ut_name));
+    strncpy(utmp.ut_id , "~~", sizeof(utmp.ut_id));
+    strncpy(utmp.ut_line, isBooting ? "~" : "~~", sizeof(utmp.ut_line));
+    if (uname(&uname_buf) == 0)
+        strncpy(utmp.ut_host, uname_buf.release, sizeof(utmp.ut_host));
+
+    if (write(fd, (char *)&utmp, sizeof(utmp)) == -1) {
+        rv = errno;
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
+                                     "Unable to write into '%s' file! Rv = %d (%s).", OUR_WTMP_FILE,
+                                     rv, strerror(rv));
+        return rv;
+    }
+    close(fd);
+
+    if (isBooting) {
+        if ((fd = open(OUR_UTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
+            rv = errno;
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
+                                         "Unable to open '%s' file! Rv = %d (%s).", OUR_UTMP_FILE,
+                                         rv, strerror(rv));
+            return rv;
+        }
+
+        if (write(fd, (char *)&utmp, sizeof utmp) == -1) {
+            rv = errno;
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
+                                         "Unable to write into '%s' file! Rv = %d (%s).", OUR_UTMP_FILE,
+                   rv, strerror(rv));
+            return rv;
+        }
+        close(fd);
+    }
+
+    return rv;
 }
