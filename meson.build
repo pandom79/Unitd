@@ -20,6 +20,8 @@ unitd_log_path = get_option('localstatedir')/'log'/log_name
 
 conf_data = configuration_data()
 conf_data.set('OS_NAME', get_option('OS_NAME'))
+conf_data.set('OUR_UTMP_FILE', get_option('OUR_UTMP_FILE'))
+conf_data.set('OUR_WTMP_FILE', get_option('OUR_WTMP_FILE'))
 conf_data.set('UNITS_PATH', units_path)
 conf_data.set('UNITS_ENAB_PATH', units_enab_path)
 conf_data.set('UNITD_DATA_PATH', unitd_data_path)
