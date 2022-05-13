@@ -124,13 +124,13 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
 }
 
 int
-unitdShutdown(Command command, bool force, bool noWtmp)
+unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 {
     assert(command != NO_COMMAND);
 
     /* Write a broadcast message to all users */
-//FIXME add 'no-wall' option to avoid it
-    sendWallMsg(command);
+    if (!noWall)
+        sendWallMsg(command);
 
     if (force) {
          /* Write a wtmp record */

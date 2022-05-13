@@ -35,7 +35,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
              * simulating the "unitctl" command without force
             */
             if (LISTEN_SOCK_REQUEST)
-                rv = unitdShutdown(SHUTDOWN_COMMAND, false, false);
+                rv = unitdShutdown(SHUTDOWN_COMMAND, false, false, true);
 
             goto out;
         }

@@ -40,6 +40,7 @@ usage(bool fail)
         "-d, --debug        Enable the debug\n"
         "-n, --no-wtmp      Don't write a wtmp record\n"
         "-o, --only-wtmp    Only write a wtmp/utmp reboot record and exit\n"
+        "-w, --no-wall      Don't write a message to all users\n"
         "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -47,8 +48,8 @@ usage(bool fail)
 
 int main(int argc, char **argv) {
     int c, rv;
-    bool force, run, noWtmp, onlyWtmp;
-    const char *shortopts = "hrfdno";
+    bool force, run, noWtmp, onlyWtmp, noWall;
+    const char *shortopts = "hrfdnow";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
     SockMessageOut *sockMessageOut = NULL;
@@ -57,6 +58,7 @@ int main(int argc, char **argv) {
         { "run", optional_argument, NULL, 'r' },
         { "no-wtmp", optional_argument, NULL, 'n' },
         { "only-wtmp", optional_argument, NULL, 'o' },
+        { "no-wall", optional_argument, NULL, 'w' },
         { "force", optional_argument, NULL, 'f' },
         { "debug", optional_argument, NULL, 'd' },
         { 0, 0, 0, 0 }
@@ -64,7 +66,7 @@ int main(int argc, char **argv) {
 
     c = rv = 0;
     commandName = arg = NULL;
-    force = run = noWtmp = onlyWtmp = false;
+    force = run = noWtmp = onlyWtmp = noWall = false;
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -83,6 +85,9 @@ int main(int argc, char **argv) {
                 break;
             case 'o':
                 onlyWtmp = true;
+                break;
+            case 'w':
+                noWall = true;
                 break;
             case 'd':
                 UNITCTL_DEBUG = true;
@@ -115,8 +120,8 @@ int main(int argc, char **argv) {
         case HALT_COMMAND:
         case KEXEC_COMMAND:
             if (argc > 2) {
-                if (argc > 5 ||
-                   (!force && !UNITCTL_DEBUG && !noWtmp && !onlyWtmp) ||
+                if (argc > 6 ||
+                   (!force && !UNITCTL_DEBUG && !noWtmp && !onlyWtmp && !noWall) ||
                    (noWtmp && onlyWtmp))
                     usage(true);
             }
@@ -129,7 +134,7 @@ int main(int argc, char **argv) {
                     unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
             }
             else
-                rv = unitdShutdown(command, force, noWtmp);
+                rv = unitdShutdown(command, force, noWtmp, noWall);
             break;
         case LIST_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:

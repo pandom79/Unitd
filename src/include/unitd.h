@@ -18,7 +18,7 @@ sockMessageOutRelease(SockMessageOut **sockMessageOut);
 
 /* Perform a reboot, halt or poweroff the system */
 int
-unitdShutdown(Command command, bool force, bool noWtmp);
+unitdShutdown(Command command, bool force, bool noWtmp, bool noWall);
 
 /* List all the units.
  * The function will populate a sockMessageOut->unitsDisplay array.
