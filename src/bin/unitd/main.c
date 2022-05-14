@@ -109,7 +109,7 @@ int main() {
     /* Set PID */
     UNITD_PID = setsid();
     //FIXME local test
-//    assert(UNITD_PID == 1);
+    assert(UNITD_PID == 1);
 
     /* Detecting virtualization environment */
     rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
@@ -139,34 +139,34 @@ int main() {
 
         /* The system is going down */
 //FIXME test
-//        sync();
-//        if (SHUTDOWN_COMMAND == NO_COMMAND)
-//            SHUTDOWN_COMMAND = REBOOT_COMMAND;
-//        switch (SHUTDOWN_COMMAND) {
-//            case REBOOT_COMMAND:
-//                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...");
-//                reboot(RB_AUTOBOOT);
-//                break;
-//            case POWEROFF_COMMAND:
-//                unitdLogInfo(LOG_UNITD_CONSOLE, "Power off the system ...");
-//                reboot(RB_POWER_OFF);
-//                break;
-//            case HALT_COMMAND:
-//                unitdLogInfo(LOG_UNITD_CONSOLE, "Halt the system ...");
-//                reboot(RB_HALT_SYSTEM);
-//                break;
-//            case KEXEC_COMMAND:
-//                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system with kexec ...");
-//                if (isKexecLoaded())
-//                    reboot(RB_KEXEC);
-//                else {
-//                    unitdLogWarning(LOG_UNITD_CONSOLE, "\nWarning : kexec is not loaded!");
-//                    reboot(RB_AUTOBOOT);
-//                }
-//                break;
-//            default:
-//                break;
-//        }
+        sync();
+        if (SHUTDOWN_COMMAND == NO_COMMAND)
+            SHUTDOWN_COMMAND = REBOOT_COMMAND;
+        switch (SHUTDOWN_COMMAND) {
+            case REBOOT_COMMAND:
+                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...");
+                reboot(RB_AUTOBOOT);
+                break;
+            case POWEROFF_COMMAND:
+                unitdLogInfo(LOG_UNITD_CONSOLE, "Power off the system ...");
+                reboot(RB_POWER_OFF);
+                break;
+            case HALT_COMMAND:
+                unitdLogInfo(LOG_UNITD_CONSOLE, "Halt the system ...");
+                reboot(RB_HALT_SYSTEM);
+                break;
+            case KEXEC_COMMAND:
+                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system with kexec ...");
+                if (isKexecLoaded())
+                    reboot(RB_KEXEC);
+                else {
+                    unitdLogWarning(LOG_UNITD_CONSOLE, "\nWarning : kexec is not loaded!");
+                    reboot(RB_AUTOBOOT);
+                }
+                break;
+            default:
+                break;
+        }
         /* Not reached */
     }
     else {

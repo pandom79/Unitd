@@ -101,22 +101,22 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
      * to fix all the errors in a one shot
     */
 //FIXME local test
-//    initStateDir = stringNew(STATE_DATA_ITEMS[INIT].desc);
-//    stringAppendStr(&initStateDir, ".state/units");
-//    if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir,
-//                        INIT, true, NULL, PARSE_UNIT, true)) != 0) {
-//        /* Show unit configuration error and emergency shell */
-//        unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
-//                      "An error has occurred in loadUnits for init.state", NULL);
-//        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-//        goto out;
-//    }
-//    if ((rv = startProcesses(initUnits, NULL)) != 0) {
-//        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-//        goto out;
-//    }
-//    if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
-//        goto shutdown;
+    initStateDir = stringNew(STATE_DATA_ITEMS[INIT].desc);
+    stringAppendStr(&initStateDir, ".state/units");
+    if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir,
+                        INIT, true, NULL, PARSE_UNIT, true)) != 0) {
+        /* Show unit configuration error and emergency shell */
+        unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
+                      "An error has occurred in loadUnits for init.state", NULL);
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        goto out;
+    }
+    if ((rv = startProcesses(initUnits, NULL)) != 0) {
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        goto out;
+    }
+    if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
+        goto shutdown;
 
 //FIXME
 //here, we can release the oneshot initialization units. Keep them into memory is very useless.
@@ -222,18 +222,18 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
          * to fix all the errors in a one shot
         */
 //FIXME local test
-//        finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);
-//        stringAppendStr(&finalStateDir, ".state/units");
-//        if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir,
-//                            FINAL, true, NULL, PARSE_UNIT, true)) != 0) {
-//            /* Show unit configuration error and emergency shell */
-//            unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
-//                          "An error has occurred in loadUnits for final.state", NULL);
-//            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-//            goto out;
-//        }
-//        if ((rv = startProcesses(finalUnits, NULL)) != 0)
-//            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);
+        stringAppendStr(&finalStateDir, ".state/units");
+        if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir,
+                            FINAL, true, NULL, PARSE_UNIT, true)) != 0) {
+            /* Show unit configuration error and emergency shell */
+            unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
+                          "An error has occurred in loadUnits for final.state", NULL);
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+            goto out;
+        }
+        if ((rv = startProcesses(finalUnits, NULL)) != 0)
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 
     out:
         assert(!UNITD_LOG_FILE);

@@ -7,8 +7,8 @@
 #define PROJECT_NAME                "Unitd init system"
 #define DEF_STATE_SYML_NAME         "default.state"
 //FIXME test
-//#define PROC_CMDLINE_PATH           "/proc/cmdline"
-#define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
+#define PROC_CMDLINE_PATH           "/proc/cmdline"
+//#define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
 #define PROC_CMDLINE_DEBUG_ARG      "unitd_debug=true"
 
 extern pid_t UNITD_PID;
