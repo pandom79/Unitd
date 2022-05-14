@@ -109,32 +109,29 @@ int main(int argc, char **argv) {
     /* Command handling */
     switch (command) {
         case NO_COMMAND:
-            if ((argc == 2 && UNITCTL_DEBUG) || argc == 1)
-                /* List command as default */
-                rv = showUnitList(&sockMessageOut);
-            else
+            if (argc > 3 || (!UNITCTL_DEBUG && !onlyWtmp))
                 usage(true);
+            else {
+                if (onlyWtmp) {
+                    /* Write a wtmp/utmp 'reboot' record and exit */
+                    rv = writeWtmp(true);
+                    if (rv != 0)
+                        unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+                }
+                else
+                    /* List command as default */
+                    rv = showUnitList(&sockMessageOut);
+            }
             break;
         case REBOOT_COMMAND:
         case POWEROFF_COMMAND:
         case HALT_COMMAND:
         case KEXEC_COMMAND:
             if (argc > 2) {
-                if (argc > 6 ||
-                   (!force && !UNITCTL_DEBUG && !noWtmp && !onlyWtmp && !noWall) ||
-                   (noWtmp && onlyWtmp))
+                if (argc > 6 || (!force && !UNITCTL_DEBUG && !noWtmp && !noWall))
                     usage(true);
             }
-            /* If 'onlyWtmp' option is here then we write into wtmp/utmp a 'reboot' record
-             * regardless the others options and exit.
-            */
-            if (onlyWtmp) {
-                rv = writeWtmp(true);
-                if (rv != 0)
-                    unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
-            }
-            else
-                rv = unitdShutdown(command, force, noWtmp, noWall);
+            rv = unitdShutdown(command, force, noWtmp, noWall);
             break;
         case LIST_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:

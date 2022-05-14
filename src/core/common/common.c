@@ -216,7 +216,7 @@ writeWtmp(bool isBooting) {
     if ((fd = open(OUR_WTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
         rv = errno;
         syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                     "Unable to open '%s' file! Rv = %d (%s).", OUR_WTMP_FILE,
+                                     "Unable to open '%s' file descriptor! Rv = %d (%s).", OUR_WTMP_FILE,
                                      rv, strerror(rv));
         return rv;
     }
@@ -244,13 +244,19 @@ writeWtmp(bool isBooting) {
                                      rv, strerror(rv));
         return rv;
     }
-    close(fd);
+    if (close(fd) == -1) {
+        rv = errno;
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
+                                     "Unable to close '%s' file descriptor! Rv = %d (%s).", OUR_WTMP_FILE,
+                                     rv, strerror(rv));
+        return rv;
+    }
 
     if (isBooting) {
         if ((fd = open(OUR_UTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
             rv = errno;
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                         "Unable to open '%s' file! Rv = %d (%s).", OUR_UTMP_FILE,
+                                         "Unable to open '%s' file descriptor! Rv = %d (%s).", OUR_UTMP_FILE,
                                          rv, strerror(rv));
             return rv;
         }
@@ -259,10 +265,16 @@ writeWtmp(bool isBooting) {
             rv = errno;
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
                                          "Unable to write into '%s' file! Rv = %d (%s).", OUR_UTMP_FILE,
-                   rv, strerror(rv));
+                                         rv, strerror(rv));
             return rv;
         }
-        close(fd);
+        if (close(fd) == -1) {
+            rv = errno;
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
+                                         "Unable to close '%s' file descriptor! Rv = %d (%s).", OUR_UTMP_FILE,
+                                         rv, strerror(rv));
+            return rv;
+        }
     }
 
     return rv;

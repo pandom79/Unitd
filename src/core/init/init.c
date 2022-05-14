@@ -212,7 +212,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
                 execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             }
         }
-        /* Write a wtmp record */
+        /* Write a wtmp 'shutdown' record */
         if (!NO_WTMP && writeWtmp(false) != 0)
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
 
