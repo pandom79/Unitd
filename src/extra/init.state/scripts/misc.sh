@@ -1,7 +1,5 @@
 #!/bin/sh -e
 
-#FIXME remove
-printf "OUR_UTMP_FILE = $OUR_UTMP_FILE"
 install -m0664 -o root -g utmp /dev/null $OUR_UTMP_FILE
 /usr/sbin/unitctl -o # Write a utmp/wtmp 'reboot' record
 

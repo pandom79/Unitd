@@ -1,11 +1,4 @@
 - Init process development
-    - Wtmp and utmp management
-
-      - Add 'install -m0664 -o root -g utmp /dev/null /var/run/utmp'
-        in misc.sh. /var/run/utmp and /var/run/wtmp could be a macro path
-      - In misc.sh we can invoke "halt -B" to write in wtmp and utmp (string reboot)
-      - In hwclock we can invoke "halt -w" only wtmp (string shutdown)
-
     - Change seed generation. See seedrng! or provide both methods for backward compatibility
 
     - Virtualization
