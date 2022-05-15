@@ -1,10 +1,10 @@
 #!/bin/sh -e
 
-if [ -x /sbin/sysctl -o -x /bin/sysctl ]; then
-    for i in /etc/sysctl.d/*.conf; do
-        sysctl -p "$i" > /dev/null
-    done
-    if [ -r /etc/sysctl.conf ]; then
-        sysctl -p /etc/sysctl.conf > /dev/null
-    fi
+# Configure kernel parameters:
+if [ -x /sbin/sysctl -a -r /etc/sysctl.conf -a -z "$VIRTUALIZATION" ]; then
+  /sbin/sysctl -e --system || true
+elif [ -x /sbin/sysctl -a -z "$VIRTUALIZATION" ]; then
+  # Don't say "Applying /etc/sysctl.conf" or complain if the file doesn't exist
+  /sbin/sysctl -e --system 2> /dev/null || true
 fi
+
