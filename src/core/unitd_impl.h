@@ -327,6 +327,7 @@ int setDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 int showUnitList(SockMessageOut **);
 int showUnitStatus(SockMessageOut **, const char *unitName);
 int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool);
+int catEditUnit(Command, const char *unitName);
 
 /* Request */
 extern int SOCKREQ_PROPERTIES_ITEMS_LEN;
@@ -346,7 +347,7 @@ int unmarshallResponse(char *, SockMessageOut **);
 /* COMMON */
 int readSymLink(const char *, char **);
 int msleep(long);
-void addEnvVar(const char *, const char *);
+void addEnvVar(Array **, const char *, const char *);
 State getStateByStr(char *);
 int getDefaultStateStr(char **);
 int setNewDefaultStateSyml(State);

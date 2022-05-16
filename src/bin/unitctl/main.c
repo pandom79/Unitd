@@ -28,6 +28,8 @@ usage(bool fail)
         "list-states        List all the unit wanted states\n"
         "get-default        Get the default state\n"
         "set-default        Set the default state\n"
+        "cat                Show the unit content\n"
+        "edit               Edit the unit content\n"
         "list               List all the units\n"
         "reboot             Shutdown and reboot the system\n"
         "poweroff           Shutdown and power off the system\n"
@@ -186,7 +188,15 @@ int main(int argc, char **argv) {
             arg = argv[argc - 1];
             rv = showUnit(command, &sockMessageOut, arg, force, false, run);
             break;
+        case CAT_COMMAND: case EDIT_COMMAND:
+            if (argc > 3 || argc < 3)
+                usage(true);
+            else
+                arg = argv[argc -1];
+            rv = catEditUnit(command, arg);
+            break;
         }
+
 
     return rv;
 }

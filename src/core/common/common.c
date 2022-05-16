@@ -64,20 +64,20 @@ readSymLink(const char *symLink, char **wherePoints)
 }
 
 void
-addEnvVar(const char *envVarName, const char *envVarValue)
+addEnvVar(Array **envVarArr, const char *envVarName, const char *envVarValue)
 {
     char *envVar  = NULL;
 
     assert(envVarName);
     assert(envVarValue);
 
-    if (!UNITD_ENV_VARS)
-        UNITD_ENV_VARS = arrayNew(objectRelease);
+    if (!(*envVarArr))
+        *envVarArr = arrayNew(objectRelease);
 
     envVar = stringNew(envVarName);
     stringAppendStr(&envVar, ASSIGNER);
     stringAppendStr(&envVar, envVarValue);
-    arrayAdd(UNITD_ENV_VARS, envVar);
+    arrayAdd(*envVarArr, envVar);
 }
 
 State

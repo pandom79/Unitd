@@ -116,14 +116,14 @@ int main() {
     rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
     if (rv == 0 || rv == 1) {
         if (rv == 1)
-            addEnvVar("VIRTUALIZATION", "1");
+            addEnvVar(&UNITD_ENV_VARS, "VIRTUALIZATION", "1");
         /* Adding the macro's path as environment variables */
-        addEnvVar("UNITS_PATH", UNITS_PATH);
-        addEnvVar("UNITS_ENAB_PATH", UNITS_ENAB_PATH);
-        addEnvVar("UNITD_DATA_PATH", UNITD_DATA_PATH);
-        addEnvVar("UNITD_CONF_PATH", UNITD_CONF_PATH);
-        addEnvVar("OUR_UTMP_FILE", OUR_UTMP_FILE);
-        addEnvVar("OUR_WTMP_FILE", OUR_WTMP_FILE);
+        addEnvVar(&UNITD_ENV_VARS, "UNITS_PATH", UNITS_PATH);
+        addEnvVar(&UNITD_ENV_VARS, "UNITS_ENAB_PATH", UNITS_ENAB_PATH);
+        addEnvVar(&UNITD_ENV_VARS, "UNITD_DATA_PATH", UNITD_DATA_PATH);
+        addEnvVar(&UNITD_ENV_VARS, "UNITD_CONF_PATH", UNITD_CONF_PATH);
+        addEnvVar(&UNITD_ENV_VARS, "OUR_UTMP_FILE", OUR_UTMP_FILE);
+        addEnvVar(&UNITD_ENV_VARS, "OUR_WTMP_FILE", OUR_WTMP_FILE);
         /* UNITD_ENV_VARS Array must be null terminated */
         arrayAdd(UNITD_ENV_VARS, NULL);
 

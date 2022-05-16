@@ -1051,3 +1051,54 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
     sockMessageOutRelease(sockMessageOut);
     return 0;
 }
+
+int
+catEditUnit(Command command, const char *arg)
+{
+    int rv = 0;
+    char *unitPath = NULL;
+    FILE *fp = NULL;
+
+    assert(command != NO_COMMAND);
+    assert(arg);
+
+    unitPath = stringNew(UNITS_PATH);
+    stringAppendChr(&unitPath, '/');
+    stringAppendStr(&unitPath, arg);
+    if (!stringEndsWithStr(arg, ".unit"))
+        stringAppendStr(&unitPath, ".unit");
+
+    if ((fp = fopen(unitPath, "r")) == NULL) {
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, arg);
+        printf("\n");
+    }
+    else {
+        /* Close file */
+        fclose(fp);
+        fp = NULL;
+
+        /* Env vars */
+        Array *envVars = arrayNew(objectRelease);
+        addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
+        /* Must be null terminated */
+        arrayAdd(envVars, NULL);
+
+        /* Building command */
+        Array *scriptParams = arrayNew(objectRelease);
+        char *cmd = stringNew(UNITD_DATA_PATH);
+        stringAppendStr(&cmd, "/scripts/cat-edit.sh");
+        arrayAdd(scriptParams, cmd); //0
+        arrayAdd(scriptParams, stringNew(COMMANDS_DATA[command].name)); //1
+        arrayAdd(scriptParams, stringNew(unitPath)); //2
+        /* Must be null terminated */
+        arrayAdd(scriptParams, NULL); //4
+        /* Execute the script */
+        rv = execScript(UNITD_DATA_PATH, "/scripts/cat-edit.sh", scriptParams->arr, envVars->arr);
+        arrayRelease(&scriptParams);
+        arrayRelease(&envVars);
+
+    }
+
+    objectRelease(&unitPath);
+    return rv;
+}

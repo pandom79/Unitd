@@ -178,6 +178,8 @@ typedef enum {
     GET_DEFAULT_STATE_COMMAND = 13,
     SET_DEFAULT_STATE_COMMAND = 14,
     KEXEC_COMMAND = 15,
+    CAT_COMMAND = 16,
+    EDIT_COMMAND = 17,
 } Command;
 
 /* Socket */

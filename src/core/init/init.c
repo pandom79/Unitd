@@ -37,8 +37,10 @@ CommandData COMMANDS_DATA[] = {
     { GET_DEFAULT_STATE_COMMAND, "get-default" },
     { SET_DEFAULT_STATE_COMMAND, "set-default" },
     { KEXEC_COMMAND, "kexec" },
+    { CAT_COMMAND, "cat" },
+    { EDIT_COMMAND, "edit" }
 };
-int COMMANDS_LEN = 16;
+int COMMANDS_LEN = 18;
 
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;
