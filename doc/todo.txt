@@ -1,9 +1,14 @@
 - Init process development
+
+    - Cat and edit unit function development
+
     - Change seed generation. See seedrng! or provide both methods for backward compatibility
 
     - Virtualization
 
     - Release the oneshot initialization unit. (optimizing unitd daemon memory usage)
+
+    - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 
     - Review initialization and finalization scripts.
       Predict unitddatapath for the "run" property in the initial and final units.

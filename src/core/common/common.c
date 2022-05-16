@@ -190,21 +190,38 @@ isKexecLoaded()
     bool res = false;
     size_t len = 0;
 
+    /* Check if the kernel is built with CONFIG_KEXEC=y */
     if ((fp = fopen("/sys/kernel/kexec_loaded", "r")) == NULL) {
         syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded.\n"
                                      "Unable to open '/sys/kernel/kexec_loaded' file!");
         return res;
     }
-
-    /* Only one line must be there */
     if (getline(&line, &len, fp) != -1) {
         if (strncmp(line, "1", 1) == 0)
             res = true;
     }
-
     objectRelease(&line);
     fclose(fp);
     fp = NULL;
+
+    /* Check if the user/distro has disabled it via sysctl command */
+    if (res) {
+        if ((fp = fopen("/proc/sys/kernel/kexec_load_disabled", "r")) == NULL) {
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded.\n"
+                                         "Unable to open '/proc/sys/kernel/kexec_load_disabled' file!");
+            return res;
+        }
+        if (getline(&line, &len, fp) != -1) {
+            if (strncmp(line, "0", 1) == 0)
+                res = true;
+            else
+                res = false;
+        }
+        objectRelease(&line);
+        fclose(fp);
+        fp = NULL;
+    }
+
     return res;
 }
 

@@ -100,7 +100,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
      * For the initialization state, we always aggregate the errors to allow
      * to fix all the errors in a one shot
     */
-//FIXME local test
+#ifndef LOCAL_TEST
     initStateDir = stringNew(STATE_DATA_ITEMS[INIT].desc);
     stringAppendStr(&initStateDir, ".state/units");
     if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir,
@@ -121,6 +121,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 //FIXME
 //here, we can release the oneshot initialization units. Keep them into memory is very useless.
 //Optimize memory usage. The daemons will be released just before of the final state execution
+#endif
 
     //******************* DEFAULT OR CMDLINE STATE ************************
     assert(!UNITD_LOG_FILE);
@@ -221,7 +222,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
          * For the finalization state, we always aggregate the errors to allow
          * to fix all the errors in a one shot
         */
-//FIXME local test
+#ifndef LOCAL_TEST
         finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);
         stringAppendStr(&finalStateDir, ".state/units");
         if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir,
@@ -234,6 +235,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         }
         if ((rv = startProcesses(finalUnits, NULL)) != 0)
             execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+#endif
 
     out:
         assert(!UNITD_LOG_FILE);

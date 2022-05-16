@@ -3,12 +3,19 @@
 
 #include "../include/unitd.h"
 
+/* Uncomment/comment the macro below to enable/disable the local test */
+#define LOCAL_TEST                  "true"
+
 /* UNITD */
 #define PROJECT_NAME                "Unitd init system"
 #define DEF_STATE_SYML_NAME         "default.state"
-//FIXME test
+
+#ifndef LOCAL_TEST
 #define PROC_CMDLINE_PATH           "/proc/cmdline"
-//#define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
+#else
+#define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
+#endif
+
 #define PROC_CMDLINE_DEBUG_ARG      "unitd_debug=true"
 
 extern pid_t UNITD_PID;

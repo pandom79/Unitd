@@ -131,6 +131,11 @@ int main(int argc, char **argv) {
                 if (argc > 6 || (!force && !UNITCTL_DEBUG && !noWtmp && !noWall))
                     usage(true);
             }
+            if (command == KEXEC_COMMAND && !isKexecLoaded()) {
+                unitdLogErrorStr(LOG_UNITD_CONSOLE, "Kexec kernel module is not loaded/enabled!\n");
+                unitdLogInfo(LOG_UNITD_CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
+                return rv;
+            }
             rv = unitdShutdown(command, force, noWtmp, noWall);
             break;
         case LIST_COMMAND:

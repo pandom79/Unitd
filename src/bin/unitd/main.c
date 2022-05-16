@@ -108,8 +108,9 @@ int main() {
 
     /* Set PID */
     UNITD_PID = setsid();
-    //FIXME local test
+#ifndef LOCAL_TEST
     assert(UNITD_PID == 1);
+#endif
 
     /* Detecting virtualization environment */
     rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
@@ -138,7 +139,7 @@ int main() {
         unitdEnd(&unitdData);
 
         /* The system is going down */
-//FIXME test
+#ifndef LOCAL_TEST
         sync();
         if (SHUTDOWN_COMMAND == NO_COMMAND)
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -157,16 +158,12 @@ int main() {
                 break;
             case KEXEC_COMMAND:
                 unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system with kexec ...");
-                if (isKexecLoaded())
-                    reboot(RB_KEXEC);
-                else {
-                    unitdLogWarning(LOG_UNITD_CONSOLE, "\nWarning : kexec is not loaded!");
-                    reboot(RB_AUTOBOOT);
-                }
+                reboot(RB_KEXEC);
                 break;
             default:
                 break;
         }
+#endif
         /* Not reached */
     }
     else {

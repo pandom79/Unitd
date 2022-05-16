@@ -51,6 +51,7 @@ libunitd = library('unitd',
 
 install_headers('src/include/unitd.h', subdir : 'unitd')
 install_headers('src/include/unitd_types.h', subdir : 'unitd')
+install_headers('build/unitd_config.h', subdir : 'unitd')
 
 executable('unitd', 'src/bin/unitd/main.c',
            link_with: libunitd,
