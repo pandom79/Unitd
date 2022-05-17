@@ -4,7 +4,7 @@ install -m0664 -o root -g utmp /dev/null $OUR_UTMP_FILE
 /usr/sbin/unitctl -o # Write a utmp/wtmp 'reboot' record
 
 if [ -z "$VIRTUALIZATION" ]; then
-    cp /var/lib/random-seed /dev/urandom >/dev/null 2>&1 || true
+    /usr/sbin/seedrng || true
 fi
 
 ip link set up dev lo

@@ -49,6 +49,23 @@ State STATE_SHUTDOWN;
 char *STATE_CMDLINE_DIR;
 bool NO_WTMP;
 
+static void
+releaseInitOneshotUnits(Array **initUnits)
+{
+    int index = 0;
+    int *len = &(*initUnits)->size;
+    Unit *unit = NULL;
+
+    while (index < *len) {
+        unit = arrayGet(*initUnits, index);
+        if (unit->type == ONESHOT)
+            arrayRemove(*initUnits, unit);
+        else
+            index++;
+    }
+}
+
+
 int
 unitdInit(UnitdData **unitdData, bool isAggregate)
 {
@@ -119,10 +136,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     }
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-
-//FIXME
-//here, we can release the oneshot initialization units. Keep them into memory is very useless.
-//Optimize memory usage. The daemons will be released just before of the final state execution
+    /* Release init oneshot units optimizing unit daemon memory usage */
+    releaseInitOneshotUnits(initUnits);
 #endif
 
     //******************* DEFAULT OR CMDLINE STATE ************************

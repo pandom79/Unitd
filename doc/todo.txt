@@ -1,10 +1,6 @@
 - Init process development
 
-    - Cat and edit unit function development
-
     - Change seed generation. See seedrng! or provide both methods for backward compatibility
-
-    - Virtualization
 
     - Release the oneshot initialization unit. (optimizing unitd daemon memory usage)
 
