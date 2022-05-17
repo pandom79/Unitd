@@ -1,8 +1,7 @@
 - Init process development
 
-    - Change seed generation. See seedrng! or provide both methods for backward compatibility
-
-    - Release the oneshot initialization unit. (optimizing unitd daemon memory usage)
+    - If the unit name doesn't exist then we could already block it client side.
+      Call the daemon is useless even if the check must be done server side as well.
 
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 
