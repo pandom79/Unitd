@@ -138,7 +138,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
     /* Release init oneshot units optimizing unit daemon memory usage */
-    releaseInitOneshotUnits(initUnits);
+    releaseOneshotInitUnits(initUnits);
 #endif
 
     //******************* DEFAULT OR CMDLINE STATE ************************
