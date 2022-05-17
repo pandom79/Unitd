@@ -19,6 +19,30 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 bool UNITCTL_DEBUG;
 
+static char*
+getUnitPathByName(const char *arg)
+{
+    FILE *fp = NULL;
+    char *unitPath = stringNew(UNITS_PATH);
+    stringAppendChr(&unitPath, '/');
+    stringAppendStr(&unitPath, arg);
+    if (!stringEndsWithStr(arg, ".unit"))
+        stringAppendStr(&unitPath, ".unit");
+
+    if ((fp = fopen(unitPath, "r")) == NULL) {
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, arg);
+        printf("\n");
+        objectRelease(&unitPath);
+    }
+    else {
+        /* Close file */
+        fclose(fp);
+        fp = NULL;
+    }
+
+    return unitPath;
+}
+
 static void
 printBar(int len)
 {
@@ -100,6 +124,13 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
 
     assert(command != NO_COMMAND);
 
+    *sockMessageIn = sockMessageInCreate();
+    (*sockMessageIn)->command = command;
+    if (arg)
+        (*sockMessageIn)->arg = stringNew(arg);
+    if (options)
+        (*sockMessageIn)->options = options;
+
     /* Socket initialize */
     if ((*socketConnection = initSocket(&name)) == -1) {
         rv = 1;
@@ -107,17 +138,8 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
     }
 
     /* Connect */
-    if (unitdSockConn(socketConnection, &name) != 0) {
+    if (unitdSockConn(socketConnection, &name) != 0)
         rv = 1;
-        goto out;
-    }
-
-    *sockMessageIn = sockMessageInCreate();
-    (*sockMessageIn)->command = command;
-    if (arg)
-        (*sockMessageIn)->arg = stringNew(arg);
-    if (options)
-        (*sockMessageIn)->options = options;
 
     out:
         return rv;
@@ -979,34 +1001,46 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
          bool force, bool restart, bool run)
 {
     int rv, len, lenErrors;
-    char *message = NULL;
+    char *message, *unitPath;
     Array *sockErrors, *unitsDisplay, *unitErrors, *messages;
     rv = len = 0;
     sockErrors = unitsDisplay = unitErrors = messages = NULL;
+    message = unitPath = NULL;
 
     switch (command) {
         case STOP_COMMAND:
-            rv = stopUnit(sockMessageOut, arg);
+            if ((unitPath = getUnitPathByName(arg)))
+                rv = stopUnit(sockMessageOut, arg);
+            else rv = 1;
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
-            rv = startUnit(sockMessageOut, arg, force, restart);
+            if ((unitPath = getUnitPathByName(arg)))
+                rv = startUnit(sockMessageOut, arg, force, restart);
+            else rv = 1;
             break;
         case DISABLE_COMMAND:
-            rv = disableUnit(sockMessageOut, arg, run);
+            if ((unitPath = getUnitPathByName(arg)))
+                rv = disableUnit(sockMessageOut, arg, run);
+            else rv = 1;
             break;
         case ENABLE_COMMAND:
-            rv = enableUnit(sockMessageOut, arg, force, run);
+            if ((unitPath = getUnitPathByName(arg)))
+                rv = enableUnit(sockMessageOut, arg, force, run);
+            else rv = 1;
             break;
         case LIST_REQUIRES_COMMAND:
         case LIST_CONFLICTS_COMMAND:
         case LIST_STATES_COMMAND:
-            if (command == LIST_REQUIRES_COMMAND)
-                rv = getUnitData(sockMessageOut, arg, true, false, false);
-            else if (command == LIST_CONFLICTS_COMMAND)
-                rv = getUnitData(sockMessageOut, arg, false, true, false);
-            else if (command == LIST_STATES_COMMAND)
-                rv = getUnitData(sockMessageOut, arg, false, false, true);
+            if ((unitPath = getUnitPathByName(arg))) {
+                if (command == LIST_REQUIRES_COMMAND)
+                    rv = getUnitData(sockMessageOut, arg, true, false, false);
+                else if (command == LIST_CONFLICTS_COMMAND)
+                    rv = getUnitData(sockMessageOut, arg, false, true, false);
+                else if (command == LIST_STATES_COMMAND)
+                    rv = getUnitData(sockMessageOut, arg, false, false, true);
+            }
+            else rv = 1;
             break;
         case GET_DEFAULT_STATE_COMMAND:
             rv = getDefaultState(sockMessageOut);
@@ -1048,6 +1082,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
         }
     }
 
+    objectRelease(&unitPath);
     sockMessageOutRelease(sockMessageOut);
     return 0;
 }
@@ -1057,26 +1092,12 @@ catEditUnit(Command command, const char *arg)
 {
     int rv = 0;
     char *unitPath = NULL;
-    FILE *fp = NULL;
 
     assert(command != NO_COMMAND);
     assert(arg);
 
-    unitPath = stringNew(UNITS_PATH);
-    stringAppendChr(&unitPath, '/');
-    stringAppendStr(&unitPath, arg);
-    if (!stringEndsWithStr(arg, ".unit"))
-        stringAppendStr(&unitPath, ".unit");
-
-    if ((fp = fopen(unitPath, "r")) == NULL) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, arg);
-        printf("\n");
-    }
-    else {
-        /* Close file */
-        fclose(fp);
-        fp = NULL;
-
+    unitPath = getUnitPathByName(arg);
+    if (unitPath) {
         /* Env vars */
         Array *envVars = arrayNew(objectRelease);
         addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
@@ -1096,9 +1117,8 @@ catEditUnit(Command command, const char *arg)
         rv = execScript(UNITD_DATA_PATH, "/scripts/cat-edit.sh", scriptParams->arr, envVars->arr);
         arrayRelease(&scriptParams);
         arrayRelease(&envVars);
-
+        objectRelease(&unitPath);
     }
 
-    objectRelease(&unitPath);
     return rv;
 }

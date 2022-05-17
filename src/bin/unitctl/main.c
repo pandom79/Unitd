@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
     /* Command handling */
     switch (command) {
         case NO_COMMAND:
-            if (argc > 3 || (!UNITCTL_DEBUG && !onlyWtmp))
+            if (argc > 3 && (!UNITCTL_DEBUG && !onlyWtmp))
                 usage(true);
             else {
                 if (onlyWtmp) {
