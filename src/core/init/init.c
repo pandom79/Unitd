@@ -49,8 +49,9 @@ State STATE_SHUTDOWN;
 char *STATE_CMDLINE_DIR;
 bool NO_WTMP;
 
+#ifndef LOCAL_TEST
 static void
-releaseInitOneshotUnits(Array **initUnits)
+releaseOneshotInitUnits(Array **initUnits)
 {
     int index = 0;
     int *len = &(*initUnits)->size;
@@ -64,7 +65,7 @@ releaseInitOneshotUnits(Array **initUnits)
             index++;
     }
 }
-
+#endif
 
 int
 unitdInit(UnitdData **unitdData, bool isAggregate)

@@ -1,10 +1,11 @@
 [Unit]
 Description = Starting udev
 Requires = kmods
-Type = oneshot
+Type = daemon
 
 [Command]
 Run = /usr/share/unitd/init.state/scripts/udev.sh
+Stop = /usr/share/unitd/final.state/scripts/udev-stop.sh
 
 [State]
 WantedBy = init
