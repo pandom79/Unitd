@@ -531,7 +531,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                     unitdLogInfo(LOG_UNITD_BOOT, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
                 /* Parse the Unit file */
                 if (parse) {
-                    rv = parseUnit(units, &unit, isAggregate);
+                    rv = parseUnit(units, &unit, isAggregate, currentState);
                     if ((rv == 0 || isAggregate) && currentState != NO_STATE)
                         checkWantedBy(&unit, currentState, isAggregate);
                 }
@@ -584,7 +584,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
 }
 
 
-int parseUnit(Array **units, Unit **unit, bool isAggregate)
+int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
 {
     FILE *fp = NULL;
     int rv, numLine, sizeErrs;
@@ -682,9 +682,13 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate)
                         break;
                     case RUN:
                         (*unit)->runCmd = stringNew(value);
+                        if (currentState == INIT || currentState == FINAL)
+                            stringReplaceStr(&(*unit)->runCmd, "$UNITD_DATA_PATH", UNITD_DATA_PATH);
                         break;
                     case STOP:
                         (*unit)->stopCmd = stringNew(value);
+                        if (currentState == INIT || currentState == FINAL)
+                            stringReplaceStr(&(*unit)->stopCmd, "$UNITD_DATA_PATH", UNITD_DATA_PATH);
                         break;
                     case WANTEDBY:
                         arrayAdd(wantedBy, stringNew(value));

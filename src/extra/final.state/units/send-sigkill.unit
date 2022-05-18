@@ -4,7 +4,7 @@ Requires = send-sigterm
 Type = oneshot
 
 [Command]
-Run = /usr/share/unitd/final.state/scripts/send-sigkill.sh
+Run = $UNITD_DATA_PATH/final.state/scripts/send-sigkill.sh
 
 [State]
 WantedBy = final

@@ -215,7 +215,7 @@ ProcessData* processDataCreate(ProcessData *, ParserFuncType);
 void processDataRelease(ProcessData **);
 int loadUnits(Array **, const char *, const char *, State,
               bool, const char *, ParserFuncType, bool);
-int parseUnit(Array **units, Unit **, bool);
+int parseUnit(Array **units, Unit **, bool, State);
 int checkConflicts(Unit **, const char *, bool);
 int checkRequires(Array **, Unit **, bool);
 int checkWantedBy(Unit **, State, bool);
@@ -354,6 +354,7 @@ int setNewDefaultStateSyml(State);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
+int showEmergencyShell();
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

@@ -136,7 +136,8 @@ getDefaultStateStr(char **destDefStateSyml)
     return rv;
 }
 
-int setNewDefaultStateSyml(State newDefaultState)
+int
+setNewDefaultStateSyml(State newDefaultState)
 {
     int rv = 0;
     Array *scriptParams = arrayNew(objectRelease);
@@ -275,5 +276,24 @@ writeWtmp(bool isBooting) {
         }
     }
 
+    return rv;
+}
+
+int
+showEmergencyShell()
+{
+    int rv = 0;
+    Array *scriptParams = arrayNew(objectRelease);
+    char *command = NULL;
+
+    /* Building command */
+    command = stringNew(UNITD_DATA_PATH);
+    stringAppendStr(&command, "/scripts/emergency-shell.sh");
+    arrayAdd(scriptParams, command); //0
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL); //1
+    /* Execute the script */
+    rv = execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", scriptParams->arr, NULL);
+    arrayRelease(&scriptParams);
     return rv;
 }

@@ -4,7 +4,7 @@ Requires = filesystems
 Type = oneshot
 
 [Command]
-Run = /usr/share/unitd/init.state/scripts/unitd-check.sh
+Run = $UNITD_DATA_PATH/init.state/scripts/unitd-check.sh
 
 [State]
 WantedBy = init

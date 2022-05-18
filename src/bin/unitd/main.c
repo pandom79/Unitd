@@ -177,7 +177,7 @@ int main() {
         objectRelease(&STATE_CMDLINE_DIR);
         if (hasError) {
             /* Show emergency shell */
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+            showEmergencyShell();
         }
         return 0;
 }

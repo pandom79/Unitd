@@ -503,7 +503,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         * Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
         */
-        parseUnit(unitsDisplay, &unit, true);
+        parseUnit(unitsDisplay, &unit, true, NO_STATE);
         /* Check wanted by */
         if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE)
             checkWantedBy(&unit, STATE_CMDLINE, true);
