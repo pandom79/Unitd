@@ -128,11 +128,11 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Show unit configuration error and emergency shell */
         unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
                       "An error has occurred in loadUnits for init.state", NULL);
-        showEmergencyShell();
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         goto out;
     }
     if ((rv = startProcesses(initUnits, NULL)) != 0) {
-        showEmergencyShell();
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         goto out;
     }
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
@@ -151,7 +151,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Get the default state as string */
         if (getDefaultStateStr(&destDefStateSyml) != 0) {
             /* If we are here then the symlink is not valid or missing */
-            showEmergencyShell();
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             unitdCloseLog();
             /* Set the default shutdown command */
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -162,7 +162,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
             /* If we are here then the symlink points to a bad destination */
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
                                                 destDefStateSyml);
-            showEmergencyShell();
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             unitdCloseLog();
             /* Set the default shutdown command */
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -176,7 +176,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     }
     /* Zero units are not allowed in this state */
     if (rv == GLOB_NOMATCH) {
-        showEmergencyShell();
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         unitdCloseLog();
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -228,7 +228,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
             if (rv != 0) {
                 unitdLogError(LOG_UNITD_CONSOLE, "src/core/init/init.c", "unitdInit", rv, strerror(rv),
                               "An error has occurred in setNewDefaultStateSyml func", NULL);
-                showEmergencyShell();
+                execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             }
         }
         /* Write a wtmp 'shutdown' record */
@@ -248,11 +248,11 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
             /* Show unit configuration error and emergency shell */
             unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", rv,
                           "An error has occurred in loadUnits for final.state", NULL);
-            showEmergencyShell();
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
             goto out;
         }
         if ((rv = startProcesses(finalUnits, NULL)) != 0)
-            showEmergencyShell();
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 #endif
 
     out:

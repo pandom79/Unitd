@@ -15,6 +15,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
     int status;
     int exitCode = -1;
     char *command = NULL;
+    Array *params = NULL;
 
     assert(unitdDataDir);
     assert(relScriptName);
@@ -23,6 +24,12 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
     command = stringNew(unitdDataDir);
     stringAppendStr(&command, relScriptName);
 
+    if (!argv) {
+        params = arrayNew(objectRelease);
+        arrayAdd(params, stringNew(command));
+        arrayAdd(params, NULL);
+    }
+
     child = fork();
     switch (child) {
         case 0:
@@ -30,7 +37,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
             if (envVar)
                 (void)execve(command, argv, envVar);
             else
-                (void)execv(command, argv);
+                (void)execv(command, (!argv ? (char **)params->arr : argv));
             _exit(errno);
         case -1:
             unitdLogError(LOG_UNITD_BOOT, "src/core/commands/commands.c", "execScript", errno,
@@ -46,6 +53,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
                       "Bad exit code for the %s script", relScriptName);
     }
 
+    arrayRelease(&params);
     objectRelease(&command);
     return exitCode;
 }

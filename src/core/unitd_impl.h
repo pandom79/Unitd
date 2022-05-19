@@ -354,7 +354,6 @@ int setNewDefaultStateSyml(State);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
-int showEmergencyShell();
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

@@ -1,12 +1,5 @@
 - Init process development
 
-    - Create showEmergencyShell func. Currently there is a little bug because argv is null.
-      It should contain the first element (command)
-
-    - Review initialization and finalization scripts.
-      Predict unitddatapath for the "run" property in the initial and final units.
-      Replace it with unitddatapath macro value from meson
-
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 
 - Unitlogd development
