@@ -10,7 +10,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define UNITD_TYPES_H
 #include <libwrapper/wrapper.h>
 #include <getopt.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
