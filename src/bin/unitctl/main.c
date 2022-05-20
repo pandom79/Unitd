@@ -100,8 +100,8 @@ int main(int argc, char **argv) {
     }
 
     if (getuid() != 0) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
-        exit(EXIT_FAILURE);
+        rv = checkAdministrator(argv);
+        exit(rv);
     }
 
     /* Get the command */

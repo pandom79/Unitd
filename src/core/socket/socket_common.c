@@ -218,3 +218,32 @@ sendWallMsg(Command command)
     arrayRelease(&scriptParams);
     return rv;
 }
+
+int
+checkAdministrator(char **argv)
+{
+    int rv = 0;
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Building command */
+    Array *scriptParams = arrayNew(objectRelease);
+    char *cmd = stringNew(UNITD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/administrator-check.sh");
+    arrayAdd(scriptParams, cmd); //0
+    while (*argv) {
+        arrayAdd(scriptParams, stringNew(*argv));
+        argv++;
+    }
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL); //last
+    /* Execute the script */
+    rv = execScript(UNITD_DATA_PATH, "/scripts/administrator-check.sh", scriptParams->arr, envVars->arr);
+    arrayRelease(&scriptParams);
+    arrayRelease(&envVars);
+
+    return rv;
+}

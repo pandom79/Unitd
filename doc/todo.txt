@@ -1,7 +1,5 @@
 - Init process development
 
-    - Unitctl get root password ???
-
     - Unitctl analyze command ??
 
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen

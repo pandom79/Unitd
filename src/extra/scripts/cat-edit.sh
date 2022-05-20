@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin:
+
 . $UNITD_DATA_PATH/functions/functions
 
 # Show or edit the unit content
@@ -9,13 +11,13 @@ OPERATION="$1"
 UNIT_PATH="$2"
 
 if [ $OPERATION == "cat" ]; then
-    /usr/bin/cat $UNIT_PATH
+    cat $UNIT_PATH
 elif [ $OPERATION == "edit" ]; then
-    if [ -x /usr/bin/vim ]; then
-        /usr/bin/vim $UNIT_PATH
-    elif [ -x /usr/bin/vi ]; then
-        /usr/bin/vi $UNIT_PATH
+    if command -v vim > /dev/null; then
+        vim $UNIT_PATH
+    elif command -v vi > /dev/null; then
+        vi $UNIT_PATH
     else
-        msg_error "Unable to find 'vim' or 'vi' text editor!"
+        msg_error "Please, install 'vim' or 'vi' text editor."
     fi
 fi
