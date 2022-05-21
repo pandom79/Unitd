@@ -84,8 +84,8 @@ typedef struct {
     PStateData *pStateData;
     int *signalNum;
     int *finalStatus;
-    char *dateTimeStart;
-    char *dateTimeStop;
+    char *dateTimeStartStr;
+    char *dateTimeStopStr;
 } ProcessData;
 
 /* States */

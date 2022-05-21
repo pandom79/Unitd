@@ -125,7 +125,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 res = waitpid(child, &status, WNOHANG);
                 if (res > 0) {
                     if (WIFEXITED(status)) {
-                        stringSetDateTime(&pData->dateTimeStop, true);
+                        stringSetDateTime(&pData->dateTimeStopStr, true);
                         *pData->exitCode = WEXITSTATUS(status);
                         *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
                         /* we communicate the failure result if the unit has a pipe */
@@ -163,7 +163,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
                 *pData->signalNum = SIGKILL;
-                stringSetDateTime(&pData->dateTimeStop, true);
+                stringSetDateTime(&pData->dateTimeStopStr, true);
                 if ((*unit)->showResult)
                     unitdLogErrorStr(LOG_UNITD_ALL, "Timeout expired for the %s unit!\n", (*unit)->name);
                 else
@@ -185,7 +185,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                                      "dateTimeStop = %s\n",
                       (*unit)->name, command, PTYPE_DATA_ITEMS[(*unit)->type].desc, *pData->pid, *pData->exitCode,
                       *pData->signalNum, pData->pStateData->desc, *pData->finalStatus,
-                      pData->dateTimeStart, pData->dateTimeStop);
+                      pData->dateTimeStartStr, pData->dateTimeStopStr);
     }
 
     return *pData->exitCode;
@@ -270,7 +270,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
     *pData->exitCode = -1;
     *pData->pStateData = PSTATE_DATA_ITEMS[DIED];
     *pData->signalNum = SIGKILL;
-    stringSetDateTime(&pData->dateTimeStop, true);
+    stringSetDateTime(&pData->dateTimeStopStr, true);
 
     if (UNITD_DEBUG)
         unitdLogInfo(LOG_UNITD_BOOT, "The %s unit has been stopped with the following values:\n"
@@ -284,7 +284,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
                                      "dateTimeStop = %s\n",
                       unitName, PTYPE_DATA_ITEMS[(*unit)->type].desc, *pData->pid, *pData->exitCode,
                       *pData->signalNum, pData->pStateData->desc, *pData->finalStatus,
-                      pData->dateTimeStart, pData->dateTimeStop);
+                      pData->dateTimeStartStr, pData->dateTimeStopStr);
 
     return *pData->exitCode;
 }

@@ -293,7 +293,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             setValueForBuffer(&buffer, *pData->signalNum);
             stringConcat(&buffer, TOKEN);
             /* Date Time Start */
-            dateTimeStart = pData->dateTimeStart;
+            dateTimeStart = pData->dateTimeStartStr;
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTART].propertyName.desc);
             stringConcat(&buffer, ASSIGNER);
             if (dateTimeStart)
@@ -302,7 +302,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                 stringConcat(&buffer, NONE);
             stringConcat(&buffer, TOKEN);
             /* Date Time Stop */
-            dateTimeStop = pData->dateTimeStop;
+            dateTimeStop = pData->dateTimeStopStr;
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTOP].propertyName.desc);
             stringConcat(&buffer, ASSIGNER);
             if (dateTimeStop)
@@ -360,14 +360,14 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                     datetimeStartHKey = SOCKRES_PROPERTIES_ITEMS[DATETIMESTARTH].propertyName.desc;
                 stringConcat(&buffer, datetimeStartHKey);
                 stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, pData->dateTimeStart);
+                stringConcat(&buffer, pData->dateTimeStartStr);
                 stringConcat(&buffer, TOKEN);
                 /* Date time stop history */
                 if (!datetimeStopHKey)
                     datetimeStopHKey = SOCKRES_PROPERTIES_ITEMS[DATETIMESTOPH].propertyName.desc;
                 stringConcat(&buffer, datetimeStopHKey);
                 stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, pData->dateTimeStop);
+                stringConcat(&buffer, pData->dateTimeStopStr);
                 stringConcat(&buffer, TOKEN);
             }
         }
@@ -515,13 +515,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                             *pData->finalStatus = atoi(value);
                         break;
                     case DATETIMESTART:
-                        pData->dateTimeStart = stringNew(value);
+                        pData->dateTimeStartStr = stringNew(value);
                         break;
                     case DATETIMESTOP:
                         if (strcmp(value, NONE) == 0)
-                            pData->dateTimeStop = NULL;
+                            pData->dateTimeStopStr = NULL;
                         else
-                            pData->dateTimeStop = stringNew(value);
+                            pData->dateTimeStopStr = stringNew(value);
                         break;
                     case PIDH:
                         if (strcmp(value, NONE) == 0)
@@ -551,13 +551,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                             *pDataHistory->finalStatus = atoi(value);
                         break;
                     case DATETIMESTARTH:
-                        pDataHistory->dateTimeStart = stringNew(value);
+                        pDataHistory->dateTimeStartStr = stringNew(value);
                         break;
                     case DATETIMESTOPH:
                         if (strcmp(value, NONE) == 0)
-                            pDataHistory->dateTimeStop = NULL;
+                            pDataHistory->dateTimeStopStr = NULL;
                         else
-                            pDataHistory->dateTimeStop = stringNew(value);
+                            pDataHistory->dateTimeStopStr = stringNew(value);
                         break;
                     default:
                         break;

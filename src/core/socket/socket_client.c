@@ -453,8 +453,8 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             pStateData = pData->pStateData;
             pState = pStateData->pState;
             unitErrors = unit->errors;
-            dateTimeStart = pData->dateTimeStart;
-            dateTimeStop = pData->dateTimeStop;
+            dateTimeStart = pData->dateTimeStartStr;
+            dateTimeStop = pData->dateTimeStopStr;
 
             printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT DATA", DEFAULT_COLOR);
             /* Name */
@@ -539,8 +539,8 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                     printf("%*s ", MAX_LEN_KEY, "Status :");
                     printStatus(pState, status, *finalStatus, true);
                     /* Date time start/stop */
-                    printf("%*s %s\n", MAX_LEN_KEY, "Started at :", pDataHistory->dateTimeStart);
-                    printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", pDataHistory->dateTimeStop);
+                    printf("%*s %s\n", MAX_LEN_KEY, "Started at :", pDataHistory->dateTimeStartStr);
+                    printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", pDataHistory->dateTimeStopStr);
                     /* Exit code */
                     exitCode = pDataHistory->exitCode;
                     printExitCode(*exitCode);

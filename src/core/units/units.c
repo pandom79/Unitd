@@ -860,14 +860,14 @@ processDataCreate(ProcessData *pDataFrom, ParserFuncType funcType)
         pDataRet->signalNum = signalNum;
 
         //Date start
-        char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStart : NULL);
+        char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStartStr : NULL);
         if (dateTimeStartFrom)
-            pDataRet->dateTimeStart = stringNew(dateTimeStartFrom);
+            pDataRet->dateTimeStartStr = stringNew(dateTimeStartFrom);
 
         //Date stop
-        char *dateTimeStopFrom = (pDataFrom ? pDataFrom->dateTimeStop : NULL);
+        char *dateTimeStopFrom = (pDataFrom ? pDataFrom->dateTimeStopStr : NULL);
         if (dateTimeStopFrom)
-            pDataRet->dateTimeStop = stringNew(dateTimeStopFrom);
+            pDataRet->dateTimeStopStr = stringNew(dateTimeStopFrom);
 
     }
 
@@ -884,8 +884,8 @@ processDataRelease(ProcessData **pData)
         objectRelease(&(pDataTemp->pStateData));
         objectRelease(&(pDataTemp->signalNum));
         objectRelease(&(pDataTemp->finalStatus));
-        objectRelease(&(pDataTemp->dateTimeStart));
-        objectRelease(&(pDataTemp->dateTimeStop));
+        objectRelease(&(pDataTemp->dateTimeStartStr));
+        objectRelease(&(pDataTemp->dateTimeStopStr));
         objectRelease(&pDataTemp);
     }
 }
