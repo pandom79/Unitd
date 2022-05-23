@@ -20,7 +20,7 @@ getCommand(const char *command)
 }
 
 SockMessageIn*
-sockMessageInCreate()
+sockMessageInNew()
 {
     SockMessageIn *sockMessageIn = calloc(1, sizeof(SockMessageIn));
     assert(sockMessageIn);
@@ -41,7 +41,7 @@ sockMessageInRelease(SockMessageIn **sockMessageIn)
 }
 
 SockMessageOut*
-sockMessageOutCreate()
+sockMessageOutNew()
 {
     SockMessageOut *sockMessageOut = calloc(1, sizeof(SockMessageOut));
     assert(sockMessageOut);

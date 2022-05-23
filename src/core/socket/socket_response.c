@@ -424,7 +424,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                     if (!(*unitsDisplay))
                         *unitsDisplay = arrayNew(unitRelease);
                     /* Create the unit */
-                    unitDisplay = unitCreate(NULL, PARSE_SOCK_RESPONSE);
+                    unitDisplay = unitNew(NULL, PARSE_SOCK_RESPONSE);
                     pData = unitDisplay->processData;
                     pDatasHistory = &unitDisplay->processDataHistory;
                     unitErrors = &unitDisplay->errors;
@@ -437,7 +437,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                     if (!(*pDatasHistory))
                         *pDatasHistory = arrayNew(processDataRelease);
 
-                    pDataHistory = processDataCreate(NULL, PARSE_SOCK_RESPONSE);
+                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
                     arrayAdd(*pDatasHistory, pDataHistory);
                     pDataHistorySecCount++;
                 }

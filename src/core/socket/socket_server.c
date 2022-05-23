@@ -188,8 +188,8 @@ socketDispatchRequest(char *buffer, int *socketFd)
     assert(buffer);
     assert(*socketFd != -1);
 
-    sockMessageIn = sockMessageInCreate();
-    sockMessageOut = sockMessageOutCreate();
+    sockMessageIn = sockMessageInNew();
+    sockMessageOut = sockMessageOutNew();
 
     if (UNITD_DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SocketDispatchRequest::Buffer received (%lu): \n%s", strlen(buffer), buffer);
@@ -265,7 +265,7 @@ getUnitListServer(int *socketFd, SockMessageOut **sockMessageOut)
     if (lenUnits > 0)
         unitsDisplay = arrayNew(unitRelease);
     for (int i = 0; i < lenUnits; i++)
-        arrayAdd(unitsDisplay, unitCreate(arrayGet(units, i), PARSE_SOCK_RESPONSE_UNITLIST));
+        arrayAdd(unitsDisplay, unitNew(arrayGet(units, i), PARSE_SOCK_RESPONSE_UNITLIST));
 
     /* Loading all the units */
     loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
@@ -317,7 +317,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
     if (unit)
-        arrayAdd(*unitsDisplay, unitCreate(unit, PARSE_SOCK_RESPONSE));
+        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     else {
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
@@ -376,7 +376,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     unit = getUnitByName(*units, unitName);
     if (unit) {
         /* Create a copy for client */
-        arrayAdd(*unitsDisplay, unitCreate(unit, PARSE_SOCK_RESPONSE));
+        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
         /* Close eventual pipe */
         if (unit->pipe)
             closePipes(NULL, unit);
@@ -491,7 +491,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     }
     else {
         /* We only start the died unit */
-        unit = unitCreate(NULL, PARSE_UNIT);
+        unit = unitNew(NULL, PARSE_UNIT);
         unit->name = stringNew(unitName);
         unitPath = stringNew(UNITS_PATH);
         stringAppendChr(&unitPath, '/');
@@ -647,7 +647,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         goto out;
     }
     if (unit) {
-        unitDisplay = unitCreate(unit, PARSE_SOCK_RESPONSE);
+        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
         arrayAdd(*unitsDisplay, unitDisplay);
     }
     else
@@ -794,7 +794,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLED_ERR].desc, unitName));
             goto out;
         }
-        unitDisplay = unitCreate(unit, PARSE_SOCK_RESPONSE);
+        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
         arrayAdd(*unitsDisplay, unitDisplay);
     }
     else
@@ -996,7 +996,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        unitDisplay = unitCreate(unit, PARSE_SOCK_RESPONSE);
+        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
         arrayAdd(*unitsDisplay, unitDisplay);
     }
     else

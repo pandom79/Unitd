@@ -158,7 +158,7 @@ getUnitByPid(Array *units, pid_t pid)
 }
 
 Unit*
-unitCreate(Unit *unitFrom, ParserFuncType funcType)
+unitNew(Unit *unitFrom, ParserFuncType funcType)
 {
     int rv = 0;
     Unit *unit = calloc(1, sizeof(Unit));
@@ -168,8 +168,8 @@ unitCreate(Unit *unitFrom, ParserFuncType funcType)
     unit->name = (unitFrom ? stringNew(unitFrom->name) : NULL);
     unit->enabled = (unitFrom ? unitFrom->enabled : false);
     unit->path = (unitFrom ? stringNew(unitFrom->path) : NULL);
-    unit->processData = (unitFrom ? processDataCreate(unitFrom->processData, funcType) :
-                                    processDataCreate(NULL, funcType));
+    unit->processData = (unitFrom ? processDataNew(unitFrom->processData, funcType) :
+                                    processDataNew(NULL, funcType));
     unit->desc = (unitFrom ? stringNew(unitFrom->desc) : NULL);
 
     if (funcType == PARSE_SOCK_RESPONSE || funcType == PARSE_UNIT) {
@@ -192,7 +192,7 @@ unitCreate(Unit *unitFrom, ParserFuncType funcType)
         if (len > 0) {
             pDataHistory = arrayNew(processDataRelease);
             for (int i = 0; i < len; i++)
-                arrayAdd(pDataHistory, processDataCreate(arrayGet(pDataHistoryFrom, i), funcType));
+                arrayAdd(pDataHistory, processDataNew(arrayGet(pDataHistoryFrom, i), funcType));
         }
         unit->processDataHistory = pDataHistory;
     }
@@ -516,7 +516,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
             /* If the unit is already in memory then skip it */
             if (getUnitByName(UNITD_DATA->units, unitName) == NULL) {
                 /* Create the unit */
-                unit = unitCreate(NULL, funcType);
+                unit = unitNew(NULL, funcType);
                 unit->name = unitName;
                 unit->path = stringNew(unitPath);
                 /* Check unit path */
@@ -795,7 +795,7 @@ unitRelease(Unit **unit)
 }
 
 ProcessData*
-processDataCreate(ProcessData *pDataFrom, ParserFuncType funcType)
+processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
 {
     ProcessData *pDataRet = NULL;
     pid_t *pid = NULL;
@@ -891,7 +891,7 @@ processDataRelease(ProcessData **pData)
 }
 
 Pipe*
-pipeCreate()
+pipeNew()
 {
     int rv = 0;
     Pipe *pipe = NULL;

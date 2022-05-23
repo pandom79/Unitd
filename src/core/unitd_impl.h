@@ -209,9 +209,9 @@ typedef struct {
 extern const UnitsMessagesData UNITS_MESSAGES_ITEMS[];
 
 /* Functions */
-Unit* unitCreate(Unit *, ParserFuncType);
+Unit* unitNew(Unit *, ParserFuncType);
 void unitRelease(Unit **);
-ProcessData* processDataCreate(ProcessData *, ParserFuncType);
+ProcessData* processDataNew(ProcessData *, ParserFuncType);
 void processDataRelease(ProcessData **);
 int loadUnits(Array **, const char *, const char *, State,
               bool, const char *, ParserFuncType, bool);
@@ -225,7 +225,7 @@ char* getUnitName(const char *);
 Unit* getUnitByName(Array *, const char *);
 Unit* getUnitByPid(Array *, pid_t pid);
 PType getPTypeByPTypeStr(const char *);
-Pipe* pipeCreate();
+Pipe* pipeNew();
 void pipeRelease(Pipe **);
 bool hasUnitError(const char *);
 /*********************************************************************************/
@@ -302,9 +302,9 @@ Command getCommand(const char *command);
 int initSocket(struct sockaddr_un *);
 int unitdSockConn(int *, struct sockaddr_un *);
 int readMessage(int *, char **, int *);
-SockMessageIn* sockMessageInCreate();
+SockMessageIn* sockMessageInNew();
 void sockMessageInRelease(SockMessageIn **);
-SockMessageOut* sockMessageOutCreate();
+SockMessageOut* sockMessageOutNew();
 int sortUnitsByName(const void *, const void *);
 void setValueForBuffer(char **, int);
 Array* getScriptParams(const char *, const char *, const char *);

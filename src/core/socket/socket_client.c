@@ -124,7 +124,7 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
 
     assert(command != NO_COMMAND);
 
-    *sockMessageIn = sockMessageInCreate();
+    *sockMessageIn = sockMessageInNew();
     (*sockMessageIn)->command = command;
     if (arg)
         (*sockMessageIn)->arg = stringNew(arg);
@@ -257,7 +257,7 @@ getUnitList(SockMessageOut **sockMessageOut)
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -401,7 +401,7 @@ getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -599,7 +599,7 @@ stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -665,7 +665,7 @@ startUnit(SockMessageOut **sockMessageOut, const char *unitName,
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -725,7 +725,7 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -790,7 +790,7 @@ enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bo
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -860,7 +860,7 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -912,7 +912,7 @@ getDefaultState(SockMessageOut **sockMessageOut)
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:
@@ -983,7 +983,7 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
-        *sockMessageOut = sockMessageOutCreate();
+        *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
 
     out:

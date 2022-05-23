@@ -564,10 +564,10 @@ listenPipeThread(void *arg)
             if (*restartNum >= SHOW_MAX_RESULTS)
                 arrayRemoveAt(pDataHistory, 0);
             /* Creating the history */
-            arrayAdd(pDataHistory, processDataCreate(*pData, PARSE_UNIT));
+            arrayAdd(pDataHistory, processDataNew(*pData, PARSE_UNIT));
             /* Release and create a new Process Data */
             processDataRelease(pData);
-            *pData = processDataCreate(NULL, PARSE_UNIT);
+            *pData = processDataNew(NULL, PARSE_UNIT);
             /* Incrementing restartNum */
             (*restartNum)++;
             *(*pData)->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
@@ -664,7 +664,7 @@ openPipe(void *arg)
     assert(arg);
     unitThreadData = (UnitThreadData *)arg;
     unit = unitThreadData->unit;
-    unit->pipe = pipeCreate();
+    unit->pipe = pipeNew();
     unit->processDataHistory = arrayNew(processDataRelease);
 
     if ((rv = pipe(unit->pipe->fds)) != 0) {
