@@ -869,6 +869,17 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
         if (dateTimeStopFrom)
             pDataRet->dateTimeStopStr = stringNew(dateTimeStopFrom);
 
+        Time *timeStartFrom = (pDataFrom ? pDataFrom->timeStart : NULL);
+        if (timeStartFrom)
+            pDataRet->timeStart = timeNew(timeStartFrom);
+
+        Time *timeStopFrom = (pDataFrom ? pDataFrom->timeStop : NULL);
+        if (timeStopFrom)
+            pDataRet->timeStop = timeNew(timeStopFrom);
+
+        char *durationFrom = (pDataFrom ? pDataFrom->duration : NULL);
+        if (durationFrom)
+            pDataRet->duration = stringNew(durationFrom);
     }
 
     return pDataRet;
@@ -886,6 +897,9 @@ processDataRelease(ProcessData **pData)
         objectRelease(&(pDataTemp->finalStatus));
         objectRelease(&(pDataTemp->dateTimeStartStr));
         objectRelease(&(pDataTemp->dateTimeStopStr));
+        objectRelease(&(pDataTemp->duration));
+        timeRelease(&pDataTemp->timeStart);
+        timeRelease(&pDataTemp->timeStop);
         objectRelease(&pDataTemp);
     }
 }

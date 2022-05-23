@@ -62,14 +62,17 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     *exitCode = info->si_status;
                     *finalStatus = FINAL_STATUS_FAILURE;
                     *pStateData = PSTATE_DATA_ITEMS[EXITED];
-                    stringSetDateTime(&(pData->dateTimeStopStr), true);
+                    timeSetCurrent(&pData->timeStop);
+                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                    stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                     if (UNITD_DEBUG) {
                         syslog(LOG_DAEMON | LOG_DEBUG,
                                "The process %s with pid %d is exited with the following values: "
                                "Exit code = %d, status = %s, finalStatus = %d, type = %s, "
-                               "dateTimeStart = %s, dateTimeStop = %s\n",
+                               "dateTimeStart = %s, dateTimeStop = %s, duration = %s\n",
                                unitName, infoPid, *exitCode, pStateData->desc, *finalStatus,
-                               PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr, pData->dateTimeStopStr);
+                               PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr,
+                               pData->dateTimeStopStr, pData->duration);
                     }
                     if (unitPipe) {
                         output = CLD_EXITED;
@@ -85,15 +88,17 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     *finalStatus = FINAL_STATUS_FAILURE;
                     *pStateData = PSTATE_DATA_ITEMS[KILLED];
                     *pData->signalNum = info->si_status;
-                    stringSetDateTime(&(pData->dateTimeStopStr), true);
+                    timeSetCurrent(&pData->timeStop);
+                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                    stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                     if (UNITD_DEBUG) {
                         syslog(LOG_DAEMON | LOG_DEBUG,
                                "The process %s with pid %d is terminated with the following values: "
                                "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s"
-                               "dateTimeStart = %s, dateTimeStop = %s\n",
+                               "dateTimeStart = %s, dateTimeStop = %s, duration = %s\n",
                                unitName, infoPid, *exitCode, *pData->signalNum, pStateData->desc,
                                *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr,
-                               pData->dateTimeStopStr);
+                               pData->dateTimeStopStr, pData->duration);
                     }
                     if (unitPipe) {
                         output = CLD_KILLED;
@@ -109,15 +114,17 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     *finalStatus = FINAL_STATUS_FAILURE;
                     *pStateData = PSTATE_DATA_ITEMS[STOPPED];
                     *pData->signalNum = info->si_status;
-                    stringSetDateTime(&(pData->dateTimeStopStr), true);
+                    timeSetCurrent(&pData->timeStop);
+                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                    stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                     if (UNITD_DEBUG)
                         syslog(LOG_DAEMON | LOG_DEBUG,
                                "The process %s with pid %d is stopped with the following values: "
                                "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s"
-                               "dateTimeStart = %s, dateTimeStop = %s\n",
+                               "dateTimeStart = %s, dateTimeStop = %s, duration = %s\n",
                                unitName, infoPid, *exitCode, *pData->signalNum, pStateData->desc,
                                *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr,
-                               pData->dateTimeStopStr);
+                               pData->dateTimeStopStr, pData->duration);
                     break;
                 case CLD_CONTINUED:
                     *exitCode = -1;
@@ -125,14 +132,15 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     *pStateData = PSTATE_DATA_ITEMS[RUNNING];
                     *pData->signalNum = info->si_status;
                     objectRelease(&pData->dateTimeStopStr);
+                    objectRelease(&pData->duration);
+                    timeRelease(&pData->timeStop);
                     if (UNITD_DEBUG)
                         syslog(LOG_DAEMON | LOG_DEBUG,
                                "The process %s with pid %d is continued with the following values: "
                                "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s"
-                               "dateTimeStart = %s, dateTimeStop = %s\n",
+                               "dateTimeStart = %s\n",
                                unitName, infoPid, *exitCode, *pData->signalNum, pStateData->desc,
-                               *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr,
-                               pData->dateTimeStopStr);
+                               *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr);
                     break;
             }
         }

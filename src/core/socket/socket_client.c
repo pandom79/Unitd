@@ -422,7 +422,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
     Unit *unit = NULL;
     ProcessData *pData, *pDataHistory;
     PStateData *pStateData, *pStateDataHistory;
-    const char *status, *desc, *dateTimeStart, *dateTimeStop;
+    const char *status, *desc, *dateTimeStart, *dateTimeStop, *duration;
     PState pState;
 
     rv = len = restartNum = lenPDataHistory = lenUnitErrors = 0;
@@ -455,6 +455,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             unitErrors = unit->errors;
             dateTimeStart = pData->dateTimeStartStr;
             dateTimeStop = pData->dateTimeStopStr;
+            duration = pData->duration;
 
             printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT DATA", DEFAULT_COLOR);
             /* Name */
@@ -499,6 +500,9 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 signalNum = pData->signalNum;
                 printSignalNum(*signalNum);
             }
+            /* Duration */
+            if (duration)
+                printf("%*s %s\n", MAX_LEN_KEY, "Duration :", duration);
 
             /* Unit errors */
             lenUnitErrors = (unitErrors ? unitErrors->size : 0);
@@ -541,6 +545,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                     /* Date time start/stop */
                     printf("%*s %s\n", MAX_LEN_KEY, "Started at :", pDataHistory->dateTimeStartStr);
                     printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", pDataHistory->dateTimeStopStr);
+                    printf("%*s %s\n", MAX_LEN_KEY, "Duration :", pDataHistory->duration);
                     /* Exit code */
                     exitCode = pDataHistory->exitCode;
                     printExitCode(*exitCode);

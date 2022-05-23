@@ -86,6 +86,9 @@ typedef struct {
     int *finalStatus;
     char *dateTimeStartStr;
     char *dateTimeStopStr;
+    Time *timeStart;
+    Time *timeStop;
+    char *duration;
 } ProcessData;
 
 /* States */

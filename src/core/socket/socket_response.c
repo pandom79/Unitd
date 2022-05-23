@@ -61,6 +61,7 @@ SignalNumH=value        (optional and repeatable)
 FinalStatusH=value      (optional and repeatable)
 DateTimeStartH=value    (optional and repeatable)
 DateTimeStopH=value     (optional and repeatable)
+DurationH=value         (optional and repeatable)
 
 */
 
@@ -91,13 +92,15 @@ enum PropertyNameEnum  {
     SIGNALNUM = 15,
     DATETIMESTART = 16,
     DATETIMESTOP = 17,
-    PIDH = 18,
-    EXITCODEH = 19,
-    PSTATEH = 20,
-    SIGNALNUMH = 21,
-    FINALSTATUSH = 22,
-    DATETIMESTARTH = 23,
-    DATETIMESTOPH = 24
+    DURATION = 18,
+    PIDH = 19,
+    EXITCODEH = 20,
+    PSTATEH = 21,
+    SIGNALNUMH = 22,
+    FINALSTATUSH = 23,
+    DATETIMESTARTH = 24,
+    DATETIMESTOPH = 25,
+    DURATIONH = 26
 };
 
 /* Sections */
@@ -108,7 +111,7 @@ SectionData SOCKRES_SECTIONS_ITEMS[] = {
 };
 
 /* Properties */
-int SOCKRES_PROPERTIES_ITEMS_LEN = 25;
+int SOCKRES_PROPERTIES_ITEMS_LEN = 27;
 PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { NO_SECTION, { MESSAGE, "Message" }, true, false, false, 0, NULL, NULL },
     { NO_SECTION, { ERROR, "Error" }, true, false, false, 0, NULL, NULL },
@@ -128,13 +131,15 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { SIGNALNUM, "SignalNum" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DATETIMESTART, "DateTimeStart" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DATETIMESTOP, "DateTimeStop" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { DURATION, "Duration" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { PIDH, "PidH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { EXITCODEH, "ExitCodeH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { PSTATEH, "PStateH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { SIGNALNUMH, "SignalNumH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { FINALSTATUSH, "FinalStatusH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { DATETIMESTARTH, "DateTimeStartH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { DATETIMESTOPH, "DateTimeStopH" }, true, false, false, 0, NULL, NULL }
+    { PDATAHISTORY, { DATETIMESTOPH, "DateTimeStopH" }, true, false, false, 0, NULL, NULL },
+    { PDATAHISTORY, { DURATIONH, "DurationH" }, true, false, false, 0, NULL, NULL }
 };
 
 //END PARSER CONFIGURATION
@@ -148,7 +153,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
     const char *msgKey, *errKey, *unitDesc, *unitPath, *dateTimeStart, *dateTimeStop,
                *unitErrorKey, *pDataHistorySecKey, *pidHKey, *exitCodeHKey,
                *pStateHKey, *signalNumHKey, *finalStatusHKey, *datetimeStartHKey,
-               *datetimeStopHKey;
+               *datetimeStopHKey, *duration, *durationKey;
     Unit *unit = NULL;
     ProcessData *pData = NULL;
 
@@ -156,7 +161,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
     len = lenUnitErrors = lenPdataHistory = 0;
     msgKey = errKey = unitDesc = unitErrorKey = pDataHistorySecKey =
     pidHKey = exitCodeHKey = pStateHKey = signalNumHKey =
-    finalStatusHKey = datetimeStartHKey = datetimeStopHKey = NULL;
+    finalStatusHKey = datetimeStartHKey = datetimeStopHKey = durationKey = NULL;
 
     assert(sockMessageOut);
 
@@ -310,7 +315,25 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             else
                 stringConcat(&buffer, NONE);
             stringConcat(&buffer, TOKEN);
-
+            /* Duration */
+            duration = pData->duration;
+            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DURATION].propertyName.desc);
+            stringConcat(&buffer, ASSIGNER);
+            if (duration)
+                stringConcat(&buffer, duration);
+            else {
+                if (pData->timeStart) {
+                    Time *currentTimeStop = timeNew(NULL);
+                    char *diff = NULL;
+                    stringSetDiffTime(&diff, currentTimeStop, pData->timeStart);
+                    stringConcat(&buffer, diff);
+                    timeRelease(&currentTimeStop);
+                    objectRelease(&diff);
+                }
+                else
+                    stringConcat(&buffer, NONE);
+            }
+            stringConcat(&buffer, TOKEN);
             /* Process Data history */
             pDataHistory = unit->processDataHistory;
             lenPdataHistory = (pDataHistory ? pDataHistory->size : 0);
@@ -368,6 +391,13 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                 stringConcat(&buffer, datetimeStopHKey);
                 stringConcat(&buffer, ASSIGNER);
                 stringConcat(&buffer, pData->dateTimeStopStr);
+                stringConcat(&buffer, TOKEN);
+                /* Duration history */
+                if (!durationKey)
+                    durationKey = SOCKRES_PROPERTIES_ITEMS[DURATIONH].propertyName.desc;
+                stringConcat(&buffer, durationKey);
+                stringConcat(&buffer, ASSIGNER);
+                stringConcat(&buffer, pData->duration);
                 stringConcat(&buffer, TOKEN);
             }
         }
@@ -523,6 +553,12 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         else
                             pData->dateTimeStopStr = stringNew(value);
                         break;
+                    case DURATION:
+                        if (strcmp(value, NONE) == 0)
+                            pData->duration = NULL;
+                        else
+                            pData->duration = stringNew(value);
+                        break;
                     case PIDH:
                         if (strcmp(value, NONE) == 0)
                             *pDataHistory->pid = -1;
@@ -558,6 +594,12 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                             pDataHistory->dateTimeStopStr = NULL;
                         else
                             pDataHistory->dateTimeStopStr = stringNew(value);
+                        break;
+                    case DURATIONH:
+                        if (strcmp(value, NONE) == 0)
+                            pDataHistory->duration = NULL;
+                        else
+                            pDataHistory->duration = stringNew(value);
                         break;
                     default:
                         break;
