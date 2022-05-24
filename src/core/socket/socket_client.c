@@ -500,12 +500,12 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 signalNum = pData->signalNum;
                 printSignalNum(*signalNum);
             }
-            /* Duration */
-            if (duration)
-                printf("%*s %s\n", MAX_LEN_KEY, "Duration :", duration);
 
-            /* Unit errors */
             lenUnitErrors = (unitErrors ? unitErrors->size : 0);
+            /* Duration */
+            if (lenUnitErrors == 0 && duration)
+                printf("%*s %s\n", MAX_LEN_KEY, "Duration :", duration);
+            /* Unit errors */
             if (lenUnitErrors > 0) {
                 printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "UNIT ERRORS", DEFAULT_COLOR);
                 for (int j = 0; j < lenUnitErrors; j++) {

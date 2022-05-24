@@ -513,8 +513,8 @@ loadUnits(Array **units, const char *path, const char *dirName,
             unitPath = results.gl_pathv[i];
             /* Set unit name */
             unitName = getUnitName(unitPath);
-            /* If the unit is already in memory then skip it */
-            if (getUnitByName(UNITD_DATA->units, unitName) == NULL) {
+            /* If the unit is already in memory then skip it. (to avoid duplicates in unit list function) */
+            if (getUnitByName(*units, unitName) == NULL) {
                 /* Create the unit */
                 unit = unitNew(NULL, funcType);
                 unit->name = unitName;
@@ -839,6 +839,20 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
         *finalStatus = *pDataFrom->finalStatus;
     pDataRet->finalStatus = finalStatus;
 
+    //Date start
+    char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStartStr : NULL);
+    if (dateTimeStartFrom)
+        pDataRet->dateTimeStartStr = stringNew(dateTimeStartFrom);
+
+    //Date stop
+    char *dateTimeStopFrom = (pDataFrom ? pDataFrom->dateTimeStopStr : NULL);
+    if (dateTimeStopFrom)
+        pDataRet->dateTimeStopStr = stringNew(dateTimeStopFrom);
+
+    char *durationFrom = (pDataFrom ? pDataFrom->duration : NULL);
+    if (durationFrom)
+        pDataRet->duration = stringNew(durationFrom);
+
     /* If we are not showing the list then we add more data */
     if (funcType == PARSE_UNIT || funcType == PARSE_SOCK_RESPONSE) {
         //Exit code
@@ -859,27 +873,16 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
             *signalNum = *pDataFrom->signalNum;
         pDataRet->signalNum = signalNum;
 
-        //Date start
-        char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStartStr : NULL);
-        if (dateTimeStartFrom)
-            pDataRet->dateTimeStartStr = stringNew(dateTimeStartFrom);
-
-        //Date stop
-        char *dateTimeStopFrom = (pDataFrom ? pDataFrom->dateTimeStopStr : NULL);
-        if (dateTimeStopFrom)
-            pDataRet->dateTimeStopStr = stringNew(dateTimeStopFrom);
-
+        //Time start
         Time *timeStartFrom = (pDataFrom ? pDataFrom->timeStart : NULL);
         if (timeStartFrom)
             pDataRet->timeStart = timeNew(timeStartFrom);
 
+        //Time stop
         Time *timeStopFrom = (pDataFrom ? pDataFrom->timeStop : NULL);
         if (timeStopFrom)
             pDataRet->timeStop = timeNew(timeStopFrom);
 
-        char *durationFrom = (pDataFrom ? pDataFrom->duration : NULL);
-        if (durationFrom)
-            pDataRet->duration = stringNew(durationFrom);
     }
 
     return pDataRet;
