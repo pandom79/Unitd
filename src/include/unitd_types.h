@@ -155,6 +155,7 @@ typedef struct {
 } Unit;
 
 typedef struct {
+    Array *bootUnits;
     Array *initUnits;
     Array *units;
     Array *shutDownUnits;

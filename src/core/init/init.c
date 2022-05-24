@@ -49,23 +49,14 @@ State STATE_SHUTDOWN;
 char *STATE_CMDLINE_DIR;
 bool NO_WTMP;
 
-#ifndef LOCAL_TEST
 static void
-releaseOneshotInitUnits(Array **initUnits)
-{
-    int index = 0;
-    int *len = &(*initUnits)->size;
-    Unit *unit = NULL;
-
-    while (index < *len) {
-        unit = arrayGet(*initUnits, index);
-        if (unit->type == ONESHOT)
-            arrayRemove(*initUnits, unit);
-        else
-            index++;
-    }
+addBootUnit(Array **bootUnits, Array **units) {
+    if (!(*bootUnits))
+        *bootUnits = arrayNew(unitRelease);
+    int len = (*units ? (*units)->size : 0);
+    for (int i = 0; i < len; i++)
+        arrayAdd(*bootUnits, unitNew(arrayGet(*units, i), PARSE_SOCK_RESPONSE_UNITLIST));
 }
-#endif
 
 int
 unitdInit(UnitdData **unitdData, bool isAggregate)
@@ -73,18 +64,19 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     int rv, lenUnits;
     struct sigaction act = { 0 };
     char *initStateDir, *destDefStateSyml, *finalStateDir;
-    Array **initUnits, **finalUnits, **units, **shutDownUnits;
+    Array **initUnits, **finalUnits, **units, **shutDownUnits, **bootUnits;
     char *shutDownStateStr = NULL;
 
     rv = lenUnits = 0;
     initStateDir = destDefStateSyml = finalStateDir = NULL;
-    initUnits = finalUnits = NULL;
+    initUnits = finalUnits = bootUnits = NULL;
 
     assert(*unitdData);
     initUnits = &(*unitdData)->initUnits;
     units = &(*unitdData)->units;
     shutDownUnits = &(*unitdData)->shutDownUnits;
     finalUnits = &(*unitdData)->finalUnits;
+    bootUnits = &(*unitdData)->bootUnits;
 
     /* Enable ctrl-alt-del signal (SIGINT) */
     reboot(RB_DISABLE_CAD);
@@ -137,8 +129,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     }
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-    /* Release oneshot init units optimizing unit daemon memory usage */
-    releaseOneshotInitUnits(initUnits);
 #endif
 
     //******************* DEFAULT OR CMDLINE STATE ************************
@@ -193,6 +183,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
 
+    /* Create the boot units array */
+    addBootUnit(bootUnits, units);
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
@@ -270,6 +262,7 @@ unitdEnd(UnitdData **unitdData)
     arrayRelease(&UNITD_ENV_VARS);
     objectRelease(&STATE_CMDLINE_DIR);
     if (*unitdData) {
+        arrayRelease(&(*unitdData)->bootUnits);
         arrayRelease(&(*unitdData)->initUnits);
         arrayRelease(&(*unitdData)->units);
         arrayRelease(&(*unitdData)->shutDownUnits);
