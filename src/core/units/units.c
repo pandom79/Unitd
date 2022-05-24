@@ -790,7 +790,7 @@ unitRelease(Unit **unit)
         processDataRelease(&(unitTemp->processData));
 
         /* Unit */
-        objectRelease(&unitTemp);
+        objectRelease(unit);
     }
 }
 
@@ -900,7 +900,7 @@ processDataRelease(ProcessData **pData)
         objectRelease(&(pDataTemp->duration));
         timeRelease(&pDataTemp->timeStart);
         timeRelease(&pDataTemp->timeStop);
-        objectRelease(&pDataTemp);
+        objectRelease(pData);
     }
 }
 
@@ -949,7 +949,7 @@ pipeRelease(Pipe **pipe)
         close(pipeTemp->fds[0]);
         close(pipeTemp->fds[1]);
         /* Release pipe */
-        objectRelease(&pipeTemp);
+        objectRelease(pipe);
     }
 }
 
