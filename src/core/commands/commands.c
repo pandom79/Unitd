@@ -186,11 +186,11 @@ execProcess(const char *command, char **argv, Unit **unit)
                                      "state = %s\n"
                                      "finalStatus = %d\n"
                                      "dateTimeStart = %s\n"
-                                     "dateTimeStop = %s\n",
+                                     "dateTimeStop = %s\n"
                                      "duration = %s\n",
-                      (*unit)->name, command, PTYPE_DATA_ITEMS[(*unit)->type].desc, *pData->pid, *pData->exitCode,
-                      *pData->signalNum, pData->pStateData->desc, *pData->finalStatus,
-                      pData->dateTimeStartStr, pData->dateTimeStopStr, pData->duration);
+                    (*unit)->name, command, PTYPE_DATA_ITEMS[(*unit)->type].desc, *pData->pid, *pData->exitCode,
+                    *pData->signalNum, pData->pStateData->desc, *pData->finalStatus,
+                    pData->dateTimeStartStr, pData->dateTimeStopStr, pData->duration);
     }
 
     return *pData->exitCode;
@@ -288,11 +288,11 @@ stopDaemon(const char *command, char **argv, Unit **unit)
                                      "state = %s\n"
                                      "finalStatus = %d\n"
                                      "dateTimeStart = %s\n"
-                                     "dateTimeStop = %s\n",
+                                     "dateTimeStop = %s\n"
                                      "duration = %s\n",
-                      unitName, PTYPE_DATA_ITEMS[(*unit)->type].desc, *pData->pid, *pData->exitCode,
-                      *pData->signalNum, pData->pStateData->desc, *pData->finalStatus,
-                      pData->dateTimeStartStr, pData->dateTimeStopStr, pData->duration);
+                    unitName, PTYPE_DATA_ITEMS[(*unit)->type].desc, *pData->pid, *pData->exitCode,
+                    *pData->signalNum, pData->pStateData->desc, *pData->finalStatus,
+                    pData->dateTimeStartStr, pData->dateTimeStopStr, pData->duration);
 
     return *pData->exitCode;
 }
