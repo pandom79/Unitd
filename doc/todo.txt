@@ -2,6 +2,12 @@
     - Unitctl analyze command. We can use "unitctl list" changing the source data.
       Predict a bool argument (isAnalyze or analyze).
 
+    - Predict a notifier when the unit content is changed ???
+      If the unit is into memory (state != Died) and the unit content is changed then we see wrong data.
+      Affected functions are (list(requires, conflicts, states), and enable).
+      Start, stop and disable are not affected by that.
+      At least, we provide a message which say us to stop the unit and re-execute the operation.
+
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 
 - Unitlogd development
