@@ -560,8 +560,6 @@ listenPipeThread(void *arg)
              * remove the first element from the history because we only show
              * the last 'SHOW_MAX_RESULTS' results
             */
-            /* Slowing it */
-            msleep(1500);
             if (*restartNum >= SHOW_MAX_RESULTS)
                 arrayRemoveAt(pDataHistory, 0);
             /* Creating the history */
@@ -575,6 +573,8 @@ listenPipeThread(void *arg)
             if (SHUTDOWN_COMMAND == NO_COMMAND) {
                 if (UNITD_DEBUG)
                     syslog(LOG_DAEMON | LOG_DEBUG, "%s unit is restarting ....", unitName);
+                /* Slowing it */
+                msleep(1500);
                 startProcesses(&UNITD_DATA->units, unit);
             }
         }

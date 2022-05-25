@@ -1,7 +1,4 @@
 - Init process development
-    - Show the error when we cannot enable unit because the wantedBy property doesn't match
-      (default/cmdline, reboot or poweroff state)
-
     - Unitctl analyze command. We can use "unitctl list" changing the source data.
       Predict a bool argument (isAnalyze or analyze).
 
