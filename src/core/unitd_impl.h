@@ -16,7 +16,7 @@
 #define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
 #endif
 
-#define PROC_CMDLINE_DEBUG_ARG      "unitd_debug=true"
+#define PROC_CMDLINE_UNITD_DEBUG    "unitd_debug=true"
 
 extern pid_t UNITD_PID;
 extern UnitdData *UNITD_DATA;

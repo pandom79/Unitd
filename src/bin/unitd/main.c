@@ -32,7 +32,6 @@ parseProcCmdLine()
     FILE *fp = NULL;
     int rv = 0;
     char *line = NULL;
-    const char *stateSingle = "single";
     size_t len = 0;
 
     assert(PROC_CMDLINE_PATH);
@@ -44,28 +43,39 @@ parseProcCmdLine()
     }
 
     while (getline(&line, &len, fp) != -1) {
-        if (stringContainsStr(line, PROC_CMDLINE_DEBUG_ARG))
-            UNITD_DEBUG = true;
-        /* If the command line contains the "single" string the we set the state to "SINGLE_USER" */
-        if (stringContainsStr(line, stateSingle)) {
-            STATE_CMDLINE = SINGLE_USER;
-            goto out;
-        }
-        /* We exclude INIT, SINGLE (already handled and it has the precedence), REBOOT,
-         * POWEROFF and FINAL STATE */
-        for (State state = MULTI_USER; state <= GRAPHICAL; state++) {
-            if (stringContainsStr(line, STATE_DATA_ITEMS[state].desc)) {
-                STATE_CMDLINE = state;
-                goto out;
+        Array *values = stringSplit(line, " ", false);
+        int len = (values ? values->size : 0);
+        for (int i = 0; i < len; i++) {
+            char *value = arrayGet(values, i);
+            stringTrim(value, NULL);
+            //Unitd debug
+            if (strcmp(value, PROC_CMDLINE_UNITD_DEBUG) == 0) {
+                UNITD_DEBUG = true;
+                continue;
+            }
+            //Single
+            else if (strcmp(value, "single") == 0 || strcmp(value, STATE_DATA_ITEMS[SINGLE_USER].desc) == 0) {
+                STATE_CMDLINE = SINGLE_USER;
+                continue;
+            }
+            else {
+                /* We exclude INIT, SINGLE (already handled), REBOOT,
+                 * POWEROFF and FINAL STATE */
+                for (State state = MULTI_USER; state <= GRAPHICAL; state++) {
+                    if (strcmp(value, STATE_DATA_ITEMS[state].desc) == 0) {
+                        STATE_CMDLINE = state;
+                        break;
+                    }
+                }
             }
         }
+        arrayRelease(&values);
     }
 
-    out:
-        objectRelease(&line);
-        fclose(fp);
-        fp = NULL;
-        return rv;
+    objectRelease(&line);
+    fclose(fp);
+    fp = NULL;
+    return rv;
 }
 
 int main() {
