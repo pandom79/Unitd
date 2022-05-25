@@ -640,15 +640,17 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
 
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
-    if (unit && !unit->enabled) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DISABLED_ERR].desc, unitName));
-        goto out;
-    }
     if (unit) {
-        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
-        arrayAdd(*unitsDisplay, unitDisplay);
+        if (!unit->enabled) {
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DISABLED_ERR].desc, unitName));
+            goto out;
+        }
+        else {
+            unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
+            arrayAdd(*unitsDisplay, unitDisplay);
+        }
     }
     else
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
