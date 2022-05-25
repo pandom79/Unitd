@@ -1044,11 +1044,11 @@ int
 getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    char *buffer, *msg, *destDefStateSyml, *error;
+    char *buffer, *destDefStateSyml;
     Array **messages, **errors;
     State defaultState = NO_STATE;
 
-    buffer = msg = destDefStateSyml = error = NULL;
+    buffer = destDefStateSyml = NULL;
     messages = errors = NULL;
 
     assert(sockMessageIn);
@@ -1059,60 +1059,45 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     *messages = arrayNew(objectRelease);
 
     if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE) {
-        msg = stringNew("Default state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_DEFAULT].desc);
-        arrayAdd(*messages, stringNew(msg));
-        objectRelease(&msg);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
+                            "Default", STATE_DATA_ITEMS[STATE_DEFAULT].desc));
     }
     else if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) {
         rv = getDefaultStateStr(&destDefStateSyml);
         /* Symlink missing */
         if (rv == 1) {
             objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, stringNew("The default state symlink is missing!"));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_MISSING_ERR].desc));
             goto out;
         }
         /* Not a symlink */
         else if (rv == 2) {
             objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, stringNew("The default state doesn't look like a symlink!"));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_TYPE_ERR].desc));
             goto out;
         }
         defaultState = getStateByStr(destDefStateSyml);
         /* Bad destination */
         if (defaultState == NO_STATE) {
-            error = stringNew("The default state symlink points to a bad destination: ");
-            stringAppendStr(&error, destDefStateSyml);
-            arrayAdd(*errors, error);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_BAD_DEST_ERR].desc,
+                                    destDefStateSyml));
             objectRelease(&destDefStateSyml);
             goto out;
         }
         objectRelease(&destDefStateSyml);
 
         /* Default state */
-        msg = stringNew("Default state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
-        arrayAdd(*messages, stringNew(msg));
-        objectRelease(&msg);
-
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
+                                   "Default", STATE_DATA_ITEMS[defaultState].desc));
         /* Current state */
-        msg = stringNew("Current state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_CMDLINE].desc);
-        arrayAdd(*messages, stringNew(msg));
-        objectRelease(&msg);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
+                                   "Current", STATE_DATA_ITEMS[STATE_CMDLINE].desc));
     }
 
     if (STATE_NEW_DEFAULT != NO_STATE) {
-        msg = stringNew("New default state : ");
-        stringAppendStr(&msg, STATE_DATA_ITEMS[STATE_NEW_DEFAULT].desc);
-        arrayAdd(*messages, stringNew(msg));
-        objectRelease(&msg);
-
-        msg = stringNew("Warning :\n"
-                        "Please, reboot or power off/halt the system\nwithout '-f' or '--force' option "
-                        "to apply the change.");
-        arrayAdd(*messages, stringNew(msg));
-        objectRelease(&msg);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
+                                   "New default", STATE_DATA_ITEMS[STATE_NEW_DEFAULT].desc));
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN].desc));
     }
 
     out:
@@ -1135,13 +1120,13 @@ int
 setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    char *buffer, *msg, *newDefaultStateStr, *destDefStateSyml;
+    char *buffer, *newDefaultStateStr, *destDefStateSyml;
     Array **messages, **errors;
     State newDefaultState = NO_STATE;
     State defaultState = STATE_DEFAULT;
 
     messages = errors = NULL;
-    buffer = msg = newDefaultStateStr = NULL;
+    buffer = newDefaultStateStr = NULL;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
@@ -1160,13 +1145,13 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         /* Symlink missing */
         if (rv == 1) {
             objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, stringNew("The default state symlink is missing!"));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_MISSING_ERR].desc));
             goto out;
         }
         /* Not a symlink */
         else if (rv == 2) {
             objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, stringNew("The default state doesn't look like a symlink!"));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_TYPE_ERR].desc));
             goto out;
         }
         defaultState = getStateByStr(destDefStateSyml);
@@ -1176,24 +1161,17 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (newDefaultState == defaultState) {
         if (STATE_NEW_DEFAULT != NO_STATE) {
             STATE_NEW_DEFAULT = NO_STATE;
-            msg = stringNew("The default state has been restored to '");
-            stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
-            stringAppendStr(&msg, "'.");
-            arrayAdd(*messages, msg);
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_RESTORED].desc,
+                                       STATE_DATA_ITEMS[defaultState].desc));
         }
         else {
-            msg = stringNew("The default state is already set to '");
-            stringAppendStr(&msg, STATE_DATA_ITEMS[defaultState].desc);
-            stringAppendStr(&msg, "'!");
-            arrayAdd(*errors, msg);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_SET_ERR].desc,
+                                     STATE_DATA_ITEMS[defaultState].desc));
         }
     }
     else {
         STATE_NEW_DEFAULT = newDefaultState;
-        msg = stringNew("Please, reboot or power off/halt the system\n"
-                        "without '-f' or '--force' option "
-                        "to apply the change.");
-        arrayAdd(*messages, msg);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN].desc));
     }
 
     out:

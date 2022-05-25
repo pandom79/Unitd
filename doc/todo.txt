@@ -1,4 +1,10 @@
 - Init process development
+    - Small bug in parseProc cmdline. StringContains func could be match a wrong state
+      (multi-user and multi-user-net case)
+
+    - Show the error when we cannot enable unit because the wantedBy property doesn't match
+      (default/cmdline, reboot and poweroff state)
+
     - Unitctl analyze command. We can use "unitctl list" changing the source data.
       Predict a bool argument (isAnalyze or analyze).
 

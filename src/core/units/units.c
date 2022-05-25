@@ -88,14 +88,23 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { UNIT_ENABLED_ERR, "The unit is already enabled!" },
     { UNIT_CONFLICT_FORCE_ERR, "Unable to force the operation!\n"
                                "This unit has a conflict with '%s' unit\n"
-                               "which has some configuration errors." }
+                               "which has some configuration errors." },
+    { DEFAULT_SYML_MISSING_ERR, "The default state symlink is missing!" },
+    { DEFAULT_SYML_TYPE_ERR, "The default state doesn't look like a symlink!" },
+    { DEFAULT_SYML_BAD_DEST_ERR, "The default state symlink points to a bad destination : %s" },
+    { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" }
 };
 
 const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
     { UNIT_START_MSG, "Please, run 'unitctl restart %s' to restart it." },
     { UNIT_FORCE_START_CONFLICT_MSG, "Please, use '--force' or '-f' option to force it." },
     { UNIT_REMOVED_SYML_MSG, "Removed symlink '%s' -> '%s'." },
-    { UNIT_CREATED_SYML_MSG, "Created symlink '%s' -> '%s'." }
+    { UNIT_CREATED_SYML_MSG, "Created symlink '%s' -> '%s'." },
+    { STATE_MSG, "%s state : %s" },
+    { DEFAULT_STATE_SYML_WARN, "Warning :\n"
+                               "Please, reboot or power off/halt the system\n"
+                               "without '-f' or '--force' option to apply the change." },
+    { DEFAULT_STATE_SYML_RESTORED, "The default state has been restored to '%s'." }
 };
 
 /* Return the unit name by unit path or unit name with ".unit" suffix */
