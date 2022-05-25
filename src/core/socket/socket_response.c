@@ -17,10 +17,7 @@ Pid=value               (optional and repeatable)
 PState=value            (optional and repeatable)
 FinalStatus=value       (optional and repeatable)
 Desc=value              (optional and repeatable)
-DateTimeStart=value     (optional and repeatable)
-DateTimeStop=value      (optional and repeatable)
 Duration=value          (optional and repeatable)
-
 */
 
 /* PARSE_SOCK_RESPONSE functionality
@@ -54,6 +51,8 @@ UnitError=value2        (optional and repeatable)
 UnitError=valueN        (optional and repeatable)
 ExitCode=value          (optional and repeatable)
 SignalNum=value         (optional and repeatable)
+DateTimeStart=value     (optional and repeatable)
+DateTimeStop=value      (optional and repeatable)
 [PDataHistory]          (optional and repeatable)
 PidH=value              (optional and repeatable)
 ExitCodeH=value         (optional and repeatable)
@@ -83,17 +82,17 @@ enum PropertyNameEnum  {
     PSTATE = 5,
     FINALSTATUS = 6,
     DESC = 7,
-    DATETIMESTART = 8,
-    DATETIMESTOP = 9,
-    DURATION = 10,
-    PATH = 11,
-    RESTARTABLE = 12,
-    RESTARTNUM = 13,
-    RESTARTMAX = 14,
-    TYPE = 15,
-    UNITERROR = 16,
-    EXITCODE = 17,
-    SIGNALNUM = 18,
+    DURATION = 8,
+    PATH = 9,
+    RESTARTABLE = 10,
+    RESTARTNUM = 11,
+    RESTARTMAX = 12,
+    TYPE = 13,
+    UNITERROR = 14,
+    EXITCODE = 15,
+    SIGNALNUM = 16,
+    DATETIMESTART = 17,
+    DATETIMESTOP = 18,
     PIDH = 19,
     EXITCODEH = 20,
     PSTATEH = 21,
@@ -122,8 +121,6 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { PSTATE, "PState" }, true, false, false, 0, NULL, NULL },
     { UNIT, { FINALSTATUS, "FinalStatus" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DESC, "Desc" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { DATETIMESTART, "DateTimeStart" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { DATETIMESTOP, "DateTimeStop" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DURATION, "Duration" }, true, false, false, 0, NULL, NULL },
     { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTABLE, "Restartable" }, true, false, false, 0, NULL, NULL },
@@ -133,6 +130,8 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { UNITERROR, "UnitError" }, true, false, false, 0, NULL, NULL },
     { UNIT, { EXITCODE, "ExitCode" }, true, false, false, 0, NULL, NULL },
     { UNIT, { SIGNALNUM, "SignalNum" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { DATETIMESTART, "DateTimeStart" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { DATETIMESTOP, "DateTimeStop" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { PIDH, "PidH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { EXITCODEH, "ExitCodeH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { PSTATEH, "PStateH" }, true, false, false, 0, NULL, NULL },
@@ -249,24 +248,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringConcat(&buffer, ASSIGNER);
         stringConcat(&buffer, (unitDesc ? unitDesc : NONE));
         stringConcat(&buffer, TOKEN);
-        /* Date Time Start */
-        dateTimeStart = pData->dateTimeStartStr;
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTART].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        if (dateTimeStart)
-            stringConcat(&buffer, dateTimeStart);
-        else
-            stringConcat(&buffer, NONE);
-        stringConcat(&buffer, TOKEN);
-        /* Date Time Stop */
-        dateTimeStop = pData->dateTimeStopStr;
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTOP].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        if (dateTimeStop)
-            stringConcat(&buffer, dateTimeStop);
-        else
-            stringConcat(&buffer, NONE);
-        stringConcat(&buffer, TOKEN);
         /* Duration */
         duration = pData->duration;
         stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DURATION].propertyName.desc);
@@ -334,6 +315,24 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[SIGNALNUM].propertyName.desc);
             stringConcat(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, *pData->signalNum);
+            stringConcat(&buffer, TOKEN);
+            /* Date Time Start */
+            dateTimeStart = pData->dateTimeStartStr;
+            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTART].propertyName.desc);
+            stringConcat(&buffer, ASSIGNER);
+            if (dateTimeStart)
+                stringConcat(&buffer, dateTimeStart);
+            else
+                stringConcat(&buffer, NONE);
+            stringConcat(&buffer, TOKEN);
+            /* Date Time Stop */
+            dateTimeStop = pData->dateTimeStopStr;
+            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTOP].propertyName.desc);
+            stringConcat(&buffer, ASSIGNER);
+            if (dateTimeStop)
+                stringConcat(&buffer, dateTimeStop);
+            else
+                stringConcat(&buffer, NONE);
             stringConcat(&buffer, TOKEN);
             /* Process Data history */
             pDataHistory = unit->processDataHistory;

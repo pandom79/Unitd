@@ -839,16 +839,7 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
         *finalStatus = *pDataFrom->finalStatus;
     pDataRet->finalStatus = finalStatus;
 
-    //Date start
-    char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStartStr : NULL);
-    if (dateTimeStartFrom)
-        pDataRet->dateTimeStartStr = stringNew(dateTimeStartFrom);
-
-    //Date stop
-    char *dateTimeStopFrom = (pDataFrom ? pDataFrom->dateTimeStopStr : NULL);
-    if (dateTimeStopFrom)
-        pDataRet->dateTimeStopStr = stringNew(dateTimeStopFrom);
-
+    //Duration
     char *durationFrom = (pDataFrom ? pDataFrom->duration : NULL);
     if (durationFrom)
         pDataRet->duration = stringNew(durationFrom);
@@ -872,6 +863,16 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
         else
             *signalNum = *pDataFrom->signalNum;
         pDataRet->signalNum = signalNum;
+
+        //Date start
+        char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStartStr : NULL);
+        if (dateTimeStartFrom)
+            pDataRet->dateTimeStartStr = stringNew(dateTimeStartFrom);
+
+        //Date stop
+        char *dateTimeStopFrom = (pDataFrom ? pDataFrom->dateTimeStopStr : NULL);
+        if (dateTimeStopFrom)
+            pDataRet->dateTimeStopStr = stringNew(dateTimeStopFrom);
 
         //Time start
         Time *timeStartFrom = (pDataFrom ? pDataFrom->timeStart : NULL);
