@@ -15,6 +15,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define WIDTH_PID            3
 #define WIDTH_STATUS         6
 #define WIDTH_DESCRIPTION   11
+#define WIDTH_DURATION       8
 #define MAX_LEN_KEY         13
 
 bool UNITCTL_DEBUG;
@@ -102,15 +103,32 @@ printSignalNum(int signalNum)
 }
 
 static int
-getMaxUnitName(Array *unitsDisplay)
+getMaxLen(Array *unitsDisplay, const char *param)
 {
-    int rv , lenUnits, lenName;
-    rv = lenUnits = lenName = 0;
+    int rv , lenUnits, len;
+    rv = lenUnits = len = 0;
+    Unit *unit = NULL;
+    char *duration, *desc;
+
+    duration = desc = NULL;
 
     lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
     for (int i = 0; i < lenUnits; i++) {
-        if ((lenName = strlen(((Unit *)arrayGet(unitsDisplay, i))->name)) > rv)
-            rv = lenName;
+        unit = arrayGet(unitsDisplay, i);
+        if (strcmp(param, "name") == 0) {
+            if ((len = strlen(unit->name)) > rv)
+                rv = len;
+        }
+        else if (strcmp(param, "duration") == 0) {
+            duration = unit->processData->duration;
+            if (duration && (len = strlen(duration)))
+                rv = len;
+        }
+        else if (strcmp(param, "desc") == 0) {
+            desc = unit->desc;
+            if (desc && (len = strlen(unit->desc)) > rv)
+                rv = len;
+        }
     }
     return rv;
 }
@@ -218,18 +236,22 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 }
 
 int
-getUnitList(SockMessageOut **sockMessageOut)
+getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze)
 {
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection, bufferSize, lenUnits, maxLen, len;
     char *bufferReq, *bufferRes;
+    Array *options = arrayNew(objectRelease);
 
     rv = socketConnection = lenUnits = maxLen = len = -1;
     bufferReq = bufferRes = NULL;
     bufferSize = INITIAL_SIZE;
 
+    if (bootAnalyze)
+        arrayAdd(options, stringNew(OPTIONS_DATA[ANALYZE_OPT].name));
+
     /* Get SockMessageIn struct */
-    if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_COMMAND, NULL, NULL)) != 0)
+    if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_COMMAND, NULL, options)) != 0)
         goto out;
 
     /* Marshalling the request */
@@ -272,7 +294,7 @@ getUnitList(SockMessageOut **sockMessageOut)
 int
 showUnitList(SockMessageOut **sockMessageOut)
 {
-    int rv, lenUnits, maxLen, len, *finalStatus;
+    int rv, lenUnits, maxLenName, maxLenDesc, len, *finalStatus;
     Array *unitsDisplay = NULL;
     Unit *unitDisplay = NULL;
     const char *unitName, *status;
@@ -280,18 +302,21 @@ showUnitList(SockMessageOut **sockMessageOut)
     pid_t *pid;
 
     unitName = status = NULL;
-    rv = lenUnits = maxLen = len = -1;
+    rv = lenUnits = maxLenName = maxLenDesc = len = -1;
 
     /* Filling sockMessageOut */
-    if ((rv = getUnitList(sockMessageOut)) == 0) {
+    if ((rv = getUnitList(sockMessageOut, false)) == 0) {
         unitsDisplay = (*sockMessageOut)->unitsDisplay;
-        maxLen = getMaxUnitName(unitsDisplay);
+        maxLenName = getMaxLen(unitsDisplay, "name");
+        maxLenDesc = getMaxLen(unitsDisplay, "desc");
         lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
-        if (maxLen < WIDTH_UNIT_NAME)
-            maxLen = WIDTH_UNIT_NAME;
+        if (maxLenName < WIDTH_UNIT_NAME)
+            maxLenName = WIDTH_UNIT_NAME;
+        if (maxLenDesc < WIDTH_DESCRIPTION)
+            maxLenDesc = WIDTH_DESCRIPTION;
         /* HEADER */
         printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLen - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
 
         printf("%s%s%s", WHITE_UNDERLINE_COLOR, "ENABLED", DEFAULT_COLOR);
         printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
@@ -303,6 +328,7 @@ showUnitList(SockMessageOut **sockMessageOut)
         printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
 
         printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
         printf("\n");
 
         /* CELLS */
@@ -316,9 +342,9 @@ showUnitList(SockMessageOut **sockMessageOut)
             unitName = unitDisplay->name;
             printf("%s", unitName);
             len = strlen(unitName);
-            if (maxLen < len)
-                maxLen = len;
-            printf("%*s", maxLen - len + PADDING, "");
+            if (maxLenName < len)
+                maxLenName = len;
+            printf("%*s", maxLenName - len + PADDING, "");
 
             /* Enabled */
             enabled = unitDisplay->enabled;
@@ -1125,5 +1151,98 @@ catEditUnit(Command command, const char *arg)
         objectRelease(&unitPath);
     }
 
+    return rv;
+}
+
+int
+showBootAnalyze(SockMessageOut **sockMessageOut)
+{
+    int rv, lenUnits, maxLenName, maxLenDuration, maxLenDesc, len;
+    Array *unitsDisplay, *messages;
+    char *unitName, *duration, *desc;
+    Unit *unitDisplay = NULL;
+
+    rv = lenUnits = maxLenName = maxLenDesc = len = 0;
+    unitName = duration = desc = NULL;
+    unitsDisplay = messages = NULL;
+
+    /* Filling sockMessageOut */
+    if ((rv = getUnitList(sockMessageOut, true)) == 0) {
+        unitsDisplay = (*sockMessageOut)->unitsDisplay;
+        messages = (*sockMessageOut)->messages;
+        maxLenName = getMaxLen(unitsDisplay, "name");
+        maxLenDuration = getMaxLen(unitsDisplay, "duration");
+        maxLenDesc = getMaxLen(unitsDisplay, "desc");
+        lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
+        if (maxLenName < WIDTH_UNIT_NAME)
+            maxLenName = WIDTH_UNIT_NAME;
+        if (maxLenDuration < WIDTH_DURATION)
+            maxLenDuration = WIDTH_DURATION;
+        if (maxLenDesc < WIDTH_DESCRIPTION)
+            maxLenDesc = WIDTH_DESCRIPTION;
+        /* HEADER */
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DURATION", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDuration - WIDTH_DURATION + PADDING, "", DEFAULT_COLOR);
+
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
+
+        printf("\n");
+
+        /* CELLS */
+        for (int i = 0; i < lenUnits; i++) {
+            unitDisplay = arrayGet(unitsDisplay, i);
+
+            //Unit name
+            unitName = unitDisplay->name;
+            printf("%s", unitName);
+            len = strlen(unitName);
+            if (maxLenName < len)
+                maxLenName = len;
+            printf("%*s", maxLenName - len + PADDING, "");
+
+            //Duration
+            duration = unitDisplay->processData->duration;
+            if (duration)
+                printf("%s", duration);
+            else
+                printf("-");
+            len = (duration ? strlen(duration) : 1);
+            if (maxLenDuration < len)
+                maxLenDuration = len;
+            printf("%*s", maxLenDuration - len + PADDING, "");
+
+            /* Description */
+            desc = unitDisplay->desc;
+            if (desc)
+                printf("%s", desc);
+            else
+                printf("-");
+            len = (desc ? strlen(desc) : 1);
+            if (maxLenDesc < len)
+                maxLenDesc = len;
+
+            printf("\n");
+        }
+        printf("\n%d units found\n\n", lenUnits);
+
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "SYSTEM INFO\n", DEFAULT_COLOR);
+        /* Messages */
+        len = (messages ? messages->size : 0);
+        for (int i = 0; i < len; i++) {
+            char *message = arrayGet(messages, i);
+            if (stringStartsWithStr(message, "Boot"))
+                unitdLogInfo(LOG_UNITD_CONSOLE, "     %s", message);
+            else
+                unitdLogInfo(LOG_UNITD_CONSOLE, "%s", message);
+            printf("\n");
+        }
+
+    }
+
+    sockMessageOutRelease(sockMessageOut);
     return rv;
 }

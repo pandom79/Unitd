@@ -10,6 +10,15 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 /* COMMUNICATION PROTOCOL (RESPONSE) ACCORDING THE PARSER FUNCTIONALITY */
 
 /* PARSE_SOCK_RESPONSE_UNITLIST functionality
+Message=value1          (optional and repeatable)
+Message=value2
+.....
+Message=valueN
+Error=value1            (optional and repeatable)
+Error=value2
+......
+Error=valueN
+
 [Unit]                  (optional and repeatable)
 Name=value              (optional and repeatable)
 Enabled=value           (optional and repeatable)
@@ -27,7 +36,6 @@ Message=value1          (optional and repeatable)
 Message=value2
 .....
 Message=valueN
-
 Error=value1            (optional and repeatable)
 Error=value2
 ......
@@ -40,6 +48,7 @@ Pid=value               (optional and repeatable)
 PState=value            (optional and repeatable)
 FinalStatus=value       (optional and repeatable)
 Desc=value              (optional and repeatable)
+Duration=value          (optional and repeatable)
 Path=value              (optional and repeatable)
 Restartable=value       (optional and repeatable)
 RestartNum=value        (optional and repeatable)
@@ -165,38 +174,42 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
 
     assert(sockMessageOut);
 
-    if (funcType == PARSE_SOCK_RESPONSE) {
-        /* Messages */
-        messages = sockMessageOut->messages;
-        len = (messages ? messages->size : 0);
-        if (len > 0)
-            msgKey = SOCKRES_PROPERTIES_ITEMS[MESSAGE].propertyName.desc;
-        for (int i = 0; i < len; i++) {
-            if (i == 0 && !buffer)
-                buffer = stringNew(msgKey);
-            else
-                stringConcat(&buffer, msgKey);
+    /* The following data (messages and errors) are in common between
+    * PARSE_SOCK_RESPONSE_UNITLIST and PARSE_SOCK_RESPONSE
+    */
 
-            stringConcat(&buffer, ASSIGNER);
-            stringConcat(&buffer, arrayGet(messages, i));
-            stringConcat(&buffer, TOKEN);
-        }
-        /* Errors */
-        errors = sockMessageOut->errors;
-        len = (errors ? errors->size : 0);
-        if (len > 0)
-            errKey = SOCKRES_PROPERTIES_ITEMS[ERROR].propertyName.desc;
-        for (int i = 0; i < len; i++) {
-            if (i == 0 && !buffer)
-                buffer = stringNew(errKey);
-            else
-                stringConcat(&buffer, errKey);
+    /* Messages */
+    messages = sockMessageOut->messages;
+    len = (messages ? messages->size : 0);
+    if (len > 0)
+        msgKey = SOCKRES_PROPERTIES_ITEMS[MESSAGE].propertyName.desc;
+    for (int i = 0; i < len; i++) {
+        if (i == 0 && !buffer)
+            buffer = stringNew(msgKey);
+        else
+            stringConcat(&buffer, msgKey);
 
-            stringConcat(&buffer, ASSIGNER);
-            stringConcat(&buffer, arrayGet(errors, i));
-            stringConcat(&buffer, TOKEN);
-        }
+        stringConcat(&buffer, ASSIGNER);
+        stringConcat(&buffer, arrayGet(messages, i));
+        stringConcat(&buffer, TOKEN);
     }
+
+    /* Errors */
+    errors = sockMessageOut->errors;
+    len = (errors ? errors->size : 0);
+    if (len > 0)
+        errKey = SOCKRES_PROPERTIES_ITEMS[ERROR].propertyName.desc;
+    for (int i = 0; i < len; i++) {
+        if (i == 0 && !buffer)
+            buffer = stringNew(errKey);
+        else
+            stringConcat(&buffer, errKey);
+
+        stringConcat(&buffer, ASSIGNER);
+        stringConcat(&buffer, arrayGet(errors, i));
+        stringConcat(&buffer, TOKEN);
+    }
+
     /* Units */
     units = sockMessageOut->unitsDisplay;
     len = (units ? units->size : 0);

@@ -32,6 +32,10 @@ extern State STATE_SHUTDOWN;
 extern char *STATE_CMDLINE_DIR;
 extern bool LISTEN_SOCK_REQUEST;
 extern bool ENABLE_RESTART;
+extern Time *BOOT_START;
+extern Time *BOOT_STOP;
+extern Time *SHUTDOWN_START;
+extern Time *SHUTDOWN_STOP;
 int parseProcCmdLine();
 
 /* UNITCTL commands */
@@ -44,6 +48,7 @@ typedef enum {
     CONFLICTS_OPT = 4,
     STATES_OPT = 5,
     NO_WTMP_OPT = 6,
+    ANALYZE_OPT = 7
 } Option;
 
 typedef struct OptionData {
@@ -206,8 +211,9 @@ typedef enum {
     UNIT_REMOVED_SYML_MSG = 2,
     UNIT_CREATED_SYML_MSG = 3,
     STATE_MSG = 4,
-    DEFAULT_STATE_SYML_WARN = 5,
-    DEFAULT_STATE_SYML_RESTORED = 6
+    DEFAULT_STATE_SYML_WARN_MSG = 5,
+    DEFAULT_STATE_SYML_RESTORED_MSG = 6,
+    TIME_MSG = 7
 } UnitsMessagesEnum;
 typedef struct {
     UnitsMessagesEnum errorEnum;
@@ -317,11 +323,12 @@ void setValueForBuffer(char **, int);
 Array* getScriptParams(const char *, const char *, const char *);
 int sendWallMsg(Command);
 int checkAdministrator(char **);
+void fillUnitsDisplayList(Array **, Array **);
 
 /* Server */
 int listenSocketRequest();
 int socketDispatchRequest(char *, int *);
-int getUnitListServer(int *, SockMessageOut **);
+int getUnitListServer(int *, SockMessageIn *, SockMessageOut **);
 int getUnitStatusServer(int *, SockMessageIn *, SockMessageOut **);
 int stopUnitServer(int *, SockMessageIn *, SockMessageOut **, bool);
 int startUnitServer(int *, SockMessageIn *, SockMessageOut **, bool);
@@ -336,6 +343,7 @@ int showUnitList(SockMessageOut **);
 int showUnitStatus(SockMessageOut **, const char *unitName);
 int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool);
 int catEditUnit(Command, const char *unitName);
+int showBootAnalyze(SockMessageOut **);
 
 /* Request */
 extern int SOCKREQ_PROPERTIES_ITEMS_LEN;

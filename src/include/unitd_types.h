@@ -183,6 +183,7 @@ typedef enum {
     KEXEC_COMMAND = 15,
     CAT_COMMAND = 16,
     EDIT_COMMAND = 17,
+    ANALYZE_COMMAND = 18
 } Command;
 
 /* Socket */

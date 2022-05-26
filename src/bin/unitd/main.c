@@ -25,6 +25,10 @@ bool NO_WTMP = false;
 Array *UNITD_ENV_VARS = NULL;
 bool LISTEN_SOCK_REQUEST = false;
 bool ENABLE_RESTART = false;
+Time *BOOT_START = NULL;
+Time *BOOT_STOP = NULL;
+Time *SHUTDOWN_START = NULL;
+Time *SHUTDOWN_STOP = NULL;
 
 int
 parseProcCmdLine()
@@ -96,6 +100,9 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    /* Boot start */
+    timeSetCurrent(&BOOT_START);
+
     if ((rv = parseProcCmdLine()) == 1) {
         hasError = true;
         goto out;
@@ -148,6 +155,18 @@ int main() {
         /* Release all */
         unitdEnd(&unitdData);
 
+        /* Print Shutdown time */
+        timeSetCurrent(&SHUTDOWN_STOP);
+        char *diff = NULL;
+        stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
+        char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "%s", msg);
+        printf("\n");
+        objectRelease(&diff);
+        objectRelease(&msg);
+        timeRelease(&SHUTDOWN_START);
+        timeRelease(&SHUTDOWN_STOP);
+
         /* The system is going down */
 #ifndef LOCAL_TEST
         sync();
@@ -184,6 +203,7 @@ int main() {
 
     /* Not reached when we reboot/poweroff the system */
     out:
+        timeRelease(&BOOT_START);
         objectRelease(&STATE_CMDLINE_DIR);
         if (hasError) {
             /* Show emergency shell */

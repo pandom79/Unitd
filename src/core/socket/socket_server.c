@@ -8,6 +8,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
+/* This variable represents the stop time */
+Time *BOOT_STOP;
+
 /* This variable is used by signal handler to invoke unitdShutdown command
  * if Ctrl+alt+del is pressed after that we are listening
 */
@@ -123,6 +126,10 @@ listenSocketRequest()
     }    
     /* Adding the master socket to monitored set of fd */
     addToMonitoredFdSet(socketConnection);
+
+    /* Stop boot */
+    timeSetCurrent(&BOOT_STOP);
+
     /* Main loop */
     while (!IS_SHUTDOWN_COMMAND) {
         /* Copy the entire monitored set of fd to readFds */
@@ -207,7 +214,7 @@ socketDispatchRequest(char *buffer, int *socketFd)
                 NO_WTMP = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[NO_WTMP_OPT].name);
                 goto out;
             case LIST_COMMAND:
-                getUnitListServer(socketFd, &sockMessageOut);
+                getUnitListServer(socketFd, sockMessageIn, &sockMessageOut);
                 break;
             case STATUS_COMMAND:
                 getUnitStatusServer(socketFd, sockMessageIn, &sockMessageOut);
@@ -248,28 +255,46 @@ socketDispatchRequest(char *buffer, int *socketFd)
 }
 
 int
-getUnitListServer(int *socketFd, SockMessageOut **sockMessageOut)
+getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     char *buffer = NULL;
-    Array *units, *unitsDisplay;
+    Array *unitsDisplay = NULL;
+    Array **messages = &(*sockMessageOut)->messages;
     int rv, lenUnits;
+    bool bootAnalyze = false;
 
-    units = unitsDisplay = NULL;
     rv = lenUnits = 0;
 
     assert(*socketFd != -1);
 
-    /* Building the unitsDisplay array */
-    units = UNITD_DATA->units;
-    lenUnits = (units ? units->size : 0);
-    if (lenUnits > 0)
-        unitsDisplay = arrayNew(unitRelease);
-    for (int i = 0; i < lenUnits; i++)
-        arrayAdd(unitsDisplay, unitNew(arrayGet(units, i), PARSE_SOCK_RESPONSE_UNITLIST));
-
-    /* Loading all the units */
-    loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
-              false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+    //Get bootAnalyze
+    bootAnalyze = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[ANALYZE_OPT].name);
+    if (!bootAnalyze) {
+        fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay);
+        /* Loading all the units */
+        loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
+                  false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+    }
+    else {
+        fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay);
+        fillUnitsDisplayList(&UNITD_DATA->initUnits, &unitsDisplay);
+        /* Adding "boot and system time like massages" */
+        char *diffBooTime, *diffExecTime;
+        diffBooTime = diffExecTime = NULL;
+        Time *current = timeNew(NULL);
+        /* Computing the diff time */
+        stringSetDiffTime(&diffBooTime, BOOT_STOP, BOOT_START);
+        stringSetDiffTime(&diffExecTime, current, BOOT_START);
+        /* Adding the messages */
+        if (!(*messages))
+            *messages = arrayNew(objectRelease);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Boot", diffBooTime));
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Execution", diffExecTime));
+        /* Release resources */
+        objectRelease(&diffBooTime);
+        objectRelease(&diffExecTime);
+        timeRelease(&current);
+    }
     /* Sorting the array by name */
     qsort(unitsDisplay->arr, unitsDisplay->size, sizeof(Unit *), sortUnitsByName);
     /* Adding the sorted array */
@@ -647,10 +672,8 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DISABLED_ERR].desc, unitName));
             goto out;
         }
-        else {
-            unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
-            arrayAdd(*unitsDisplay, unitDisplay);
-        }
+        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
+        arrayAdd(*unitsDisplay, unitDisplay);
     }
     else
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
@@ -1099,7 +1122,7 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (STATE_NEW_DEFAULT != NO_STATE) {
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
                                    "New default", STATE_DATA_ITEMS[STATE_NEW_DEFAULT].desc));
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN].desc));
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN_MSG].desc));
     }
 
     out:
@@ -1163,7 +1186,7 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (newDefaultState == defaultState) {
         if (STATE_NEW_DEFAULT != NO_STATE) {
             STATE_NEW_DEFAULT = NO_STATE;
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_RESTORED].desc,
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_RESTORED_MSG].desc,
                                        STATE_DATA_ITEMS[defaultState].desc));
         }
         else {
@@ -1173,7 +1196,7 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     }
     else {
         STATE_NEW_DEFAULT = newDefaultState;
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN].desc));
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN_MSG].desc));
     }
 
     out:

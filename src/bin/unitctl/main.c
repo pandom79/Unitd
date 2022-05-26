@@ -14,7 +14,7 @@ static void __attribute__((noreturn))
 usage(bool fail)
 {
     fprintf(stdout,
-        "Usage: unitctl [COMMAND] [OPTION] ... \n\n"
+        "Usage: unitctl [COMMAND] [OPTIONS] ... \n\n"
 
         WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
         "enable             Enable the unit\n"
@@ -31,12 +31,13 @@ usage(bool fail)
         "cat                Show the unit content\n"
         "edit               Edit the unit content\n"
         "list               List all the units\n"
+        "analyze            Analyze the boot process"
         "reboot             Shutdown and reboot the system\n"
         "poweroff           Shutdown and power off the system\n"
         "halt               Shutdown and halt the system\n"
         "kexec              Shutdown and reboot the system with kexec\n\n"
 
-        WHITE_UNDERLINE_COLOR"OPTION\n"DEFAULT_COLOR
+        WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
         "-r, --run          Run the operation\n"
         "-f, --force        Force the operation\n"
         "-d, --debug        Enable the debug\n"
@@ -190,12 +191,16 @@ int main(int argc, char **argv) {
             rv = showUnit(command, &sockMessageOut, arg, force, false, run);
             break;
         case CAT_COMMAND: case EDIT_COMMAND:
-            if (argc > 3 || argc < 3)
+            if (argc != 3)
                 usage(true);
             else
                 arg = argv[argc -1];
             rv = catEditUnit(command, arg);
             break;
+        case ANALYZE_COMMAND:
+            if (argc > 3 || (argc == 3 && !UNITCTL_DEBUG))
+                usage(true);
+            rv = showBootAnalyze(&sockMessageOut);
         }
 
 

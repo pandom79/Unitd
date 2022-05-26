@@ -247,3 +247,13 @@ checkAdministrator(char **argv)
 
     return rv;
 }
+
+void
+fillUnitsDisplayList(Array **units, Array **unitsDisplay)
+{
+    int lenUnits = (*units ? (*units)->size : 0);
+    if (lenUnits > 0 && !(*unitsDisplay))
+        *unitsDisplay = arrayNew(unitRelease);
+    for (int i = 0; i < lenUnits; i++)
+        arrayAdd(*unitsDisplay, unitNew(arrayGet(*units, i), PARSE_SOCK_RESPONSE_UNITLIST));
+}

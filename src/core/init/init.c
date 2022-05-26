@@ -17,8 +17,9 @@ OptionData OPTIONS_DATA[] = {
     { CONFLICTS_OPT, "conflicts"},
     { STATES_OPT, "states"},
     { NO_WTMP_OPT, "no-wtmp"},
+    { ANALYZE_OPT, "analyze"},
 };
-int OPTIONS_LEN = 7;
+int OPTIONS_LEN = 8;
 /* Commands */
 CommandData COMMANDS_DATA[] = {
     { REBOOT_COMMAND, "reboot" },
@@ -38,15 +39,18 @@ CommandData COMMANDS_DATA[] = {
     { SET_DEFAULT_STATE_COMMAND, "set-default" },
     { KEXEC_COMMAND, "kexec" },
     { CAT_COMMAND, "cat" },
-    { EDIT_COMMAND, "edit" }
+    { EDIT_COMMAND, "edit" },
+    { ANALYZE_COMMAND, "analyze" },
 };
-int COMMANDS_LEN = 18;
+int COMMANDS_LEN = 19;
 
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;
 State STATE_CMDLINE;
 State STATE_SHUTDOWN;
 char *STATE_CMDLINE_DIR;
+Time *BOOT_START;
+Time *SHUTDOWN_START;
 bool NO_WTMP;
 
 static void
@@ -185,10 +189,13 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 
     /* Create the boot units array */
     addBootUnit(bootUnits, units);
+
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
     shutdown:
+        /* Shutdown start */
+        timeSetCurrent(&SHUTDOWN_START);
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
         assert(!UNITD_LOG_FILE);
@@ -261,6 +268,8 @@ unitdEnd(UnitdData **unitdData)
 {
     arrayRelease(&UNITD_ENV_VARS);
     objectRelease(&STATE_CMDLINE_DIR);
+    timeRelease(&BOOT_START);
+    timeRelease(&BOOT_STOP);
     if (*unitdData) {
         arrayRelease(&(*unitdData)->bootUnits);
         arrayRelease(&(*unitdData)->initUnits);
