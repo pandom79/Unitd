@@ -501,7 +501,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "PROCESS DATA", DEFAULT_COLOR);
             /* Process Type */
             printf("%*s %s\n", MAX_LEN_KEY, "Type :", PTYPE_DATA_ITEMS[unit->type].desc);
-            if (pState != DIED) {
+            if (pState != DEAD) {
                 /* Pid */
                 pid = pData->pid;
                 if (*pid != -1)
@@ -515,7 +515,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             /* Date time start */
             if (strcmp(dateTimeStart, NONE) != 0)
                 printf("%*s %s\n", MAX_LEN_KEY, "Started at :", dateTimeStart);
-            if (pState != DIED) {
+            if (pState != DEAD) {
                 /* Date time stop */
                 if (dateTimeStop)
                     printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", dateTimeStop);
@@ -1207,7 +1207,7 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
             //Duration
             duration = unitDisplay->processData->duration;
             if (duration)
-                printf("%s", duration);
+                unitdLogSuccess(LOG_UNITD_CONSOLE, "%s", duration);
             else
                 printf("-");
             len = (duration ? strlen(duration) : 1);

@@ -54,7 +54,7 @@ Time *SHUTDOWN_START;
 bool NO_WTMP;
 
 static void
-addBootUnit(Array **bootUnits, Array **units) {
+addBootUnits(Array **bootUnits, Array **units) {
     if (!(*bootUnits))
         *bootUnits = arrayNew(unitRelease);
     int len = (*units ? (*units)->size : 0);
@@ -188,7 +188,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         goto shutdown;
 
     /* Create the boot units array */
-    addBootUnit(bootUnits, units);
+    addBootUnits(bootUnits, units);
 
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();

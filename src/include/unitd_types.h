@@ -33,7 +33,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 /* Process */
 typedef enum {
-    DIED = 0,
+    DEAD = 0,
     EXITED = 1,
     KILLED = 2,
     RUNNING = 3,
@@ -47,7 +47,7 @@ typedef struct PStateData {
 } PStateData;
 
 static const struct PStateData PSTATE_DATA_ITEMS[] = {
-    { DIED, "Died" },
+    { DEAD, "Dead" },
     { EXITED, "Exited" },
     { KILLED, "Killed" },
     { RUNNING, "Running" },

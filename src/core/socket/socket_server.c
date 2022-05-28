@@ -278,11 +278,11 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     else {
         fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay);
         fillUnitsDisplayList(&UNITD_DATA->initUnits, &unitsDisplay);
-        /* Adding "boot and system time like massages" */
+        /* Adding "boot and system execution time like messages" */
         char *diffBooTime, *diffExecTime;
         diffBooTime = diffExecTime = NULL;
         Time *current = timeNew(NULL);
-        /* Computing the diff time */
+        /* Computing the duration */
         stringSetDiffTime(&diffBooTime, BOOT_STOP, BOOT_START);
         stringSetDiffTime(&diffExecTime, current, BOOT_START);
         /* Adding the messages */

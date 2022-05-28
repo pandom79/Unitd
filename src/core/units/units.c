@@ -835,7 +835,7 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
     pStateData = calloc(1, sizeof(PStateData));
     assert(pStateData);
     if (!pDataFrom)
-        *pStateData = PSTATE_DATA_ITEMS[DIED];
+        *pStateData = PSTATE_DATA_ITEMS[DEAD];
     else
         *pStateData = *pDataFrom->pStateData;
     pDataRet->pStateData = pStateData;

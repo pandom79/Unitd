@@ -168,7 +168,7 @@ startProcess(void *arg)
                                                 unitNameDep, unitName));
                 /* If the dependency is failed then the unit state is died */
                 *finalStatus = FINAL_STATUS_FAILURE;
-                *pData->pStateData = PSTATE_DATA_ITEMS[DIED];
+                *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
 
                 if (UNITD_DEBUG)
                     unitdLogInfo(LOG_UNITD_BOOT, "The dependency '%s' for the '%s' unit went in ABEND!\n",
@@ -395,7 +395,7 @@ stopProcess(void *arg)
 
     /* Evaluating the final status */
     if (statusThread == -1 && *pData->exitCode == -1 && *pData->pid != -1 &&
-        pData->pStateData->pState == DIED)
+        pData->pStateData->pState == DEAD)
         *finalStatus = FINAL_STATUS_NOT_READY;
     else
         *finalStatus = FINAL_STATUS_FAILURE;

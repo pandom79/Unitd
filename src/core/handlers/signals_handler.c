@@ -31,7 +31,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
         if (signo == SIGINT || signo == SIGTERM) {
             /* Set default shutdown operation. */
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
-            /* If we already are listening then we can invoke unitdShutdown command
+            /* If we already are listening then we can invoke unitdShutdown function
              * simulating the "unitctl" command without force
             */
             if (LISTEN_SOCK_REQUEST)

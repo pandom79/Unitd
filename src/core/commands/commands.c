@@ -273,7 +273,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
 
     /* Set the values */
     *pData->exitCode = -1;
-    *pData->pStateData = PSTATE_DATA_ITEMS[DIED];
+    *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
     *pData->signalNum = SIGKILL;
     timeSetCurrent(&pData->timeStop);
     stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
