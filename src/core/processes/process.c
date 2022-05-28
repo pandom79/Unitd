@@ -166,7 +166,7 @@ startProcess(void *arg)
                 /* Set the unsatisfied dependency error in the current unit */
                 arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
                                                 unitNameDep, unitName));
-                /* If the dependency is failed then the unit state is died */
+                /* If the dependency is failed then the unit state is dead */
                 *finalStatus = FINAL_STATUS_FAILURE;
                 *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
 

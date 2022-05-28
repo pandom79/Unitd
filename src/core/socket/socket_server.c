@@ -426,7 +426,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         else {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DIED_ERR].desc));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DEAD_ERR].desc));
             rv = 1;
         }
     }
@@ -515,7 +515,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
     }
     else {
-        /* We only start the died unit */
+        /* We only start the dead unit */
         unit = unitNew(NULL, PARSE_UNIT);
         unit->name = stringNew(unitName);
         unitPath = stringNew(UNITS_PATH);
