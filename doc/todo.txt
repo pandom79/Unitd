@@ -1,12 +1,33 @@
 - Init process development
-    - Unitctl analyze command. We can use "unitctl list" changing the source data.
-      Predict a bool argument (isAnalyze or analyze).
+    - Predict a notifier when the unit content is changed. (inotify)
+      We can add a "watch" on the UNITS_PATH which normally is "/usr/lib64/unitd/units".
+      Just an event occurred (MODIFY), we only set isContentChanged = true into the unit.
+      We don't think that we have to lock the unit mutex.
+      Maybe more persons use the machine at the same time !!!!! :)
+      A simple variable is enough. (see ENABLE_RESTART)
 
-    - Predict a notifier when the unit content is changed ???
-      If the unit is into memory (state != Died) and the unit content is changed then we see wrong data.
-      Affected functions are (list(requires, conflicts, states), and enable).
-      Start, stop and disable are not affected by that.
-      At least, we provide a message which say us to stop the unit and re-execute the operation.
+    - Stop unit:
+        We don't release the unit if its content is not changed.
+        We would like know when it was stopped (Dead) otherwise we lose these data (timestamp stop and duration).
+
+    - Start unit:
+        Now, if the unit is not in memory then create, parse and put it into memory,
+        otherwise we have to check its state.
+        Dead : release, create, parse and put into memory.
+        != Dead : show the unit start error (already started).
+        Only check if the unit is into memory is no longer enough!!!
+
+    - List (requires, conflicts, states) and Enable unit:
+      If the unit content is changed then we have to force the user to stop the unit.
+      In this case, stop unit func will fully release the unit.
+      In this way, these functions will read the data on the disk which is that we expect.
+
+    - Disable unit:
+      Now, we don't consider "wantedBy" property for this function.
+      It is useful for enable and start the unit.
+      This function will have to check if a symlink exists for the default/cmdline, reboot and poweroff state,
+      regardeless if the unit is into memory or not and if its content is changed or not.
+      We can use isEnabledUnit func passing the state to satisfy "Removed symlink" message.
 
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 
