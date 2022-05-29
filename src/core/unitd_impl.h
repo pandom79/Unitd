@@ -265,7 +265,6 @@ typedef struct {
     pthread_t thread;
     Unit *unit;
     Array *units;
-    bool showResult;
 } UnitThreadData;
 
 int startProcesses(Array **, Unit *);
