@@ -335,11 +335,13 @@ getDaemonUnits(Array **units)
     Array *daemonUnits = arrayNew(NULL);
     int lenUnits = 0;
     Unit *unit = NULL;
+    ProcessData *pData = NULL;
 
     lenUnits = (*units ? (*units)->size : 0);
     for (int i = 0; i < lenUnits; i++) {
         unit = arrayGet(*units, i);
-        if (unit->type == DAEMON && *unit->processData->finalStatus == FINAL_STATUS_SUCCESS)
+        pData = unit->processData;
+        if (unit->type == DAEMON && (pData->pStateData->pState == RUNNING || pData->pStateData->pState == STOPPED))
             arrayAdd(daemonUnits, unit);
     }
 

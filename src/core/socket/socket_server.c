@@ -376,6 +376,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     Array **units, **unitsDisplay, **errors;
     char *buffer, *unitName;
     Unit *unit = NULL;
+    ProcessData *pData = NULL;
 
     buffer = unitName = NULL;
 
@@ -406,7 +407,8 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         if (unit->pipe)
             closePipes(NULL, unit);
         /* Stop the process */
-        if (unit->type == DAEMON && unit->processData->pStateData->pState == RUNNING) {
+        pData = unit->processData;
+        if (unit->type == DAEMON && (pData->pStateData->pState == RUNNING || pData->pStateData->pState == STOPPED)) {
             /* We don't show the result on the console and don't catch it by signal handler */
             unit->showResult = false;
             unit->isStopping = true;
