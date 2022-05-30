@@ -14,25 +14,17 @@ waitForPid(int pid, int *status, bool noHang)
     int res = -1;
 
     do {
-printf("Pid = %d\n", pid);
-printf("noHang = %d\n", noHang);
         res = waitpid(pid, status, (!noHang ? 0 : WNOHANG));
-printf("Res = %d\n", res);
-        if (res > 0 && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
-printf("Res = %d, WIFEXITED(*status) = %d, WIFSIGNALED(*status) = %d\n",
-                   res, WIFEXITED(*status), WIFSIGNALED(*status));
+        if (res > 0 && (WIFEXITED(*status) || WIFSIGNALED(*status)))
             break;
-        }
         else if (res == -1 && errno != EINTR) {
             syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for the child!");
             break;
         }
     }
     while (res == -1 && errno == EINTR);
-printf("Returned res = %d\n", res);
     return res;
 }
-
 
 int
 execScript(const char *unitdDataDir, const char *relScriptName, char **argv, char **envVar)
