@@ -161,7 +161,8 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                waitpid(child, &status, 0);
+                waitpid(-1, &status, 0);
+
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
                 *pData->signalNum = SIGKILL;
@@ -265,9 +266,10 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             kill(pid, SIGKILL);
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
-             * In the "stop" case it looks like useless but we do that for cleaning up
             */
             waitpid(pid, &status, 0);
+            /* Some cases require also to wait for evenual childs of pid. */
+            waitpid(-1, &status, 0);
         }
     }
 
