@@ -1,3 +1,6 @@
+- Bugs
+    - For some reasons, I get some "defunct" process when i stop some processes in VM....Boh !!!!
+
 - Init process development
     - Predict a notifier when the unit content is changed. (inotify)
       We can add a "watch" on the UNITS_PATH which normally is "/usr/lib64/unitd/units".
