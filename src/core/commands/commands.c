@@ -9,14 +9,30 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitd_impl.h"
 
 int
-waitForPid(int pid, int *status)
+waitForPid(int pid, int *status, bool noHang)
 {
-    int res;
-    do
-        res = waitpid(pid, status, 0);
-    while ((res == -1) && (errno == EINTR));
+    int res = -1;
+
+    do {
+printf("Pid = %d\n", pid);
+printf("noHang = %d\n", noHang);
+        res = waitpid(pid, status, (!noHang ? 0 : WNOHANG));
+printf("Res = %d\n", res);
+        if (res > 0 && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
+printf("Res = %d, WIFEXITED(*status) = %d, WIFSIGNALED(*status) = %d\n",
+                   res, WIFEXITED(*status), WIFSIGNALED(*status));
+            break;
+        }
+        else if (res == -1 && errno != EINTR) {
+            syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for the child!");
+            break;
+        }
+    }
+    while (res == -1 && errno == EINTR);
+printf("Returned res = %d\n", res);
     return res;
 }
+
 
 int
 execScript(const char *unitdDataDir, const char *relScriptName, char **argv, char **envVar)
@@ -171,12 +187,8 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                while (waitForPid(child, &status) == -1) {
-                    if (errno == EINTR) continue;
-                    syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for child!");
-                    break;
-                }
-                waitpid(-1, &status, WNOHANG);
+                waitForPid(child, &status, false);
+                waitForPid(-1, &status, true);
 
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
@@ -282,12 +294,8 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
             */
-            while (waitForPid(pid, &status) == -1) {
-                if (errno == EINTR) continue;
-                syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for child!");
-                break;
-            }
-            waitpid(-1, &status, WNOHANG);
+            waitForPid(pid, &status, false);
+            waitForPid(-1, &status, true);
         }
     }
 
