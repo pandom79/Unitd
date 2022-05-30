@@ -54,8 +54,10 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
             exitCode = pData->exitCode;
             unitPipe = unit->pipe;
 
-            if (infoCode == CLD_EXITED || infoCode == CLD_KILLED)
-                waitpid(-1, &status, 0);
+            if (infoCode == CLD_EXITED || infoCode == CLD_KILLED) {
+                waitForPid(infoPid, &status);
+                waitpid(-1, &status, WNOHANG);
+            }
 
             switch (infoCode) {
                 case CLD_EXITED:

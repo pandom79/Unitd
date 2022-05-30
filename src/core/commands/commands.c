@@ -9,6 +9,16 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitd_impl.h"
 
 int
+waitForPid(int pid, int *status)
+{
+    int res;
+    do
+        res = waitpid(pid, status, 0);
+    while ((res == -1) && (errno == EINTR));
+    return res;
+}
+
+int
 execScript(const char *unitdDataDir, const char *relScriptName, char **argv, char **envVar)
 {
     pid_t child;
@@ -161,7 +171,8 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                waitpid(-1, &status, 0);
+                waitForPid(child, &status);
+                waitpid(-1, &status, WNOHANG);
 
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
@@ -267,9 +278,8 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
             */
-            waitpid(pid, &status, 0);
-            /* Some cases require also to wait for evenual childs of pid. */
-            waitpid(-1, &status, 0);
+            waitForPid(pid, &status);
+            waitpid(-1, &status, WNOHANG);
         }
     }
 
