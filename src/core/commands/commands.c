@@ -171,7 +171,11 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                waitForPid(child, &status);
+                while (waitForPid(child, &status) == -1) {
+                    if (errno == EINTR) continue;
+                    syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for child!");
+                    break;
+                }
                 waitpid(-1, &status, WNOHANG);
 
                 *pData->exitCode = -1;
@@ -278,7 +282,11 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
             */
-            waitForPid(pid, &status);
+            while (waitForPid(pid, &status) == -1) {
+                if (errno == EINTR) continue;
+                syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for child!");
+                break;
+            }
             waitpid(-1, &status, WNOHANG);
         }
     }

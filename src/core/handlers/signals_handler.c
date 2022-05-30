@@ -55,7 +55,11 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
             unitPipe = unit->pipe;
 
             if (infoCode == CLD_EXITED || infoCode == CLD_KILLED) {
-                waitForPid(infoPid, &status);
+                while (waitForPid(infoPid, &status) == -1) {
+                    if (errno == EINTR) continue;
+                    syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for child!");
+                    break;
+                }
                 waitpid(-1, &status, WNOHANG);
             }
 
