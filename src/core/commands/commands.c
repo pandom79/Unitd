@@ -271,8 +271,10 @@ stopDaemon(const char *command, char **argv, Unit **unit)
         while (millisec <= TIMEOUT_STOP_MS) {
             res = waitpid(pid, &status, WNOHANG);
             if (res > 0) {
-                if (WIFEXITED(status) || WIFSIGNALED(status))
+                if (WIFEXITED(status) || WIFSIGNALED(status)) {
+                    waitForPid(-1, &status, true);
                     break;
+                }
             }
             else if (res == 0) {
                 msleep(TIMEOUT_INC_MS);
