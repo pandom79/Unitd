@@ -55,8 +55,6 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
             unitPipe = unit->pipe;
 
             if (infoCode == CLD_EXITED || infoCode == CLD_KILLED) {
-//                waitForPid(infoPid, &status, false);
-//                waitForPid(-1, &status, true);
                 waitpid(infoPid, &status, 0);
                 /* Reap all pending child processes */
                 reapPendingChild();

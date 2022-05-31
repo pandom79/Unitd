@@ -256,7 +256,6 @@ int execProcess(const char *, char **, Unit **);
 char** cmdlineSplit(const char *);
 void cmdlineRelease(char **);
 int stopDaemon(const char *, char **, Unit **);
-int waitForPid(int, int *, bool);
 void reapPendingChild();
 /*********************************************************************************/
 

@@ -14,26 +14,7 @@ reapPendingChild()
     pid_t p;
     do {
         p = waitpid(-1, NULL, WNOHANG);
-printf("p = %d\n", p);
     } while (p != (pid_t)0 && p != (pid_t)-1);
-}
-
-int
-waitForPid(int pid, int *status, bool noHang)
-{
-    int res = -1;
-
-    do {
-        res = waitpid(pid, status, (!noHang ? 0 : WNOHANG));
-        if (res > 0 && (WIFEXITED(*status) || WIFSIGNALED(*status)))
-            break;
-        else if (res == -1 && errno != EINTR) {
-            syslog(LOG_DAEMON | LOG_ERR, "Unable to wait for the child!");
-            break;
-        }
-    }
-    while (res == -1 && errno == EINTR);
-    return res;
 }
 
 int
@@ -189,8 +170,6 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-//                waitForPid(child, &status, false);
-//                waitForPid(-1, &status, true);
                 waitpid(child, &status, 0);
                 /* Reap all pending child processes */
                 reapPendingChild();
@@ -285,7 +264,6 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             res = waitpid(pid, &status, WNOHANG);
             if (res > 0) {
                 if (WIFEXITED(status) || WIFSIGNALED(status)) {
-//                    waitForPid(-1, &status, true);
                     /* Reap all pending child processes */
                     reapPendingChild();
                     break;
@@ -307,8 +285,6 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             waitpid(pid, &status, 0);
             /* Reap all pending child processes */
             reapPendingChild();
-//            waitForPid(pid, &status, false);
-//            waitForPid(-1, &status, true);
         }
     }
 
