@@ -17,6 +17,8 @@ reapPendingChild()
         if (p > 0 && UNITD_DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "The pid %d has been reaped!\n", p);
     } while (p != (pid_t)0 && p != (pid_t)-1);
+    if (UNITD_DEBUG)
+        syslog(LOG_DAEMON | LOG_DEBUG, "reapPendingChild terminated! Res = %d\n", p);
 }
 
 int
