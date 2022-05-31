@@ -29,6 +29,7 @@ Time *BOOT_START = NULL;
 Time *BOOT_STOP = NULL;
 Time *SHUTDOWN_START = NULL;
 Time *SHUTDOWN_STOP = NULL;
+Cleaner *CLEANER = NULL;
 
 int
 parseProcCmdLine()

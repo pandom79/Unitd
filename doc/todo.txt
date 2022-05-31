@@ -1,6 +1,4 @@
 - Init process development
-    - Review waitForPid
-
     - Predict a notifier when the unit content is changed. (inotify)
       We can add a "watch" on the UNITS_PATH which normally is "/usr/lib64/unitd/units".
       Just an event occurred (MODIFY), we only set isContentChanged = true into the unit.

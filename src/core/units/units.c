@@ -934,7 +934,7 @@ pipeNew()
     assert(mutex);
     pipe->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/units/units.c", "pipeCreate", rv, strerror(rv),
+        unitdLogError(LOG_UNITD_BOOT, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);

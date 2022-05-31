@@ -14,6 +14,8 @@ reapPendingChild()
     pid_t p;
     do {
         p = waitpid(-1, NULL, WNOHANG);
+        if (p > 0 && UNITD_DEBUG)
+            syslog(LOG_DAEMON | LOG_DEBUG, "The pid %d has been reaped!\n", p);
     } while (p != (pid_t)0 && p != (pid_t)-1);
 }
 

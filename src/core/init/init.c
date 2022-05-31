@@ -189,13 +189,16 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 
     /* Create the boot units array */
     addBootUnits(bootUnits, units);
-
+    /* Start the cleaner */
+    startCleaner();
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
     shutdown:
         /* Shutdown start */
         timeSetCurrent(&SHUTDOWN_START);
+        /* Stop cleaner */
+        stopCleaner();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
         assert(!UNITD_LOG_FILE);

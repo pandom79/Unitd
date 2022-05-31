@@ -43,7 +43,7 @@ libunitd = library('unitd',
                    'src/core/socket/socket_request.c', 'src/core/socket/socket_response.c',
                    'src/core/parser/parser.c', 'src/core/units/units.c',
                    'src/core/commands/commands.c', 'src/core/processes/process.c',
-                   'src/core/handlers/signals_handler.c',
+                   'src/core/handlers/signals.c', 'src/core/handlers/cleaner.c',
                    dependencies: deps,
                    version: '1.0.0',
                    soversion: '0', install: true

@@ -547,7 +547,7 @@ listenPipeThread(void *arg)
                           unitName);
             goto out;
         }
-        if (input == PIPE_THREAD_EXIT)
+        if (input == THREAD_EXIT)
             goto out;
 
         /* The restart is blocked until all threads are terminated. See init.c */
@@ -588,7 +588,7 @@ listenPipeThread(void *arg)
         /* Unlock mutex pipe */
         if ((rv = pthread_mutex_unlock(unitPipe->mutex)) != 0) {
             unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "listenPipeThread",
-                          rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
+                          rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
                           unitName);
         }
         objectRelease(&unitThreadData);
@@ -792,7 +792,7 @@ closePipe(void *arg)
     unitPipe = unit->pipe;
     mutex = unitPipe->mutex;
 
-    output = PIPE_THREAD_EXIT;
+    output = THREAD_EXIT;
     if ((rv = write(unitPipe->fds[1], &output, sizeof(int))) == -1) {
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
                       errno, strerror(errno), "Unable to write into pipe for the %s unit", unitName);

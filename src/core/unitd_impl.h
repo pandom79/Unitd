@@ -18,6 +18,11 @@
 
 #define PROC_CMDLINE_UNITD_DEBUG    "unitd_debug=true"
 
+typedef struct {
+    int fds[2];
+    pthread_mutex_t *mutex;
+} Cleaner;
+
 extern pid_t UNITD_PID;
 extern UnitdData *UNITD_DATA;
 extern bool UNITD_DEBUG;
@@ -36,6 +41,7 @@ extern Time *BOOT_START;
 extern Time *BOOT_STOP;
 extern Time *SHUTDOWN_START;
 extern Time *SHUTDOWN_STOP;
+extern Cleaner *CLEANER;
 int parseProcCmdLine();
 
 /* UNITCTL commands */
@@ -240,6 +246,8 @@ Unit* getUnitByPid(Array *, pid_t pid);
 PType getPTypeByPTypeStr(const char *);
 Pipe* pipeNew();
 void pipeRelease(Pipe **);
+Cleaner* cleanerNew();
+void cleanerRelease(Cleaner **);
 bool hasUnitError(const char *);
 /*********************************************************************************/
 
@@ -261,7 +269,7 @@ void reapPendingChild();
 
 /* PROCESSES */
 #define SHOW_MAX_RESULTS        10
-#define PIPE_THREAD_EXIT        -1
+#define THREAD_EXIT             -1
 typedef struct {
     pthread_t thread;
     Unit *unit;
@@ -290,7 +298,12 @@ void unitdEnd(UnitdData **);
 /*********************************************************************************/
 
 /* HANDLERS */
+#define CLEANER_TIMEOUT         10
 int signalsHandler(int, siginfo_t *, void *);
+void startCleaner();
+void* startCleanerThread(void *);
+void stopCleaner();
+void* stopCleanerThread(void *);
 /*********************************************************************************/
 
 /* SOCKET */
