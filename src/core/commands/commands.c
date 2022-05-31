@@ -8,6 +8,16 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
+void
+reapPendingChild()
+{
+    pid_t p;
+    do {
+        p = waitpid(-1, NULL, WNOHANG);
+printf("p = %d\n", p);
+    } while (p != (pid_t)0 && p != (pid_t)-1);
+}
+
 int
 waitForPid(int pid, int *status, bool noHang)
 {
@@ -179,8 +189,11 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                waitForPid(child, &status, false);
-                waitForPid(-1, &status, true);
+//                waitForPid(child, &status, false);
+//                waitForPid(-1, &status, true);
+                waitpid(child, &status, 0);
+                /* Reap all pending child processes */
+                reapPendingChild();
 
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
@@ -272,7 +285,9 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             res = waitpid(pid, &status, WNOHANG);
             if (res > 0) {
                 if (WIFEXITED(status) || WIFSIGNALED(status)) {
-                    waitForPid(-1, &status, true);
+//                    waitForPid(-1, &status, true);
+                    /* Reap all pending child processes */
+                    reapPendingChild();
                     break;
                 }
             }
@@ -283,13 +298,17 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             else break;
         }
 
+        /* If it' not exited yet, kill it! */
         if (res == 0) {
             kill(pid, SIGKILL);
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
             */
-            waitForPid(pid, &status, false);
-            waitForPid(-1, &status, true);
+            waitpid(pid, &status, 0);
+            /* Reap all pending child processes */
+            reapPendingChild();
+//            waitForPid(pid, &status, false);
+//            waitForPid(-1, &status, true);
         }
     }
 
