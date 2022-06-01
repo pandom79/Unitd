@@ -54,7 +54,7 @@ cleanerRelease(Cleaner **cleaner)
         /* Close fds */
         close(cleanerTemp->fds[0]);
         close(cleanerTemp->fds[1]);
-        /* Release pipe */
+        /* Release cleaner */
         objectRelease(cleaner);
     }
 }
@@ -94,7 +94,7 @@ runCleanerThread()
 
         if (select(fd + 1, &fds, NULL, NULL, &tv) == -1) {
             unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
-                          strerror(errno), "Select system call returned -1");
+                          strerror(errno), "Select function has returned -1 exit code");
             goto out;
         }
         else {
@@ -107,8 +107,10 @@ runCleanerThread()
                 if (input == THREAD_EXIT)
                     goto out;
             }
-            else
+            else {
+                /* Reap all pending child processes */
                 reapPendingChild();
+            }
         }
     }
 
@@ -203,22 +205,23 @@ stopCleaner()
     pthread_t thread;
     int rv = 0;
 
-    if ((rv = pthread_create(&thread, NULL, stopCleanerThread, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "stopCleaner", errno,
-                      strerror(errno), "Unable to create the thread for the cleaner (stop)");
+    if (CLEANER) {
+        if ((rv = pthread_create(&thread, NULL, stopCleanerThread, NULL)) != 0) {
+            unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "stopCleaner", errno,
+                          strerror(errno), "Unable to create the thread for the cleaner (stop)");
+        }
+        else {
+            if (UNITD_DEBUG)
+                unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the cleaner (stop)\n");
+        }
+        /* Waiting for the thread to terminate */
+        if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
+            unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "stopCleaner", rv,
+                          strerror(rv), "Unable to join the thread for the cleaner (stop)");
+        }
+        else {
+            if (UNITD_DEBUG)
+                unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the cleaner (stop)\n");
+        }
     }
-    else {
-        if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the cleaner (stop)\n");
-    }
-    /* Waiting for the thread to terminate */
-    if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "stopCleaner", rv,
-                      strerror(rv), "Unable to join the thread for the cleaner (stop)");
-    }
-    else {
-        if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the cleaner (stop)\n");
-    }
-
 }

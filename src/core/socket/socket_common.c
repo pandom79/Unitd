@@ -127,7 +127,7 @@ readMessage(int *socketFd, char **buffer, int *bufferSize)
 int
 sortUnitsByName(const void *unitDisplayA, const void *unitDisplayB)
 {
-    return strcmp((*(Unit **)unitDisplayA)->name, (*(Unit **)unitDisplayB)->name);
+    return strcasecmp((*(Unit **)unitDisplayA)->name, (*(Unit **)unitDisplayB)->name);
 }
 
 void
@@ -137,7 +137,7 @@ setValueForBuffer(char **buffer, int value)
     if (value == -1 || value == -2)
         stringConcat(buffer, NONE);
     else {
-        char valueStr[10];
+        char valueStr[10] = {0};
         sprintf(valueStr, "%d", value);
         stringConcat(buffer, valueStr);
     }

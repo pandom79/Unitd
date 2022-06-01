@@ -135,9 +135,16 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         goto shutdown;
 #endif
 
-    //******************* DEFAULT OR CMDLINE STATE ************************
     assert(!UNITD_LOG_FILE);
     unitdOpenLog("w");
+    /* Start the cleaner.
+    * We don't want to use SA_NOCLDWAIT flag for sigaction.
+    * According my test, it seems that no guarantees it clenas all if more processes exit at the same time.
+    * This thread is simple, fast and secure.
+    * Tested in VM. I no longer see "defunct" processes.
+    */
+    startCleaner();
+    //******************* DEFAULT OR CMDLINE STATE ************************
     if (STATE_CMDLINE_DIR)
         rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR,
                        STATE_CMDLINE, isAggregate, NULL, PARSE_UNIT, true);
@@ -189,20 +196,18 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 
     /* Create the boot units array */
     addBootUnits(bootUnits, units);
-    /* Start the cleaner */
-    startCleaner();
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
     shutdown:
         /* Shutdown start */
         timeSetCurrent(&SHUTDOWN_START);
+        assert(!UNITD_LOG_FILE);
+        unitdOpenLog("a");
         /* Stop cleaner */
         stopCleaner();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
-        assert(!UNITD_LOG_FILE);
-        unitdOpenLog("a");
         if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;
         if (SHUTDOWN_COMMAND == HALT_COMMAND) {
             shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);

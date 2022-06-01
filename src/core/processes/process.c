@@ -628,8 +628,6 @@ hasPipe(Unit *unit)
 
     assert(unit);
 
-    /* Create the pipe if we are in STATE_CMDLINE or STATE_DEFAULT and we have to restart */
-    /* Get the properties related the restart feature */
     restart = unit->restart;
     restartMax = unit->restartMax;
     restartNum = unit->restartNum;

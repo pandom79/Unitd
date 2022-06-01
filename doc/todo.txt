@@ -24,7 +24,7 @@
       In this way, these functions will read the data on the disk which is that we expect.
 
     - Enable unit:
-      In conflicts case, we will release the unit only if its content is changed.
+      In conflicts case, we will release the unit (conflict) only if its content is changed.
       Moreover, we can remove the check about the conflict errors because, now, the "disable"
       function no longer considers the "wantedBy" property but cmdline/default, poweroff and reboot state.
 
@@ -40,5 +40,3 @@
 - Unitlogd development
 
 - Unitlogctl development
-
-
