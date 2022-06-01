@@ -307,7 +307,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* Sending the response */
     if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitListServer."
-                                     "Send func has returned %d = %s", rv, strerror(rv));
+                                     "Send func has returned %d = %s", errno, strerror(errno));
     }
 
     objectRelease(&buffer);
@@ -361,7 +361,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     /* Sending the response */
     if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitStatusServer."
-                                     "Send func has returned %d = %s", rv, strerror(rv));
+                                     "Send func has returned %d = %s", errno, strerror(errno));
     }
 
     objectRelease(&buffer);
@@ -441,7 +441,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::stopUnitServer."
-                                         "Send func has returned %d = %s", rv, strerror(rv));
+                                         "Send func has returned %d = %s", errno, strerror(errno));
         }
         objectRelease(&buffer);
     }
@@ -618,7 +618,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             /* Sending the response */
             if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
                 syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::startUnitServer."
-                                             "Send func has returned %d = %s", rv, strerror(rv));
+                                             "Send func has returned %d = %s", errno, strerror(errno));
             }
             objectRelease(&buffer);
         }
@@ -763,7 +763,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             /* Sending the response */
             if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
                 syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::disableUnitServer."
-                                             "Send func has returned %d = %s", rv, strerror(rv));
+                                             "Send func has returned %d = %s", errno, strerror(errno));
             }
             objectRelease(&buffer);
         }
@@ -972,7 +972,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
-                                         "Send func has returned %d = %s", rv, strerror(rv));
+                                         "Send func has returned %d = %s", errno, strerror(errno));
         }
 
         objectRelease(&buffer);
@@ -1060,7 +1060,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitDataServer."
-                                         "Send func has returned %d = %s", rv, strerror(rv));
+                                         "Send func has returned %d = %s", errno, strerror(errno));
         }
 
         objectRelease(&buffer);
@@ -1136,7 +1136,7 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
-                                         "Send func has returned %d = %s", rv, strerror(rv));
+                                         "Send func has returned %d = %s", errno, strerror(errno));
         }
 
         objectRelease(&buffer);
@@ -1210,7 +1210,7 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
-                                         "Send func has returned %d = %s", rv, strerror(rv));
+                                         "Send func has returned %d = %s", errno, strerror(errno));
         }
 
         objectRelease(&buffer);
