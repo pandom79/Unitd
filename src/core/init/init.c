@@ -144,6 +144,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     * Tested in VM. I no longer see "defunct" processes.
     */
     startCleaner();
+    /* Start the notifier */
+    startNotifier();
     //******************* DEFAULT OR CMDLINE STATE ************************
     if (STATE_CMDLINE_DIR)
         rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR,
@@ -206,6 +208,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         unitdOpenLog("a");
         /* Stop cleaner */
         stopCleaner();
+        /* Stop notifier */
+//FIXME
+//        stopNotifier();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
         if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;

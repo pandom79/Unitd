@@ -13,6 +13,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/inotify.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdarg.h>

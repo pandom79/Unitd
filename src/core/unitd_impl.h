@@ -23,6 +23,13 @@ typedef struct {
     pthread_mutex_t *mutex;
 } Cleaner;
 
+typedef struct {
+    int fds[2];
+    int *fd;
+    int *wd;
+    pthread_mutex_t *mutex;
+} Notifier;
+
 extern pid_t UNITD_PID;
 extern UnitdData *UNITD_DATA;
 extern bool UNITD_DEBUG;
@@ -42,6 +49,7 @@ extern Time *BOOT_STOP;
 extern Time *SHUTDOWN_START;
 extern Time *SHUTDOWN_STOP;
 extern Cleaner *CLEANER;
+extern Notifier *NOTIFIER;
 int parseProcCmdLine();
 
 /* UNITCTL commands */
@@ -248,6 +256,8 @@ Pipe* pipeNew();
 void pipeRelease(Pipe **);
 Cleaner* cleanerNew();
 void cleanerRelease(Cleaner **);
+Notifier* notifierNew();
+void notifierRelease(Notifier **);
 bool hasUnitError(const char *);
 /*********************************************************************************/
 
@@ -299,11 +309,18 @@ void unitdEnd(UnitdData **);
 
 /* HANDLERS */
 #define CLEANER_TIMEOUT         10
+//Signals
 int signalsHandler(int, siginfo_t *, void *);
+//Cleaner
 void startCleaner();
 void* startCleanerThread(void *);
 void stopCleaner();
 void* stopCleanerThread(void *);
+//Notifier
+void startNotifier();
+void* startNotifierThread(void *);
+void stopNotifier();
+void* stopNotifierThread(void *);
 /*********************************************************************************/
 
 /* SOCKET */

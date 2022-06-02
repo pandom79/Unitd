@@ -30,6 +30,7 @@ Time *BOOT_STOP = NULL;
 Time *SHUTDOWN_START = NULL;
 Time *SHUTDOWN_STOP = NULL;
 Cleaner *CLEANER = NULL;
+Notifier *NOTIFIER = NULL;
 
 int
 parseProcCmdLine()

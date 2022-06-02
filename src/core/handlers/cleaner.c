@@ -2,9 +2,9 @@
 (C) 2021 by Domenico Panella <pandom79@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
-                                         it under the terms of the GNU General Public License version 3.
-                                     See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
-                                                */
+it under the terms of the GNU General Public License version 3.
+See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
+*/
 
 #include "../unitd_impl.h"
 
@@ -74,13 +74,13 @@ runCleanerThread()
 
     /* Open pipe */
     if ((rv = pipe(CLEANER->fds)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
+        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
                       strerror(errno), "Unable to run pipe for the cleaner");
         goto out;
     }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "runCleanerThread",
+        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread",
                       rv, strerror(rv), "Unable to acquire the cleaner mutex lock");
         goto out;
     }
@@ -134,11 +134,12 @@ startCleanerThread(void *arg UNUSED)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     if ((rv = pthread_create(&thread, &attr, runCleanerThread, NULL)) != 0) {
-        syslog(LOG_DAEMON | LOG_ERR, "Unable to create the runCleaner thread (detached)\n");
+        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "startCleanerThread", errno,
+                      strerror(errno), "Unable to create the runCleaner thread (detached)");
     }
     else {
         if (UNITD_DEBUG)
-            syslog(LOG_DAEMON | LOG_DEBUG, "Run cleaner thread (detached) created successfully\n");
+            unitdLogInfo(LOG_UNITD_BOOT, "Run cleaner thread (detached) created successfully\n");
     }
     return NULL;
 }
