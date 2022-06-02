@@ -142,7 +142,7 @@ runNotifierThread()
         goto out;
     }
 
-    /* Adding the “UNIT_UNITS_PATH” directory into watch list. */
+    /* Adding the "UNITS_PATH" directory into watch list. */
     if ((*wd = inotify_add_watch(*fd, UNITS_PATH, IN_MODIFY)) == -1) {
         unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifierThread",
                       errno, strerror(errno), "Inotify_add_watch has returned -1");
@@ -208,7 +208,7 @@ runNotifierThread()
     out:
         if (*fd != -1) {
             if (*wd != -1) {
-                /* Removing the “UNIT_UNITS_PATH” directory into watch list. */
+                /* Removing the "UNITS_PATH" directory from watch list. */
                 if ((rv = inotify_rm_watch(*fd, *wd)) == -1) {
                     unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifierThread",
                                   errno, strerror(errno), "Inotify_rm_watch has returned -1");
@@ -223,8 +223,8 @@ runNotifierThread()
 
         /* Unlock mutex */
         if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread",
-                          rv, strerror(rv), "Unable to unlock the cleaner mutex");
+            unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifierThread",
+                          rv, strerror(rv), "Unable to unlock the notifier mutex");
         }
         pthread_exit(0);
 }
