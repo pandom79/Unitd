@@ -35,6 +35,11 @@
       regardeless if the unit is into memory or not and if its content is changed or not.
       We can use isEnabledUnit func passing the state to satisfy "Removed symlink" message.
 
+    - Set default:
+      We can remove the limitation about the "--force" option. Just show created symlink.
+      "default.state" symlink is useful only for set STATE_DEFAULT variable.
+      After that, we can handle default state symlink whatever way we want.
+
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 
 - Unitlogd development

@@ -212,6 +212,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         /* Set the default values */
         unit->showResult = true;
         unit->isStopping = false;
+        unit->isChanged = false;
 
         /* Initialize mutex */
         pthread_mutex_t *mutex = NULL;

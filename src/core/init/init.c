@@ -209,8 +209,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Stop cleaner */
         stopCleaner();
         /* Stop notifier */
-//FIXME
-//        stopNotifier();
+        stopNotifier();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
         if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;

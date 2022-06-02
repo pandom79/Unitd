@@ -153,6 +153,7 @@ typedef struct {
     Pipe *pipe;
     bool showResult;
     bool isStopping;
+    bool isChanged;
 } Unit;
 
 typedef struct {

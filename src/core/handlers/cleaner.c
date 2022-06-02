@@ -93,15 +93,17 @@ runCleanerThread()
         tv.tv_sec = CLEANER_TIMEOUT;
 
         if (select(fd + 1, &fds, NULL, NULL, &tv) == -1) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
-                          strerror(errno), "Select function has returned -1 exit code");
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::cleaner! "
+                                         "Select has returned -1. Rv = %d (%s)",
+                                         errno, strerror(errno));
             goto out;
         }
         else {
             if (FD_ISSET(fd, &fds)) {
                 if ((rv = read(fd, &input, sizeof(int))) == -1) {
-                    unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
-                                  strerror(errno), "Unable to read from pipe for the cleaner");
+                    syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::cleaner! "
+                                                 "Unable to read from pipe for the cleaner. Rv = %d (%s)",
+                                                 errno, strerror(errno));
                     goto out;
                 }
                 if (input == THREAD_EXIT)
@@ -134,7 +136,7 @@ startCleanerThread(void *arg UNUSED)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     if ((rv = pthread_create(&thread, &attr, runCleanerThread, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "startCleanerThread", errno,
+        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "startCleanerThread", errno,
                       strerror(errno), "Unable to create the runCleaner thread (detached)");
     }
     else {
@@ -151,7 +153,7 @@ startCleaner()
     int rv = 0;
 
     if ((rv = pthread_create(&thread, NULL, startCleanerThread, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "startCleaner", errno,
+        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "startCleaner", errno,
                       strerror(errno), "Unable to create the thread for the cleaner");
     }
     else {
@@ -160,7 +162,7 @@ startCleaner()
     }
     /* Waiting for the thread to terminate */
     if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "startCleaner", rv,
+        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "startCleaner", rv,
                       strerror(rv), "Unable to join the thread for the cleaner");
     }
     else {
@@ -208,7 +210,7 @@ stopCleaner()
 
     if (CLEANER) {
         if ((rv = pthread_create(&thread, NULL, stopCleanerThread, NULL)) != 0) {
-            unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "stopCleaner", errno,
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleaner", errno,
                           strerror(errno), "Unable to create the thread for the cleaner (stop)");
         }
         else {
@@ -217,7 +219,7 @@ stopCleaner()
         }
         /* Waiting for the thread to terminate */
         if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
-            unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "stopCleaner", rv,
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleaner", rv,
                           strerror(rv), "Unable to join the thread for the cleaner (stop)");
         }
         else {

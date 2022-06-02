@@ -136,7 +136,11 @@ listenSocketRequest()
         refreshFdSet(&readFds);
         LISTEN_SOCK_REQUEST = true;
         /* 'Select' is a blocking system call */
-        select(getMaxFd() + 1, &readFds, NULL, NULL, NULL);
+        if (select(getMaxFd() + 1, &readFds, NULL, NULL, NULL) == -1) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c",
+                          "listenSocketRequest", errno, strerror(errno), "Select has returned -1");
+            goto out;
+        }
         /* The data arrive on the master socket only when a new client connects to the server,
          * that is, when a client performs 'connect' system call.
         */
