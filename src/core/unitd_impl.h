@@ -28,6 +28,7 @@ typedef struct {
     int *fd;
     int *wd;
     pthread_mutex_t *mutex;
+    bool *isWorking;
 } Notifier;
 
 extern pid_t UNITD_PID;

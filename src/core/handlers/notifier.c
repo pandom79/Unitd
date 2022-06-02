@@ -59,6 +59,12 @@ notifierNew()
     }
     assert(rv == 0);
 
+    /* Is Working flag */
+    bool *isWorking = calloc(1, sizeof(bool));
+    assert(isWorking);
+    *isWorking = false;
+    notifier->isWorking = isWorking;
+
     return notifier;
 }
 
@@ -69,6 +75,7 @@ notifierRelease(Notifier **notifier)
     pthread_mutex_t *mutex = NULL;
     int rv = 0;
     int *fd, *wd;
+    bool *isWorking = NULL;
     fd = wd = NULL;
 
     if (notifierTemp) {
@@ -88,6 +95,9 @@ notifierRelease(Notifier **notifier)
         if ((wd = notifierTemp->wd))
             objectRelease(&wd);
 
+        if ((isWorking = notifierTemp->isWorking))
+            objectRelease(&isWorking);
+
         /* Release notifier */
         objectRelease(notifier);
     }
@@ -101,12 +111,14 @@ runNotifierThread()
     pthread_mutex_t *mutex = NULL;
     char buffer[EVENT_BUF_LEN] = {0};
     fd_set fds;
+    bool *isWorking = false;
 
     assert(!NOTIFIER);
     NOTIFIER = notifierNew();
     mutex = NOTIFIER->mutex;
     fd = NOTIFIER->fd;
     wd = NOTIFIER->wd;
+    isWorking = NOTIFIER->isWorking;
     rv = i = length = 0;
     maxFd = -1;
 
@@ -178,9 +190,11 @@ runNotifierThread()
                         if (unitName) {
                             Unit *unit = getUnitByName(UNITD_DATA->units, unitName);
                             if (unit) {
+                                *isWorking = true;
                                 if (UNITD_DEBUG)
                                     syslog(LOG_DAEMON | LOG_DEBUG, "Unit '%s' is changed!!\n", unitName);
                                 unit->isChanged = true;
+                                *isWorking = false;
                             }
                         }
                         objectRelease(&unitName);
