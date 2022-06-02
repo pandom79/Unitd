@@ -177,6 +177,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
         if (!noWtmp && writeWtmp(false) != 0)
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
 
+#ifndef UNITD_TEST
         sync();
         switch (command) {
             case REBOOT_COMMAND:
@@ -194,6 +195,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
             default:
                 break;
         }
+#endif
     }
     /* Not reached if we are forcing */
 

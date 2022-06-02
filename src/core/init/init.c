@@ -116,7 +116,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
      * For the initialization state, we always aggregate the errors to allow
      * to fix all the errors in a one shot
     */
-#ifndef LOCAL_TEST
+#ifndef UNITD_TEST
     initStateDir = stringNew(STATE_DATA_ITEMS[INIT].desc);
     stringAppendStr(&initStateDir, ".state/units");
     if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir,
@@ -251,7 +251,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
          * For the finalization state, we always aggregate the errors to allow
          * to fix all the errors in a one shot
         */
-#ifndef LOCAL_TEST
+#ifndef UNITD_TEST
         finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);
         stringAppendStr(&finalStateDir, ".state/units");
         if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir,

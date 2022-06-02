@@ -3,14 +3,11 @@
 
 #include "../include/unitd.h"
 
-/* Uncomment/comment the macro below to enable/disable the local test */
-#define LOCAL_TEST                  "true"
-
 /* UNITD */
 #define PROJECT_NAME                "Unitd init system"
 #define DEF_STATE_SYML_NAME         "default.state"
 
-#ifndef LOCAL_TEST
+#ifndef UNITD_TEST
 #define PROC_CMDLINE_PATH           "/proc/cmdline"
 #else
 #define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"

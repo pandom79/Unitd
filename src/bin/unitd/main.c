@@ -127,7 +127,7 @@ int main() {
 
     /* Set PID */
     UNITD_PID = setsid();
-#ifndef LOCAL_TEST
+#ifndef UNITD_TEST
     assert(UNITD_PID == 1);
 #endif
 
@@ -170,7 +170,7 @@ int main() {
         timeRelease(&SHUTDOWN_STOP);
 
         /* The system is going down */
-#ifndef LOCAL_TEST
+#ifndef UNITD_TEST
         sync();
         if (SHUTDOWN_COMMAND == NO_COMMAND)
             SHUTDOWN_COMMAND = REBOOT_COMMAND;

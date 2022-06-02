@@ -111,7 +111,7 @@ runNotifierThread()
     pthread_mutex_t *mutex = NULL;
     char buffer[EVENT_BUF_LEN] = {0};
     fd_set fds;
-    bool *isWorking = false;
+    bool *isWorking;
 
     assert(!NOTIFIER);
     NOTIFIER = notifierNew();

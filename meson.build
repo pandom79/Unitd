@@ -27,7 +27,7 @@ conf_data.set('UNITS_ENAB_PATH', units_enab_path)
 conf_data.set('UNITD_DATA_PATH', unitd_data_path)
 conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
 conf_data.set('UNITD_LOG_PATH', unitd_log_path)
-
+conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Find libwrapper
