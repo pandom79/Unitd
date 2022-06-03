@@ -4,9 +4,9 @@
       Just an event occurred (MODIFY), we only set isContentChanged = true into the unit.
       We don't think that we have to lock the unit mutex.
       Maybe more persons use the machine at the same time !!!!! :)
-      A simple variable is enough. (see ENABLE_RESTART)
+      A simple variable is enough. (see ENABLE_RESTART)  DONE
 
-    - Stop unit:
+    - FIXME Stop unit:
         We don't release the unit if its content is not changed.
         We would like know when it was stopped (Dead) otherwise we lose these data
         (timestamp stop, duration and eventual process data history).
@@ -39,6 +39,8 @@
       We can remove the limitation about the "--force" option. Just show created symlink.
       "default.state" symlink is useful only for set STATE_DEFAULT variable.
       After that, we can handle default state symlink whatever way we want.
+
+    - Re-enable func ???
 
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 

@@ -136,11 +136,7 @@ listenSocketRequest()
         refreshFdSet(&readFds);
         LISTEN_SOCK_REQUEST = true;
         /* 'Select' is a blocking system call */
-        if (select(getMaxFd() + 1, &readFds, NULL, NULL, NULL) == -1) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c",
-                          "listenSocketRequest", errno, strerror(errno), "Select has returned -1");
-            goto out;
-        }
+        select(getMaxFd() + 1, &readFds, NULL, NULL, NULL);
         /* The data arrive on the master socket only when a new client connects to the server,
          * that is, when a client performs 'connect' system call.
         */
@@ -381,6 +377,8 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     char *buffer, *unitName;
     Unit *unit = NULL;
     ProcessData *pData = NULL;
+    PState *pState = NULL;
+    PType *pType = NULL;
 
     buffer = unitName = NULL;
 
@@ -405,21 +403,35 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     /* Try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        /* Create a copy for client */
-        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
-        /* Close eventual pipe */
-        if (unit->pipe)
-            closePipes(NULL, unit);
-        /* Stop the process */
         pData = unit->processData;
-        if (unit->type == DAEMON && (pData->pStateData->pState == RUNNING || pData->pStateData->pState == STOPPED)) {
+        pState = &pData->pStateData->pState;
+        pType = &unit->type;
+
+        /* Close eventual pipe */
+        if (unit->pipe) {
+            closePipes(NULL, unit);
+            pipeRelease(&unit->pipe);
+        }
+        /* Stop the process */
+        if (*pType == DAEMON && (*pState == RUNNING || *pState == STOPPED)) {
             /* We don't show the result on the console and don't catch it by signal handler */
             unit->showResult = false;
             unit->isStopping = true;
             stopProcesses(NULL, unit);
         }
-        /* Release the unit */
-        arrayRemove(*units, unit);
+        /* Create a copy for client */
+        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
+
+//FIXME continue
+unitdLogWarning(LOG_UNITD_CONSOLE, "Unit %s released", unitName);
+        while (NOTIFIER->isWorking)
+            msleep(200);
+
+        if (unit->isChanged || *pType == ONESHOT) {
+unitdLogWarning(LOG_UNITD_CONSOLE, "Unit %s released", unitName);
+            /* Release the unit */
+            arrayRemove(*units, unit);
+        }
     }
     else {
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);

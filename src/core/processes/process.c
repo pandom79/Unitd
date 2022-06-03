@@ -647,7 +647,7 @@ getRestartableUnits(Array **units)
     lenUnits = (*units ? (*units)->size : 0);
     for (int i = 0; i < lenUnits; i++) {
         unit = arrayGet(*units, i);
-        if (unit->errors->size == 0 && !unit->pipe && hasPipe(unit))
+        if (unit->pipe)
             arrayAdd(restartableUnits, unit);
     }
     return restartableUnits;
@@ -665,8 +665,6 @@ openPipe(void *arg)
     assert(arg);
     unitThreadData = (UnitThreadData *)arg;
     unit = unitThreadData->unit;
-    unit->pipe = pipeNew();
-    unit->processDataHistory = arrayNew(processDataRelease);
 
     if ((rv = pipe(unit->pipe->fds)) != 0) {
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "openPipe", errno,
@@ -810,7 +808,6 @@ closePipe(void *arg)
     }
 
     out:
-        pipeRelease(&unitPipe);
         rvThread = calloc(1, sizeof(int));
         assert(rvThread);
         *rvThread = rv;

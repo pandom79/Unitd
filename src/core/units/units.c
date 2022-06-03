@@ -546,6 +546,13 @@ loadUnits(Array **units, const char *path, const char *dirName,
                     if ((rv == 0 || isAggregate) && currentState != NO_STATE)
                         checkWantedBy(&unit, currentState, isAggregate);
                 }
+                /* Create the pipe */
+                if (unit->errors->size == 0 && hasPipe(unit)) {
+                    unit->pipe = pipeNew();
+                    /* Create process data history array accordingly */
+                    unit->processDataHistory = arrayNew(processDataRelease);
+                }
+
                 /* Adding the unit to the array */
                 arrayAdd(*units, unit);
             }
@@ -740,6 +747,7 @@ unitRelease(Unit **unit)
     Array *conflicts, *errors, *requires, *wantedBy;
     pthread_cond_t *cv = NULL;
     pthread_mutex_t *mutex = NULL;
+    Pipe *pipe = NULL;
     int rv = 0;
 
     name = desc = runCmd = stopCmd = type = path = NULL;
@@ -793,6 +801,10 @@ unitRelease(Unit **unit)
             assert(rv == 0);
             objectRelease(&mutex);
         }
+
+        /* Pipe */
+        if ((pipe = unitTemp->pipe))
+            pipeRelease(&pipe);
 
         /* Process Data History */
         arrayRelease(&(unitTemp->processDataHistory));

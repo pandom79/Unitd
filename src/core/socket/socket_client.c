@@ -517,10 +517,10 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             /* Date time start */
             if (strcmp(dateTimeStart, NONE) != 0)
                 printf("%*s %s\n", MAX_LEN_KEY, "Started at :", dateTimeStart);
+            /* Date time stop */
+            if (dateTimeStop)
+                printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", dateTimeStop);
             if (pState != DEAD) {
-                /* Date time stop */
-                if (dateTimeStop)
-                    printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", dateTimeStop);
                 /* Exit code */
                 exitCode = pData->exitCode;
                 printExitCode(*exitCode);
