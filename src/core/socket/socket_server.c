@@ -409,12 +409,13 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         pType = &unit->type;
         unitErrors = &unit->errors;
 
-        if (unit->pipe) {
-            /* Close eventual pipe */
+        /* Close eventual pipe */
+        if (unit->pipe)
             closePipes(NULL, unit);
-        }
+
         if (*pState == DEAD) {
             if (*unitErrors && (*unitErrors)->size > 0) {
+                /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
                 loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE,
                           false);
@@ -436,14 +437,13 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         while (*NOTIFIER->isWorking)
             msleep(200);
         if (unit->isChanged || *pType == ONESHOT) {
-            /* Release the unit */
+            /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
             loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
         }
-        else {
+        else
             /* Create a copy for client */
             arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
-        }
     }
     else {
         /* We don't parse this unit. We only check the unitname */

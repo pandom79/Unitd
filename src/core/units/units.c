@@ -747,7 +747,6 @@ unitRelease(Unit **unit)
     Array *conflicts, *errors, *requires, *wantedBy;
     pthread_cond_t *cv = NULL;
     pthread_mutex_t *mutex = NULL;
-    Pipe *pipe = NULL;
     int rv = 0;
 
     name = desc = runCmd = stopCmd = type = path = NULL;

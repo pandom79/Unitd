@@ -785,30 +785,32 @@ closePipe(void *arg)
     unitThreadData = (UnitThreadData *)arg;
     unit = unitThreadData->unit;
     unitName = unit->name;
-    unitPipe = unit->pipe;
-    mutex = unitPipe->mutex;
 
-    output = THREAD_EXIT;
-    if ((rv = write(unitPipe->fds[1], &output, sizeof(int))) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
-                      errno, strerror(errno), "Unable to write into pipe for the %s unit", unitName);
-        goto out;
-    }
-    if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
-                      rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
-                      unitName);
-        goto out;
-    }
-    /* Unlock the pipe mutex */
-    if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
-                      rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
-                      unitName);
+    if (unit->pipe) {
+        unitPipe = unit->pipe;
+        mutex = unitPipe->mutex;
+        output = THREAD_EXIT;
+        if ((rv = write(unitPipe->fds[1], &output, sizeof(int))) == -1) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
+                          errno, strerror(errno), "Unable to write into pipe for the %s unit", unitName);
+            goto out;
+        }
+        if ((rv = pthread_mutex_lock(mutex)) != 0) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
+                          rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
+                          unitName);
+            goto out;
+        }
+        /* Unlock the pipe mutex */
+        if ((rv = pthread_mutex_unlock(mutex)) != 0) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
+                          rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
+                          unitName);
+        }
+        pipeRelease(&unit->pipe);
     }
 
     out:
-        pipeRelease(&unit->pipe);
         rvThread = calloc(1, sizeof(int));
         assert(rvThread);
         *rvThread = rv;
