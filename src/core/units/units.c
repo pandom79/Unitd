@@ -547,7 +547,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                         checkWantedBy(&unit, currentState, isAggregate);
                 }
                 /* Create the pipe */
-                if (unit->errors->size == 0 && hasPipe(unit)) {
+                if (funcType == PARSE_UNIT && unit->errors && unit->errors->size == 0 && hasPipe(unit)) {
                     unit->pipe = pipeNew();
                     /* Create process data history array accordingly */
                     unit->processDataHistory = arrayNew(processDataRelease);
@@ -801,10 +801,6 @@ unitRelease(Unit **unit)
             assert(rv == 0);
             objectRelease(&mutex);
         }
-
-        /* Pipe */
-        if ((pipe = unitTemp->pipe))
-            pipeRelease(&pipe);
 
         /* Process Data History */
         arrayRelease(&(unitTemp->processDataHistory));

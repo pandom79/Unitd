@@ -808,6 +808,7 @@ closePipe(void *arg)
     }
 
     out:
+        pipeRelease(&unit->pipe);
         rvThread = calloc(1, sizeof(int));
         assert(rvThread);
         *rvThread = rv;

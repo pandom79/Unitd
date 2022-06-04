@@ -191,9 +191,9 @@ runNotifierThread()
                             Unit *unit = getUnitByName(UNITD_DATA->units, unitName);
                             if (unit) {
                                 *isWorking = true;
+                                unit->isChanged = true;
                                 if (UNITD_DEBUG)
                                     syslog(LOG_DAEMON | LOG_DEBUG, "Unit '%s' is changed!!\n", unitName);
-                                unit->isChanged = true;
                                 *isWorking = false;
                             }
                         }

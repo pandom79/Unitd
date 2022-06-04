@@ -503,12 +503,10 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "PROCESS DATA", DEFAULT_COLOR);
             /* Process Type */
             printf("%*s %s\n", MAX_LEN_KEY, "Type :", PTYPE_DATA_ITEMS[unit->type].desc);
-            if (pState != DEAD) {
-                /* Pid */
-                pid = pData->pid;
-                if (*pid != -1)
-                    printf("%*s %d\n", MAX_LEN_KEY, "Pid :", *pid);
-            }
+            /* Pid */
+            pid = pData->pid;
+            if (*pid != -1)
+                printf("%*s %d\n", MAX_LEN_KEY, "Pid :", *pid);
             /* Status */
             finalStatus = pData->finalStatus;
             status = pStateData->desc;

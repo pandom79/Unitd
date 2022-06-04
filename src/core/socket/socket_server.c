@@ -373,12 +373,13 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
                bool sendResponse)
 {
     int rv = 0;
-    Array **units, **unitsDisplay, **errors;
+    Array **units, **unitsDisplay, **errors, **unitErrors;
     char *buffer, *unitName;
     Unit *unit = NULL;
     ProcessData *pData = NULL;
     PState *pState = NULL;
     PType *pType = NULL;
+    bool isDead = false;
 
     buffer = unitName = NULL;
 
@@ -406,12 +407,24 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         pData = unit->processData;
         pState = &pData->pStateData->pState;
         pType = &unit->type;
+        unitErrors = &unit->errors;
 
-        /* Close eventual pipe */
         if (unit->pipe) {
+            /* Close eventual pipe */
             closePipes(NULL, unit);
-            pipeRelease(&unit->pipe);
         }
+        if (*pState == DEAD) {
+            if (*unitErrors && (*unitErrors)->size > 0) {
+                arrayRemove(*units, unit);
+                loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE,
+                          false);
+                goto out;
+            }
+            else
+                isDead = true;
+        }
+    }
+    if (unit && !isDead) {
         /* Stop the process */
         if (*pType == DAEMON && (*pState == RUNNING || *pState == STOPPED)) {
             /* We don't show the result on the console and don't catch it by signal handler */
@@ -419,21 +432,21 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             unit->isStopping = true;
             stopProcesses(NULL, unit);
         }
-        /* Create a copy for client */
-        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
-
-//FIXME continue
-unitdLogWarning(LOG_UNITD_CONSOLE, "Unit %s released", unitName);
-        while (NOTIFIER->isWorking)
+        /* Waiting for notifier. Basically, it should never happen. Extreme case */
+        while (*NOTIFIER->isWorking)
             msleep(200);
-
         if (unit->isChanged || *pType == ONESHOT) {
-unitdLogWarning(LOG_UNITD_CONSOLE, "Unit %s released", unitName);
             /* Release the unit */
             arrayRemove(*units, unit);
+            loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
+        }
+        else {
+            /* Create a copy for client */
+            arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
         }
     }
     else {
+        /* We don't parse this unit. We only check the unitname */
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
         if ((*unitsDisplay)->size == 0) {
             if (!(*errors))
@@ -441,28 +454,32 @@ unitdLogWarning(LOG_UNITD_CONSOLE, "Unit %s released", unitName);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
             rv = 1;
         }
-        else {
-            if (!(*errors))
-                *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DEAD_ERR].desc));
-            rv = 1;
-        }
+        else
+            isDead = true;
     }
-    /* Marshall response */
-    if (sendResponse) {
-        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-        if (UNITD_DEBUG)
-            syslog(LOG_DAEMON | LOG_DEBUG, "StopUnitServer::Buffer sent (%lu): \n%s",
-                                            strlen(buffer), buffer);
-        /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::stopUnitServer."
-                                         "Send func has returned %d = %s", errno, strerror(errno));
-        }
-        objectRelease(&buffer);
+    if (isDead) {
+        if (!(*errors))
+            *errors = arrayNew(objectRelease);
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DEAD_ERR].desc));
+        rv = 1;
     }
 
-    return rv;
+    out:
+        /* Marshall response */
+        if (sendResponse) {
+            buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
+            if (UNITD_DEBUG)
+                syslog(LOG_DAEMON | LOG_DEBUG, "StopUnitServer::Buffer sent (%lu): \n%s",
+                                                strlen(buffer), buffer);
+            /* Sending the response */
+            if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::stopUnitServer."
+                                             "Send func has returned %d = %s", errno, strerror(errno));
+            }
+            objectRelease(&buffer);
+        }
+
+        return rv;
 }
 
 int
