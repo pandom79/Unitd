@@ -59,7 +59,7 @@ printStatus(PState pState, const char *status, int finalStatus, bool newline)
             break;
         case FINAL_STATUS_FAILURE:
             if (pState == STOPPED)
-                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", status);
+                unitdLogInfo(LOG_UNITD_CONSOLE, "%s", status);
             else
                 unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s", "Failed");
             break;
@@ -96,7 +96,7 @@ printSignalNum(int signalNum)
         if (signalNum != SIGSTOP && signalNum != SIGTSTP && signalNum != SIGCONT)
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
         else if (signalNum == SIGSTOP || signalNum == SIGTSTP)
-            unitdLogWarning(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
+            unitdLogInfo(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
         else if (signalNum == SIGCONT)
             unitdLogSuccess(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
     }

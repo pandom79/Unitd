@@ -82,8 +82,7 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { UNIT_PATH_ERR, "The '%s' unit is not a valid symbolic link!" },
     { UNIT_NOT_EXIST, "The '%s' unit doesn't exist!" },
     { UNIT_TIMEOUT_ERR, "Timeout expired for the '%s' unit !" },
-    { UNIT_DEAD_ERR, "The unit is already dead!" },
-    { UNIT_START_ERR, "The unit is already started!" },
+    { UNIT_ALREADY_ERR, "The unit is already %s!" },
     { UNIT_DISABLED_ERR, "The unit is already disabled!" },
     { UNIT_ENABLED_ERR, "The unit is already enabled!" },
     { UNIT_CONFLICT_FORCE_ERR, "Unable to force the operation!\n"

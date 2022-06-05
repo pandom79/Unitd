@@ -439,11 +439,12 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         if (unit->isChanged || *pType == ONESHOT) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
-            loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
+            if (sendResponse)
+                loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
         }
-        else
-            /* Create a copy for client */
-            arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
+        else if (sendResponse)
+                /* Create a copy for client */
+                arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
     else {
         /* We don't parse this unit. We only check the unitname */
@@ -460,7 +461,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     if (isDead) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_DEAD_ERR].desc));
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "dead"));
         rv = 1;
     }
 
@@ -523,12 +524,18 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         *unitsDisplay = arrayNew(unitRelease);
 
     unit = getUnitByName(*units, unitName);
+    if (unit && unit->processData->pStateData->pState == DEAD) {
+        arrayRemove(*units, unit);
+        unit = getUnitByName(*units, unitName);
+        assert(unit == NULL);
+    }
+
     if (unit) {
         if (!restart) {
             /* Avoid to show the unit detail if the unit is already into memory */
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_START_ERR].desc, unitName));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "started"));
             /* If we are come from enableUnitServer func then we don't add the following msg */
             if (sendResponse) {
                 if (!(*messages))
@@ -539,11 +546,17 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
         else if (restart) {
             assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
-            unit = NULL;
+            unit = getUnitByName(*units, unitName);
+            if (unit) {
+                /* We always remove the unit */
+                arrayRemove(*units, unit);
+                unit = getUnitByName(*units, unitName);
+            }
+            assert(unit == NULL);
         }
     }
-    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
 
+    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
@@ -636,8 +649,11 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         /* Adding the unit into memory */
         arrayAdd(*units, unit);
         /* Creating eventual pipe */
-        if (hasPipe(unit))
+        if (hasPipe(unit)) {
+            if (!unit->pipe)
+                unit->pipe = pipeNew();
             openPipes(NULL, unit);
+        }
         startProcesses(units, unit);
     }
 

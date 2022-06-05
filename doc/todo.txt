@@ -19,6 +19,7 @@
         Dead : release, create, parse and put into memory.
         != Dead : show the unit start error (already started).
         Only check if the unit is into memory is no longer enough!!!
+        Show the timeout msg when the time of the unit start is major then 4 sec.
 
     - List (requires, conflicts, states) and Enable unit:
       If the unit content is changed then we have to force the user to stop the unit.
