@@ -27,7 +27,7 @@
       In this way, these functions will read the data on the disk which is that we expect.
       DONE
 
-    - Disable unit:
+    - FIXME Disable unit:
       Now, we don't consider "wantedBy" property for this function.
       It is useful for "enable" and "start" unit commands.
       This function will have to just check if a symlink exists for the default/cmdline, reboot and poweroff state,
