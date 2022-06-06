@@ -427,7 +427,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     }
     if (unit && !isDead) {
         /* Stop the process */
-        if (*pType == DAEMON && (*pState == RUNNING || *pState == STOPPED)) {
+        if (*pType == DAEMON && *pState == RUNNING) {
             /* We don't show the result on the console and don't catch it by signal handler */
             unit->showResult = false;
             unit->isStopping = true;

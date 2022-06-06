@@ -92,27 +92,21 @@ runCleanerThread()
         /* Reset the timeout */
         tv.tv_sec = CLEANER_TIMEOUT;
 
-        if (select(fd + 1, &fds, NULL, NULL, &tv) == -1) {
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::cleaner! "
-                                         "Select has returned -1. Rv = %d (%s)",
-                                         errno, strerror(errno));
-            goto out;
+        if (select(fd + 1, &fds, NULL, NULL, &tv) == -1 && errno == EINTR)
+            continue;
+        if (FD_ISSET(fd, &fds)) {
+            if ((rv = read(fd, &input, sizeof(int))) == -1) {
+                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::cleaner! "
+                                             "Unable to read from pipe for the cleaner. Rv = %d (%s)",
+                                             errno, strerror(errno));
+                goto out;
+            }
+            if (input == THREAD_EXIT)
+                goto out;
         }
         else {
-            if (FD_ISSET(fd, &fds)) {
-                if ((rv = read(fd, &input, sizeof(int))) == -1) {
-                    syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::cleaner! "
-                                                 "Unable to read from pipe for the cleaner. Rv = %d (%s)",
-                                                 errno, strerror(errno));
-                    goto out;
-                }
-                if (input == THREAD_EXIT)
-                    goto out;
-            }
-            else {
-                /* Reap all pending child processes */
-                reapPendingChild();
-            }
+            /* Reap all pending child processes */
+            reapPendingChild();
         }
     }
 

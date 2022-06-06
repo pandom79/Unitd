@@ -157,12 +157,7 @@ runNotifierThread()
         FD_SET(*fd, &fds);
 
         /* Wait for data */
-        if (select(maxFd, &fds, NULL, NULL, NULL) == -1) {
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::notifier!"
-                                         "Select has returned -1. Rv = %d (%s)",
-                                         errno, strerror(errno));
-            goto out;
-        }
+        select(maxFd, &fds, NULL, NULL, NULL);
         if (FD_ISSET(*fdPipe, &fds)) {
             if ((length = read(*fdPipe, &input, sizeof(int))) == -1) {
                 syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::notifier!"

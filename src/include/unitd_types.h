@@ -38,8 +38,7 @@ typedef enum {
     EXITED = 1,
     KILLED = 2,
     RUNNING = 3,
-    STOPPED = 4,
-    RESTARTING = 5
+    RESTARTING = 4
 } PState;
 
 typedef struct PStateData {
@@ -52,7 +51,6 @@ static const struct PStateData PSTATE_DATA_ITEMS[] = {
     { EXITED, "Exited" },
     { KILLED, "Killed" },
     { RUNNING, "Running" },
-    { STOPPED, "Stopped" },
     { RESTARTING, "Restarting" }
 };
 

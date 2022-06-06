@@ -113,37 +113,22 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     }
                     break;
                 case CLD_STOPPED:
-                    *exitCode = -1;
-                    *finalStatus = FINAL_STATUS_FAILURE;
-                    *pStateData = PSTATE_DATA_ITEMS[STOPPED];
-                    *pData->signalNum = info->si_status;
-                    timeSetCurrent(&pData->timeStop);
-                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
-                    stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
-                    if (UNITD_DEBUG)
-                        syslog(LOG_DAEMON | LOG_DEBUG,
-                               "The process %s with pid %d is stopped with the following values: "
-                               "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s"
-                               "dateTimeStart = %s, dateTimeStop = %s, duration = %s\n",
-                               unitName, infoPid, *exitCode, *pData->signalNum, pStateData->desc,
-                               *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr,
-                               pData->dateTimeStopStr, pData->duration);
+                    /* We don't want to allow SIGSTOP, SIGTSTP or something else.
+                     * The only way to stop a process is "unitctl stop" command
+                     */
+                    if (kill(infoPid, SIGCONT) == -1) {
+                        if (UNITD_DEBUG) {
+                            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::signals.c. "
+                                                         "Unable to send SIGCONT for %d pid. Rv = %d (%s)\n",
+                                                         infoPid, errno, strerror(errno));
+                        }
+                    }
+                    else if (UNITD_DEBUG)
+                        syslog(LOG_DAEMON | LOG_DEBUG, "Sent a SIGCONT signal for %d pid\n", infoPid);
                     break;
                 case CLD_CONTINUED:
-                    *exitCode = -1;
-                    *finalStatus = FINAL_STATUS_SUCCESS;
-                    *pStateData = PSTATE_DATA_ITEMS[RUNNING];
-                    *pData->signalNum = info->si_status;
-                    objectRelease(&pData->dateTimeStopStr);
-                    objectRelease(&pData->duration);
-                    timeRelease(&pData->timeStop);
                     if (UNITD_DEBUG)
-                        syslog(LOG_DAEMON | LOG_DEBUG,
-                               "The process %s with pid %d is continued with the following values: "
-                               "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s"
-                               "dateTimeStart = %s\n",
-                               unitName, infoPid, *exitCode, *pData->signalNum, pStateData->desc,
-                               *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr);
+                        syslog(LOG_DAEMON | LOG_DEBUG, "Received a SIGCONT signal for %d pid\n", infoPid);
                     break;
             }
         }

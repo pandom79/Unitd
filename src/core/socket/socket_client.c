@@ -58,9 +58,6 @@ printStatus(PState pState, const char *status, int finalStatus, bool newline)
             unitdLogSuccess(LOG_UNITD_CONSOLE, "%s", status);
             break;
         case FINAL_STATUS_FAILURE:
-            if (pState == STOPPED)
-                unitdLogInfo(LOG_UNITD_CONSOLE, "%s", status);
-            else
                 unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s", "Failed");
             break;
         case FINAL_STATUS_READY:
@@ -372,7 +369,7 @@ showUnitList(SockMessageOut **sockMessageOut)
             finalStatus = pData->finalStatus;
             status = pStateData->desc;
             printStatus(pState, status, *finalStatus, false);
-            if (*finalStatus == FINAL_STATUS_FAILURE && pState != STOPPED)
+            if (*finalStatus == FINAL_STATUS_FAILURE)
                 printf("%*s", 10 - 6 + PADDING, ""); //Failed str
             else
                 printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
