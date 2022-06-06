@@ -74,7 +74,7 @@ startProcess(void *arg)
     for (int i = 0; i < lenConflicts; i++) {
         unitNameconflict = arrayGet(conflicts, i);
         unitConflict = getUnitByName(units, unitNameconflict);
-        if (unitConflict) {
+        if (unitConflict && unitConflict->processData->pStateData->pState != DEAD) {
             arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
                                             unitName, unitNameconflict));
             *finalStatus = FINAL_STATUS_FAILURE;

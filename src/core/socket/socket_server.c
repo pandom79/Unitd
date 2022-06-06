@@ -414,7 +414,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             closePipes(NULL, unit);
 
         if (*pState == DEAD) {
-            if (*unitErrors && (*unitErrors)->size > 0) {
+            if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
                 loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE,
@@ -546,6 +546,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
         else if (restart) {
             assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
+            /* stopUnitServer function could not removed it but it must be always removed */
             unit = getUnitByName(*units, unitName);
             if (unit) {
                 /* We always remove the unit */
@@ -583,7 +584,6 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         else if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE)
             checkWantedBy(&unit, STATE_DEFAULT, true);
         if (unit->errors->size > 0) {
-            /* The errors are here thus we show the unit errors */
             *errors = arrayStrCopy(unit->errors);
             unitRelease(&unit);
             goto out;
@@ -612,7 +612,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         len = (conflicts ? conflicts->size : 0);
         for (int i = 0; i < len; i++) {
             conflict = arrayGet(conflicts, i);
-            if ((unitConflict = getUnitByName(*units, conflict))) {
+            if ((unitConflict = getUnitByName(*units, conflict)) && unitConflict->processData->pStateData->pState != DEAD) {
                 if (!force) {
                     if (!(*errors))
                         *errors = arrayNew(objectRelease);
@@ -642,8 +642,14 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             closePipes(&stopConflictsArr, NULL);
             stopProcesses(&stopConflictsArr, NULL);
             len = stopConflictsArr->size;
-            for (int i = 0; i < len; i++)
-                arrayRemove(*units, arrayGet(stopConflictsArr, i));
+            for (int i = 0; i < len; i++) {
+                unitConflict = arrayGet(stopConflictsArr, i);
+                /* We only release the conflict which has been changed or type == ONESHOT.
+                 * We should know dateTimestop and duration
+                */
+                if (unitConflict->isChanged || unitConflict->type == ONESHOT)
+                    arrayRemove(*units, unitConflict);
+            }
             arrayRelease(&stopConflictsArr);
         }
         /* Adding the unit into memory */
