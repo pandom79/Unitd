@@ -31,7 +31,7 @@ getUnitPathByName(const char *arg)
         stringAppendStr(&unitPath, ".unit");
 
     if ((fp = fopen(unitPath, "r")) == NULL) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, arg);
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, arg);
         printf("\n");
         objectRelease(&unitPath);
     }

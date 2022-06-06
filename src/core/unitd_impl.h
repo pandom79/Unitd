@@ -198,7 +198,7 @@ typedef enum {
     WANTEDBY_INIT_FINAL_ERR = 9,
     UNIT_PATH_INIT_FINAL_ERR = 10,
     UNIT_PATH_ERR = 11,
-    UNIT_NOT_EXIST = 12,
+    UNIT_NOT_EXIST_ERR = 12,
     UNIT_TIMEOUT_ERR = 13,
     UNIT_ALREADY_ERR = 14,
     UNIT_DISABLED_ERR = 15,
@@ -207,7 +207,8 @@ typedef enum {
     DEFAULT_SYML_MISSING_ERR = 18,
     DEFAULT_SYML_TYPE_ERR = 19,
     DEFAULT_SYML_BAD_DEST_ERR = 20,
-    DEFAULT_SYML_SET_ERR = 21
+    DEFAULT_SYML_SET_ERR = 21,
+    UNIT_CHANGED_ERR = 22
 } UnitsErrorsEnum;
 typedef struct {
     UnitsErrorsEnum errorEnum;
@@ -224,7 +225,8 @@ typedef enum {
     STATE_MSG = 4,
     DEFAULT_STATE_SYML_WARN_MSG = 5,
     DEFAULT_STATE_SYML_RESTORED_MSG = 6,
-    TIME_MSG = 7
+    TIME_MSG = 7,
+    UNIT_CHANGED_MSG = 8
 } UnitsMessagesEnum;
 typedef struct {
     UnitsMessagesEnum errorEnum;

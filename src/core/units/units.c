@@ -80,7 +80,7 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { WANTEDBY_INIT_FINAL_ERR, "The '%s' and '%s' states are not allowed!" },
     { UNIT_PATH_INIT_FINAL_ERR, "The '%s' and '%s' states can't contain symbolic links!" },
     { UNIT_PATH_ERR, "The '%s' unit is not a valid symbolic link!" },
-    { UNIT_NOT_EXIST, "The '%s' unit doesn't exist!" },
+    { UNIT_NOT_EXIST_ERR, "The '%s' unit doesn't exist!" },
     { UNIT_TIMEOUT_ERR, "Timeout expired for the '%s' unit !" },
     { UNIT_ALREADY_ERR, "The unit is already %s!" },
     { UNIT_DISABLED_ERR, "The unit is already disabled!" },
@@ -91,7 +91,8 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { DEFAULT_SYML_MISSING_ERR, "The default state symlink is missing!" },
     { DEFAULT_SYML_TYPE_ERR, "The default state doesn't look like a symlink!" },
     { DEFAULT_SYML_BAD_DEST_ERR, "The default state symlink points to a bad destination : %s" },
-    { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" }
+    { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" },
+    { UNIT_CHANGED_ERR, "The unit content is changed!" }
 };
 
 const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
@@ -104,7 +105,8 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
                                    "Please, reboot or power off/halt the system\n"
                                    "without '-f' or '--force' option to apply the change." },
     { DEFAULT_STATE_SYML_RESTORED_MSG, "The default state has been restored to '%s'." },
-    { TIME_MSG, "%s time : \033[1;32m%s\033[0m" }
+    { TIME_MSG, "%s time : \033[1;32m%s\033[0m" },
+    { UNIT_CHANGED_MSG, "Please, run 'unitctl stop %s' to continue working with this unit." }
 };
 
 /* Return the unit name by unit path or unit name with ".unit" suffix */

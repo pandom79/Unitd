@@ -25,6 +25,7 @@
       If the unit content is changed then we have to force the user to stop the unit.
       In this case, stop unit func will fully release the unit.
       In this way, these functions will read the data on the disk which is that we expect.
+      DONE
 
     - Disable unit:
       Now, we don't consider "wantedBy" property for this function.

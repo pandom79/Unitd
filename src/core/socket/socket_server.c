@@ -350,7 +350,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
         if ((*unitsDisplay)->size == 0) {
             *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
         }
     }
     /* Marshall response */
@@ -413,6 +413,10 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         if (unit->pipe)
             closePipes(NULL, unit);
 
+        /* Waiting for notifier. Basically, it should never happen. Extreme case */
+        while (*NOTIFIER->isWorking)
+            msleep(200);
+
         if (*pState == DEAD) {
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
@@ -452,7 +456,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         if ((*unitsDisplay)->size == 0) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
             rv = 1;
         }
         else
@@ -561,7 +565,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
     }
     else {
         /* We only start the dead unit */
@@ -644,6 +648,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             len = stopConflictsArr->size;
             for (int i = 0; i < len; i++) {
                 unitConflict = arrayGet(stopConflictsArr, i);
+                /* Waiting for notifier. Basically, it should never happen. Extreme case */
+                while (*NOTIFIER->isWorking)
+                    msleep(200);
                 /* We only release the conflict which has been changed or type == ONESHOT.
                  * We should know dateTimestop and duration
                 */
@@ -658,6 +665,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         if (hasPipe(unit)) {
             if (!unit->pipe)
                 unit->pipe = pipeNew();
+            /* Create process data history array accordingly */
+            unit->processDataHistory = arrayNew(processDataRelease);
             openPipes(NULL, unit);
         }
         startProcesses(units, unit);
@@ -738,7 +747,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
         goto out;
     }
 
@@ -886,7 +895,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
         goto out;
     }
 
@@ -1078,8 +1087,25 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
-        arrayAdd(*unitsDisplay, unitDisplay);
+        /* Waiting for notifier. Basically, it should never happen. Extreme case */
+        while (*NOTIFIER->isWorking)
+            msleep(200);
+        /* If the unit content is changed then we force the user to stop the unit.
+         * In this way, we will read the data on the disk (updated) which is that we expect.
+         */
+        if (unit->isChanged) {
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
+            if (!(*messages))
+                *messages = arrayNew(objectRelease);
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, unitName));
+            goto out;
+        }
+        else {
+            unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
+            arrayAdd(*unitsDisplay, unitDisplay);
+        }
     }
     else
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
@@ -1087,7 +1113,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST].desc, unitName));
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
         goto out;
     }
 
