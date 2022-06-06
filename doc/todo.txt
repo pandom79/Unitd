@@ -39,7 +39,7 @@
       function no longer considers the "wantedBy" property but cmdline/default, poweroff and reboot state.
 
     - Set default:
-      We can remove the limitation about the "--force" option. Just show created symlink.
+      We can remove the limit about the "--force" option. Just show created symlink.
       "default.state" symlink is useful only for set STATE_DEFAULT variable.
       After that, we can handle default state symlink whatever way we want.
 
