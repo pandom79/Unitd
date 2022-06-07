@@ -27,7 +27,7 @@
       In this way, these functions will read the data on the disk which is that we expect.
       DONE
 
-    - FIXME Disable unit:
+    - Disable unit:
       Now, we don't consider "wantedBy" property for this function.
       It is useful for "enable" and "start" unit commands.
       This function will have to just check if a symlink exists for the default/cmdline, reboot and poweroff state,
@@ -39,7 +39,7 @@
       Moreover, we can remove the check about the conflict errors because, now, the "disable"
       function no longer considers the "wantedBy" property but cmdline/default, poweroff and reboot state.
 
-    - Set default:
+    - FIXME Set default:
       We can remove the limit about the "--force" option. Just show created symlink.
       "default.state" symlink is useful only for set STATE_DEFAULT variable.
       After that, we can handle default state symlink whatever way we want.

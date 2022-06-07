@@ -740,11 +740,9 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
             goto out;
         }
-        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
-        arrayAdd(*unitsDisplay, unitDisplay);
     }
-    else
-        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
+
+    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
 
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
@@ -768,7 +766,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         assert((*unitsDisplay)->size == 1);
         unitDisplay = arrayGet(*unitsDisplay, 0);
     }
-    if (!unitDisplay->enabled) {
+    if (!unit && !unitDisplay->enabled) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
@@ -854,7 +852,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
 {
     int rv, len;
     Array **units, **unitsDisplay, **errors, **messages, **unitDisplayErrors, *conflicts,
-          *conflictNames, *unitsConflicts, *wantedBy, *scriptParams;
+          *conflictNames, *unitsConflicts, *wantedBy, *scriptParams, *requires;
     Unit *unit, *unitDisplay, *unitConflict;
     char *unitName, *buffer, *stateStr, *from, *to;
     const char *conflictName = NULL;
@@ -864,7 +862,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     unitName = buffer = stateStr = from = to = NULL;
     force = run = hasError = false;
     unit = unitDisplay = unitConflict = NULL;
-    conflicts = conflictNames = unitsConflicts = NULL;
+    conflicts = conflictNames = unitsConflicts = requires = NULL;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
@@ -893,17 +891,27 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if (unit->enabled) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLED_ERR].desc, unitName));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
             goto out;
         }
-        unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
-        arrayAdd(*unitsDisplay, unitDisplay);
-    }
-    else
-        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
+        /* Waiting for notifier. Basically, it should never happen. Extreme case */
+        while (*NOTIFIER->isWorking)
+            msleep(200);
 
+        if (unit->isChanged) {
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
+            if (!(*messages))
+                *messages = arrayNew(objectRelease);
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, unitName));
+            goto out;
+        }
+    }
+
+    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
     /* Check if unitname exists */
-    if ((*unitsDisplay)->size == 0) {
+    if (!unit && (*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
@@ -913,19 +921,39 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
     /* Check if it is already enabled */
-    if (unitDisplay->enabled) {
+    if (!unit && unitDisplay->enabled) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLED_ERR].desc, unitName));
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
         goto out;
     }
-    /* Before the enable it, we perform the "requires" specific check.
-    * Actually, this check has been already called but now, we re-execute it considerating all memory data
-    * to satisfy all checks (syntax and logic errors)
-    */
+
     unitDisplayErrors = &unitDisplay->errors;
     if (!(*unitDisplayErrors))
         *unitDisplayErrors = arrayNew(objectRelease);
+
+    /* Check dependencies are enabled */
+    requires = unitDisplay->requires;
+    len = (requires ? requires->size : 0);
+    for (int i = 0; i < len; i++) {
+        const char *depName = arrayGet(requires, i);
+        if (!isEnabledUnit(depName, NO_STATE)) {
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
+                                     depName, unitName));
+            hasError = true;
+        }
+    }
+    if (hasError) {
+        unitRelease(&unit);
+        goto out;
+    }
+
+    /* Before the enable it, we perform the "requires" specific check.
+     * Actually, this check has been already called but now, we re-execute it considerating all memory data
+     * to satisfy all checks (syntax and logic errors)
+    */
     checkRequires(units, &unitDisplay, true);
     if ((*unitDisplayErrors)->size > 0) {
         *errors = arrayStrCopy(*unitDisplayErrors);
@@ -947,18 +975,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                 hasError = true;
             }
             else {
-                /* If we are forcing then we must be sure that the conflict have no errors */
-                if ((unitConflict && unitConflict->errors && unitConflict->errors->size > 0) ||
-                    (!unitConflict && hasUnitError(conflictName))) {
-                    if (!(*errors))
-                        *errors = arrayNew(objectRelease);
-                    arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CONFLICT_FORCE_ERR].desc,
-                                             conflictName));
-                    arrayRelease(&conflictNames);
-                    arrayRelease(&unitsConflicts);
-                    goto out;
-                }
-
                 /* If we have to force then we create the array of names and the unit pointers */
                 if (!conflictNames)
                     conflictNames = arrayNew(objectRelease);
@@ -993,8 +1009,15 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         closePipes(&unitsConflicts, NULL);
         stopProcesses(&unitsConflicts, NULL);
         len = unitsConflicts->size;
-        for (int i = 0; i < len; i++)
-            arrayRemove(*units, arrayGet(unitsConflicts, i));
+        for (int i = 0; i < len; i++) {
+            unitConflict = arrayGet(unitsConflicts, i);
+            /* Waiting for notifier. Basically, it should never happen. Extreme case */
+            while (*NOTIFIER->isWorking)
+                msleep(200);
+            /* We fully release the conflicts which have the unit content changed or its type is ONESHOT */
+            if (unitConflict->isChanged || unitConflict->type == ONESHOT)
+                arrayRemove(*units, unitConflict);
+        }
         arrayRelease(&unitsConflicts);
     }
 
@@ -1113,14 +1136,9 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, unitName));
             goto out;
         }
-        else {
-            unitDisplay = unitNew(unit, PARSE_SOCK_RESPONSE);
-            arrayAdd(*unitsDisplay, unitDisplay);
-        }
     }
-    else
-        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
 
+    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
     if ((*unitsDisplay)->size == 0) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);

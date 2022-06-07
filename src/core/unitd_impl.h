@@ -201,13 +201,11 @@ typedef enum {
     UNIT_NOT_EXIST_ERR = 12,
     UNIT_TIMEOUT_ERR = 13,
     UNIT_ALREADY_ERR = 14,
-    UNIT_ENABLED_ERR = 15,
-    UNIT_CONFLICT_FORCE_ERR = 16,
-    DEFAULT_SYML_MISSING_ERR = 17,
-    DEFAULT_SYML_TYPE_ERR = 18,
-    DEFAULT_SYML_BAD_DEST_ERR = 19,
-    DEFAULT_SYML_SET_ERR = 20,
-    UNIT_CHANGED_ERR = 21
+    DEFAULT_SYML_MISSING_ERR = 15,
+    DEFAULT_SYML_TYPE_ERR = 16,
+    DEFAULT_SYML_BAD_DEST_ERR = 17,
+    DEFAULT_SYML_SET_ERR = 18,
+    UNIT_CHANGED_ERR = 19
 } UnitsErrorsEnum;
 typedef struct {
     UnitsErrorsEnum errorEnum;
@@ -256,7 +254,6 @@ Cleaner* cleanerNew();
 void cleanerRelease(Cleaner **);
 Notifier* notifierNew();
 void notifierRelease(Notifier **);
-bool hasUnitError(const char *);
 /*********************************************************************************/
 
 /* COMMANDS */

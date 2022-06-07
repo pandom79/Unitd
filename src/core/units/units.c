@@ -83,10 +83,6 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { UNIT_NOT_EXIST_ERR, "The '%s' unit doesn't exist!" },
     { UNIT_TIMEOUT_ERR, "Timeout expired for the '%s' unit !" },
     { UNIT_ALREADY_ERR, "The unit is already %s!" },
-    { UNIT_ENABLED_ERR, "The unit is already enabled!" },
-    { UNIT_CONFLICT_FORCE_ERR, "Unable to force the operation!\n"
-                               "This unit has a conflict with '%s' unit\n"
-                               "which has some configuration errors." },
     { DEFAULT_SYML_MISSING_ERR, "The default state symlink is missing!" },
     { DEFAULT_SYML_TYPE_ERR, "The default state doesn't look like a symlink!" },
     { DEFAULT_SYML_BAD_DEST_ERR, "The default state symlink points to a bad destination : %s" },
@@ -561,6 +557,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                         checkWantedBy(&unit, currentState, isAggregate);
                 }
                 /* Create the pipe */
+                if (currentState != INIT && currentState != FINAL && currentState != REBOOT && currentState != POWEROFF)
                 if (funcType == PARSE_UNIT && unit->errors && unit->errors->size == 0 && hasPipe(unit)) {
                     unit->pipe = pipeNew();
                     /* Create process data history array accordingly */
@@ -987,20 +984,4 @@ pipeRelease(Pipe **pipe)
         /* Release pipe */
         objectRelease(pipe);
     }
-}
-
-bool
-hasUnitError(const char *conflictName)
-{
-    Array *units = arrayNew(unitRelease);
-    Unit *unit = NULL;
-    bool res = false;
-
-    loadUnits(&units, UNITS_PATH, NULL, NO_STATE, true, conflictName, PARSE_SOCK_RESPONSE, true);
-    unit = arrayGet(units, 0);
-    if (unit && unit->errors && unit->errors->size > 0)
-        res = true;
-
-    arrayRelease(&units);
-    return res;
 }
