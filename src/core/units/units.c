@@ -241,30 +241,41 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
 }
 
 bool
-isEnabledUnit(const char *unitName)
+isEnabledUnit(const char *unitName, State currentState)
 {
     char *pattern = NULL;
-    int rv = 0;
+    int rv, len;
     glob_t results;
     bool found = false;
+    Array *statesData = NULL;
+    StateData *stateData = NULL;
+
+    rv = len = 0;
 
     assert(unitName);
 
     /* The check must be done only for reboot, poweroff and (default or cmdline state).
      * We can never have reboot or poweroff state as default.
     */
-    State states[3];
-    states[0] = REBOOT;
-    states[1] = POWEROFF;
-    if (STATE_DEFAULT != NO_STATE && STATE_CMDLINE == NO_STATE)
-        states[2] = STATE_DEFAULT;
-    else if (STATE_DEFAULT == NO_STATE && STATE_CMDLINE != NO_STATE)
-        states[2] = STATE_CMDLINE;
+    statesData = arrayNew(NULL);
+    if (currentState != NO_STATE)
+        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[currentState]);
+    else {
+        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[REBOOT]);
+        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
+        if (STATE_CMDLINE != NO_STATE)
+            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_CMDLINE]);
+        else if (STATE_DEFAULT != NO_STATE)
+            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_DEFAULT]);
+    }
 
-    for (State state = 0; state < 3; state++) {
+    len = statesData->size;
+    assert(len >= 1);
+    for (int i = 0; i < len; i++) {
+        stateData = arrayGet(statesData, i);
         pattern = stringNew(UNITS_ENAB_PATH);
         stringAppendChr(&pattern, '/');
-        stringAppendStr(&pattern, STATE_DATA_ITEMS[states[state]].desc);
+        stringAppendStr(&pattern, stateData->desc);
         stringAppendStr(&pattern, ".state/");
         stringAppendStr(&pattern, unitName);
         stringAppendStr(&pattern, ".unit");
@@ -276,8 +287,11 @@ isEnabledUnit(const char *unitName)
             break;
     }
 
+    arrayRelease(&statesData);
     return found;
 }
+
+
 
 int
 checkAndSetUnitPath(Unit **currentUnit, State state)
@@ -537,7 +551,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                     */
                     checkAndSetUnitPath(&unit, currentState);
                 }
-                unit->enabled = (currentState != NO_STATE ? true : isEnabledUnit(unitName));
+                unit->enabled = (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
                 if (UNITD_DEBUG)
                     unitdLogInfo(LOG_UNITD_BOOT, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
                 /* Parse the Unit file */

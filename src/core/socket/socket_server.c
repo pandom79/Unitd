@@ -576,7 +576,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         stringAppendStr(&unitPath, unit->name);
         stringAppendStr(&unitPath, ".unit");
         unit->path = unitPath;
-        unit->enabled = isEnabledUnit(unitName);
+        unit->enabled = isEnabledUnit(unitName, NO_STATE);
         /* Aggregate all the syntax errors.
         * Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
@@ -693,15 +693,17 @@ int
 disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut,
                   const char *unitNameArg, bool sendResponse)
 {
-    Array **unitsDisplay, **errors, **messages, *wantedBy, *scriptParams, **unitDisplayErrors;
+    Array **unitsDisplay, **errors, **messages, *scriptParams, **unitDisplayErrors, *statesData;
     Unit *unit, *unitDisplay;
     char *unitName, *buffer, *stateStr, *from, *to;
     bool run = false;
     int rv, len;
+    StateData *stateData = NULL;
+    State state = NO_STATE;
 
     unitName = buffer = stateStr = from = to = NULL;
     unit = unitDisplay = NULL;
-    wantedBy = scriptParams = NULL;
+    scriptParams = statesData = NULL;
     rv = len = 0;
 
     assert(sockMessageIn);
@@ -780,42 +782,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* Call the script to remove symlinks from the states
      * We always consider the default state (or cmdline ), reboot and poweroff
     */
-//    wantedBy = unitDisplay->wantedBy;
-//    len = wantedBy->size;
-//    for (int i = 0; i < len; ++i) {
-//        /* Get wanted state */
-//        stateStr = stringNew(arrayGet(wantedBy, i));
-//        stringAppendStr(&stateStr, ".state");
-//        State state = getStateByStr(stateStr);
-//        assert(state != NO_STATE);
-//        if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT || state == POWEROFF) {
-//            /* Get script parameter array */
-//            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP);
-//            from = arrayGet(scriptParams, 2);
-//            to = arrayGet(scriptParams, 3);
-//            /* Execute the script */
-//            rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
-//            if (rv != 0) {
-//                /* We don't put this error into response because it should never occurred */
-//                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::disableUnitServer."
-//                                             "ExecScript func has returned %d = %s", rv, strerror(rv));
-//            }
-//            else {
-//                if (unit)
-//                    unit->enabled = false;
-//                /* Put the result into response */
-//                if (!(*messages))
-//                    *messages = arrayNew(objectRelease);
-//                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_REMOVED_SYML_MSG].desc,
-//                                           to, from));
-//            }
-//            arrayRelease(&scriptParams);
-//        }
-//        objectRelease(&stateStr);
-//    }
-
-
-    Array *statesData = arrayNew(NULL);
+    statesData = arrayNew(NULL);
     arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[REBOOT]);
     arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
     if (STATE_CMDLINE != NO_STATE)
@@ -824,17 +791,14 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_DEFAULT]);
 
     len = statesData->size;
+    assert(len == 3);
     for (int i = 0; i < len; ++i) {
-        StateData *stateData = arrayGet(statesData, i);
+        stateData = arrayGet(statesData, i);
         stateStr = stringNew(stateData->desc);
         stringAppendStr(&stateStr, ".state");
-        State state = stateData->state;
+        state = stateData->state;
 
-        /* FIXME Now, we have to check if an entry exists for this state to satisfy removed symlink message
-         * Change isEnabledUnit func like above. Use array!!
-         */
-
-        if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT || state == POWEROFF) {
+        if (isEnabledUnit(unitName, state)) {
             /* Get script parameter array */
             scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP);
             from = arrayGet(scriptParams, 2);
@@ -859,20 +823,6 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         }
         objectRelease(&stateStr);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /* If 'run' = true then stop it */
     if (run)
         stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false);
@@ -895,6 +845,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             arrayRemove(*unitsDisplay, unitDisplay);
             objectRelease(&unitName);
         }
+        arrayRelease(&statesData);
         return rv;
 }
 
@@ -987,7 +938,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         conflictName = arrayGet(conflicts, i);
         unitConflict = getUnitByName(*units, conflictName);
         if ((unitConflict && unitConflict->enabled) ||
-            (!unitConflict && isEnabledUnit(conflictName))) {
+            (!unitConflict && isEnabledUnit(conflictName, NO_STATE))) {
             if (!force) {
                 if (!(*errors))
                     *errors = arrayNew(objectRelease);

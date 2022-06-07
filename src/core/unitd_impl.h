@@ -245,7 +245,7 @@ int checkConflicts(Unit **, const char *, bool);
 int checkRequires(Array **, Unit **, bool);
 int checkWantedBy(Unit **, State, bool);
 int checkAndSetUnitPath(Unit **, State);
-bool isEnabledUnit(const char *);
+bool isEnabledUnit(const char *, State);
 char* getUnitName(const char *);
 Unit* getUnitByName(Array *, const char *);
 Unit* getUnitByPid(Array *, pid_t pid);
