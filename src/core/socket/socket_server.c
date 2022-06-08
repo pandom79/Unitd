@@ -577,10 +577,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         stringAppendStr(&unitPath, ".unit");
         unit->path = unitPath;
         unit->enabled = isEnabledUnit(unitName, NO_STATE);
-        /* Aggregate all the syntax errors.
-        * Check and parse unitName. We don't consider the units into memory
-        * because we show only syntax errors, not logic errors.
-        */
+        /* Aggregate all the errors */
         parseUnit(unitsDisplay, &unit, true, NO_STATE);
         /* Check wanted by */
         if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE)
@@ -932,7 +929,30 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     if (!(*unitDisplayErrors))
         *unitDisplayErrors = arrayNew(objectRelease);
 
-    /* Check dependencies are enabled */
+    /* Before to perform the checks and enabling, we test that at least a valid state is here */
+    wantedBy = unitDisplay->wantedBy;
+    if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[REBOOT].desc) &&
+        !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[POWEROFF].desc) &&
+        !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_CMDLINE].desc) &&
+        !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_DEFAULT].desc))
+        hasError = true;
+
+    if (hasError) {
+        if (!(*errors))
+            *errors = arrayNew(objectRelease);
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLE_STATE_ERR].desc));
+        if (!(*messages))
+            *messages = arrayNew(objectRelease);
+        if (STATE_CMDLINE != NO_STATE)
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
+                                       STATE_DATA_ITEMS[STATE_CMDLINE].desc));
+        else if (STATE_DEFAULT != NO_STATE)
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
+                                       STATE_DATA_ITEMS[STATE_DEFAULT].desc));
+        goto out;
+    }
+
+    /* Check dependencies */
     requires = unitDisplay->requires;
     len = (requires ? requires->size : 0);
     for (int i = 0; i < len; i++) {

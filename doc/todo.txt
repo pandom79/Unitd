@@ -35,9 +35,8 @@
       We can use isEnabledUnit func passing the state to satisfy "Removed symlink" message.
 
     - Enable unit:
-      In conflicts case, we will release the unit (conflict) only if its content is changed.
-      Moreover, we can remove the check about the conflict errors because, now, the "disable"
-      function no longer considers the "wantedBy" property but cmdline/default, poweroff and reboot state.
+      Evaluate at least one valid state before run enabling
+      DONE
 
     - FIXME Set default:
       We can remove the limit about the "--force" option. Just show created symlink.
