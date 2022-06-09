@@ -97,9 +97,6 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
     { UNIT_REMOVED_SYML_MSG, "Removed symlink '%s' -> '%s'." },
     { UNIT_CREATED_SYML_MSG, "Created symlink '%s' -> '%s'." },
     { STATE_MSG, "%s state : %s" },
-    { DEFAULT_STATE_SYML_WARN_MSG, "Warning :\n"
-                                   "Please, reboot or power off/halt the system\n"
-                                   "without '-f' or '--force' option to apply the change." },
     { DEFAULT_STATE_SYML_RESTORED_MSG, "The default state has been restored to '%s'." },
     { TIME_MSG, "%s time : \033[1;32m%s\033[0m" },
     { UNIT_CHANGED_MSG, "Please, run 'unitctl stop %s' to continue working with this unit." },
@@ -264,7 +261,7 @@ isEnabledUnit(const char *unitName, State currentState)
         arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
         if (STATE_CMDLINE != NO_STATE)
             arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_CMDLINE]);
-        else if (STATE_DEFAULT != NO_STATE)
+        else
             arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_DEFAULT]);
     }
 

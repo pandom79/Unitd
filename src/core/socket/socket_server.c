@@ -528,15 +528,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         *unitsDisplay = arrayNew(unitRelease);
 
     unit = getUnitByName(*units, unitName);
-    if (unit && unit->processData->pStateData->pState == DEAD) {
-        arrayRemove(*units, unit);
-        unit = getUnitByName(*units, unitName);
-        assert(unit == NULL);
-    }
-
     if (unit) {
         if (!restart) {
-            /* Avoid to show the unit detail if the unit is already into memory */
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "started"));
@@ -580,9 +573,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         /* Aggregate all the errors */
         parseUnit(unitsDisplay, &unit, true, NO_STATE);
         /* Check wanted by */
-        if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE)
+        if (STATE_CMDLINE != NO_STATE)
             checkWantedBy(&unit, STATE_CMDLINE, true);
-        else if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE)
+        else
             checkWantedBy(&unit, STATE_DEFAULT, true);
         if (unit->errors->size > 0) {
             *errors = arrayStrCopy(unit->errors);
@@ -782,7 +775,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
     if (STATE_CMDLINE != NO_STATE)
         arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_CMDLINE]);
-    else if (STATE_DEFAULT != NO_STATE)
+    else
         arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_DEFAULT]);
 
     len = statesData->size;
@@ -946,7 +939,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if (STATE_CMDLINE != NO_STATE)
             arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
                                        STATE_DATA_ITEMS[STATE_CMDLINE].desc));
-        else if (STATE_DEFAULT != NO_STATE)
+        else
             arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
                                        STATE_DATA_ITEMS[STATE_DEFAULT].desc));
         goto out;
@@ -1201,83 +1194,49 @@ int
 getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    char *buffer, *destDefStateSyml;
-    Array **messages, **errors;
-    State defaultState = NO_STATE;
-
-    buffer = destDefStateSyml = NULL;
-    messages = errors = NULL;
+    char *buffer = NULL;
+    Array **messages = NULL;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
-    errors = &(*sockMessageOut)->errors;
-    *errors = arrayNew(objectRelease);
+    assert(STATE_DEFAULT != NO_STATE);
     messages = &(*sockMessageOut)->messages;
     *messages = arrayNew(objectRelease);
 
-    if (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE) {
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
-                            "Default", STATE_DATA_ITEMS[STATE_DEFAULT].desc));
-    }
-    else if (STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) {
-        rv = getDefaultStateStr(&destDefStateSyml);
-        /* Symlink missing */
-        if (rv == 1) {
-            objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_MISSING_ERR].desc));
-            goto out;
-        }
-        /* Not a symlink */
-        else if (rv == 2) {
-            objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_TYPE_ERR].desc));
-            goto out;
-        }
-        defaultState = getStateByStr(destDefStateSyml);
-        /* Bad destination */
-        if (defaultState == NO_STATE) {
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_BAD_DEST_ERR].desc,
-                                    destDefStateSyml));
-            objectRelease(&destDefStateSyml);
-            goto out;
-        }
-        objectRelease(&destDefStateSyml);
-
-        /* Default state */
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
-                                   "Default", STATE_DATA_ITEMS[defaultState].desc));
-        /* Current state */
+    /* Default state */
+    arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
+                               "Default", STATE_DATA_ITEMS[STATE_DEFAULT].desc));
+    /* Current state */
+    if (STATE_CMDLINE != NO_STATE) {
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
                                    "Current", STATE_DATA_ITEMS[STATE_CMDLINE].desc));
     }
-
+    /* New default state */
     if (STATE_NEW_DEFAULT != NO_STATE) {
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc,
                                    "New default", STATE_DATA_ITEMS[STATE_NEW_DEFAULT].desc));
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN_MSG].desc));
     }
 
-    out:
-        /* Marshall response */
-        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-        if (UNITD_DEBUG)
-            syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
-                   strlen(buffer), buffer);
-        /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
-                                         "Send func has returned %d = %s", errno, strerror(errno));
-        }
+    /* Marshall response */
+    buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
+    if (UNITD_DEBUG)
+        syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
+               strlen(buffer), buffer);
+    /* Sending the response */
+    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
+                                     "Send func has returned %d = %s", errno, strerror(errno));
+    }
 
-        objectRelease(&buffer);
-        return rv;
+    objectRelease(&buffer);
+    return rv;
 }
 
 int
 setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    char *buffer, *newDefaultStateStr, *destDefStateSyml;
+    char *buffer, *newDefaultStateStr;
     Array **messages, **errors;
     State newDefaultState = NO_STATE;
     State defaultState = STATE_DEFAULT;
@@ -1296,27 +1255,10 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     newDefaultState = getStateByStr(newDefaultStateStr);
     assert(newDefaultState != NO_STATE);
 
-    if (defaultState == NO_STATE) {
-        assert(STATE_CMDLINE != NO_STATE);
-        rv = getDefaultStateStr(&destDefStateSyml);
-        /* Symlink missing */
-        if (rv == 1) {
-            objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_MISSING_ERR].desc));
-            goto out;
-        }
-        /* Not a symlink */
-        else if (rv == 2) {
-            objectRelease(&destDefStateSyml);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_TYPE_ERR].desc));
-            goto out;
-        }
-        defaultState = getStateByStr(destDefStateSyml);
-        objectRelease(&destDefStateSyml);
-    }
-
     if (newDefaultState == defaultState) {
         if (STATE_NEW_DEFAULT != NO_STATE) {
+            /* Create symlink */
+            setNewDefaultStateSyml(defaultState, messages);
             STATE_NEW_DEFAULT = NO_STATE;
             arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_RESTORED_MSG].desc,
                                        STATE_DATA_ITEMS[defaultState].desc));
@@ -1328,21 +1270,21 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     }
     else {
         STATE_NEW_DEFAULT = newDefaultState;
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_WARN_MSG].desc));
+        /* Create symlink */
+        setNewDefaultStateSyml(STATE_NEW_DEFAULT, messages);
     }
 
-    out:
-        /* Marshall response */
-        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-        if (UNITD_DEBUG)
-            syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
-                   strlen(buffer), buffer);
-        /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
-                                         "Send func has returned %d = %s", errno, strerror(errno));
-        }
+    /* Marshall response */
+    buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
+    if (UNITD_DEBUG)
+        syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
+               strlen(buffer), buffer);
+    /* Sending the response */
+    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
+                                     "Send func has returned %d = %s", errno, strerror(errno));
+    }
 
-        objectRelease(&buffer);
-        return rv;
+    objectRelease(&buffer);
+    return rv;
 }

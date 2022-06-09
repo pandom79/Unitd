@@ -240,7 +240,7 @@ startNotifierThread(void *arg UNUSED)
     }
     else {
         if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Run notifier thread (detached) created successfully");
+            unitdLogInfo(LOG_UNITD_BOOT, "Run notifier thread (detached) created successfully\n");
     }
     return NULL;
 }

@@ -221,11 +221,10 @@ typedef enum {
     UNIT_REMOVED_SYML_MSG = 2,
     UNIT_CREATED_SYML_MSG = 3,
     STATE_MSG = 4,
-    DEFAULT_STATE_SYML_WARN_MSG = 5,
-    DEFAULT_STATE_SYML_RESTORED_MSG = 6,
-    TIME_MSG = 7,
-    UNIT_CHANGED_MSG = 8,
-    UNIT_ENABLE_STATE_MSG = 9
+    DEFAULT_STATE_SYML_RESTORED_MSG = 5,
+    TIME_MSG = 6,
+    UNIT_CHANGED_MSG = 7,
+    UNIT_ENABLE_STATE_MSG = 8
 } UnitsMessagesEnum;
 typedef struct {
     UnitsMessagesEnum errorEnum;
@@ -393,7 +392,7 @@ int msleep(long);
 void addEnvVar(Array **, const char *, const char *);
 State getStateByStr(char *);
 int getDefaultStateStr(char **);
-int setNewDefaultStateSyml(State);
+int setNewDefaultStateSyml(State, Array **);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);

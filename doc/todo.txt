@@ -33,15 +33,17 @@
       This function will have to just check if a symlink exists for the default/cmdline, reboot and poweroff state,
       regardeless if the unit is into memory or not and if its content is changed or not.
       We can use isEnabledUnit func passing the state to satisfy "Removed symlink" message.
+      DONE
 
     - Enable unit:
       Evaluate at least one valid state before run enabling
       DONE
 
-    - FIXME Set default:
+    - Set/Get default:
       We can remove the limit about the "--force" option. Just show created symlink.
       "default.state" symlink is useful only for set STATE_DEFAULT variable.
       After that, we can handle default state symlink whatever way we want.
+      DONE
 
     - Re-enable func ???
 

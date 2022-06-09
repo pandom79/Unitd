@@ -139,7 +139,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     unitdOpenLog("w");
     /* Start the cleaner.
     * We don't want to use SA_NOCLDWAIT flag for sigaction.
-    * According my test, it seems that no guarantees it clenas all if more processes exit at the same time.
+    * According my test, it seems that no guarantees it cleans all if more processes exit at the same time.
     * This thread is simple, fast and secure.
     * Tested in VM. I no longer see "defunct" processes.
     */
@@ -147,37 +147,47 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     /* Start the notifier */
     startNotifier();
     //******************* DEFAULT OR CMDLINE STATE ************************
-    if (STATE_CMDLINE_DIR)
+    /* Set the default state variable.
+     * Actually, the following errors should never happen because the unitd-check initialization
+     * unit which makes this job has been already called.
+     */
+    if (getDefaultStateStr(&destDefStateSyml) != 0) {
+        /* If we are here then the symlink is not valid or missing */
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        unitdCloseLog();
+        /* Set the default shutdown command */
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
+        goto shutdown;
+    }
+    STATE_DEFAULT = getStateByStr(destDefStateSyml);
+    if (STATE_DEFAULT == NO_STATE) {
+        /* If we are here then the symlink points to a bad destination */
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
+                         destDefStateSyml);
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        unitdCloseLog();
+        /* Set the default shutdown command */
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
+        goto shutdown;
+    }
+    assert(STATE_DEFAULT != NO_STATE);
+    if (UNITD_DEBUG)
+        unitdLogInfo(LOG_UNITD_ALL, "The default.state symlink points to %s\n",
+                     STATE_DATA_ITEMS[STATE_DEFAULT].desc);
+
+    /* Parsing the units for the cmdline or default state */
+    if (STATE_CMDLINE_DIR) {
+        if (UNITD_DEBUG)
+            unitdLogInfo(LOG_UNITD_ALL, "The state of the cmdline is %s\n",
+                         STATE_DATA_ITEMS[STATE_CMDLINE].desc);
         rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR,
                        STATE_CMDLINE, isAggregate, NULL, PARSE_UNIT, true);
+    }
     else {
-        /* Get the default state as string */
-        if (getDefaultStateStr(&destDefStateSyml) != 0) {
-            /* If we are here then the symlink is not valid or missing */
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-            unitdCloseLog();
-            /* Set the default shutdown command */
-            SHUTDOWN_COMMAND = REBOOT_COMMAND;
-            goto shutdown;
-        }
-        STATE_DEFAULT = getStateByStr(destDefStateSyml);
-        if (STATE_DEFAULT == NO_STATE) {
-            /* If we are here then the symlink points to a bad destination */
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
-                                                destDefStateSyml);
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-            unitdCloseLog();
-            /* Set the default shutdown command */
-            SHUTDOWN_COMMAND = REBOOT_COMMAND;
-            goto shutdown;
-        }
-        if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "The default.state symlink points to %s",
-                         STATE_DATA_ITEMS[STATE_DEFAULT].desc);
         rv = loadUnits(units, UNITS_ENAB_PATH, DEF_STATE_SYML_NAME,
                        STATE_DEFAULT, isAggregate, NULL, PARSE_UNIT, true);
     }
-    /* Zero units are not allowed in this state */
+    /* Zero units are not allowed in this state (default/cmdline) */
     if (rv == GLOB_NOMATCH) {
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         unitdCloseLog();
@@ -185,13 +195,10 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
-    assert((STATE_CMDLINE != NO_STATE && STATE_DEFAULT == NO_STATE) ||
-           (STATE_CMDLINE == NO_STATE && STATE_DEFAULT != NO_STATE));
     /* we open eventual pipes and start the processes */
     openPipes(units, NULL);
     startProcesses(units, NULL);
     ENABLE_RESTART = true;
-    assert(UNITD_LOG_FILE);
     unitdCloseLog();
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
@@ -231,17 +238,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         stopProcesses(units, NULL);
         stopProcesses(shutDownUnits, NULL);
         stopProcesses(initUnits, NULL);
-        assert(UNITD_LOG_FILE);
         unitdCloseLog();
-        /* Set the new default state */
-        if (STATE_NEW_DEFAULT != NO_STATE) {
-            rv = setNewDefaultStateSyml(STATE_NEW_DEFAULT);
-            if (rv != 0) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/init/init.c", "unitdInit", rv, strerror(rv),
-                              "An error has occurred in setNewDefaultStateSyml func", NULL);
-                execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-            }
-        }
         /* Write a wtmp 'shutdown' record */
         if (!NO_WTMP && writeWtmp(false) != 0)
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
