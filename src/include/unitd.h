@@ -65,7 +65,7 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run);
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
-enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run);
+enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run, bool reEnable);
 
 /* Get the dependencies, conflicts or unit wanted states according the boolean parameters values.
  * The "unit name" argument can also contain the ".unit" suffix.

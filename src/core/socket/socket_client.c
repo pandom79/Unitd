@@ -766,7 +766,7 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
 }
 
 int
-enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run)
+enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run, bool reEnable)
 {
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection, bufferSize;
@@ -787,6 +787,11 @@ enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bo
         if (!options)
             options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[FORCE_OPT].name));
+    }
+    if (reEnable) {
+        if (!options)
+            options = arrayNew(objectRelease);
+        arrayAdd(options, stringNew(OPTIONS_DATA[RE_ENABLE_OPT].name));
     }
 
     /* Get SockMessageIn struct */
@@ -1026,7 +1031,7 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
 
 int
 showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
-         bool force, bool restart, bool run)
+         bool force, bool restart, bool run, bool reEnable)
 {
     int rv, len, lenErrors;
     char *message, *unitPath;
@@ -1052,9 +1057,10 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
                 rv = disableUnit(sockMessageOut, arg, run);
             else rv = 1;
             break;
+        case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
             if ((unitPath = getUnitPathByName(arg)))
-                rv = enableUnit(sockMessageOut, arg, force, run);
+                rv = enableUnit(sockMessageOut, arg, force, run, reEnable);
             else rv = 1;
             break;
         case LIST_REQUIRES_COMMAND:

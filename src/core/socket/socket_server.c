@@ -417,7 +417,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         while (*NOTIFIER->isWorking)
             msleep(200);
 
-        if (*pState == DEAD) {
+        if (*pState == DEAD || *pState == RESTARTING) {
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
@@ -462,7 +462,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         else
             isDead = true;
     }
-    if (isDead) {
+    if (isDead && sendResponse) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "dead"));
@@ -498,6 +498,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     Unit *unit, *unitConflict, *unitDep;
     bool force, restart, hasError;
     const char *dep, *conflict;
+    PState *pState = NULL;
 
     unit = unitConflict = unitDep = NULL;
     force = restart = hasError = false;
@@ -529,7 +530,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        if (!restart) {
+        pState = &unit->processData->pStateData->pState;
+        if (!restart && *pState != DEAD && *pState != RESTARTING) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "started"));
@@ -541,8 +543,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             }
             goto out;
         }
-        else if (restart) {
-            assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
+        else if (restart || *pState == DEAD || *pState == RESTARTING) {
+            if (*pState != DEAD && *pState != RESTARTING)
+                assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
             /* stopUnitServer function could not removed it but it must be always removed */
             unit = getUnitByName(*units, unitName);
             if (unit) {
@@ -641,10 +644,11 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
                 /* Waiting for notifier. Basically, it should never happen. Extreme case */
                 while (*NOTIFIER->isWorking)
                     msleep(200);
-                /* We only release the conflict which has been changed or type == ONESHOT.
+                /* We only release the conflict which has been changed,type == ONESHOT or pState = RESTARTING.
                  * We should know dateTimestop and duration
                 */
-                if (unitConflict->isChanged || unitConflict->type == ONESHOT)
+                if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
+                    unitConflict->processData->pStateData->pState == RESTARTING)
                     arrayRemove(*units, unitConflict);
             }
             arrayRelease(&stopConflictsArr);
@@ -846,11 +850,11 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     Unit *unit, *unitDisplay, *unitConflict;
     char *unitName, *buffer, *stateStr, *from, *to;
     const char *conflictName = NULL;
-    bool force, run, hasError;
+    bool force, run, hasError, reEnable, isAlreadyDisabled;
 
     rv = len = 0;
     unitName = buffer = stateStr = from = to = NULL;
-    force = run = hasError = false;
+    force = run = hasError = isAlreadyDisabled = false;
     unit = unitDisplay = unitConflict = NULL;
     conflicts = conflictNames = unitsConflicts = requires = NULL;
 
@@ -871,6 +875,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     }
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
+    reEnable = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RE_ENABLE_OPT].name);
 
     /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);
@@ -878,7 +883,25 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     /* try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        if (unit->enabled) {
+        if (reEnable) {
+            if (!run && unit->isChanged) {
+                if (!(*errors))
+                    *errors = arrayNew(objectRelease);
+                arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
+                if (!(*messages))
+                    *messages = arrayNew(objectRelease);
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_RE_ENABLE_MSG].desc));
+                goto out;
+            }
+            else {
+                disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
+                isAlreadyDisabled = true;
+                /* disableUnitServer func could fully release the unit */
+                unit = getUnitByName(*units, unitName);
+            }
+        }
+
+        if (unit && unit->enabled) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
@@ -888,7 +911,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         while (*NOTIFIER->isWorking)
             msleep(200);
 
-        if (unit->isChanged) {
+        if (unit && unit->isChanged) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
@@ -911,11 +934,14 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
     /* Check if it is already enabled */
-    if (!unit && unitDisplay->enabled) {
+    if (!unit && !reEnable && unitDisplay->enabled) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
         goto out;
+    }
+    else if (!unit && reEnable && unitDisplay->enabled && !isAlreadyDisabled) {
+        disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
     }
 
     unitDisplayErrors = &unitDisplay->errors;

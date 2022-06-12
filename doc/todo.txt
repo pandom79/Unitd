@@ -45,7 +45,8 @@
       After that, we can handle default state symlink whatever way we want.
       DONE
 
-    - Re-enable func ???
+    - Re-enable function
+      DONE
 
     - For the hibernate/suspend management we will use 'zzz' script gently provided by Leah Neukirchen
 

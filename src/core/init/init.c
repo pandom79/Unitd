@@ -18,8 +18,9 @@ OptionData OPTIONS_DATA[] = {
     { STATES_OPT, "states"},
     { NO_WTMP_OPT, "no-wtmp"},
     { ANALYZE_OPT, "analyze"},
+    { RE_ENABLE_OPT, "re-enable"}
 };
-int OPTIONS_LEN = 8;
+int OPTIONS_LEN = 9;
 /* Commands */
 CommandData COMMANDS_DATA[] = {
     { REBOOT_COMMAND, "reboot" },
@@ -41,8 +42,9 @@ CommandData COMMANDS_DATA[] = {
     { CAT_COMMAND, "cat" },
     { EDIT_COMMAND, "edit" },
     { ANALYZE_COMMAND, "analyze" },
+    { RE_ENABLE_COMMAND, "re-enable" },
 };
-int COMMANDS_LEN = 19;
+int COMMANDS_LEN = 20;
 
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;

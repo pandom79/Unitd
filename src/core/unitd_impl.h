@@ -60,7 +60,8 @@ typedef enum {
     CONFLICTS_OPT = 4,
     STATES_OPT = 5,
     NO_WTMP_OPT = 6,
-    ANALYZE_OPT = 7
+    ANALYZE_OPT = 7,
+    RE_ENABLE_OPT = 8
 } Option;
 
 typedef struct OptionData {
@@ -224,7 +225,8 @@ typedef enum {
     DEFAULT_STATE_SYML_RESTORED_MSG = 5,
     TIME_MSG = 6,
     UNIT_CHANGED_MSG = 7,
-    UNIT_ENABLE_STATE_MSG = 8
+    UNIT_ENABLE_STATE_MSG = 8,
+    UNIT_CHANGED_RE_ENABLE_MSG = 9
 } UnitsMessagesEnum;
 typedef struct {
     UnitsMessagesEnum errorEnum;
@@ -367,7 +369,7 @@ int setDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 /* Client */
 int showUnitList(SockMessageOut **);
 int showUnitStatus(SockMessageOut **, const char *unitName);
-int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool);
+int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
 int catEditUnit(Command, const char *unitName);
 int showBootAnalyze(SockMessageOut **);
 

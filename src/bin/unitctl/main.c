@@ -18,6 +18,7 @@ usage(bool fail)
 
         WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
         "enable             Enable the unit\n"
+        "re-enable          Re-enable the unit\n"
         "disable            Disable the unit\n"
         "restart            Restart the unit\n"
         "start              Start the unit\n"
@@ -149,7 +150,7 @@ int main(int argc, char **argv) {
             if (command == LIST_COMMAND)
                 rv = showUnitList(&sockMessageOut);
             else
-                rv = showUnit(command, &sockMessageOut, NULL, false, false, false);
+                rv = showUnit(command, &sockMessageOut, NULL, false, false, false, false);
             break;
         case STATUS_COMMAND:
         case STOP_COMMAND:
@@ -166,7 +167,7 @@ int main(int argc, char **argv) {
             if (command == STATUS_COMMAND)
                 rv = showUnitStatus(&sockMessageOut, arg);
             else
-                rv = showUnit(command, &sockMessageOut, arg, false, false, false);
+                rv = showUnit(command, &sockMessageOut, arg, false, false, false, false);
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
@@ -174,21 +175,25 @@ int main(int argc, char **argv) {
                 usage(true);
             arg = argv[argc - 1];
             if (command == START_COMMAND)
-                rv = showUnit(command, &sockMessageOut, arg, force, false, false);
+                rv = showUnit(command, &sockMessageOut, arg, force, false, false, false);
             else
-                rv = showUnit(command, &sockMessageOut, arg, force, true, false);
+                rv = showUnit(command, &sockMessageOut, arg, force, true, false, false);
             break;
         case DISABLE_COMMAND:
             if (argc == 2 || (argc > 3 && !run && !UNITCTL_DEBUG))
                 usage(true);
             arg = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, arg, false, false, run);
+            rv = showUnit(command, &sockMessageOut, arg, false, false, run, false);
             break;
+        case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
             if (argc == 2 || (argc > 3 && !run && !force && !UNITCTL_DEBUG))
                 usage(true);
             arg = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, arg, force, false, run);
+            if (command == ENABLE_COMMAND)
+                rv = showUnit(command, &sockMessageOut, arg, force, false, run, false);
+            else
+                rv = showUnit(command, &sockMessageOut, arg, force, false, run, true);
             break;
         case CAT_COMMAND: case EDIT_COMMAND:
             if (argc != 3)
@@ -202,7 +207,6 @@ int main(int argc, char **argv) {
                 usage(true);
             rv = showBootAnalyze(&sockMessageOut);
         }
-
 
     return rv;
 }

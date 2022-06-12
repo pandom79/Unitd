@@ -101,7 +101,8 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
     { TIME_MSG, "%s time : \033[1;32m%s\033[0m" },
     { UNIT_CHANGED_MSG, "Please, run 'unitctl stop %s' to continue working with this unit." },
     { UNIT_ENABLE_STATE_MSG, "The 'wantedBy' property should contain at least one of the following states :\n"
-                            "%s\nreboot\npoweroff" }
+                            "%s\nreboot\npoweroff" },
+    { UNIT_CHANGED_RE_ENABLE_MSG, "Please, use '--run' or '-r' option to run this operation." }
 };
 
 /* Return the unit name by unit path or unit name with ".unit" suffix */
