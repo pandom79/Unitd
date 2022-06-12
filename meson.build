@@ -75,3 +75,7 @@ install_subdir('src/extra/functions', install_dir : unitd_data_path)
 install_subdir('src/extra/scripts', install_dir : unitd_data_path)
 install_subdir('src/extra/init.state', install_dir : unitd_data_path)
 install_subdir('src/extra/final.state', install_dir : unitd_data_path)
+
+#zzz script
+install_data('src/extra/scripts/zzz', install_dir : sbin_path)
+install_man('src/extra/man/man8/zzz.8')
