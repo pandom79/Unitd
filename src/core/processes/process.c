@@ -17,15 +17,16 @@ startProcess(void *arg)
     Unit *unit, *unitDep, *unitConflict;
     Array *units, *requires, *conflicts, *wantedBy, *pDataHistory;
     int lenDeps, lenConflicts, statusThread, *finalStatus, *finalStatusDep, *rvThread, rv;
-    ProcessData *pData, *pDataDep;
+    ProcessData *pData, *pDataDep, *pDataConflict;
     pthread_mutex_t *unitMutex, *unitDepMutex;
     char **cmdline = NULL;
     const char *command, *unitName, *unitNameDep, *unitNameconflict, *desc;
+    PState *pStateConflict = NULL;
 
     lenDeps = lenConflicts = rv = 0;
     rvThread = NULL;
     unit = unitDep = unitConflict = NULL;
-    pData = pDataDep = NULL;
+    pData = pDataDep = pDataConflict = NULL;
     unitMutex = unitDepMutex = NULL;
     command = unitName = unitNameDep = unitNameconflict = NULL;
     units = requires = conflicts = wantedBy = pDataHistory = NULL;
@@ -74,14 +75,19 @@ startProcess(void *arg)
     for (int i = 0; i < lenConflicts; i++) {
         unitNameconflict = arrayGet(conflicts, i);
         unitConflict = getUnitByName(units, unitNameconflict);
-        if (unitConflict && unitConflict->processData->pStateData->pState != DEAD) {
-            arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
-                                            unitName, unitNameconflict));
-            *finalStatus = FINAL_STATUS_FAILURE;
-            if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "The '%s' unit has a conflict with the '%s' unit. Exit!\n",
-                             unitName, unitNameconflict);
-            goto out;
+        if (unitConflict) {
+            pDataConflict = unitConflict->processData;
+            pStateConflict = &pDataConflict->pStateData->pState;
+            if (*pStateConflict != DEAD ||
+               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+                arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
+                                              unitName, unitNameconflict));
+                *finalStatus = FINAL_STATUS_FAILURE;
+                if (UNITD_DEBUG)
+                    unitdLogInfo(LOG_UNITD_BOOT, "The '%s' unit has a conflict with the '%s' unit. Exit!\n",
+                                 unitName, unitNameconflict);
+                goto out;
+            }
         }
     }
 
@@ -393,7 +399,6 @@ stopProcess(void *arg)
     }
     else
         statusThread = stopDaemon(NULL, NULL, &unit);
-
 
     /* Evaluating the final status */
     if (statusThread == -1 && *pData->exitCode == -1 && *pData->pid != -1 &&

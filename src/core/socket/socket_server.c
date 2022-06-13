@@ -498,13 +498,15 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     Unit *unit, *unitConflict, *unitDep;
     bool force, restart, hasError;
     const char *dep, *conflict;
-    PState *pState = NULL;
+    PState *pState, *pStateConflict;
+    ProcessData *pDataConflict = NULL;
 
     unit = unitConflict = unitDep = NULL;
     force = restart = hasError = false;
     rv = len = 0;
     buffer = unitName = unitPath = NULL;
     dep = conflict = NULL;
+    pState = pStateConflict = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
     messages = &(*sockMessageOut)->messages;
@@ -609,21 +611,27 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         len = (conflicts ? conflicts->size : 0);
         for (int i = 0; i < len; i++) {
             conflict = arrayGet(conflicts, i);
-            if ((unitConflict = getUnitByName(*units, conflict)) && unitConflict->processData->pStateData->pState != DEAD) {
-                if (!force) {
-                    if (!(*errors))
-                        *errors = arrayNew(objectRelease);
-                    arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
-                                             unitName, conflict));
-                    hasError = true;
-                }
-                else {
-                    /* If we have to force then we create the new array of unit pointers */
-                    if (!stopConflictsArr)
-                        stopConflictsArr = arrayNew(NULL);
-                    arrayAdd(stopConflictsArr, unitConflict);
-                    unitConflict->isStopping = true;
-                    unitConflict->showResult = false;
+            unitConflict = getUnitByName(*units, conflict);
+            if (unitConflict) {
+                pDataConflict = unitConflict->processData;
+                pStateConflict = &pDataConflict->pStateData->pState;
+                if (*pStateConflict != DEAD ||
+                   (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+                    if (!force) {
+                        if (!(*errors))
+                            *errors = arrayNew(objectRelease);
+                        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
+                                                 unitName, conflict));
+                        hasError = true;
+                    }
+                    else {
+                        /* If we have to force then we create the new array of unit pointers */
+                        if (!stopConflictsArr)
+                            stopConflictsArr = arrayNew(NULL);
+                        arrayAdd(stopConflictsArr, unitConflict);
+                        unitConflict->isStopping = true;
+                        unitConflict->showResult = false;
+                    }
                 }
             }
         }
