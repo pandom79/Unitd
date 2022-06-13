@@ -1,0 +1,14 @@
+[Unit]
+Description = Terminal 1
+
+[Command]
+Run = /sbin/agetty --noclear 38400 tty1 linux
+
+[State]
+WantedBy = multi-user
+WantedBy = multi-user-net
+WantedBy = custom
+WantedBy = graphical
+
+
+
