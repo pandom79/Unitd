@@ -64,7 +64,6 @@ The **init** and **final** states are excluded by normal units handling. In thes
 [**Command**]                                   (required and not repeatable)<br/>
 **_Run_** = /sbin/NetworkManager									(required and not repeatable)<br/>
 **_Stop_** = /sbin/NetworkManager -stop						(optional and not repeatable)<br/>
-<<<<<<< HEAD
 
 [**State**]														          (required and not repeatable)<br/>
 **_WantedBy_** = multi-user.state									(required and repeatable)<br/>
