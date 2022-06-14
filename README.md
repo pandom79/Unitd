@@ -1,15 +1,14 @@
 # Unitd
 
-Unit daemon is a simple, fast and modern init system which is mainly focused on an accurate processes supervision.
+Unit daemon is a simple, fast and modern init system which is mainly focused on an accurate processes supervision.<br/>
 The main features are the following:
 
 - multi-threading start
 - dependencies and conflicts management
 - Restart of the processes providing the history
 
-For this init system, every process is named "**unit**" and will has "**.unit**" as configuration file extension.
-
-Unlike the others init systems, Unit daemon doesn't run a "**level**" or strike a "**target**". 
+For this init system, every process is named "**unit**" and will has "**.unit**" as configuration file extension.<br/>
+Unlike the others init systems, Unit daemon doesn't run a "**level**" or strike a "**target**".<br/>
 It brings the system in a determine "**state**".
 
 The available states are:
@@ -29,24 +28,25 @@ The **init** and **final** states are excluded by normal units handling. In thes
 
 ### Unit configuration file
 
-[Unit]														(required)
-Description = NetworkManager								(required)
+[**Unit**]														          (required and not repeatable)<br/>
+**_Description_** = NetworkManager								(required and not repeatable)<br/>
 
-Requires = NetworkManager									(optional and repeatable)
-Requires = ...
+**_Requires_** = NetworkManager									  (optional and repeatable)<br/>
+**_Requires_** = ...<br/>
 
-Conflict = dhcpcd											(optional and repeatable)
-Conflict = ......
+**_Conflict_** = dhcpcd											      (optional and repeatable)<br/>
+**_Conflict_** = ......<br/>
 
-Type = oneshot												(optional and not repeatable. If omitted is daemon)
-Restart = true												(optional and not repeatable. If omitted  is false)
-RestartMax = num											(optional and not repeatable. A numeric value major than zero)
+**_Type_** = oneshot												      (optional and not repeatable. If omitted is "daemon")<br/>
+**_Restart_** = true												      (optional and not repeatable. If omitted  is "false")<br/>
+**_RestartMax_** = num											      (optional and not repeatable. A numeric value major than zero)<br/>
 
-[Command]
-run = /sbin/NetworkManager									(required)
-stop = /sbin/NetworkManager -stop							(optional)
+[**Command**]                                   (required and not repeatable)<br/>
+**_Run_** = /sbin/NetworkManager									(required and not repeatable)<br/>
+**_Stop_** = /sbin/NetworkManager -stop						(optional and not repeatable)<br/>
 
-[State]														(required)
-WantedBy = multi-user.state									(required and repeatable)
+[**State**]														          (required and not repeatable)<br/>
+**_WantedBy_** = multi-user.state									(required and repeatable)<br/>
 
+FIXME Continue....
   
