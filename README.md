@@ -7,10 +7,23 @@ The main features are the following:
 - dependencies and conflicts management
 - Restart of the processes providing the history
 
+### Build instructions
+
+```
+git clone git@github.com:pandom79/Unitd.git
+cd Unitd
+meson setup build
+cd build
+meson configure -DOS_NAME="Slackware Linux"
+meson compile
+meson install
+```
+
+### States
+
 For this init system, every process is named "**unit**" and will has "**.unit**" as configuration file extension.<br/>
 Unlike the others init systems, Unit daemon doesn't run a "**level**" or strike a "**target**".<br/>
-It brings the system in a determine "**state**".
-
+It brings the system in a "**state**".<br/>
 The available states are:
 
 - init
@@ -48,5 +61,8 @@ The **init** and **final** states are excluded by normal units handling. In thes
 [**State**]														          (required and not repeatable)<br/>
 **_WantedBy_** = multi-user.state									(required and repeatable)<br/>
 
-FIXME Continue....
-  
+
+### Unitctl 
+
+The units handling is possible via **unitctl** command.<br/>
+Run ```unitctl --help or -h``` to know the usage.<br/>

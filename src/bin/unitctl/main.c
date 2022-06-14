@@ -32,7 +32,7 @@ usage(bool fail)
         "cat                Show the unit content\n"
         "edit               Edit the unit content\n"
         "list               List all the units\n"
-        "analyze            Analyze the boot process"
+        "analyze            Analyze the boot process\n"
         "reboot             Shutdown and reboot the system\n"
         "poweroff           Shutdown and power off the system\n"
         "halt               Shutdown and halt the system\n"
