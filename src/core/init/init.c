@@ -174,13 +174,13 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     }
     assert(STATE_DEFAULT != NO_STATE);
     if (UNITD_DEBUG)
-        unitdLogInfo(LOG_UNITD_ALL, "The default.state symlink points to %s\n",
+        unitdLogInfo(LOG_UNITD_BOOT, "The default.state symlink points to %s\n",
                      STATE_DATA_ITEMS[STATE_DEFAULT].desc);
 
     /* Parsing the units for the cmdline or default state */
     if (STATE_CMDLINE_DIR) {
         if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_ALL, "The state of the cmdline is %s\n",
+            unitdLogInfo(LOG_UNITD_BOOT, "The state of the cmdline is %s\n",
                          STATE_DATA_ITEMS[STATE_CMDLINE].desc);
         rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR,
                        STATE_CMDLINE, isAggregate, NULL, PARSE_UNIT, true);

@@ -861,9 +861,9 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
         rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_CONFLICTS_COMMAND, unitName, options);
     }
     else if (states) {
+        arrayAdd(options, stringNew(OPTIONS_DATA[STATES_OPT].name));
         /* Get SockMessageIn struct */
         rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_STATES_COMMAND, unitName, options);
-        arrayAdd(options, stringNew(OPTIONS_DATA[STATES_OPT].name));
     }
     if (rv != 0)
         goto out;
