@@ -66,3 +66,9 @@ The **init** and **final** states are excluded by normal units handling. In thes
 
 The units handling is possible via **unitctl** command.<br/>
 Run ```unitctl --help or -h``` to know the usage.<br/>
+
+
+*** Note
+Thanks to Void linux Team for providing the initialization and finalization scripts.
+Another thanks to Leah Neukirchen which provides "zzz" script for the hibernate/suspend management.
+
