@@ -288,8 +288,6 @@ isEnabledUnit(const char *unitName, State currentState)
     return found;
 }
 
-
-
 int
 checkAndSetUnitPath(Unit **currentUnit, State state)
 {

@@ -280,7 +280,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             else break;
         }
 
-        /* If it' not exited yet, kill it! */
+        /* If it's not exited yet, kill it! */
         if (res == 0) {
             kill(pid, SIGKILL);
             /* After killed, waiting for the pid's status
