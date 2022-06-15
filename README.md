@@ -69,6 +69,7 @@ Run ```unitctl --help or -h``` to know the usage.<br/>
 
 
 ### Note
-Thanks to Void linux Team for providing the initialization and finalization scripts.<br/>
+The initialization and finalization units are based on [Void Linux Runit](https://github.com/void-linux/void-runit)<br/>
+Thanks to Void linux Team for providing them.<br/>
 Another thanks to Leah Neukirchen which provides "zzz" script for the hibernate/suspend management.<br/>
 
