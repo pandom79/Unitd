@@ -146,7 +146,7 @@ int main() {
         /* UNITD_ENV_VARS Array must be null terminated */
         arrayAdd(UNITD_ENV_VARS, NULL);
 
-        /* Starting by a heap pointer */
+        /* Starting from an heap pointer */
         unitdData = calloc(1, sizeof(UnitdData));
         assert(unitdData);
         UNITD_DATA = unitdData;
