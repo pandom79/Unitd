@@ -195,7 +195,8 @@ int main(int argc, char **argv) {
             else
                 rv = showUnit(command, &sockMessageOut, arg, force, false, run, true);
             break;
-        case CAT_COMMAND: case EDIT_COMMAND:
+        case CAT_COMMAND:
+        case EDIT_COMMAND:
             if (argc != 3)
                 usage(true);
             else
