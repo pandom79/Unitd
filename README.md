@@ -7,6 +7,11 @@ The main features are the following:
 - dependencies and conflicts management
 - Restart of the processes providing the history
 
+### dependencies
+
+Unitd init system depends on [wrapper](https://github.com/pandom79/wrapper) library.<br/>
+
+
 ### Build instructions
 
 ```
