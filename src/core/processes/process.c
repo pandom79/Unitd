@@ -131,42 +131,49 @@ startProcess(void *arg)
                 msleep(20);
             finalStatusDep = pDataDep->finalStatus;
 
-            /* Lock the dependency mutex */
-            unitDepMutex = unitDep->mutex;
-            if ((rv = pthread_mutex_lock(unitDepMutex)) != 0) {
-                *finalStatusDep = FINAL_STATUS_FAILURE;
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "startProcess",
-                              rv, strerror(rv), "Unable to lock the mutex for the %s dependency",
-                              unitNameDep);
-            }
-            else {
-                /* If the dependency is not started yet */
-                while (*finalStatusDep == FINAL_STATUS_READY) {
-                    if (UNITD_DEBUG)
-                        unitdLogInfo(LOG_UNITD_BOOT, "The dependency '%s' for the '%s' unit is not started yet. "
-                                                     "Waiting for the broadcast signal...!\n",
-                                     unitNameDep, unitName);
-                    /* Waiting for the broadcast signal ... */
-                    if ((rv = pthread_cond_wait(unitDep->cv, unitDepMutex)) != 0) {
-                        *finalStatusDep = FINAL_STATUS_FAILURE;
-                        unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "startProcess",
-                                      rv, strerror(rv), "Unable to wait for condition variable for the %s dependency",
-                                      unitNameDep);
-                        break;
-                    }
-                    if (UNITD_DEBUG)
-                        unitdLogInfo(LOG_UNITD_BOOT,
-                                     "The dependency '%s' for the '%s' unit sent the broadcast signal! Final status = %d\n",
-                                     unitNameDep, unitName, *finalStatusDep);
-                }
-                /* Unlock the dependency mutex */
-                if ((rv = pthread_mutex_unlock(unitDepMutex)) != 0) {
+            /* If the dependency is not started yet */
+            if (*finalStatusDep == FINAL_STATUS_READY) {
+                /* Lock the dependency mutex */
+                unitDepMutex = unitDep->mutex;
+                if ((rv = pthread_mutex_lock(unitDepMutex)) != 0) {
                     *finalStatusDep = FINAL_STATUS_FAILURE;
                     unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "startProcess",
-                                  rv, strerror(rv), "Unable to unlock the mutex for the %s dependency",
+                                  rv, strerror(rv), "Unable to lock the mutex for the %s dependency",
                                   unitNameDep);
                 }
-            }//unitDep mutex locked
+                else {
+                    while (*finalStatusDep == FINAL_STATUS_READY) {
+                        if (UNITD_DEBUG)
+                            unitdLogInfo(LOG_UNITD_BOOT, "The dependency '%s' for the '%s' unit is not started yet. "
+                                                         "Waiting for the broadcast signal...!\n",
+                                         unitNameDep, unitName);
+                        /* Waiting for the broadcast signal ... */
+                        if ((rv = pthread_cond_wait(unitDep->cv, unitDepMutex)) != 0) {
+                            *finalStatusDep = FINAL_STATUS_FAILURE;
+                            unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "startProcess",
+                                          rv, strerror(rv), "Unable to wait for condition variable for the %s dependency",
+                                          unitNameDep);
+                            break;
+                        }
+                        if (UNITD_DEBUG)
+                            unitdLogInfo(LOG_UNITD_BOOT,
+                                         "The dependency '%s' for the '%s' unit sent the broadcast signal! Final status = %d\n",
+                                         unitNameDep, unitName, *finalStatusDep);
+                    }
+                    /* Unlock the dependency mutex */
+                    if ((rv = pthread_mutex_unlock(unitDepMutex)) != 0) {
+                        *finalStatusDep = FINAL_STATUS_FAILURE;
+                        unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "startProcess",
+                                      rv, strerror(rv), "Unable to unlock the mutex for the %s dependency",
+                                      unitNameDep);
+                    }
+                }//unitDep mutex locked
+            }
+            else
+                if (UNITD_DEBUG)
+                    unitdLogInfo(LOG_UNITD_BOOT,
+                                 "The dependency '%s' for the '%s' unit is already started! Final status = %d\n",
+                                 unitNameDep, unitName, *finalStatusDep);
 
             if (*finalStatusDep != FINAL_STATUS_SUCCESS) {
                 /* Set the unsatisfied dependency error in the current unit */
