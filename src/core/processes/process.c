@@ -102,9 +102,6 @@ startProcess(void *arg)
         unitNameDep = arrayGet(requires, i);
         /* Get the dependency as Unit type. */
         unitDep = getUnitByName(units, unitNameDep);
-        /* Actually, when the unit is stopped, doesn't exist into memory.
-         * In this way, we are optimizing memory usage and making easier the management
-        */
         if (!unitDep || (unitDep && unitDep->errors->size > 0)) {
             /* Set the unsatisfied dependency error in the current unit */
             arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
