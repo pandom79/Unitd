@@ -440,7 +440,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
         while (*NOTIFIER->isWorking)
             msleep(200);
-        if (unit->isChanged || *pType == ONESHOT || (*pType == DAEMON && *pState != RUNNING)) {
+        if (unit->isChanged || *pType == ONESHOT || (*pType == DAEMON && *pState == EXITED)) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
             if (sendResponse)
