@@ -136,8 +136,8 @@ execProcess(const char *command, char **argv, Unit **unit)
             /* Timeout */
             while (millisec <= TIMEOUT_MS) {
                 res = waitpid(child, &status, WNOHANG);
-                if (res > 0) {
-                    if (WIFEXITED(status)) {
+                if (res > 0 || res == -1) {
+                    if ((WIFEXITED(status) && res > 0) || res == -1) {
                         timeSetCurrent(&pData->timeStop);
                         stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
                         stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
@@ -165,7 +165,6 @@ execProcess(const char *command, char **argv, Unit **unit)
                     msleep(TIMEOUT_INC_MS);
                     millisec += TIMEOUT_INC_MS;
                 }
-                else break;
             }
 
             /* If it's not exited yet, kill it */
@@ -186,9 +185,8 @@ execProcess(const char *command, char **argv, Unit **unit)
                 stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                 if ((*unit)->showResult)
                     unitdLogErrorStr(LOG_UNITD_ALL, "Timeout expired for the %s unit!\n", (*unit)->name);
-                else
-                    arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc,
-                                                       (*unit)->name));
+                arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc,
+                                                (*unit)->name));
             }
             break;
     }
