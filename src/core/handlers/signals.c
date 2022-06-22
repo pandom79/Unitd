@@ -66,7 +66,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     *finalStatus = FINAL_STATUS_FAILURE;
                     *pStateData = PSTATE_DATA_ITEMS[EXITED];
                     timeSetCurrent(&pData->timeStop);
-                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
                     stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                     if (UNITD_DEBUG) {
                         syslog(LOG_DAEMON | LOG_DEBUG,
@@ -92,7 +92,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     *pStateData = PSTATE_DATA_ITEMS[KILLED];
                     *pData->signalNum = info->si_status;
                     timeSetCurrent(&pData->timeStop);
-                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
                     stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                     if (UNITD_DEBUG) {
                         syslog(LOG_DAEMON | LOG_DEBUG,

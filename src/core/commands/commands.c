@@ -139,7 +139,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 if (res > 0 || res == -1) {
                     if ((WIFEXITED(status) && res > 0) || res == -1) {
                         timeSetCurrent(&pData->timeStop);
-                        stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                        stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
                         stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                         *pData->exitCode = WEXITSTATUS(status);
                         *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
@@ -181,7 +181,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
                 *pData->signalNum = SIGKILL;
                 timeSetCurrent(&pData->timeStop);
-                stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+                stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
                 stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                 if ((*unit)->showResult)
                     unitdLogErrorStr(LOG_UNITD_ALL, "Timeout expired for the %s unit!\n", (*unit)->name);
@@ -295,7 +295,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
     *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
     *pData->signalNum = SIGKILL;
     timeSetCurrent(&pData->timeStop);
-    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop, true);
+    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
     stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
 
     if (UNITD_DEBUG)

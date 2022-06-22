@@ -42,7 +42,7 @@ startProcess(void *arg)
     finalStatus = pData->finalStatus;
     pDataHistory = unit->processDataHistory;
     timeSetCurrent(&pData->timeStart);
-    stringSetTimeStamp(&pData->dateTimeStartStr, pData->timeStart, true);
+    stringSetTimeStamp(&pData->dateTimeStartStr, pData->timeStart);
 
     /* Lock the mutex */
     if ((rv = pthread_mutex_lock(unitMutex)) != 0) {
