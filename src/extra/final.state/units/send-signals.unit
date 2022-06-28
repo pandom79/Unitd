@@ -1,0 +1,11 @@
+[Unit]
+Description = Sent term and kill signal to all processes
+Requires = udev-stop
+Type = oneshot
+
+[Command]
+Run = $UNITD_DATA_PATH/final.state/scripts/send-signals.sh
+
+[State]
+WantedBy = final
+

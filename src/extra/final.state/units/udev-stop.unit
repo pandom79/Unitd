@@ -1,7 +1,5 @@
 [Unit]
 Description = Stopping udev
-Requires = random-seed
-Requires = hw-clock
 Type = oneshot
 
 [Command]

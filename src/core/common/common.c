@@ -8,8 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-Array *UNITD_ENV_VARS;
-
 int
 msleep(long msec)
 {
@@ -199,7 +197,6 @@ isKexecLoaded()
     bool res = false;
     size_t len = 0;
 
-    /* Check if the kernel is built with CONFIG_KEXEC=y */
     if ((fp = fopen("/sys/kernel/kexec_loaded", "r")) == NULL) {
         syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded.\n"
                                      "Unable to open '/sys/kernel/kexec_loaded' file!");

@@ -54,6 +54,7 @@ char *STATE_CMDLINE_DIR;
 Time *BOOT_START;
 Time *SHUTDOWN_START;
 bool NO_WTMP;
+Array *UNITD_ENV_VARS;
 
 static void
 addBootUnits(Array **bootUnits, Array **units) {

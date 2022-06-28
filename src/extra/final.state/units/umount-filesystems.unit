@@ -1,6 +1,6 @@
 [Unit]
 Description = Unmounting filesystems
-Requires = send-sigkill
+Requires = send-signals
 Type = oneshot
 
 [Command]
