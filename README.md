@@ -9,8 +9,10 @@ The main features are the following:
 
 ### Dependencies
 
-Unitd init system depends on [wrapper](https://github.com/pandom79/wrapper) library.<br/>
-
+- [Wrapper](https://github.com/pandom79/wrapper) library
+- A POSIX shell
+- A POSIX awk
+- procps-ng (needs pkill -s0,1)
 
 ### Build instructions
 
