@@ -17,7 +17,7 @@ startProcess(void *arg)
     Unit *unit, *unitDep, *unitConflict;
     Array *units, *requires, *conflicts, *wantedBy, *pDataHistory;
     int lenDeps, lenConflicts, statusThread, *finalStatus, *finalStatusDep, *rvThread, rv;
-    ProcessData *pData, *pDataDep, *pDataConflict;
+    ProcessData *pData, **pDataDep, **pDataConflict;
     pthread_mutex_t *unitMutex, *unitDepMutex;
     char **cmdline = NULL;
     const char *command, *unitName, *unitNameDep, *unitNameconflict, *desc;
@@ -26,7 +26,8 @@ startProcess(void *arg)
     lenDeps = lenConflicts = rv = 0;
     rvThread = NULL;
     unit = unitDep = unitConflict = NULL;
-    pData = pDataDep = pDataConflict = NULL;
+    pData = NULL;
+    pDataDep = pDataConflict = NULL;
     unitMutex = unitDepMutex = NULL;
     command = unitName = unitNameDep = unitNameconflict = NULL;
     units = requires = conflicts = wantedBy = pDataHistory = NULL;
@@ -76,10 +77,17 @@ startProcess(void *arg)
         unitNameconflict = arrayGet(conflicts, i);
         unitConflict = getUnitByName(units, unitNameconflict);
         if (unitConflict) {
-            pDataConflict = unitConflict->processData;
-            pStateConflict = &pDataConflict->pStateData->pState;
+            pDataConflict = &unitConflict->processData;
+            /* When an unit restarts, its processData could be temporarily NULL (extreme case).
+             * See listenPipeThread function.
+             * Waiting for it.
+            */
+            while (!(*pDataConflict))
+                continue;
+
+            pStateConflict = &(*pDataConflict)->pStateData->pState;
             if (*pStateConflict != DEAD ||
-               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+               (*pStateConflict == DEAD && *(*pDataConflict)->finalStatus != FINAL_STATUS_NOT_READY)) {
                 arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
                                               unitName, unitNameconflict));
                 *finalStatus = FINAL_STATUS_FAILURE;
@@ -119,14 +127,15 @@ startProcess(void *arg)
                 unitdLogInfo(LOG_UNITD_BOOT, "The dependency name for the '%s' unit = '%s' have no errors and is enabled. Go on!\n",
                              unitName, unitNameDep);
             /* Get the dependency's Process Data */
-            pDataDep = unitDep->processData;
+            pDataDep = &unitDep->processData;
             /* When an unit restarts, its processData could be temporarily NULL (extreme case).
              * See listenPipeThread function.
              * Waiting for it.
             */
             while (!pDataDep)
-                msleep(20);
-            finalStatusDep = pDataDep->finalStatus;
+                continue;
+
+            finalStatusDep = (*pDataDep)->finalStatus;
 
             /* If the dependency is not started yet */
             if (*finalStatusDep == FINAL_STATUS_READY) {

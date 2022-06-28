@@ -506,13 +506,14 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     bool force, restart, hasError;
     const char *dep, *conflict;
     PState *pState, *pStateConflict;
-    ProcessData **pData = NULL, *pDataConflict = NULL;
+    ProcessData **pData, **pDataConflict;
 
     unit = unitConflict = unitDep = NULL;
     force = restart = hasError = false;
     rv = len = 0;
     buffer = unitName = unitPath = NULL;
     dep = conflict = NULL;
+    pData = pDataConflict = NULL;
     pState = pStateConflict = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
@@ -605,6 +606,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         for (int i = 0; i < len; i++) {
             dep = arrayGet(requires, i);
             if (!(unitDep = getUnitByName(*units, dep)) ||
+                !unitDep->processData ||
                 *unitDep->processData->finalStatus != FINAL_STATUS_SUCCESS ||
                 (unitDep->errors->size > 0)) {
                 if (!(*errors))
@@ -625,10 +627,13 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             conflict = arrayGet(conflicts, i);
             unitConflict = getUnitByName(*units, conflict);
             if (unitConflict) {
-                pDataConflict = unitConflict->processData;
-                pStateConflict = &pDataConflict->pStateData->pState;
+                pDataConflict = &unitConflict->processData;
+                /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
+                while (!(*pDataConflict))
+                    continue;
+                pStateConflict = &(*pDataConflict)->pStateData->pState;
                 if (*pStateConflict != DEAD ||
-                   (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+                   (*pStateConflict == DEAD && *(*pDataConflict)->finalStatus != FINAL_STATUS_NOT_READY)) {
                     if (!force) {
                         if (!(*errors))
                             *errors = arrayNew(objectRelease);
@@ -668,7 +673,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
                  * We should know dateTimestop and duration
                 */
                 if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
-                    unitConflict->processData->pStateData->pState == RESTARTING)
+                   (unitConflict->processData && unitConflict->processData->pStateData->pState == RESTARTING))
                     arrayRemove(*units, unitConflict);
             }
             arrayRelease(&stopConflictsArr);
@@ -1074,7 +1079,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             while (*NOTIFIER->isWorking)
                 msleep(200);
             /* We fully release the conflicts which have the unit content changed or its type is ONESHOT */
-            if (unitConflict->isChanged || unitConflict->type == ONESHOT)
+            if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
+               (unitConflict->processData && unitConflict->processData->pStateData->pState == RESTARTING))
                 arrayRemove(*units, unitConflict);
         }
         arrayRelease(&unitsConflicts);
