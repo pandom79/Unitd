@@ -321,6 +321,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     Array **unitsDisplay, **errors;
     char *buffer, *unitName;
     Unit *unit = NULL;
+    ProcessData **pData = NULL;
 
     rv = lenUnitsDisplay = 0;
     buffer = unitName = NULL;
@@ -341,8 +342,13 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     *unitsDisplay = arrayNew(unitRelease);    
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
-    if (unit)
+    if (unit) {
+        pData = &unit->processData;
+        /* it could be null in restart case. (extreme case) */
+        while (!(*pData))
+            continue;
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
+    }
     else {
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
@@ -404,14 +410,15 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     /* Try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        pData = unit->processData;
-        pState = &pData->pStateData->pState;
-        pType = &unit->type;
-        unitErrors = &unit->errors;
 
         /* Close eventual pipe */
         if (unit->pipe)
             closePipes(NULL, unit);
+
+        pData = unit->processData;
+        pState = &pData->pStateData->pState;
+        pType = &unit->type;
+        unitErrors = &unit->errors;
 
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
         while (*NOTIFIER->isWorking)
@@ -499,7 +506,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     bool force, restart, hasError;
     const char *dep, *conflict;
     PState *pState, *pStateConflict;
-    ProcessData *pDataConflict = NULL;
+    ProcessData **pData = NULL, *pDataConflict = NULL;
 
     unit = unitConflict = unitDep = NULL;
     force = restart = hasError = false;
@@ -532,8 +539,13 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        pState = &unit->processData->pStateData->pState;
-        if (!restart && *pState != DEAD && *pState != RESTARTING) {
+        /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
+        pData = &unit->processData;
+        while (!(*pData))
+            continue;
+        pState = &(*pData)->pStateData->pState;
+
+        if (!restart && *pState != DEAD) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "started"));
@@ -545,8 +557,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             }
             goto out;
         }
-        else if (restart || *pState == DEAD || *pState == RESTARTING) {
-            if (*pState != DEAD && *pState != RESTARTING)
+        else if (restart) {
+            if (*pState != DEAD)
                 assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
             /* stopUnitServer function could not removed it but it must be always removed */
             unit = getUnitByName(*units, unitName);

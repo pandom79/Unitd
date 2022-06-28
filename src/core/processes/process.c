@@ -581,6 +581,7 @@ listenPipeThread(void *arg)
             /* Incrementing restartNum */
             (*restartNum)++;
             *(*pData)->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
+
             if (SHUTDOWN_COMMAND == NO_COMMAND) {
                 if (UNITD_DEBUG)
                     syslog(LOG_DAEMON | LOG_DEBUG, "%s unit is restarting ....", unitName);
