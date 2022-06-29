@@ -175,8 +175,8 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
     unit->name = (unitFrom ? stringNew(unitFrom->name) : NULL);
     unit->enabled = (unitFrom ? unitFrom->enabled : false);
     unit->path = (unitFrom ? stringNew(unitFrom->path) : NULL);
-    unit->processData = (unitFrom ? processDataNew(unitFrom->processData, funcType) :
-                                    processDataNew(NULL, funcType));
+    unit->processData = (unitFrom ? processDataNew(unitFrom->processData, funcType, false) :
+                                    processDataNew(NULL, funcType, false));
     unit->desc = (unitFrom ? stringNew(unitFrom->desc) : NULL);
 
     if (funcType == PARSE_SOCK_RESPONSE || funcType == PARSE_UNIT) {
@@ -199,7 +199,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         if (len > 0) {
             pDataHistory = arrayNew(processDataRelease);
             for (int i = 0; i < len; i++)
-                arrayAdd(pDataHistory, processDataNew(arrayGet(pDataHistoryFrom, i), funcType));
+                arrayAdd(pDataHistory, processDataNew(arrayGet(pDataHistoryFrom, i), funcType, false));
         }
         unit->processDataHistory = pDataHistory;
     }
@@ -823,7 +823,7 @@ unitRelease(Unit **unit)
 }
 
 ProcessData*
-processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
+processDataNew(ProcessData *pDataFrom, ParserFuncType funcType, bool isRestarting)
 {
     ProcessData *pDataRet = NULL;
     pid_t *pid = NULL;
@@ -853,7 +853,7 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
     pStateData = calloc(1, sizeof(PStateData));
     assert(pStateData);
     if (!pDataFrom)
-        *pStateData = PSTATE_DATA_ITEMS[DEAD];
+        *pStateData = (!isRestarting ? PSTATE_DATA_ITEMS[DEAD] : PSTATE_DATA_ITEMS[RESTARTING]);
     else
         *pStateData = *pDataFrom->pStateData;
     pDataRet->pStateData = pStateData;

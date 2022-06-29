@@ -83,7 +83,7 @@ startProcess(void *arg)
              * Waiting for it.
             */
             while (!(*pDataConflict))
-                continue;
+                msleep(200);
 
             pStateConflict = &(*pDataConflict)->pStateData->pState;
             if (*pStateConflict != DEAD ||
@@ -132,8 +132,8 @@ startProcess(void *arg)
              * See listenPipeThread function.
              * Waiting for it.
             */
-            while (!pDataDep)
-                continue;
+            while (!(*pDataDep))
+                msleep(200);
 
             finalStatusDep = (*pDataDep)->finalStatus;
 
@@ -583,13 +583,12 @@ listenPipeThread(void *arg)
             if (*restartNum >= SHOW_MAX_RESULTS)
                 arrayRemoveAt(pDataHistory, 0);
             /* Creating the history */
-            arrayAdd(pDataHistory, processDataNew(*pData, PARSE_UNIT));
+            arrayAdd(pDataHistory, processDataNew(*pData, PARSE_UNIT, false));
             /* Release and create a new Process Data */
             processDataRelease(pData);
-            *pData = processDataNew(NULL, PARSE_UNIT);
+            *pData = processDataNew(NULL, PARSE_UNIT, true);
             /* Incrementing restartNum */
             (*restartNum)++;
-            *(*pData)->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
 
             if (SHUTDOWN_COMMAND == NO_COMMAND) {
                 if (UNITD_DEBUG)

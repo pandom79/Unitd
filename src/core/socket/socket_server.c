@@ -346,7 +346,8 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         pData = &unit->processData;
         /* it could be null in restart case. (extreme case) */
         while (!(*pData))
-            continue;
+            msleep(200);
+
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
     else {
@@ -382,7 +383,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     Array **units, **unitsDisplay, **errors, **unitErrors;
     char *buffer, *unitName;
     Unit *unit = NULL;
-    ProcessData *pData = NULL;
+    ProcessData **pData = NULL;
     PState *pState = NULL;
     PType *pType = NULL;
     bool isDead = false;
@@ -415,8 +416,8 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         if (unit->pipe)
             closePipes(NULL, unit);
 
-        pData = unit->processData;
-        pState = &pData->pStateData->pState;
+        pData = &unit->processData;
+        pState = &(*pData)->pStateData->pState;
         pType = &unit->type;
         unitErrors = &unit->errors;
 
@@ -424,7 +425,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         while (*NOTIFIER->isWorking)
             msleep(200);
 
-        if (*pState == DEAD || *pState == RESTARTING) {
+        if (*pState == DEAD) {
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
@@ -447,7 +448,8 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
         while (*NOTIFIER->isWorking)
             msleep(200);
-        if (unit->isChanged || *pType == ONESHOT || (*pType == DAEMON && *pState == EXITED)) {
+
+        if (unit->isChanged || *pType == ONESHOT || (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
             if (sendResponse)
@@ -628,9 +630,11 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             unitConflict = getUnitByName(*units, conflict);
             if (unitConflict) {
                 pDataConflict = &unitConflict->processData;
+
                 /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
                 while (!(*pDataConflict))
-                    continue;
+                    msleep(200);
+
                 pStateConflict = &(*pDataConflict)->pStateData->pState;
                 if (*pStateConflict != DEAD ||
                    (*pStateConflict == DEAD && *(*pDataConflict)->finalStatus != FINAL_STATUS_NOT_READY)) {
@@ -669,11 +673,16 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
                 /* Waiting for notifier. Basically, it should never happen. Extreme case */
                 while (*NOTIFIER->isWorking)
                     msleep(200);
-                /* We only release the conflict which has been changed,type == ONESHOT or pState = RESTARTING.
-                 * We should know dateTimestop and duration
-                */
+
+                 pDataConflict = &unitConflict->processData;
+                /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
+                while (!(*pDataConflict))
+                    msleep(200);
+                pStateConflict = &(*pDataConflict)->pStateData->pState;
+
+                /* Release */
                 if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
-                   (unitConflict->processData && unitConflict->processData->pStateData->pState == RESTARTING))
+                   (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
                     arrayRemove(*units, unitConflict);
             }
             arrayRelease(&stopConflictsArr);
@@ -876,6 +885,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     char *unitName, *buffer, *stateStr, *from, *to;
     const char *conflictName = NULL;
     bool force, run, hasError, reEnable, isAlreadyDisabled;
+    ProcessData **pDataConflict = NULL;
+    PState *pStateConflict = NULL;
 
     rv = len = 0;
     unitName = buffer = stateStr = from = to = NULL;
@@ -1075,12 +1086,20 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         len = unitsConflicts->size;
         for (int i = 0; i < len; i++) {
             unitConflict = arrayGet(unitsConflicts, i);
+
             /* Waiting for notifier. Basically, it should never happen. Extreme case */
             while (*NOTIFIER->isWorking)
                 msleep(200);
-            /* We fully release the conflicts which have the unit content changed or its type is ONESHOT */
+
+            pDataConflict = &unitConflict->processData;
+            /* it could be null in restart case. (extreme case) */
+            while (!(*pDataConflict))
+                msleep(200);
+            pStateConflict = &(*pDataConflict)->pStateData->pState;
+
+            /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
-               (unitConflict->processData && unitConflict->processData->pStateData->pState == RESTARTING))
+                (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
                 arrayRemove(*units, unitConflict);
         }
         arrayRelease(&unitsConflicts);

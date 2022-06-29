@@ -237,7 +237,7 @@ extern const UnitsMessagesData UNITS_MESSAGES_ITEMS[];
 /* Functions */
 Unit* unitNew(Unit *, ParserFuncType);
 void unitRelease(Unit **);
-ProcessData* processDataNew(ProcessData *, ParserFuncType);
+ProcessData* processDataNew(ProcessData *, ParserFuncType, bool);
 void processDataRelease(ProcessData **);
 int loadUnits(Array **, const char *, const char *, State,
               bool, const char *, ParserFuncType, bool);

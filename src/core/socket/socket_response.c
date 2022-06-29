@@ -480,7 +480,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                     if (!(*pDatasHistory))
                         *pDatasHistory = arrayNew(processDataRelease);
 
-                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
+                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE, false);
                     arrayAdd(*pDatasHistory, pDataHistory);
                     pDataHistorySecCount++;
                 }
