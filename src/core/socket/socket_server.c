@@ -560,7 +560,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             }
             goto out;
         }
-        else if (restart) {
+        else {
             if (*pState != DEAD)
                 assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
             /* stopUnitServer function could not removed it but it must be always removed */
