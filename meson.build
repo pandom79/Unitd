@@ -30,11 +30,11 @@ conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
-# Find libwrapper
+# Dependencies
 libwrapper = meson.get_compiler('c').find_library('libwrapper', required : true)
-
 deps = [dependency('threads'), libwrapper]
 
+# Unitd lib
 libunitd = library('unitd',
                    'src/include/unitd.h', 'src/include/unitd_types.h', 'src/core/unitd_impl.h',
                    'src/core/init/init.c', 'src/core/logger/logger.c',
@@ -49,10 +49,12 @@ libunitd = library('unitd',
                    soversion: '0', install: true
                    )
 
+# Headers
 install_headers('src/include/unitd.h', subdir : 'unitd')
 install_headers('src/include/unitd_types.h', subdir : 'unitd')
 install_headers('build/unitd_config.h', subdir : 'unitd')
 
+# Executables
 executable('unitd', 'src/bin/unitd/main.c',
            link_with: libunitd,
            install: true,
@@ -67,10 +69,15 @@ executable('unitctl', 'src/bin/unitctl/main.c',
            install_dir: sbin_path
            )
 
+executable('seedrng', 'src/extra/src/seedrng.c',
+           install: true,
+           install_dir: sbin_path
+           )
+
+# Configuration
 install_data(project_name + '.conf', install_dir: unitd_conf_path)
 install_data(project_name + '.conf', install_dir: unitd_data_path,
              rename: project_name + '.conf.sample')
-
 install_subdir('src/extra/functions', install_dir : unitd_data_path)
 install_subdir('src/extra/scripts', install_dir : unitd_data_path)
 install_subdir('src/extra/init.state', install_dir : unitd_data_path)
