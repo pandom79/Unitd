@@ -1,5 +1,5 @@
 [Unit]
-Description = Cleaning up
+Description = Cleaning up executed
 Requires = filesystems
 Type = oneshot
 

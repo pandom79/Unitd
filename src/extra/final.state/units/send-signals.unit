@@ -1,5 +1,5 @@
 [Unit]
-Description = Sent term and kill signal to all processes
+Description = Sent TERM and KILL signal to all processes
 Requires = udev-stop
 Type = oneshot
 

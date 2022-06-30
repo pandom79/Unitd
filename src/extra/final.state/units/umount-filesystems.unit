@@ -1,5 +1,5 @@
 [Unit]
-Description = Unmounting filesystems
+Description = File systems unmounted
 Requires = send-signals
 Type = oneshot
 

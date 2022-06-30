@@ -1,5 +1,5 @@
 [Unit]
-Description = Creating dmesg log
+Description = Dmesg log created
 Requires = filesystems
 Type = oneshot
 

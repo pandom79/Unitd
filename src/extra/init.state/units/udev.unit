@@ -1,5 +1,5 @@
 [Unit]
-Description = Starting udev
+Description = Udev started
 Requires = kmods
 Type = oneshot
 

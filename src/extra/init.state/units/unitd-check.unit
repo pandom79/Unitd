@@ -1,5 +1,5 @@
 [Unit]
-Description = Unitd check
+Description = Unitd check executed
 Requires = filesystems
 Type = oneshot
 

@@ -1,5 +1,5 @@
 [Unit]
-Description = Loading kernel modules
+Description = Kernel modules loaded
 Requires = static-devnodes
 Type = oneshot
 

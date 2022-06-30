@@ -1,5 +1,5 @@
 [Unit]
-Description = Activating swap
+Description = Swap activated
 Requires = filesystems
 Type = oneshot
 

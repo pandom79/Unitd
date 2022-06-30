@@ -1,5 +1,5 @@
 [Unit]
-Description = Stopping udev
+Description = Udev stopped
 Type = oneshot
 
 [Command]

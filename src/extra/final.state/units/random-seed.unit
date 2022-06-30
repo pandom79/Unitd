@@ -1,5 +1,5 @@
 [Unit]
-Description = Saving random seed
+Description = Random seed saved
 Type = oneshot
 
 [Command]

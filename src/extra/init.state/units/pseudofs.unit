@@ -1,5 +1,5 @@
 [Unit]
-Description = Mounting pseudo file system
+Description = Pseudo file system mounted
 Type = oneshot
 
 [Command]

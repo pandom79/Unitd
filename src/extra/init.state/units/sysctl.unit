@@ -1,5 +1,5 @@
 [Unit]
-Description = Configuring kernel parameter
+Description = Kernel parameters configured
 Requires = filesystems
 Type = oneshot
 
