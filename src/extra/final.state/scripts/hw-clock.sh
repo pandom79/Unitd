@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 . $UNITD_CONF_PATH/unitd.conf
 
 if [ -z "$VIRTUALIZATION" -a -n "$HARDWARECLOCK" ]; then

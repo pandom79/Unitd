@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 [ -n "$VIRTUALIZATION" ] && exit 0
 
 if [ -x /usr/lib/systemd/systemd-udevd ]; then

@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 . $UNITD_CONF_PATH/unitd.conf
 
 [ -n "$VIRTUALIZATION" ] && exit 0

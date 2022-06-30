@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 if [ -z "$VIRTUALIZATION" ]; then
-    /usr/sbin/seedrng > /dev/null
+    seedrng > /dev/null
 fi

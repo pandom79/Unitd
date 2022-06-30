@@ -1,12 +1,14 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 . $UNITD_CONF_PATH/unitd.conf
 
 install -m0664 -o root -g utmp /dev/null $OUR_UTMP_FILE
-/usr/sbin/unitctl -o # Write a utmp/wtmp 'reboot' record
+unitctl -o # Write a utmp/wtmp 'reboot' record
 
 if [ -z "$VIRTUALIZATION" ]; then
-    /usr/sbin/seedrng > /dev/null
+    seedrng > /dev/null
 fi
 
 ip link set up dev lo

@@ -137,6 +137,7 @@ int main() {
         if (rv == 1)
             addEnvVar(&UNITD_ENV_VARS, "VIRTUALIZATION", "1");
         /* Adding the macro's path as environment variables */
+        addEnvVar(&UNITD_ENV_VARS, "PATH", PATH_ENV_VAR);
         addEnvVar(&UNITD_ENV_VARS, "UNITS_PATH", UNITS_PATH);
         addEnvVar(&UNITD_ENV_VARS, "UNITS_ENAB_PATH", UNITS_ENAB_PATH);
         addEnvVar(&UNITD_ENV_VARS, "UNITD_DATA_PATH", UNITD_DATA_PATH);

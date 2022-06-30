@@ -1,4 +1,7 @@
 #!/bin/sh -e
+
+PATH=$PATH
+
 # Some kernel modules must be loaded before starting udev(7).
 # Load them by looking at the output of `kmod static-nodes`.
 

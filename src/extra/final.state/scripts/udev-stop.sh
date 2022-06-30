@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 if [ -z "$VIRTUALIZATION" ]; then
-    /sbin/udevadm control --exit
+    udevadm control --exit
 fi

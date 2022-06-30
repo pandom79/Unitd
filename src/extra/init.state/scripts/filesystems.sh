@@ -1,5 +1,7 @@
 #!/bin/sh
 
+PATH=$PATH
+
 [ -n "$VIRTUALIZATION" ] && exit 0
 
 mount -o remount,ro /

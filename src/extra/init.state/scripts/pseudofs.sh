@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 mountpoint -q /proc || mount -o nosuid,noexec,nodev -t proc proc /proc
 mountpoint -q /sys || mount -o nosuid,noexec,nodev -t sysfs sys /sys
 mountpoint -q /run || mount -o mode=0755,nosuid,nodev -t tmpfs run /run

@@ -14,6 +14,7 @@
 #endif
 
 #define PROC_CMDLINE_UNITD_DEBUG    "unitd_debug=true"
+#define PATH_ENV_VAR                "/usr/bin:/usr/sbin:/bin:/sbin"
 
 typedef struct {
     int fds[2];

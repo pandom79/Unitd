@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+PATH=$PATH
+
 if [ -z "$VIRTUALIZATION" ]; then
     swapoff -a
     umount -r -a -t nosysfs,noproc,nodevtmpfs,notmpfs
