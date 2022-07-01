@@ -15,6 +15,24 @@ The main features are the following:
 - A POSIX awk
 - procps-ng (needs pkill -s0,1)
 
+### States
+
+For this init system, every process is named "**unit**" and will has "**.unit**" as configuration file extension.<br/>
+Unlike the others init systems, Unit daemon doesn't run a "**level**" or strike a "**target**".<br/>
+It brings the system in a "**state**".<br/>
+The available states are:
+
+- init
+- poweroff
+- single-user
+- multi-user
+- multi-user-net
+- custom
+- graphical
+- reboot
+- final
+
+The **init** and **final** states are excluded by normal units handling. In these states are only present the units which "initialize" and "finalize" the system. An example, could be the mounting and unmounting the disk, etc... Normally, the final user should not consider these states.
 
 ### Build instructions
 
@@ -51,27 +69,6 @@ After that, check the **Run** property of the **Command** section works and enab
 ln -s /usr/lib64/unitd/units/agetty-1.unit /etc/unitd/units/multi-user-net.state/.
 ```
 You should repeat this operation for all the states except **reboot** and **poweroff**.<br/>
-
-
-### States
-
-For this init system, every process is named "**unit**" and will has "**.unit**" as configuration file extension.<br/>
-Unlike the others init systems, Unit daemon doesn't run a "**level**" or strike a "**target**".<br/>
-It brings the system in a "**state**".<br/>
-The available states are:
-
-- init
-- poweroff
-- single-user
-- multi-user
-- multi-user-net
-- custom
-- graphical
-- reboot
-- final
-
-The **init** and **final** states are excluded by normal units handling. In these states are only present the units which "initialize" and "finalize" the system. An example, could be the mounting and unmounting the disk, etc... Normally, the final user should not consider these states.
-
 
 ### Unit configuration file
 
