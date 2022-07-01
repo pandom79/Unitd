@@ -510,7 +510,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             printf("%*s ", MAX_LEN_KEY, "Status :");
             printStatus(pState, status, *finalStatus, true);
             /* Date time start */
-            if (strcmp(dateTimeStart, NONE) != 0)
+            if (dateTimeStart && strcmp(dateTimeStart, NONE) != 0)
                 printf("%*s %s\n", MAX_LEN_KEY, "Started at :", dateTimeStart);
             /* Date time stop */
             if (dateTimeStop)

@@ -480,7 +480,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                     if (!(*pDatasHistory))
                         *pDatasHistory = arrayNew(processDataRelease);
 
-                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE, false);
+                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
                     arrayAdd(*pDatasHistory, pDataHistory);
                     pDataHistorySecCount++;
                 }
@@ -558,7 +558,10 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                             *pData->finalStatus = atoi(value);
                         break;
                     case DATETIMESTART:
-                        pData->dateTimeStartStr = stringNew(value);
+                        if (strcmp(value, NONE) == 0)
+                            pData->dateTimeStartStr = NULL;
+                        else
+                            pData->dateTimeStartStr = stringNew(value);
                         break;
                     case DATETIMESTOP:
                         if (strcmp(value, NONE) == 0)

@@ -321,7 +321,6 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     Array **unitsDisplay, **errors;
     char *buffer, *unitName;
     Unit *unit = NULL;
-    ProcessData **pData = NULL;
 
     rv = lenUnitsDisplay = 0;
     buffer = unitName = NULL;
@@ -342,14 +341,8 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     *unitsDisplay = arrayNew(unitRelease);    
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
-    if (unit) {
-        pData = &unit->processData;
-        /* it could be null in restart case. (extreme case) */
-        while (!(*pData))
-            msleep(200);
-
+    if (unit)
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
-    }
     else {
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
@@ -508,7 +501,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     bool force, restart, hasError;
     const char *dep, *conflict;
     PState *pState, *pStateConflict;
-    ProcessData **pData, **pDataConflict;
+    ProcessData *pData, *pDataConflict;
 
     unit = unitConflict = unitDep = NULL;
     force = restart = hasError = false;
@@ -542,11 +535,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
-        pData = &unit->processData;
-        while (!(*pData))
-            continue;
-        pState = &(*pData)->pStateData->pState;
+        pData = unit->processData;
+        pState = &pData->pStateData->pState;
 
         if (!restart && *pState != DEAD) {
             if (!(*errors))
@@ -562,7 +552,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
         else {
             if (*pState != DEAD)
-                assert(stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false) == 0);
+                stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false);
             /* stopUnitServer function could not removed it but it must be always removed */
             unit = getUnitByName(*units, unitName);
             if (unit) {
@@ -608,7 +598,6 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         for (int i = 0; i < len; i++) {
             dep = arrayGet(requires, i);
             if (!(unitDep = getUnitByName(*units, dep)) ||
-                !unitDep->processData ||
                 *unitDep->processData->finalStatus != FINAL_STATUS_SUCCESS ||
                 (unitDep->errors->size > 0)) {
                 if (!(*errors))
@@ -629,15 +618,11 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             conflict = arrayGet(conflicts, i);
             unitConflict = getUnitByName(*units, conflict);
             if (unitConflict) {
-                pDataConflict = &unitConflict->processData;
+                pDataConflict = unitConflict->processData;
+                pStateConflict = &pDataConflict->pStateData->pState;
 
-                /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
-                while (!(*pDataConflict))
-                    msleep(200);
-
-                pStateConflict = &(*pDataConflict)->pStateData->pState;
                 if (*pStateConflict != DEAD ||
-                   (*pStateConflict == DEAD && *(*pDataConflict)->finalStatus != FINAL_STATUS_NOT_READY)) {
+                   (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
                     if (!force) {
                         if (!(*errors))
                             *errors = arrayNew(objectRelease);
@@ -674,11 +659,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
                 while (*NOTIFIER->isWorking)
                     msleep(200);
 
-                 pDataConflict = &unitConflict->processData;
-                /* In restart case, it could be null. See listenPipeThread in process.c. (extreme case) */
-                while (!(*pDataConflict))
-                    msleep(200);
-                pStateConflict = &(*pDataConflict)->pStateData->pState;
+                pDataConflict = unitConflict->processData;
+                pStateConflict = &pDataConflict->pStateData->pState;
 
                 /* Release */
                 if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
@@ -885,7 +867,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     char *unitName, *buffer, *stateStr, *from, *to;
     const char *conflictName = NULL;
     bool force, run, hasError, reEnable, isAlreadyDisabled;
-    ProcessData **pDataConflict = NULL;
+    ProcessData *pDataConflict = NULL;
     PState *pStateConflict = NULL;
 
     rv = len = 0;
@@ -1091,11 +1073,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             while (*NOTIFIER->isWorking)
                 msleep(200);
 
-            pDataConflict = &unitConflict->processData;
-            /* it could be null in restart case. (extreme case) */
-            while (!(*pDataConflict))
-                msleep(200);
-            pStateConflict = &(*pDataConflict)->pStateData->pState;
+            pDataConflict = unitConflict->processData;
+            pStateConflict = &pDataConflict->pStateData->pState;
 
             /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||

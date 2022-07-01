@@ -78,11 +78,23 @@ executable('seedrng', 'src/extra/src/seedrng.c',
 install_data(project_name + '.conf', install_dir: unitd_conf_path)
 install_data(project_name + '.conf', install_dir: unitd_data_path,
              rename: project_name + '.conf.sample')
+
+# Install extra data
 install_subdir('src/extra/functions', install_dir : unitd_data_path)
 install_subdir('src/extra/scripts', install_dir : unitd_data_path)
 install_subdir('src/extra/init.state', install_dir : unitd_data_path)
 install_subdir('src/extra/final.state', install_dir : unitd_data_path)
 
-#zzz script
+# zzz script
 install_data('src/extra/scripts/zzz', install_dir : sbin_path)
 install_man('src/extra/man/man8/zzz.8')
+
+# Execute 'unitd-check' initialization unit to create the folders tree
+env = environment()
+env.set('UNITS_PATH', units_path)
+env.set('UNITS_ENAB_PATH', units_enab_path)
+r = run_command('src/extra/init.state/scripts/unitd-check.sh', env: env, check: false)
+if r.returncode() != 0
+    message(r.stderr().strip())
+    error('An error has occurred')
+endif
