@@ -4,6 +4,7 @@ PATH=$PATH
 DEF_STATE="multi-user-net.state"
 DEF_SYML="default.state"
 STATES="custom.state graphical.state multi-user-net.state multi-user.state poweroff.state reboot.state single-user.state"
+VALID_STATES="custom.state graphical.state multi-user-net.state multi-user.state single-user.state"
 
 reset_symlink() {
     rm -rf "$UNITS_ENAB_PATH/$DEF_SYML" || true
@@ -39,7 +40,7 @@ if [ -z "$POINTS_TO" ]; then
 else
     # Check where it points
     FOUND=0
-    for STATE in ${STATES[@]}
+    for STATE in ${VALID_STATES[@]}
     do
         # Compare with absolute or relative state path
         if [ "$POINTS_TO" == "$STATE" -o "$POINTS_TO" == "$UNITS_ENAB_PATH/$STATE" ]; then
