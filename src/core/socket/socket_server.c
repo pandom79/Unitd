@@ -154,7 +154,7 @@ listenSocketRequest()
             */
             for (int i = 0; i < MAX_CLIENT_SUPPORTED; i++) {
                 currentFd = &MONITORED_FD_SET[i];
-                if (FD_ISSET(*currentFd, &readFds)) {
+                if (*currentFd != -1 && FD_ISSET(*currentFd, &readFds)) {
                     socketFd = *currentFd;
                     /* Prepare the buffer */
                     bufferSize = INITIAL_SIZE;
