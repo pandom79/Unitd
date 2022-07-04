@@ -212,5 +212,11 @@ int main() {
             /* Show emergency shell */
             execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         }
+
+#ifndef UNITD_TEST
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...\n");
+        sync();
+        reboot(RB_AUTOBOOT);
+#endif
         return 0;
 }
