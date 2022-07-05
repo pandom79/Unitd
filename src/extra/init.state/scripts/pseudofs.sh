@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 
 mountpoint -q /proc || mount -o nosuid,noexec,nodev -t proc proc /proc
 mountpoint -q /sys || mount -o nosuid,noexec,nodev -t sysfs sys /sys

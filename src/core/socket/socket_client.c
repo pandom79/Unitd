@@ -1135,6 +1135,7 @@ catEditUnit(Command command, const char *arg)
         /* Env vars */
         Array *envVars = arrayNew(objectRelease);
         addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
+        addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
         /* Must be null terminated */
         arrayAdd(envVars, NULL);
 

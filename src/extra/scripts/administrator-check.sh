@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export PATH=/sbin:/usr/sbin:/bin:/usr/bin:
+export PATH=$PATH
 
 . $UNITD_DATA_PATH/functions/functions
 
@@ -12,6 +12,9 @@ if command -v pkexec > /dev/null; then
 elif command -v sudo > /dev/null; then
     msg_warn "Authentication required for 'unitctl'."
     sudo -k $PARAMS
+elif command -v doas > /dev/null; then
+    msg_warn "Authentication required for 'unitctl'."
+    doas $PARAMS
 else
     msg_error "Please, run this program as administrator."
 fi

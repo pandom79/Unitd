@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 
 # Configure kernel parameters:
 if [ -x /sbin/sysctl -a -z "$VIRTUALIZATION" ]; then

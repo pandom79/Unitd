@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 DEF_STATE="multi-user-net.state"
 DEF_SYML="default.state"
 STATES="custom.state graphical.state multi-user-net.state multi-user.state poweroff.state reboot.state single-user.state"
