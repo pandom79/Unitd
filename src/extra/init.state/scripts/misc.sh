@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 
 . $UNITD_CONF_PATH/unitd.conf
 

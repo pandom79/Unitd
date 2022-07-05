@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 
 [ -n "$VIRTUALIZATION" ] && exit 0
 

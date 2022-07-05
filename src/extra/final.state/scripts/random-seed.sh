@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 
 if [ -z "$VIRTUALIZATION" ]; then
     seedrng > /dev/null

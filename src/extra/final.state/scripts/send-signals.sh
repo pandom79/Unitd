@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-PATH=$PATH
+export PATH=$PATH
 
 pkill --inverse -s0,1 -TERM
 sleep 1
