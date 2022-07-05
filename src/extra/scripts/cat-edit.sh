@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-export PATH=/sbin:/usr/sbin:/bin:/usr/bin:
+export PATH=$PATH
 
 . $UNITD_DATA_PATH/functions/functions
 
