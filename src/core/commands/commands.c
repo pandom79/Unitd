@@ -274,11 +274,8 @@ stopDaemon(const char *command, char **argv, Unit **unit)
         while (millisec <= TIMEOUT_STOP_MS) {
             res = waitpid(pid, &status, WNOHANG);
             if (res > 0) {
-                if (WIFEXITED(status) || WIFSIGNALED(status)) {
-                    /* Reap all pending child processes */
-                    reapPendingChild();
+                if (WIFEXITED(status) || WIFSIGNALED(status))
                     break;
-                }
             }
             else if (res == 0) {
                 msleep(TIMEOUT_INC_MS);
