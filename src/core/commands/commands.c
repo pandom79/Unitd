@@ -103,9 +103,9 @@ execProcess(const char *command, char **argv, Unit **unit)
                  */
                 (void)execve(command, argv, (char **)UNITD_ENV_VARS->arr);
             }
-            else {
+            else
                 (void)execv(command, argv);
-            }
+
             _exit(errno);
         case -1:
             unitdLogError(LOG_UNITD_BOOT, "src/core/commands/commands.c", "execProcess", errno,
@@ -173,9 +173,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                waitpid(child, &status, 0);
-                /* Reap all pending child processes */
-                reapPendingChild();
+                waitpid(child, &status, WNOHANG);
 
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
@@ -219,6 +217,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
     ProcessData *pData = NULL;
     const char *unitName = NULL;
     int waitPidRes = -1;
+    Array *wantedBy = NULL;
 
     assert(*unit);
     assert((*unit)->type == DAEMON);
@@ -226,6 +225,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
     unitName = (*unit)->name;
     pData = (*unit)->processData;
     pid = *pData->pid;
+    wantedBy = (*unit)->wantedBy;
 
     if (pid != -1) {
         /* Check if the pid exists */
@@ -238,7 +238,16 @@ stopDaemon(const char *command, char **argv, Unit **unit)
                 child = fork();
                 switch (child) {
                     case 0:
-                        (void)execv(command, argv);
+                        if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
+                            arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
+                            /* For the initialization and finalization units we pass
+                            * the environment variables to the scripts
+                            */
+                            (void)execve(command, argv, (char **)UNITD_ENV_VARS->arr);
+                        }
+                        else
+                            (void)execv(command, argv);
+
                         _exit(errno);
                     case -1:
                         unitdLogError(LOG_UNITD_BOOT, "src/core/commands/commands.c", "stopDaemon", errno,
@@ -284,9 +293,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
             */
-            waitpid(pid, &status, 0);
-            /* Reap all pending child processes */
-            reapPendingChild();
+            waitpid(pid, &status, WNOHANG);
         }
     }
 
