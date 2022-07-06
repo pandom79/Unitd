@@ -1,5 +1,7 @@
 [Unit]
 Description = Sent TERM and KILL signal to all processes
+Requires = hw-clock
+Requires = random-seed
 Requires = udev-stop
 Type = oneshot
 

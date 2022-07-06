@@ -1,6 +1,6 @@
 [Unit]
 Description = File systems mounted
-Requires = udev
+Requires = kmods
 Type = oneshot
 
 [Command]
