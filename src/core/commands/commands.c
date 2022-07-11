@@ -41,6 +41,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
         params = arrayNew(objectRelease);
         arrayAdd(params, stringNew(command));
         arrayAdd(params, NULL);
+        argv = (char **)params->arr;
     }
 
     child = fork();
@@ -50,7 +51,8 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
             if (envVar)
                 (void)execve(command, argv, envVar);
             else
-                (void)execv(command, (!argv ? (char **)params->arr : argv));
+                (void)execv(command, argv);
+
             _exit(errno);
         case -1:
             unitdLogError(LOG_UNITD_BOOT, "src/core/commands/commands.c", "execScript", errno,
