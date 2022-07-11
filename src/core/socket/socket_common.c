@@ -203,18 +203,30 @@ sendWallMsg(Command command)
     }
 
     assert(msg);
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Building command */
+    cmd = stringNew(UNITD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/send-wallmsg.sh");
+
+    /* Creating script params */
     Array *scriptParams = arrayNew(objectRelease);
-    cmd = stringNew("/usr/bin/wall");
     arrayAdd(scriptParams, cmd); //0
     arrayAdd(scriptParams, msg); //1
     arrayAdd(scriptParams, NULL); //2
 
-    rv = execScript("/usr/bin", "/wall", scriptParams->arr, NULL);
+    /* Execute the script */
+    rv = execScript(UNITD_DATA_PATH, "/scripts/send-wallmsg.sh", scriptParams->arr, envVars->arr);
     if (rv != 0) {
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_common.c",
                       "sendWallMsg", rv, strerror(rv), "ExecScript error");
     }
 
+    arrayRelease(&envVars);
     arrayRelease(&scriptParams);
     return rv;
 }
@@ -230,9 +242,11 @@ checkAdministrator(char **argv)
     arrayAdd(envVars, NULL);
 
     /* Building command */
-    Array *scriptParams = arrayNew(objectRelease);
     char *cmd = stringNew(UNITD_DATA_PATH);
     stringAppendStr(&cmd, "/scripts/administrator-check.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
     arrayAdd(scriptParams, cmd); //0
     while (*argv) {
         arrayAdd(scriptParams, stringNew(*argv));
@@ -240,6 +254,7 @@ checkAdministrator(char **argv)
     }
     /* Must be null terminated */
     arrayAdd(scriptParams, NULL); //last
+
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/administrator-check.sh", scriptParams->arr, envVars->arr);
     arrayRelease(&scriptParams);
