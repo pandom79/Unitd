@@ -141,7 +141,7 @@ listenSocketRequest()
          * that is, when a client performs 'connect' system call.
         */
         if (FD_ISSET(socketConnection, &readFds)) {
-            if ((socketData = accept(socketConnection, NULL, NULL)) == -1) {
+            if ((socketData = accept(socketConnection, NULL, NULL)) == -1 && errno != EAGAIN) {
                 unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c",
                               "listenSocketRequest", errno, strerror(errno), "Accept error");
                 goto out;
