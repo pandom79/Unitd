@@ -114,21 +114,26 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                     break;
                 case CLD_STOPPED:
                     /* We don't want to allow SIGSTOP, SIGTSTP or something else.
-                     * The only way to stop a process is "unitctl stop" command
+                     * The only way to stop a process is "unitctl stop" command.
+                     * We don't create a history for that because this is not a real "restart".
+                     * Additionally, according restart policy, if 'restartNum' achieves 'restartMax' then
+                     * this pid will remain stopped and we don't want that.
+                     * At most, we set a sigcont signal. In this way the user will see it in the unit status
+                     * and will understand that is has been stopped.
+                     * That will can also be confirmed by system log.
                      */
                     if (kill(infoPid, SIGCONT) == -1) {
-                        if (UNITD_DEBUG) {
                             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::signals.c. "
                                                          "Unable to send SIGCONT for %d pid. Rv = %d (%s)\n",
                                                          infoPid, errno, strerror(errno));
-                        }
                     }
-                    else if (UNITD_DEBUG)
-                        syslog(LOG_DAEMON | LOG_DEBUG, "Sent a SIGCONT signal for %d pid\n", infoPid);
+                    else
+                        syslog(LOG_DAEMON | LOG_DEBUG, "The '%s' unit with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...\n",
+                                                        unitName, infoPid);
                     break;
                 case CLD_CONTINUED:
-                    if (UNITD_DEBUG)
-                        syslog(LOG_DAEMON | LOG_DEBUG, "Received a SIGCONT signal for %d pid\n", infoPid);
+                    syslog(LOG_DAEMON | LOG_DEBUG, "The '%s' unit with '%d' pid has received a SIGCONT signal!\n", unitName, infoPid);
+                    *pData->signalNum = SIGCONT;
                     break;
             }
         }
