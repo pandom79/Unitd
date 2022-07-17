@@ -57,7 +57,6 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
             if (infoCode == CLD_EXITED || infoCode == CLD_KILLED)
                 waitpid(infoPid, &status, 0);
 
-
             if (unit->type == ONESHOT) {
                 if (infoCode == CLD_EXITED) {
                     timeSetCurrent(&pData->timeStop);
