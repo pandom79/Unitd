@@ -175,7 +175,6 @@ execProcess(const char *command, char **argv, Unit **unit)
             }
 
             /* If it's not exited yet, kill it */
-            res = waitpid(child, &status, WNOHANG);
             if (res == 0 && pData->pStateData->pState != EXITED) {
                 kill(child, SIGKILL);
                 /* After killed, waiting for the pid's status
