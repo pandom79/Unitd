@@ -138,25 +138,30 @@ execProcess(const char *command, char **argv, Unit **unit)
             /* Timeout */
             while (millisec <= TIMEOUT_MS) {
                 res = waitpid(child, &status, WNOHANG);
-                if (res > 0 || res == -1) {
-                    if ((WIFEXITED(status) && res > 0) || res == -1) {
+                if ((res > 0 && WIFEXITED(status)) ||
+                    res == -1 ||
+                    *pData->exitCode != -1) {
+
+                    /* If the values has not been set by signal handler then we set them here */
+                    if (*pData->exitCode == -1) {
                         timeSetCurrent(&pData->timeStop);
                         stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
                         stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
-                        *pData->exitCode = WEXITSTATUS(status);
                         *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
-                        /* we communicate the failure result if the unit has a pipe */
-                        if (unitPipe && *pData->exitCode != EXIT_SUCCESS) {
-                            if (write(unitPipe->fds[1], pData->exitCode, sizeof(int)) == -1) {
-                                unitdLogError(LOG_UNITD_CONSOLE, "src/core/commands/commands.c", "execProcess",
-                                              errno, strerror(errno), "Unable to write into pipe for the %s unit (oneshot case)",
-                                              (*unit)->name);
-                            }
-                        }
-                        break;
+                        *pData->exitCode = WEXITSTATUS(status);
                     }
+
+                    /* we communicate the failure result if the unit has a pipe */
+                    if (unitPipe && *pData->exitCode != EXIT_SUCCESS) {
+                        if (write(unitPipe->fds[1], pData->exitCode, sizeof(int)) == -1) {
+                            unitdLogError(LOG_UNITD_CONSOLE, "src/core/commands/commands.c", "execProcess",
+                                          errno, strerror(errno), "Unable to write into pipe for the %s unit (oneshot case)",
+                                          (*unit)->name);
+                        }
+                    }
+                    break;
                 }
-                else if (res == 0) {
+                else {
                     if (millisec > MIN_TIMEOUT_MS) {
                         if (showResult && !showWaitMsg) {
                             unitdLogWarning(LOG_UNITD_CONSOLE, "Waiting for '%s' to exit (%d sec) ...\n",
@@ -170,7 +175,8 @@ execProcess(const char *command, char **argv, Unit **unit)
             }
 
             /* If it's not exited yet, kill it */
-            if (res == 0 && pData->pStateData->pState != EXITED ) {
+            res = waitpid(child, &status, WNOHANG);
+            if (res == 0 && pData->pStateData->pState != EXITED) {
                 kill(child, SIGKILL);
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
