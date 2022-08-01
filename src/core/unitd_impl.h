@@ -49,7 +49,6 @@ extern Time *SHUTDOWN_START;
 extern Time *SHUTDOWN_STOP;
 extern Cleaner *CLEANER;
 extern Notifier *NOTIFIER;
-int parseProcCmdLine();
 
 /* UNITCTL commands */
 typedef enum {
@@ -402,6 +401,8 @@ void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
 int userDirs();
+int parseProcCmdLine();
+int setSigAction();
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

@@ -322,3 +322,80 @@ userDirs()
     arrayRelease(&scriptParams);
     return rv;
 }
+
+int
+parseProcCmdLine()
+{
+    FILE *fp = NULL;
+    int rv = 0;
+    char *line = NULL;
+    size_t len = 0;
+
+    assert(PROC_CMDLINE_PATH);
+    if ((fp = fopen(PROC_CMDLINE_PATH, "r")) == NULL) {
+        rv = 1;
+        unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "readCmdline", errno,
+                      strerror(errno), "Unable to open %s", PROC_CMDLINE_PATH, NULL);
+        return rv;
+    }
+
+    while (getline(&line, &len, fp) != -1) {
+        Array *values = stringSplit(line, " ", false);
+        int len = (values ? values->size : 0);
+        for (int i = 0; i < len; i++) {
+            char *value = arrayGet(values, i);
+            stringTrim(value, NULL);
+            /* Unitd debug */
+            if (strcmp(value, PROC_CMDLINE_UNITD_DEBUG) == 0) {
+                UNITD_DEBUG = true;
+                continue;
+            }
+            /* Single */
+            else if (strcmp(value, "single") == 0 || strcmp(value, STATE_DATA_ITEMS[SINGLE_USER].desc) == 0) {
+                STATE_CMDLINE = SINGLE_USER;
+                continue;
+            }
+            else {
+                /* We exclude INIT, SINGLE (already handled), REBOOT,
+                 * POWEROFF and FINAL STATE */
+                for (State state = MULTI_USER; state <= GRAPHICAL; state++) {
+                    if (strcmp(value, STATE_DATA_ITEMS[state].desc) == 0) {
+                        STATE_CMDLINE = state;
+                        break;
+                    }
+                }
+            }
+        }
+        arrayRelease(&values);
+    }
+
+    objectRelease(&line);
+    fclose(fp);
+    fp = NULL;
+    return rv;
+}
+
+int
+setSigAction()
+{
+    int rv = 0;
+    struct sigaction act = {0};
+
+    /* Enable ctrl-alt-del signal (SIGINT) */
+    reboot(RB_DISABLE_CAD);
+
+    /* Set the values for the signals handler */
+    /* We use SA_RESTART flag to avoid 'Interrupted system call' error by socket */
+    act.sa_flags = SA_SIGINFO | SA_RESTART;
+    act.sa_sigaction = signalsHandler;
+    if (sigaction(SIGTERM, &act, NULL) == -1 ||
+        sigaction(SIGINT, &act, NULL)  == -1 ||
+        sigaction(SIGCHLD, &act, NULL) == -1) {
+        rv = -1;
+        unitdLogError(LOG_UNITD_ALL, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
+                      "Sigaction has returned -1 exit code");
+    }
+
+    return rv;
+}
+

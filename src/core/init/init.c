@@ -70,7 +70,6 @@ int
 unitdInit(UnitdData **unitdData, bool isAggregate)
 {
     int rv, lenUnits;
-    struct sigaction act = { 0 };
     char *initStateDir, *destDefStateSyml, *finalStateDir;
     Array **initUnits, **finalUnits, **units, **shutDownUnits, **bootUnits;
     char *shutDownStateStr = NULL;
@@ -85,31 +84,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     shutDownUnits = &(*unitdData)->shutDownUnits;
     finalUnits = &(*unitdData)->finalUnits;
     bootUnits = &(*unitdData)->bootUnits;
-
-    /* Enable ctrl-alt-del signal (SIGINT) */
-    reboot(RB_DISABLE_CAD);
-
-    /* Set the values for the signals handler */
-    /* We use SA_RESTART flag to avoid 'Interrupted system call' error by socket */
-    act.sa_flags = SA_SIGINFO | SA_RESTART;
-    act.sa_sigaction = signalsHandler;
-    if (sigaction(SIGTERM, &act, NULL) == -1 ||
-        sigaction(SIGINT, &act, NULL)  == -1 ||
-        sigaction(SIGCHLD, &act, NULL) == -1) {
-        rv = -1;
-        unitdLogError(LOG_UNITD_ALL, "src/core/init/init.c", "unitdInit", errno, strerror(errno),
-                      "Sigaction has returned -1 exit code");
-        goto out;
-    }
-
-    if (UNITD_DEBUG) {
-        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, UNITD_PID);
-        unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Log path = %s\n", UNITD_LOG_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
-    }
 
     /* For each terminated state, we check if "SHUTDOWN_COMMAND" is set by signal handler.
      * If so (Ctrl+Alt+Del pressed), we start the reboot phase

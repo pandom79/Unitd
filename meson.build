@@ -14,6 +14,7 @@ unitd_conf_path = get_option('sysconfdir')/project_name
 
 sbin_path = get_option('sbindir')
 units_path = get_option('prefix')/get_option('libdir')/project_name/'units'
+units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = get_option('prefix')/get_option('datadir')/project_name
 unitd_log_path = get_option('localstatedir')/'log'/log_name
@@ -23,6 +24,7 @@ conf_data.set('OS_NAME', get_option('OS_NAME'))
 conf_data.set('OUR_UTMP_FILE', get_option('OUR_UTMP_FILE'))
 conf_data.set('OUR_WTMP_FILE', get_option('OUR_WTMP_FILE'))
 conf_data.set('UNITS_PATH', units_path)
+conf_data.set('UNITS_USER_PATH', units_user_path)
 conf_data.set('UNITS_ENAB_PATH', units_enab_path)
 conf_data.set('UNITD_DATA_PATH', unitd_data_path)
 conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
@@ -92,6 +94,7 @@ install_man('src/extra/man/man8/zzz.8')
 # Execute 'unitd-check' initialization unit to create the folders tree
 env = environment()
 env.set('UNITS_PATH', units_path)
+env.set('UNITS_USER_PATH', units_user_path)
 env.set('UNITS_ENAB_PATH', units_enab_path)
 r = run_command('src/extra/init.state/scripts/unitd-check.sh', env: env, check: false)
 if r.returncode() != 0

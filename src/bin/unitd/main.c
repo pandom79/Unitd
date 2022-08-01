@@ -49,58 +49,6 @@ usage(bool fail)
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
-int
-parseProcCmdLine()
-{
-    FILE *fp = NULL;
-    int rv = 0;
-    char *line = NULL;
-    size_t len = 0;
-
-    assert(PROC_CMDLINE_PATH);
-    if ((fp = fopen(PROC_CMDLINE_PATH, "r")) == NULL) {
-        rv = 1;
-        unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "readCmdline", errno,
-                      strerror(errno), "Unable to open %s", PROC_CMDLINE_PATH, NULL);
-        return rv;
-    }
-
-    while (getline(&line, &len, fp) != -1) {
-        Array *values = stringSplit(line, " ", false);
-        int len = (values ? values->size : 0);
-        for (int i = 0; i < len; i++) {
-            char *value = arrayGet(values, i);
-            stringTrim(value, NULL);
-            /* Unitd debug */
-            if (strcmp(value, PROC_CMDLINE_UNITD_DEBUG) == 0) {
-                UNITD_DEBUG = true;
-                continue;
-            }
-            /* Single */
-            else if (strcmp(value, "single") == 0 || strcmp(value, STATE_DATA_ITEMS[SINGLE_USER].desc) == 0) {
-                STATE_CMDLINE = SINGLE_USER;
-                continue;
-            }
-            else {
-                /* We exclude INIT, SINGLE (already handled), REBOOT,
-                 * POWEROFF and FINAL STATE */
-                for (State state = MULTI_USER; state <= GRAPHICAL; state++) {
-                    if (strcmp(value, STATE_DATA_ITEMS[state].desc) == 0) {
-                        STATE_CMDLINE = state;
-                        break;
-                    }
-                }
-            }
-        }
-        arrayRelease(&values);
-    }
-
-    objectRelease(&line);
-    fclose(fp);
-    fp = NULL;
-    return rv;
-}
-
 int main(int argc, char **argv) {
 
     int c, rv;
@@ -158,19 +106,23 @@ int main(int argc, char **argv) {
             hasError = true;
             goto out;
         }
+
         /* Boot start */
         timeSetCurrent(&BOOT_START);
         if ((rv = parseProcCmdLine()) == 1) {
             hasError = true;
             goto out;
         }
+
         /* We check if a state is defined on the command line */
         if (STATE_CMDLINE != NO_STATE) {
             STATE_CMDLINE_DIR = stringNew(STATE_DATA_ITEMS[STATE_CMDLINE].desc);
             stringAppendStr(&STATE_CMDLINE_DIR, ".state");
         }
+
         /* Welcome msg */
         unitdLogInfo(LOG_UNITD_CONSOLE, "Welcome to %s!\n", OS_NAME);
+
         /* Detecting virtualization environment */
         rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
         if (rv == 0 || rv == 1) {
@@ -206,6 +158,7 @@ int main(int argc, char **argv) {
             hasError = true;
             goto out;
         }
+
         /* Change the current working directory to user home */
         userHome = userInfo->pw_dir;
         if ((rv = chdir(userHome)) == -1) {
@@ -214,6 +167,7 @@ int main(int argc, char **argv) {
             hasError = true;
             goto out;
         }
+
         /* Set user dirs */
         UNITS_USER_LOCAL_PATH = stringNew(userHome);
         stringAppendStr(&UNITS_USER_LOCAL_PATH, "/.config/unitd/units");
@@ -236,11 +190,34 @@ int main(int argc, char **argv) {
     assert(unitdData);
     UNITD_DATA = unitdData;
 
+    /* Set sigaction */
+    if ((rv = setSigAction()) != 0)
+        goto out;
+
+    if (UNITD_DEBUG) {
+        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, UNITD_PID);
+        unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Log path = %s\n", UNITD_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+    }
+
     /* Init */
     if (!USER_INSTANCE)
         unitdInit(&unitdData, false);
-    else
+    else {
+        assert(UNITS_USER_LOCAL_PATH);
+        assert(UNITD_USER_CONF_PATH);
+        assert(UNITS_USER_ENAB_PATH);
+        if (UNITD_DEBUG) {
+            unitdLogInfo(LOG_UNITD_ALL, "Units user path = %s\n", UNITS_USER_PATH);
+            unitdLogInfo(LOG_UNITD_ALL, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
+            unitdLogInfo(LOG_UNITD_ALL, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
+            unitdLogInfo(LOG_UNITD_ALL, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
+        }
         unitdUserInit(&unitdData, false);
+    }
 
     /* Release all */
     unitdEnd(&unitdData);
