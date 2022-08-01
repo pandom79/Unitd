@@ -10,6 +10,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define OUR_UTMP_FILE "@OUR_UTMP_FILE@"
 #define OUR_WTMP_FILE "@OUR_WTMP_FILE@"
 #define UNITS_PATH "@UNITS_PATH@"
+#define UNITS_USER_PATH "@UNITS_USER_PATH@"
 #define UNITS_ENAB_PATH "@UNITS_ENAB_PATH@"
 #define UNITD_DATA_PATH "@UNITD_DATA_PATH@"
 #define UNITD_LOG_PATH "@UNITD_LOG_PATH@"

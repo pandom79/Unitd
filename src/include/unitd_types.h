@@ -29,6 +29,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include <sys/reboot.h>
 #include <utmp.h>
 #include <sys/utsname.h>
+#include <pwd.h>
 
 #define UNUSED __attribute__((unused))
 
@@ -91,7 +92,7 @@ typedef struct {
 } ProcessData;
 
 /* States */
-static const int STATE_DATA_ITEMS_LEN = 9;
+static const int STATE_DATA_ITEMS_LEN = 10;
 
 typedef enum {
     NO_STATE = -1,
@@ -103,7 +104,8 @@ typedef enum {
     CUSTOM = 5,
     GRAPHICAL = 6,
     REBOOT = 7,
-    FINAL = 8
+    FINAL = 8,
+    USER = 9
 } State;
 
 typedef struct StateData {
@@ -120,7 +122,8 @@ static const struct StateData STATE_DATA_ITEMS[] = {
     { CUSTOM, "custom" },
     { GRAPHICAL, "graphical" },
     { REBOOT, "reboot" },
-    { FINAL, "final" }
+    { FINAL, "final" },
+    { USER, "user" }
 };
 
 /* Units */

@@ -17,6 +17,12 @@ if [ ! -d "$UNITS_PATH" ]; then
     chmod 0755 -R "$UNITS_PATH"
 fi
 
+# Check UNITS_USER_PATH
+if [ ! -d "$UNITS_USER_PATH" ]; then
+    mkdir -p "$UNITS_USER_PATH"
+    chmod 0755 -R "$UNITS_USER_PATH"
+fi
+
 # Check UNITS_ENAB_PATH
 if [ ! -d "$UNITS_ENAB_PATH" ]; then
     mkdir -p "$UNITS_ENAB_PATH"

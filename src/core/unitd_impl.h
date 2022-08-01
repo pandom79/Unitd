@@ -304,6 +304,7 @@ void* closePipe(void *);
 
 /* INIT */
 int unitdInit(UnitdData **, bool);
+int unitdUserInit(UnitdData **, bool);
 void unitdEnd(UnitdData **);
 /*********************************************************************************/
 
@@ -400,6 +401,7 @@ int setNewDefaultStateSyml(State, Array **);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
+int userDirs();
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

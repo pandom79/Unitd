@@ -8,6 +8,10 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
+char *UNITS_USER_LOCAL_PATH;
+char *UNITS_USER_ENAB_PATH;
+
+
 int
 msleep(long msec)
 {
@@ -281,5 +285,40 @@ writeWtmp(bool isBooting) {
         }
     }
 
+    return rv;
+}
+
+int
+userDirs()
+{
+    int rv = 0;
+
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Building command */
+    char *cmd = stringNew(UNITD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/user-dirs.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, stringNew(UNITS_USER_LOCAL_PATH)); //1
+    arrayAdd(scriptParams, stringNew(UNITS_USER_ENAB_PATH)); //2
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL); //3
+
+    /* Execute the script */
+    rv = execScript(UNITD_DATA_PATH, "/scripts/user-dirs.sh", scriptParams->arr, envVars->arr);
+    if (rv != 0) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c",
+                      "userDirs", rv, strerror(rv), "ExecScript error");
+    }
+
+    arrayRelease(&envVars);
+    arrayRelease(&scriptParams);
     return rv;
 }

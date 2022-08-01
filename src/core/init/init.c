@@ -55,6 +55,7 @@ Time *BOOT_START;
 Time *SHUTDOWN_START;
 bool NO_WTMP;
 Array *UNITD_ENV_VARS;
+pid_t UNITD_PID;
 
 static void
 addBootUnits(Array **bootUnits, Array **units) {
@@ -102,7 +103,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     }
 
     if (UNITD_DEBUG) {
-        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, getpid());
+        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, UNITD_PID);
         unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
         unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
         unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
@@ -274,6 +275,13 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         objectRelease(&finalStateDir);
         return rv;
 }
+
+int
+unitdUserInit(UnitdData **unitdData, bool isAggregate)
+{
+    return 0;
+}
+
 
 void
 unitdEnd(UnitdData **unitdData)
