@@ -400,7 +400,7 @@ int setNewDefaultStateSyml(State, Array **);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
-int userDirs();
+int unitdUserCheck(int, const char *);
 int parseProcCmdLine();
 int setSigAction();
 /*********************************************************************************/

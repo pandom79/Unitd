@@ -90,7 +90,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     */
 
     //*************************** INIT STATE *********************************
-     /* Parsing and starting the initialization units
+    /* Parsing and starting the initialization units
      * For the initialization state, we always aggregate the errors to allow
      * to fix all the errors in a one shot
     */
@@ -115,12 +115,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 
     assert(!UNITD_LOG_FILE);
     unitdOpenLog("w");
-    /* Start the cleaner.
-    * We don't want to use SA_NOCLDWAIT flag for sigaction.
-    * According my test, it seems that no guarantees it cleans all if more processes exit at the same time.
-    * This thread is simple, fast and secure.
-    * Tested in VM. I no longer see "defunct" processes.
-    */
+    /* Start the cleaner */
     startCleaner();
     /* Start the notifier */
     startNotifier();
@@ -253,7 +248,31 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 int
 unitdUserInit(UnitdData **unitdData, bool isAggregate)
 {
-    return 0;
+    int rv = 0;
+
+    /* Open log */
+    assert(!UNITD_LOG_FILE);
+    unitdOpenLog("w");
+
+    /* Start the cleaner */
+    startCleaner();
+    /* Start the notifier */
+    startNotifier();
+
+
+//FIXME continue...
+    sleep(30);
+
+    /* Stop cleaner */
+    stopCleaner();
+    /* Stop notifier */
+    stopNotifier();
+
+    /* Close log */
+    unitdCloseLog();
+    assert(!UNITD_LOG_FILE);
+
+    return rv;
 }
 
 

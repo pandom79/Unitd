@@ -35,6 +35,7 @@ bool USER_INSTANCE = false;
 char *UNITS_USER_LOCAL_PATH = NULL;
 char *UNITS_USER_ENAB_PATH = NULL;
 char *UNITD_USER_CONF_PATH = NULL;
+char *UNITD_USER_LOG_PATH = NULL;
 
 static void __attribute__((noreturn))
 usage(bool fail)
@@ -173,14 +174,19 @@ int main(int argc, char **argv) {
         stringAppendStr(&UNITS_USER_LOCAL_PATH, "/.config/unitd/units");
         UNITD_USER_CONF_PATH = stringNew(userHome);
         stringAppendStr(&UNITD_USER_CONF_PATH, "/.local/share/unitd");
+        UNITD_USER_LOG_PATH = stringNew(UNITD_USER_CONF_PATH);
+        stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
         UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
         stringAppendStr(&UNITS_USER_ENAB_PATH, "/units/");
         stringAppendStr(&UNITS_USER_ENAB_PATH, STATE_DATA_ITEMS[USER].desc);
         stringAppendStr(&UNITS_USER_ENAB_PATH, ".state");
 
-        /* Check the user directories are there */
-        if ((rv = userDirs()) != 0) {
-            hasError = true;
+        /* Check the user directories are there and the instance is not already running for this user */
+        if ((rv = unitdUserCheck(userInfo->pw_uid, userInfo->pw_name)) != 0) {
+            /* If the exit code == 1 then the instance is already running, hence,
+             * we don't show the emergency shell */
+            if (rv != 1)
+                hasError = true;
             goto out;
         }
     }
@@ -209,11 +215,13 @@ int main(int argc, char **argv) {
     else {
         assert(UNITS_USER_LOCAL_PATH);
         assert(UNITD_USER_CONF_PATH);
+        assert(UNITD_USER_LOG_PATH);
         assert(UNITS_USER_ENAB_PATH);
         if (UNITD_DEBUG) {
             unitdLogInfo(LOG_UNITD_ALL, "Units user path = %s\n", UNITS_USER_PATH);
             unitdLogInfo(LOG_UNITD_ALL, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
             unitdLogInfo(LOG_UNITD_ALL, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
+            unitdLogInfo(LOG_UNITD_ALL, "unitd user log path = %s\n", UNITD_USER_LOG_PATH);
             unitdLogInfo(LOG_UNITD_ALL, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
         }
         unitdUserInit(&unitdData, false);
@@ -270,8 +278,9 @@ int main(int argc, char **argv) {
         }
         else {
             objectRelease(&UNITS_USER_LOCAL_PATH);
-            objectRelease(&UNITS_USER_ENAB_PATH);
             objectRelease(&UNITD_USER_CONF_PATH);
+            objectRelease(&UNITD_USER_LOG_PATH);
+            objectRelease(&UNITS_USER_ENAB_PATH);
         }
         if (hasError) {
             /* Show emergency shell */

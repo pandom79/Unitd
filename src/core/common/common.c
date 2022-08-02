@@ -289,33 +289,44 @@ writeWtmp(bool isBooting) {
 }
 
 int
-userDirs()
+unitdUserCheck(int userUid, const char *userName)
 {
     int rv = 0;
+    char userUidStr[20] = {0};
+
+    assert(userUid >= 0);
+    assert(userName);
+
+    sprintf(userUidStr, "%d", userUid);
 
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
     /* Must be null terminated */
     arrayAdd(envVars, NULL);
 
     /* Building command */
     char *cmd = stringNew(UNITD_DATA_PATH);
-    stringAppendStr(&cmd, "/scripts/user-dirs.sh");
+    stringAppendStr(&cmd, "/scripts/unitd-user-check.sh");
 
     /* Creating script params */
     Array *scriptParams = arrayNew(objectRelease);
     arrayAdd(scriptParams, cmd); //0
     arrayAdd(scriptParams, stringNew(UNITS_USER_LOCAL_PATH)); //1
     arrayAdd(scriptParams, stringNew(UNITS_USER_ENAB_PATH)); //2
+    arrayAdd(scriptParams, stringNew(userUidStr)); //3
+    arrayAdd(scriptParams, stringNew(userName)); //4
     /* Must be null terminated */
-    arrayAdd(scriptParams, NULL); //3
+    arrayAdd(scriptParams, NULL); //5
 
     /* Execute the script */
-    rv = execScript(UNITD_DATA_PATH, "/scripts/user-dirs.sh", scriptParams->arr, envVars->arr);
-    if (rv != 0) {
+    rv = execScript(UNITD_DATA_PATH, "/scripts/unitd-user-check.sh", scriptParams->arr, envVars->arr);
+    /* If the exit code == 1 then the instance is already running, hence,
+     * we don't set the error */
+    if (rv != 0 && rv != 1) {
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c",
-                      "userDirs", rv, strerror(rv), "ExecScript error");
+                      "unitdUserCheck", rv, strerror(rv), "ExecScript error");
     }
 
     arrayRelease(&envVars);

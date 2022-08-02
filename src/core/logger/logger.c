@@ -9,15 +9,24 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitd_impl.h"
 
 FILE *UNITD_LOG_FILE = NULL;
+bool USER_INSTANCE;
+char *UNITD_USER_LOG_PATH;
 
 int
 unitdOpenLog(const char *mode)
 {
+    const char *unitdLogPath = NULL;
+
+    if (!USER_INSTANCE)
+        unitdLogPath = UNITD_LOG_PATH;
+    else
+        unitdLogPath = UNITD_USER_LOG_PATH;
+
     if (!UNITD_LOG_FILE)
-        UNITD_LOG_FILE = fopen(UNITD_LOG_PATH, mode);
+        UNITD_LOG_FILE = fopen(unitdLogPath, mode);
     if (!UNITD_LOG_FILE) {
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
-                      "Unable to open the log %s in mode '%s'", UNITD_LOG_PATH, mode);
+                      "Unable to open the log %s in mode '%s'", unitdLogPath, mode);
         return -1;
     }
 
@@ -28,9 +37,17 @@ int
 unitdCloseLog()
 {
     int rv = 0;
-    if (UNITD_LOG_FILE && (rv = fclose(UNITD_LOG_FILE)) != 0)
+    const char *unitdLogPath = NULL;
+
+    if (!USER_INSTANCE)
+        unitdLogPath = UNITD_LOG_PATH;
+    else
+        unitdLogPath = UNITD_USER_LOG_PATH;
+
+    if (UNITD_LOG_FILE && (rv = fclose(UNITD_LOG_FILE)) != 0) {
         unitdLogError(LOG_UNITD_ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
-                      "Unable to close the log '%s'", UNITD_LOG_PATH);
+                                     "Unable to close the log '%s'", unitdLogPath);
+    }
     UNITD_LOG_FILE = NULL;
     return rv;
 }
