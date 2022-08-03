@@ -289,15 +289,15 @@ writeWtmp(bool isBooting) {
 }
 
 int
-unitdUserCheck(int userUid, const char *userName)
+unitdUserCheck(int userId, const char *userName)
 {
     int rv = 0;
-    char userUidStr[20] = {0};
+    char userIdStr[20] = {0};
 
-    assert(userUid >= 0);
+    assert(userId >= 0);
     assert(userName);
 
-    sprintf(userUidStr, "%d", userUid);
+    sprintf(userIdStr, "%d", userId);
 
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
@@ -315,18 +315,22 @@ unitdUserCheck(int userUid, const char *userName)
     arrayAdd(scriptParams, cmd); //0
     arrayAdd(scriptParams, stringNew(UNITS_USER_LOCAL_PATH)); //1
     arrayAdd(scriptParams, stringNew(UNITS_USER_ENAB_PATH)); //2
-    arrayAdd(scriptParams, stringNew(userUidStr)); //3
+    arrayAdd(scriptParams, stringNew(userIdStr)); //3
     arrayAdd(scriptParams, stringNew(userName)); //4
     /* Must be null terminated */
     arrayAdd(scriptParams, NULL); //5
 
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd-user-check.sh", scriptParams->arr, envVars->arr);
-    /* If the exit code == 1 then the instance is already running, hence,
-     * we don't set the error */
-    if (rv != 0 && rv != 1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c",
-                      "unitdUserCheck", rv, strerror(rv), "ExecScript error");
+    /* If rv == 1 then the instance is already running */
+    if (rv != 0) {
+        if (rv != 1)
+            unitdLogError(LOG_UNITD_BOOT, "src/core/common/common.c",
+                          "unitdUserCheck", rv, strerror(rv), "ExecScript error");
+        else {
+            unitdLogErrorStr(LOG_UNITD_BOOT, "Unitd instance is already running for %s user!\n", userName);
+            syslog(LOG_DAEMON | LOG_ERR, "Unitd instance is already running for %s user!\n", userName);
+        }
     }
 
     arrayRelease(&envVars);

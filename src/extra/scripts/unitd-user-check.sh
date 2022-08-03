@@ -4,8 +4,8 @@ export PATH=$PATH
 
 . $UNITD_DATA_PATH/functions/functions
 
-# $1 = UNITS_USER_LOCAL_PATH (/.config/unitd/units)
-# $2 = UNITS_USER_ENAB_PATH (/.local/share/unitd/)
+# $1 = UNITS_USER_LOCAL_PATH ($HOME/.config/unitd/units)
+# $2 = UNITS_USER_ENAB_PATH ($HOME/.local/share/unitd/units/user.state)
 # $3 = USER UID
 # $4 = USER NAME
 UNITS_USER_LOCAL_PATH="$1"

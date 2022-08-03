@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
     int c, rv;
     UnitdData *unitdData = NULL;
-    bool hasError = false;
+    bool showEmergencyShell = false;
     const char *shortopts = "hd";
     char *userHome = NULL;
     const struct option longopts[] = {
@@ -104,14 +104,14 @@ int main(int argc, char **argv) {
         if ((rv = chdir("/")) == -1) {
             unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Chdir (system instance) has returned -1 exit code");
-            hasError = true;
+            showEmergencyShell = true;
             goto out;
         }
 
         /* Boot start */
         timeSetCurrent(&BOOT_START);
         if ((rv = parseProcCmdLine()) == 1) {
-            hasError = true;
+            showEmergencyShell = true;
             goto out;
         }
 
@@ -144,28 +144,31 @@ int main(int argc, char **argv) {
         else {
             unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", rv,
                           "An error has occurred in virtualization.sh", NULL);
-            hasError = true;
+            showEmergencyShell = true;
             goto out;
         }
     }
     else {
+
         /* Get user info */
         errno = 0;
-        struct passwd *userInfo = getpwuid(getuid());
+        int userId = getuid();
+        struct passwd *userInfo = getpwuid(userId);
         if (!userInfo) {
             rv = errno;
-            unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", errno,
+            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Getpwuid has returned a null pointer");
-            hasError = true;
+            syslog(LOG_DAEMON | LOG_ERR, "Getpwuid has returned a null pointer for userId = %d", userId);
             goto out;
         }
 
         /* Change the current working directory to user home */
         userHome = userInfo->pw_dir;
         if ((rv = chdir(userHome)) == -1) {
-            unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", errno,
-                          strerror(errno), "Chdir (user instance) has returned -1 exit code");
-            hasError = true;
+            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", errno,
+                          strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
+            syslog(LOG_DAEMON | LOG_ERR, "Chdir (user instance) for %d userId has returned -1 exit code. "
+                                         "Rv = %d (%s)", userId, errno, strerror(errno));
             goto out;
         }
 
@@ -181,14 +184,19 @@ int main(int argc, char **argv) {
         stringAppendStr(&UNITS_USER_ENAB_PATH, STATE_DATA_ITEMS[USER].desc);
         stringAppendStr(&UNITS_USER_ENAB_PATH, ".state");
 
+        assert(UNITS_USER_LOCAL_PATH);
+        assert(UNITD_USER_CONF_PATH);
+        assert(UNITD_USER_LOG_PATH);
+        assert(UNITS_USER_ENAB_PATH);
+
+        /* For the user instance we never show the emrgency shell and we put whatever error into log which
+         * can be already opened in this case (disk already mounted) */
+        assert(!UNITD_LOG_FILE);
+        unitdOpenLog("w");
+
         /* Check the user directories are there and the instance is not already running for this user */
-        if ((rv = unitdUserCheck(userInfo->pw_uid, userInfo->pw_name)) != 0) {
-            /* If the exit code == 1 then the instance is already running, hence,
-             * we don't show the emergency shell */
-            if (rv != 1)
-                hasError = true;
+        if ((rv = unitdUserCheck(userInfo->pw_uid, userInfo->pw_name)) != 0)
             goto out;
-        }
     }
 
     /* Starting from an heap pointer */
@@ -197,51 +205,35 @@ int main(int argc, char **argv) {
     UNITD_DATA = unitdData;
 
     /* Set sigaction */
-    if ((rv = setSigAction()) != 0)
+    if ((rv = setSigAction()) != 0) {
+        if (!USER_INSTANCE)
+            showEmergencyShell = true;
         goto out;
-
-    if (UNITD_DEBUG) {
-        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, UNITD_PID);
-        unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Log path = %s\n", UNITD_LOG_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
     }
 
     /* Init */
     if (!USER_INSTANCE)
-        unitdInit(&unitdData, false);
-    else {
-        assert(UNITS_USER_LOCAL_PATH);
-        assert(UNITD_USER_CONF_PATH);
-        assert(UNITD_USER_LOG_PATH);
-        assert(UNITS_USER_ENAB_PATH);
-        if (UNITD_DEBUG) {
-            unitdLogInfo(LOG_UNITD_ALL, "Units user path = %s\n", UNITS_USER_PATH);
-            unitdLogInfo(LOG_UNITD_ALL, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
-            unitdLogInfo(LOG_UNITD_ALL, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
-            unitdLogInfo(LOG_UNITD_ALL, "unitd user log path = %s\n", UNITD_USER_LOG_PATH);
-            unitdLogInfo(LOG_UNITD_ALL, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
-        }
-        unitdUserInit(&unitdData, false);
-    }
+        rv = unitdInit(&unitdData, false);
+    else
+        rv = unitdUserInit(&unitdData, false);
 
     /* Release all */
     unitdEnd(&unitdData);
 
     if (!USER_INSTANCE) {
-        /* Print Shutdown time */
-        timeSetCurrent(&SHUTDOWN_STOP);
-        char *diff = NULL;
-        stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
-        char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "%s", msg);
-        printf("\n");
-        objectRelease(&diff);
-        objectRelease(&msg);
-        timeRelease(&SHUTDOWN_START);
-        timeRelease(&SHUTDOWN_STOP);
+        if (SHUTDOWN_START) {
+            /* Print Shutdown time */
+            timeSetCurrent(&SHUTDOWN_STOP);
+            char *diff = NULL;
+            stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
+            char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
+            unitdLogInfo(LOG_UNITD_CONSOLE, "%s", msg);
+            printf("\n");
+            objectRelease(&diff);
+            objectRelease(&msg);
+            timeRelease(&SHUTDOWN_START);
+            timeRelease(&SHUTDOWN_STOP);
+        }
 
         /* The system is going down */
 #ifndef UNITD_TEST
@@ -272,19 +264,23 @@ int main(int argc, char **argv) {
     }
 
     out:
+        if (showEmergencyShell)
+            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+
+        unitdEnd(&unitdData);
         if (!USER_INSTANCE) {
             timeRelease(&BOOT_START);
             objectRelease(&STATE_CMDLINE_DIR);
+            arrayRelease(&UNITD_ENV_VARS);
         }
         else {
             objectRelease(&UNITS_USER_LOCAL_PATH);
             objectRelease(&UNITD_USER_CONF_PATH);
             objectRelease(&UNITD_USER_LOG_PATH);
             objectRelease(&UNITS_USER_ENAB_PATH);
-        }
-        if (hasError) {
-            /* Show emergency shell */
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+            unitdLogInfo(LOG_UNITD_BOOT, "Unitd instance exited with %d (%s) exit code.\n", rv, strerror(rv));
+            unitdCloseLog();
+            assert(!UNITD_LOG_FILE);
         }
 
 #ifndef UNITD_TEST
@@ -294,5 +290,6 @@ int main(int argc, char **argv) {
             reboot(RB_AUTOBOOT);
         }
 #endif
+
         return rv;
 }

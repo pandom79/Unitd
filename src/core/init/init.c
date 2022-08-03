@@ -45,7 +45,6 @@ CommandData COMMANDS_DATA[] = {
     { RE_ENABLE_COMMAND, "re-enable" },
 };
 int COMMANDS_LEN = 20;
-
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;
 State STATE_CMDLINE;
@@ -56,6 +55,7 @@ Time *SHUTDOWN_START;
 bool NO_WTMP;
 Array *UNITD_ENV_VARS;
 pid_t UNITD_PID;
+char *UNITD_USER_CONF_PATH;
 
 static void
 addBootUnits(Array **bootUnits, Array **units) {
@@ -84,6 +84,15 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     shutDownUnits = &(*unitdData)->shutDownUnits;
     finalUnits = &(*unitdData)->finalUnits;
     bootUnits = &(*unitdData)->bootUnits;
+
+    if (UNITD_DEBUG) {
+        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, UNITD_PID);
+        unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Unitd Log path = %s\n", UNITD_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_ALL, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+    }
 
     /* For each terminated state, we check if "SHUTDOWN_COMMAND" is set by signal handler.
      * If so (Ctrl+Alt+Del pressed), we start the reboot phase
@@ -250,15 +259,19 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
 {
     int rv = 0;
 
-    /* Open log */
-    assert(!UNITD_LOG_FILE);
-    unitdOpenLog("w");
+    if (UNITD_DEBUG) {
+        unitdLogInfo(LOG_UNITD_BOOT, "Units user path = %s\n", UNITS_USER_PATH);
+        unitdLogInfo(LOG_UNITD_BOOT, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
+        unitdLogInfo(LOG_UNITD_BOOT, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
+        unitdLogInfo(LOG_UNITD_BOOT, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_BOOT, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
+        unitdLogInfo(LOG_UNITD_BOOT, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+    }
 
     /* Start the cleaner */
     startCleaner();
     /* Start the notifier */
     startNotifier();
-
 
 //FIXME continue...
     sleep(30);
@@ -267,10 +280,6 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     stopCleaner();
     /* Stop notifier */
     stopNotifier();
-
-    /* Close log */
-    unitdCloseLog();
-    assert(!UNITD_LOG_FILE);
 
     return rv;
 }

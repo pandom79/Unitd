@@ -49,6 +49,10 @@ extern Time *SHUTDOWN_START;
 extern Time *SHUTDOWN_STOP;
 extern Cleaner *CLEANER;
 extern Notifier *NOTIFIER;
+extern char *UNITS_USER_LOCAL_PATH;
+extern char *UNITS_USER_ENAB_PATH;
+extern char *UNITD_USER_CONF_PATH;
+extern char *UNITD_USER_LOG_PATH;
 
 /* UNITCTL commands */
 typedef enum {
