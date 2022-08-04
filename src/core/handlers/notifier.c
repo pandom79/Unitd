@@ -282,7 +282,7 @@ void*
 runNotifiersThread(void *arg)
 {
     int rv, length, i, input, maxFd;
-    int *fd, *wd, *fdPipe, *idxNotifier;
+    int *fd, *wd, *fdPipe;
     pthread_mutex_t *mutex = NULL;
     char buffer[EVENT_BUF_LEN] = {0};
     fd_set fds;
@@ -291,8 +291,7 @@ runNotifiersThread(void *arg)
     const char *watchDir = NULL;
 
     assert(arg);
-    idxNotifier = (int *)arg;
-    notifier = arrayGet(NOTIFIERS, *idxNotifier);
+    notifier = (Notifier *)arg;
     /* Get notifier data */
     mutex = notifier->mutex;
     fd = notifier->fd;
@@ -414,23 +413,19 @@ startNotifiersThread(void *arg)
 {
     pthread_t thread;
     pthread_attr_t attr;
-    int rv = 0, *idxNotifier;
+    int rv = 0;
     Notifier *notifier = NULL;
     const char *watchDir = NULL;
 
-    /* Set notifier index */
-    idxNotifier = calloc(1, sizeof(int));
-    assert(idxNotifier);
-    *idxNotifier = *((int *)arg);
-
+    assert(arg);
     /* Get notifier data */
-    notifier = arrayGet(NOTIFIERS, *idxNotifier);
+    notifier = (Notifier *)arg;
     watchDir = notifier->watchDir;
 
     /* Set pthread attributes and start */
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if ((rv = pthread_create(&thread, &attr, runNotifiersThread, idxNotifier)) != 0) {
+    if ((rv = pthread_create(&thread, &attr, runNotifiersThread, notifier)) != 0) {
         unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "startNotifierThread", errno,
                       strerror(errno), "Unable to create the runNotifiersThread thread (detached) (%s)", watchDir);
     }
@@ -452,7 +447,7 @@ setNotifiers()
         arrayAdd(NOTIFIERS, notifier);
     }
     else {
-        /* Foe user instance we have two dirs to monitor */
+        /* For user instance we have to monitor two dirs */
         for (int i = 0; i < 2; i++) {
             Notifier *notifier = notifierNew();
             if (i == 0)
@@ -467,7 +462,6 @@ setNotifiers()
 void
 startNotifiers()
 {
-    pthread_t thread;
     int rv = 0, len;
     Notifier *notifier = NULL;
     const char *watchDir = NULL;
@@ -475,10 +469,11 @@ startNotifiers()
     setNotifiers();
     assert(NOTIFIERS);
     len = NOTIFIERS->size;
+    pthread_t threads[len];
     for (int i = 0; i < len; i++) {
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
-        if ((rv = pthread_create(&thread, NULL, startNotifiersThread, &i)) != 0) {
+        if ((rv = pthread_create(&threads[i], NULL, startNotifiersThread, notifier)) != 0) {
             unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "startNotifiers", errno,
                           strerror(errno), "Unable to create the thread for the notifier (%s)",
                           watchDir);
@@ -493,7 +488,7 @@ startNotifiers()
     for (int i = 0; i < len; i++) {
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
-        if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
+        if ((rv = pthread_join(threads[i], NULL)) != EXIT_SUCCESS) {
             unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "startNotifiers", rv,
                           strerror(rv), "Unable to join the thread for the notifier (%s)", watchDir);
         }
@@ -561,4 +556,84 @@ stopNotifier()
                 unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the notifier (stop)\n");
         }
     }
+}
+
+void*
+stopNotifiersThread(void *arg)
+{
+    int rv = 0, output = THREAD_EXIT;
+    Notifier *notifier = NULL;
+    pthread_mutex_t *mutex = NULL;
+    const char *watchDir = NULL;
+
+    assert(arg);
+    notifier = (Notifier *)arg;
+    mutex = notifier->mutex;
+    watchDir = notifier->watchDir;
+
+    if ((rv = write(notifier->fds[1], &output, sizeof(int))) == -1) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
+                      errno, strerror(errno), "Unable to write into fd for the notifier (%s)", watchDir);
+        goto out;
+    }
+
+    /* Lock mutex */
+    if ((rv = pthread_mutex_lock(mutex)) != 0) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
+                      rv, strerror(rv), "Unable to acquire the notifier mutex lock (%s)", watchDir);
+        goto out;
+    }
+
+    /* Unlock mutex */
+    if ((rv = pthread_mutex_unlock(mutex)) != 0) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
+                      rv, strerror(rv), "Unable to unlock the notifier mutex (%s)", watchDir);
+    }
+
+    out:
+        return NULL;
+}
+
+void
+stopNotifiers()
+{
+    int rv = 0, len;
+    Notifier *notifier = NULL;
+    const char *watchDir = NULL;
+
+    assert(NOTIFIERS);
+    len = NOTIFIERS->size;
+    pthread_t threads[len];
+    for (int i = 0; i < len; i++) {
+        notifier = arrayGet(NOTIFIERS, i);
+        watchDir = notifier->watchDir;
+        if ((rv = pthread_create(&threads[i], NULL, stopNotifiersThread, notifier)) != 0) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiers", errno,
+                          strerror(errno), "Unable to create the thread for the notifier (stop) (%s)",
+                          watchDir);
+        }
+        else {
+            if (UNITD_DEBUG)
+                unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the notifier (stop) (%s)\n",
+                             watchDir);
+        }
+    }
+    /* Waiting for the thread to terminate */
+    for (int i = 0; i < len; i++) {
+        notifier = arrayGet(NOTIFIERS, i);
+        watchDir = notifier->watchDir;
+        if ((rv = pthread_join(threads[i], NULL)) != EXIT_SUCCESS) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiers", rv,
+                          strerror(rv), "Unable to join the thread for the notifier (stop) (%s)",
+                          watchDir);
+        }
+        else {
+            if (UNITD_DEBUG)
+                unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the notifier (stop) (%s)\n",
+                             watchDir);
+        }
+    }
+
+    /* Release notifiers */
+    arrayRelease(&NOTIFIERS);
 }

@@ -9,7 +9,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitd_impl.h"
 
 FILE *UNITD_LOG_FILE = NULL;
-bool USER_INSTANCE;
 char *UNITD_USER_LOG_PATH;
 
 int

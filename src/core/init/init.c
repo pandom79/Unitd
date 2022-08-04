@@ -270,8 +270,8 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
 
     /* Start the cleaner */
     startCleaner();
-    /* Start the notifier */
-    startNotifier();
+    /* Start the notifiers */
+    startNotifiers();
 
 //FIXME continue...
     sleep(30);
@@ -279,7 +279,7 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     /* Stop cleaner */
     stopCleaner();
     /* Stop notifier */
-    stopNotifier();
+    stopNotifiers();
 
     return rv;
 }

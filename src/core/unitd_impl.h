@@ -57,6 +57,7 @@ extern char *UNITS_USER_LOCAL_PATH;
 extern char *UNITS_USER_ENAB_PATH;
 extern char *UNITD_USER_CONF_PATH;
 extern char *UNITD_USER_LOG_PATH;
+extern bool USER_INSTANCE;
 
 /* UNITCTL commands */
 typedef enum {
@@ -335,6 +336,8 @@ void setNotifiers();
 void startNotifiers();
 void* startNotifiersThread(void *);
 void* runNotifiersThread(void *);
+void stopNotifiers();
+void* stopNotifiersThread(void *);
 
 
 
