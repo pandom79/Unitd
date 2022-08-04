@@ -30,7 +30,10 @@ Time *BOOT_STOP = NULL;
 Time *SHUTDOWN_START = NULL;
 Time *SHUTDOWN_STOP = NULL;
 Cleaner *CLEANER = NULL;
+//FIXME remove the variable below
 Notifier *NOTIFIER = NULL;
+Array *NOTIFIERS = NULL;
+bool NOTIFIER_WORKING = false;
 bool USER_INSTANCE = false;
 char *UNITS_USER_LOCAL_PATH = NULL;
 char *UNITS_USER_ENAB_PATH = NULL;
@@ -52,7 +55,7 @@ usage(bool fail)
 
 int main(int argc, char **argv) {
 
-    int c, rv;
+    int c, rv, userId;
     UnitdData *unitdData = NULL;
     bool showEmergencyShell = false;
     const char *shortopts = "hd";
@@ -72,6 +75,18 @@ int main(int argc, char **argv) {
     assert(UNITD_LOG_PATH);
     assert(UNITD_DATA_PATH);
     assert(UNITD_CONF_PATH);
+
+    /* Check user id.
+     * If UNITD_TEST macro is defined then we want the root user.
+    */
+    userId = getuid();
+#ifdef UNITD_TEST
+    if (userId != 0) {
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
+        showEmergencyShell = true;
+        goto out;
+    }
+#endif
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -152,7 +167,6 @@ int main(int argc, char **argv) {
 
         /* Get user info */
         errno = 0;
-        int userId = getuid();
         struct passwd *userInfo = getpwuid(userId);
         if (!userInfo) {
             rv = errno;
@@ -267,11 +281,17 @@ int main(int argc, char **argv) {
         if (showEmergencyShell)
             execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 
+        /* If something went wrong then we try to relase all anyway */
         unitdEnd(&unitdData);
         if (!USER_INSTANCE) {
             timeRelease(&BOOT_START);
             objectRelease(&STATE_CMDLINE_DIR);
             arrayRelease(&UNITD_ENV_VARS);
+#ifndef UNITD_TEST
+            unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...\n");
+            sync();
+            reboot(RB_AUTOBOOT);
+#endif
         }
         else {
             objectRelease(&UNITS_USER_LOCAL_PATH);
@@ -282,14 +302,6 @@ int main(int argc, char **argv) {
             unitdCloseLog();
             assert(!UNITD_LOG_FILE);
         }
-
-#ifndef UNITD_TEST
-        if (!USER_INSTANCE) {
-            unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...\n");
-            sync();
-            reboot(RB_AUTOBOOT);
-        }
-#endif
 
         return rv;
 }
