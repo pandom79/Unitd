@@ -26,7 +26,6 @@ typedef struct {
     int *fd;
     int *wd;
     pthread_mutex_t *mutex;
-    bool *isWorking;
     char *watchDir;
 } Notifier;
 
@@ -51,8 +50,6 @@ extern Time *SHUTDOWN_STOP;
 extern Cleaner *CLEANER;
 extern Array *NOTIFIERS;
 extern bool NOTIFIER_WORKING;
-//FIXME remove the variable below
-extern Notifier *NOTIFIER;
 extern char *UNITS_USER_LOCAL_PATH;
 extern char *UNITS_USER_ENAB_PATH;
 extern char *UNITD_USER_CONF_PATH;
@@ -329,20 +326,12 @@ void* startCleanerThread(void *);
 void stopCleaner();
 void* stopCleanerThread(void *);
 //Notifier
-void startNotifier();
-void* startNotifierThread(void *);
-void stopNotifier();
-void* stopNotifierThread(void *);
-
-//NEW
 void setNotifiers();
 void startNotifiers();
 void* startNotifiersThread(void *);
 void* runNotifiersThread(void *);
 void stopNotifiers();
 void* stopNotifiersThread(void *);
-
-
 
 /*********************************************************************************/
 

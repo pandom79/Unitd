@@ -30,8 +30,6 @@ Time *BOOT_STOP = NULL;
 Time *SHUTDOWN_START = NULL;
 Time *SHUTDOWN_STOP = NULL;
 Cleaner *CLEANER = NULL;
-//FIXME remove the variable below
-Notifier *NOTIFIER = NULL;
 Array *NOTIFIERS = NULL;
 bool NOTIFIER_WORKING = false;
 bool USER_INSTANCE = false;
@@ -104,6 +102,9 @@ int main(int argc, char **argv) {
         }
     }
 
+    /* Boot start */
+    timeSetCurrent(&BOOT_START);
+
     /* Set PID */
     UNITD_PID = setsid();
     if (UNITD_PID != 1) {
@@ -124,9 +125,6 @@ int main(int argc, char **argv) {
             showEmergencyShell = true;
             goto out;
         }
-
-        /* Boot start */
-        timeSetCurrent(&BOOT_START);
 
         /* Parsing /proc/cmdline file */
         if ((rv = parseProcCmdLine()) == 1) {
@@ -168,7 +166,6 @@ int main(int argc, char **argv) {
         }
     }
     else {
-
         /* Get user info */
         errno = 0;
         struct passwd *userInfo = getpwuid(userId);
@@ -198,9 +195,7 @@ int main(int argc, char **argv) {
         UNITD_USER_LOG_PATH = stringNew(UNITD_USER_CONF_PATH);
         stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
         UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
-        stringAppendStr(&UNITS_USER_ENAB_PATH, "/units/");
-        stringAppendStr(&UNITS_USER_ENAB_PATH, STATE_DATA_ITEMS[USER].desc);
-        stringAppendStr(&UNITS_USER_ENAB_PATH, ".state");
+        stringAppendStr(&UNITS_USER_ENAB_PATH, "/units");
 
         /* Get userId as string */
         char userIdStr[20] = {0};
@@ -218,14 +213,14 @@ int main(int argc, char **argv) {
         assert(UNITS_USER_ENAB_PATH);
         assert(SOCKET_USER_PATH);
 
+        /* Check the user directories are there and the instance is not already running for this user */
+        if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0)
+            goto out;
+
         /* For the user instance we never show the emrgency shell and we put whatever error into log which
          * can be already opened in this case (disk already mounted) */
         assert(!UNITD_LOG_FILE);
         unitdOpenLog("w");
-
-        /* Check the user directories are there and the instance is not already running for this user */
-        if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0)
-            goto out;
     }
 
     /* Starting from an heap pointer */
@@ -296,12 +291,10 @@ int main(int argc, char **argv) {
         if (showEmergencyShell)
             execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 
-        /* If something went wrong then we try to relase all anyway */
+        /* If something went wrong then we try to release all anyway */
         unitdEnd(&unitdData);
+
         if (!USER_INSTANCE) {
-            timeRelease(&BOOT_START);
-            objectRelease(&STATE_CMDLINE_DIR);
-            arrayRelease(&UNITD_ENV_VARS);
 #ifndef UNITD_TEST
             unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...\n");
             sync();
@@ -309,11 +302,6 @@ int main(int argc, char **argv) {
 #endif
         }
         else {
-            objectRelease(&UNITS_USER_LOCAL_PATH);
-            objectRelease(&UNITD_USER_CONF_PATH);
-            objectRelease(&UNITD_USER_LOG_PATH);
-            objectRelease(&UNITS_USER_ENAB_PATH);
-            objectRelease(&SOCKET_USER_PATH);
             assert(UNITD_LOG_FILE);
             unitdLogInfo(LOG_UNITD_BOOT, "Unitd instance exited with %d (%s) exit code.\n", rv, strerror(rv));
             unitdCloseLog();

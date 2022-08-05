@@ -128,8 +128,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     unitdOpenLog("w");
     /* Start the cleaner */
     startCleaner();
-    /* Start the notifier */
-    startNotifier();
+    /* Start the notifiers */
+    startNotifiers();
     //******************* DEFAULT OR CMDLINE STATE ************************
     /* Set the default state variable.
      * Actually, the following errors should never happen because the unitd-check initialization
@@ -199,8 +199,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         unitdOpenLog("a");
         /* Stop the cleaner */
         stopCleaner();
-        /* Stop the notifier */
-        stopNotifier();
+        /* Stop the notifiers */
+        stopNotifiers();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
         if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -260,10 +260,13 @@ int
 unitdUserInit(UnitdData **unitdData, bool isAggregate)
 {
     int rv = 0;
-    Array **units = NULL;
+    Array **units, **bootUnits;
+
+    units = bootUnits = NULL;
 
     assert(*unitdData);
     units = &(*unitdData)->units;
+    bootUnits = &(*unitdData)->bootUnits;
 
     if (UNITD_DEBUG) {
         unitdLogInfo(LOG_UNITD_BOOT, "Units user path = %s\n", UNITS_USER_PATH);
@@ -295,6 +298,8 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
 
+    /* Create the boot units array */
+    addBootUnits(bootUnits, units);
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
@@ -321,6 +326,11 @@ unitdEnd(UnitdData **unitdData)
     objectRelease(&STATE_CMDLINE_DIR);
     timeRelease(&BOOT_START);
     timeRelease(&BOOT_STOP);
+    objectRelease(&UNITS_USER_LOCAL_PATH);
+    objectRelease(&UNITD_USER_CONF_PATH);
+    objectRelease(&UNITD_USER_LOG_PATH);
+    objectRelease(&UNITS_USER_ENAB_PATH);
+    objectRelease(&SOCKET_USER_PATH);
     if (*unitdData) {
         arrayRelease(&(*unitdData)->bootUnits);
         arrayRelease(&(*unitdData)->initUnits);

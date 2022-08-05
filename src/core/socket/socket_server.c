@@ -427,7 +427,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         unitErrors = &unit->errors;
 
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (*NOTIFIER->isWorking)
+        while (NOTIFIER_WORKING)
             msleep(200);
 
         if (*pState == DEAD) {
@@ -451,7 +451,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             stopProcesses(NULL, unit);
         }
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (*NOTIFIER->isWorking)
+        while (NOTIFIER_WORKING)
             msleep(200);
 
         if (unit->isChanged || *pType == ONESHOT || (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
@@ -668,7 +668,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             for (int i = 0; i < len; i++) {
                 unitConflict = arrayGet(stopConflictsArr, i);
                 /* Waiting for notifier. Basically, it should never happen. Extreme case */
-                while (*NOTIFIER->isWorking)
+                while (NOTIFIER_WORKING)
                     msleep(200);
 
                 pDataConflict = unitConflict->processData;
@@ -938,7 +938,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             goto out;
         }
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (*NOTIFIER->isWorking)
+        while (NOTIFIER_WORKING)
             msleep(200);
 
         if (unit && unit->isChanged) {
@@ -1082,7 +1082,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             unitConflict = arrayGet(unitsConflicts, i);
 
             /* Waiting for notifier. Basically, it should never happen. Extreme case */
-            while (*NOTIFIER->isWorking)
+            while (NOTIFIER_WORKING)
                 msleep(200);
 
             pDataConflict = unitConflict->processData;
@@ -1197,7 +1197,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     unit = getUnitByName(*units, unitName);
     if (unit) {
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (*NOTIFIER->isWorking)
+        while (NOTIFIER_WORKING)
             msleep(200);
         /* If the unit content is changed then we force the user to stop the unit.
          * In this way, we will read the data on the disk (updated) which is that we expect.

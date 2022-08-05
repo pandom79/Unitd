@@ -4,6 +4,7 @@ export PATH=$PATH
 
 . $UNITD_DATA_PATH/functions/functions
 
+USER_STATE="user.state"
 # $1 = UNITS_USER_LOCAL_PATH ($HOME/.config/unitd/units)
 # $2 = UNITS_USER_ENAB_PATH ($HOME/.local/share/unitd/units/user.state)
 # $3 = USER UID
@@ -20,6 +21,7 @@ if [ ! -d "$UNITS_USER_LOCAL_PATH" ]; then
 fi
 
 # Check UNITS_USER_ENAB_PATH
+UNITS_USER_ENAB_PATH="$UNITS_USER_ENAB_PATH/$USER_STATE"
 if [ ! -d "$UNITS_USER_ENAB_PATH" ]; then
     mkdir -p "$UNITS_USER_ENAB_PATH"
     chmod 0755 -R "$UNITS_USER_ENAB_PATH"
