@@ -289,15 +289,12 @@ writeWtmp(bool isBooting) {
 }
 
 int
-unitdUserCheck(int userId, const char *userName)
+unitdUserCheck(const char *userIdStr, const char *userName)
 {
     int rv = 0;
-    char userIdStr[20] = {0};
 
-    assert(userId >= 0);
+    assert(userIdStr);
     assert(userName);
-
-    sprintf(userIdStr, "%d", userId);
 
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);

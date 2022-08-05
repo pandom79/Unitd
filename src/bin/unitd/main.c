@@ -39,6 +39,9 @@ char *UNITS_USER_LOCAL_PATH = NULL;
 char *UNITS_USER_ENAB_PATH = NULL;
 char *UNITD_USER_CONF_PATH = NULL;
 char *UNITD_USER_LOG_PATH = NULL;
+State STATE_USER = USER;
+char *STATE_USER_DIR = NULL;
+char *SOCKET_USER_PATH = NULL;
 
 static void __attribute__((noreturn))
 usage(bool fail)
@@ -59,7 +62,6 @@ int main(int argc, char **argv) {
     UnitdData *unitdData = NULL;
     bool showEmergencyShell = false;
     const char *shortopts = "hd";
-    char *userHome = NULL;
     const struct option longopts[] = {
         { "help", no_argument, NULL, 'h' },
         { "debug", optional_argument, NULL, 'd' },
@@ -125,6 +127,8 @@ int main(int argc, char **argv) {
 
         /* Boot start */
         timeSetCurrent(&BOOT_START);
+
+        /* Parsing /proc/cmdline file */
         if ((rv = parseProcCmdLine()) == 1) {
             showEmergencyShell = true;
             goto out;
@@ -177,7 +181,7 @@ int main(int argc, char **argv) {
         }
 
         /* Change the current working directory to user home */
-        userHome = userInfo->pw_dir;
+        char *userHome = userInfo->pw_dir;
         if ((rv = chdir(userHome)) == -1) {
             unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
@@ -198,10 +202,21 @@ int main(int argc, char **argv) {
         stringAppendStr(&UNITS_USER_ENAB_PATH, STATE_DATA_ITEMS[USER].desc);
         stringAppendStr(&UNITS_USER_ENAB_PATH, ".state");
 
+        /* Get userId as string */
+        char userIdStr[20] = {0};
+        assert(userId >= 0);
+        sprintf(userIdStr, "%d", userId);
+
+        /* Set socket user path */
+        SOCKET_USER_PATH = stringNew("/run/user/");
+        stringAppendStr(&SOCKET_USER_PATH, userIdStr);
+        stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
+
         assert(UNITS_USER_LOCAL_PATH);
         assert(UNITD_USER_CONF_PATH);
         assert(UNITD_USER_LOG_PATH);
         assert(UNITS_USER_ENAB_PATH);
+        assert(SOCKET_USER_PATH);
 
         /* For the user instance we never show the emrgency shell and we put whatever error into log which
          * can be already opened in this case (disk already mounted) */
@@ -209,7 +224,7 @@ int main(int argc, char **argv) {
         unitdOpenLog("w");
 
         /* Check the user directories are there and the instance is not already running for this user */
-        if ((rv = unitdUserCheck(userInfo->pw_uid, userInfo->pw_name)) != 0)
+        if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0)
             goto out;
     }
 
@@ -298,6 +313,8 @@ int main(int argc, char **argv) {
             objectRelease(&UNITD_USER_CONF_PATH);
             objectRelease(&UNITD_USER_LOG_PATH);
             objectRelease(&UNITS_USER_ENAB_PATH);
+            objectRelease(&SOCKET_USER_PATH);
+            assert(UNITD_LOG_FILE);
             unitdLogInfo(LOG_UNITD_BOOT, "Unitd instance exited with %d (%s) exit code.\n", rv, strerror(rv));
             unitdCloseLog();
             assert(!UNITD_LOG_FILE);

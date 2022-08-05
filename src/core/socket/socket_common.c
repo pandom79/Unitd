@@ -76,7 +76,10 @@ initSocket(struct sockaddr_un *name)
         /* Initialize sockaddr_un */
         memset(name, 0, sizeof(struct sockaddr_un));
         name->sun_family = AF_UNIX;
-        strncpy(name->sun_path, SOCKET_NAME, sizeof(name->sun_path) - 1);
+        if (!USER_INSTANCE)
+            strncpy(name->sun_path, SOCKET_PATH, sizeof(name->sun_path) - 1);
+        else
+            strncpy(name->sun_path, SOCKET_USER_PATH, sizeof(name->sun_path) - 1);
     }
 
     return socketConnection;

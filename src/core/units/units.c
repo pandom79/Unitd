@@ -596,7 +596,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
     }
     else if (rv == GLOB_NOMATCH && currentState != NO_STATE) {
         /* Zero units are allowed only for Reboot and Poweroff State otherwise we show the errors */
-        if (currentState != REBOOT && currentState != POWEROFF)
+        if (currentState != REBOOT && currentState != POWEROFF && currentState != USER)
             unitdLogError(LOG_UNITD_CONSOLE, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
                           "GLOB_NOMATCH", "Zero units found for %s state", STATE_DATA_ITEMS[currentState].desc);
         else {

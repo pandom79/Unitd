@@ -56,6 +56,8 @@ bool NO_WTMP;
 Array *UNITD_ENV_VARS;
 pid_t UNITD_PID;
 char *UNITD_USER_CONF_PATH;
+State STATE_USER;
+char *STATE_USER_DIR;
 
 static void
 addBootUnits(Array **bootUnits, Array **units) {
@@ -195,9 +197,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         timeSetCurrent(&SHUTDOWN_START);
         assert(!UNITD_LOG_FILE);
         unitdOpenLog("a");
-        /* Stop cleaner */
+        /* Stop the cleaner */
         stopCleaner();
-        /* Stop notifier */
+        /* Stop the notifier */
         stopNotifier();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
@@ -258,6 +260,10 @@ int
 unitdUserInit(UnitdData **unitdData, bool isAggregate)
 {
     int rv = 0;
+    Array **units = NULL;
+
+    assert(*unitdData);
+    units = &(*unitdData)->units;
 
     if (UNITD_DEBUG) {
         unitdLogInfo(LOG_UNITD_BOOT, "Units user path = %s\n", UNITS_USER_PATH);
@@ -272,18 +278,41 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     startCleaner();
     /* Start the notifiers */
     startNotifiers();
+    if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
+        goto shutdown;
 
-//FIXME continue...
-    sleep(30);
+    //******************* USER STATE ************************
+    /* Parsing the units for the user state */
+    STATE_USER_DIR = stringNew(STATE_DATA_ITEMS[USER].desc);
+    stringAppendStr(&STATE_USER_DIR, ".state");
+    rv = loadUnits(units, UNITS_USER_ENAB_PATH, STATE_USER_DIR,
+                   STATE_USER, isAggregate, NULL, PARSE_UNIT, true);
+    /* we open eventual pipes and start the processes */
+    openPipes(units, NULL);
+    startProcesses(units, NULL);
+    ENABLE_RESTART = true;
+    unitdCloseLog();
+    if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
+        goto shutdown;
 
-    /* Stop cleaner */
-    stopCleaner();
-    /* Stop notifier */
-    stopNotifiers();
+    /* Unitd is blocked here listening the client requests */
+    listenSocketRequest();
 
-    return rv;
+    shutdown:
+        assert(!UNITD_LOG_FILE);
+        unitdOpenLog("a");
+        /* Stop the cleaner */
+        stopCleaner();
+        /* Stop the notifiers */
+        stopNotifiers();
+
+        //********************* STOPPING UNITS **********************************
+        closePipes(units, NULL);
+        stopProcesses(units, NULL);
+
+        objectRelease(&STATE_USER_DIR);
+        return rv;
 }
-
 
 void
 unitdEnd(UnitdData **unitdData)

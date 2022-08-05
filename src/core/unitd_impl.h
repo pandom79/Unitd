@@ -58,6 +58,9 @@ extern char *UNITS_USER_ENAB_PATH;
 extern char *UNITD_USER_CONF_PATH;
 extern char *UNITD_USER_LOG_PATH;
 extern bool USER_INSTANCE;
+extern State STATE_USER;
+extern char *STATE_USER_DIR;
+extern char *SOCKET_USER_PATH;
 
 /* UNITCTL commands */
 typedef enum {
@@ -344,7 +347,7 @@ void* stopNotifiersThread(void *);
 /*********************************************************************************/
 
 /* SOCKET */
-#define SOCKET_NAME             "/run/unitd.sock"
+#define SOCKET_PATH             "/run/unitd.sock"
 #define MAX_CLIENT_SUPPORTED    32
 #define BACK_LOG                20
 #define INITIAL_SIZE            512
@@ -420,7 +423,7 @@ int setNewDefaultStateSyml(State, Array **);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
-int unitdUserCheck(int, const char *);
+int unitdUserCheck(const char *, const char *);
 int parseProcCmdLine();
 int setSigAction();
 /*********************************************************************************/

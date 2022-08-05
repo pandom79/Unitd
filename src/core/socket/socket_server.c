@@ -24,6 +24,9 @@ bool IS_SHUTDOWN_COMMAND = false;
 */
 Command SHUTDOWN_COMMAND;
 
+/* Socket user path for unitd user instance */
+char *SOCKET_USER_PATH;
+
 /*
 * An array of file descriptors which the server
 * is maintaining in order to talk with the connected clients.
@@ -92,6 +95,15 @@ getMaxFd()
     return maxFd;
 }
 
+static void
+unlinkSocket()
+{
+    if (!USER_INSTANCE)
+        unlink(SOCKET_PATH);
+    else
+        unlink(SOCKET_USER_PATH);
+}
+
 int
 listenSocketRequest()
 {
@@ -106,7 +118,7 @@ listenSocketRequest()
     /* Initialize */
     initializeMonitoredFdSet();
     /* If unitd daemon not properly exited, could have not remove the socket */
-    unlink(SOCKET_NAME);
+    unlinkSocket();
     /* Connection */
     if ((socketConnection = initSocket(&name)) == -1)
         goto out;
@@ -180,7 +192,7 @@ listenSocketRequest()
             close(socketConnection);
             removeFromMonitoredFdSet(socketConnection);
         }
-        unlink(SOCKET_NAME);
+        unlinkSocket();
         return rv;
 }
 
