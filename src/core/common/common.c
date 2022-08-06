@@ -411,3 +411,22 @@ setSigAction()
     return rv;
 }
 
+int
+setUserSocketPath(int userId)
+{
+    int rv = 0;
+    /* Set user socket path */
+    const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
+    if (!xdgRunTimeDir) {
+        rv = EPERM;
+        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", rv,
+                      strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
+        syslog(LOG_DAEMON | LOG_ERR, "XDG_RUNTIME_DIR for %d userId is not set", userId);
+    }
+    else {
+        SOCKET_USER_PATH = stringNew(xdgRunTimeDir);
+        stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
+    }
+
+    return rv;
+}

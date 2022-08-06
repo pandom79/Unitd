@@ -9,10 +9,13 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../../core/unitd_impl.h"
 
 bool UNITCTL_DEBUG = false;
+bool USER_INSTANCE;
+char *SOCKET_USER_PATH;
 
 static void __attribute__((noreturn))
 usage(bool fail)
 {
+    objectRelease(&SOCKET_USER_PATH);
     fprintf(stdout,
         "Usage: unitctl [COMMAND] [OPTIONS] ... \n\n"
 
@@ -45,15 +48,16 @@ usage(bool fail)
         "-n, --no-wtmp      Don't write a wtmp record\n"
         "-o, --only-wtmp    Only write a wtmp/utmp reboot record and exit\n"
         "-w, --no-wall      Don't write a message to all users\n"
+        "-u, --user         Connect to user unitd instance\n"
         "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv) {
-    int c, rv;
+    int c, rv, userId;
     bool force, run, noWtmp, onlyWtmp, noWall;
-    const char *shortopts = "hrfdnow";
+    const char *shortopts = "hrfdnowu";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
     SockMessageOut *sockMessageOut = NULL;
@@ -65,10 +69,12 @@ int main(int argc, char **argv) {
         { "no-wall", optional_argument, NULL, 'w' },
         { "force", optional_argument, NULL, 'f' },
         { "debug", optional_argument, NULL, 'd' },
+        { "user", optional_argument, NULL, 'u' },
         { 0, 0, 0, 0 }
     };
 
     c = rv = 0;
+    userId = -1;
     commandName = arg = NULL;
     force = run = noWtmp = onlyWtmp = noWall = false;
 
@@ -96,14 +102,29 @@ int main(int argc, char **argv) {
             case 'd':
                 UNITCTL_DEBUG = true;
                 break;
+            case 'u':
+                USER_INSTANCE = true;
+                break;
             default:
                 usage(true);
         }
     }
 
-    if (getuid() != 0) {
-        rv = checkAdministrator(argv);
-        exit(rv);
+    /* Get user id */
+    userId = getuid();
+    assert(userId >= 0);
+
+    /* Check user instance and set user socket path */
+    if (!USER_INSTANCE) {
+        if (userId != 0) {
+            rv = checkAdministrator(argv);
+            goto out;
+        }
+    }
+    else {
+        if ((rv = setUserSocketPath(userId)) != 0)
+            goto out;
+        assert(SOCKET_USER_PATH);
     }
 
     /* Get the command */
@@ -114,7 +135,7 @@ int main(int argc, char **argv) {
     switch (command) {
         case NO_COMMAND:
         if (argc > 3 ||
-           ((argc == 3 || argc == 2) && !UNITCTL_DEBUG && !onlyWtmp))
+           ((argc == 3 || argc == 2) && !UNITCTL_DEBUG && !onlyWtmp && !USER_INSTANCE))
                 usage(true);
             else {
                 if (onlyWtmp) {
@@ -204,10 +225,14 @@ int main(int argc, char **argv) {
             rv = catEditUnit(command, arg);
             break;
         case ANALYZE_COMMAND:
-            if (argc > 3 || (argc == 3 && !UNITCTL_DEBUG))
+            if (argc > 4 || (argc == 4 && !UNITCTL_DEBUG && !USER_INSTANCE))
                 usage(true);
             rv = showBootAnalyze(&sockMessageOut);
         }
 
-    return rv;
+    out:
+        /* Release resources */
+        objectRelease(&SOCKET_USER_PATH);
+
+        return rv;
 }

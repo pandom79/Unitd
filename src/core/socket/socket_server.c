@@ -283,9 +283,18 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     bootAnalyze = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[ANALYZE_OPT].name);
     if (!bootAnalyze) {
         fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay);
-        /* Loading all the units */
-        loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
-                  false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+        if (!USER_INSTANCE) {
+            /* Loading all the units */
+            loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
+                      false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+        }
+        else {
+            /* Loading all the units */
+            loadUnits(&unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
+                      false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+            loadUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
+                      false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+        }
     }
     else {
         fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay);
