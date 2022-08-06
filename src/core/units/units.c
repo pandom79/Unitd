@@ -49,6 +49,7 @@ static const char *WANTEDBY_VALUES[] = {
                                         STATE_DATA_ITEMS[GRAPHICAL].desc,
                                         STATE_DATA_ITEMS[REBOOT].desc,
                                         STATE_DATA_ITEMS[FINAL].desc,
+                                        STATE_DATA_ITEMS[USER].desc,
                                         NULL
                                        };
 
@@ -294,6 +295,7 @@ checkAndSetUnitPath(Unit **currentUnit, State state)
     int rv = 0;
     char *wherePoints, *path;
     Array **errors = NULL;
+    bool hasError = false;
 
     wherePoints = path = NULL;
 
@@ -316,15 +318,27 @@ checkAndSetUnitPath(Unit **currentUnit, State state)
     }
     else {
         /* Check where the unit is pointing */
-        if ((rv = readSymLink(path, &wherePoints)) == 2 ||
-            !stringStartsWithStr(wherePoints, UNITS_PATH)) {
+        rv = readSymLink(path, &wherePoints);
+        if (rv == 2)
+            hasError = true;
+        else {
+            if (!USER_INSTANCE) {
+                if (!stringStartsWithStr(wherePoints, UNITS_PATH))
+                    hasError = true;
+            }
+            else {
+                if (!stringStartsWithStr(wherePoints, UNITS_USER_PATH) &&
+                    !stringStartsWithStr(wherePoints, UNITS_USER_LOCAL_PATH))
+                    hasError = true;
+            }
+        }
+        if (hasError) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
-            arrayAdd(*errors,
-                     getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_PATH_ERR].desc, path));
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_PATH_ERR].desc, path));
         }
         else
-           stringSet(&(*currentUnit)->path, wherePoints);
+            stringSet(&(*currentUnit)->path, wherePoints);
     }
 
     objectRelease(&wherePoints);

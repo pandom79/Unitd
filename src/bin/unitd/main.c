@@ -203,10 +203,18 @@ int main(int argc, char **argv) {
         sprintf(userIdStr, "%d", userId);
 
         /* Set socket user path */
-        SOCKET_USER_PATH = stringNew("/run/user/");
-        stringAppendStr(&SOCKET_USER_PATH, userIdStr);
+        const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
+        if (!xdgRunTimeDir) {
+            rv = EPERM;
+            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", rv,
+                          strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
+            syslog(LOG_DAEMON | LOG_ERR, "XDG_RUNTIME_DIR for %d userId is not set", userId);
+            goto out;
+        }
+        SOCKET_USER_PATH = stringNew(xdgRunTimeDir);
         stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
 
+        /* Assert all variables are defined */
         assert(UNITS_USER_LOCAL_PATH);
         assert(UNITD_USER_CONF_PATH);
         assert(UNITD_USER_LOG_PATH);
@@ -302,8 +310,8 @@ int main(int argc, char **argv) {
 #endif
         }
         else {
-            assert(UNITD_LOG_FILE);
-            unitdLogInfo(LOG_UNITD_BOOT, "Unitd instance exited with %d (%s) exit code.\n", rv, strerror(rv));
+            syslog(LOG_DAEMON | LOG_INFO, "Unitd instance for %d userId exited with %d (%s) exit code.\n", userId, rv, strerror(rv));
+            unitdLogInfo(LOG_UNITD_BOOT, "Unitd instance for %d userId exited with %d (%s) exit code.\n", userId, rv, strerror(rv));
             unitdCloseLog();
             assert(!UNITD_LOG_FILE);
         }
