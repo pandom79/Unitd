@@ -1233,7 +1233,9 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
         }
         printf("\n%d units found\n\n", lenUnits);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "SYSTEM INFO\n", DEFAULT_COLOR);
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR,
+               !USER_INSTANCE ? "SYSTEM INSTANCE INFO\n" : "USER INSTANCE INFO\n",
+               DEFAULT_COLOR);
         /* Messages */
         len = (messages ? messages->size : 0);
         for (int i = 0; i < len; i++) {

@@ -76,10 +76,9 @@ initSocket(struct sockaddr_un *name)
         /* Initialize sockaddr_un */
         memset(name, 0, sizeof(struct sockaddr_un));
         name->sun_family = AF_UNIX;
-        if (!USER_INSTANCE)
-            strncpy(name->sun_path, SOCKET_PATH, sizeof(name->sun_path) - 1);
-        else
-            strncpy(name->sun_path, SOCKET_USER_PATH, sizeof(name->sun_path) - 1);
+        strncpy(name->sun_path,
+                !USER_INSTANCE ? SOCKET_PATH : SOCKET_USER_PATH,
+                sizeof(name->sun_path) - 1);
     }
 
     return socketConnection;
@@ -91,7 +90,10 @@ unitdSockConn(int *socketConnection, struct sockaddr_un *name)
     int rv = 0;
     if ((rv = connect(*socketConnection, (const struct sockaddr *)name,
                       sizeof(struct sockaddr_un))) == -1) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "The unitd daemon could be not running!\n");
+        unitdLogErrorStr(LOG_UNITD_CONSOLE,
+                         !USER_INSTANCE ?
+                         "Unitd system instance could be not running!\n" :
+                         "Unitd user instance could be not running!\n");
     }
     return rv;
 }

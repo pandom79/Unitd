@@ -346,7 +346,7 @@ parseProcCmdLine()
     assert(PROC_CMDLINE_PATH);
     if ((fp = fopen(PROC_CMDLINE_PATH, "r")) == NULL) {
         rv = 1;
-        unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "readCmdline", errno,
+        unitdLogError(LOG_UNITD_ALL, "src/core/common/common.c", "parseProcCmdLine", errno,
                       strerror(errno), "Unable to open %s", PROC_CMDLINE_PATH, NULL);
         return rv;
     }
@@ -419,7 +419,7 @@ setUserSocketPath(int userId)
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
     if (!xdgRunTimeDir) {
         rv = EPERM;
-        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", rv,
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserSocketPath", rv,
                       strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
         syslog(LOG_DAEMON | LOG_ERR, "XDG_RUNTIME_DIR for %d userId is not set", userId);
     }

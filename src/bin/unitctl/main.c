@@ -15,42 +15,59 @@ char *SOCKET_USER_PATH;
 static void __attribute__((noreturn))
 usage(bool fail)
 {
+    if (USER_INSTANCE) {
+        fprintf(stdout,
+            "Usage for user instance: unitctl [COMMAND] [OPTIONS] ... \n\n"
+
+            WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
+            "list               List the units\n"
+            "analyze            Analyze the boot process\n"
+
+            WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
+            "-d, --debug        Enable the debug\n"
+            "-h, --help         Show usage\n\n"
+        );
+    }
+    else {
+        fprintf(stdout,
+            "Usage for system instance: unitctl [COMMAND] [OPTIONS] ... \n\n"
+
+            WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
+            "enable             Enable the unit\n"
+            "re-enable          Re-enable the unit\n"
+            "disable            Disable the unit\n"
+            "restart            Restart the unit\n"
+            "start              Start the unit\n"
+            "stop               Stop the unit\n"
+            "status             Get the unit status\n"
+            "list-requires      List the unit dependencies\n"
+            "list-conflicts     List the unit conflicts\n"
+            "list-states        List the unit wanted states\n"
+            "get-default        Get the default state\n"
+            "set-default        Set the default state\n"
+            "cat                Show the unit content\n"
+            "edit               Edit the unit content\n"
+            "list               List the units\n"
+            "analyze            Analyze the boot process\n"
+            "reboot             Shutdown and reboot the system\n"
+            "poweroff           Shutdown and power off the system\n"
+            "halt               Shutdown and halt the system\n"
+            "kexec              Shutdown and reboot the system with kexec\n"
+
+            WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
+            "-r, --run          Run the operation\n"
+            "-f, --force        Force the operation\n"
+            "-d, --debug        Enable the debug\n"
+            "-n, --no-wtmp      Don't write a wtmp record\n"
+            "-o, --only-wtmp    Only write a wtmp/utmp reboot record and exit\n"
+            "-w, --no-wall      Don't write a message to all users\n"
+            "-u, --user         Connect to user unitd instance\n"
+            "-h, --help         Show usage\n\n"
+        );
+    }
+
+    /* Release resources */
     objectRelease(&SOCKET_USER_PATH);
-    fprintf(stdout,
-        "Usage: unitctl [COMMAND] [OPTIONS] ... \n\n"
-
-        WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
-        "enable             Enable the unit\n"
-        "re-enable          Re-enable the unit\n"
-        "disable            Disable the unit\n"
-        "restart            Restart the unit\n"
-        "start              Start the unit\n"
-        "stop               Stop the unit\n"
-        "status             Get the unit status\n"
-        "list-requires      List the unit dependencies\n"
-        "list-conflicts     List the unit conflicts\n"
-        "list-states        List the unit wanted states\n"
-        "get-default        Get the default state\n"
-        "set-default        Set the default state\n"
-        "cat                Show the unit content\n"
-        "edit               Edit the unit content\n"
-        "list               List the units\n"
-        "analyze            Analyze the boot process\n"
-        "reboot             Shutdown and reboot the system\n"
-        "poweroff           Shutdown and power off the system\n"
-        "halt               Shutdown and halt the system\n"
-        "kexec              Shutdown and reboot the system with kexec\n\n"
-
-        WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
-        "-r, --run          Run the operation\n"
-        "-f, --force        Force the operation\n"
-        "-d, --debug        Enable the debug\n"
-        "-n, --no-wtmp      Don't write a wtmp record\n"
-        "-o, --only-wtmp    Only write a wtmp/utmp reboot record and exit\n"
-        "-w, --no-wall      Don't write a message to all users\n"
-        "-u, --user         Connect to user unitd instance\n"
-        "-h, --help         Show usage\n\n"
-    );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
@@ -139,10 +156,13 @@ int main(int argc, char **argv) {
                 usage(true);
             else {
                 if (onlyWtmp) {
-                    /* Write a wtmp/utmp 'reboot' record and exit */
-                    rv = writeWtmp(true);
-                    if (rv != 0)
-                        unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+                    if (!USER_INSTANCE) {
+                        /* Write a wtmp/utmp 'reboot' record and exit */
+                        rv = writeWtmp(true);
+                        if (rv != 0)
+                            unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+                    }
+                    else usage(true);
                 }
                 else
                     /* List command as default */
