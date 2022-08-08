@@ -200,7 +200,9 @@ int main(int argc, char **argv) {
             break;
         case LIST_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
-            if ((argc > 2 && !UNITCTL_DEBUG) || argc > 3)
+            if ((argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+                argc > 4 ||
+                (command == GET_DEFAULT_STATE_COMMAND && USER_INSTANCE))
                 usage(true);
             if (command == LIST_COMMAND)
                 rv = showUnitList(&sockMessageOut);

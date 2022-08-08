@@ -15,13 +15,7 @@ int
 unitdOpenLog(const char *mode)
 {
     if (!UNITD_LOG_FILE) {
-        /* Set log path */
-        const char *unitdLogPath = NULL;
-        if (!USER_INSTANCE)
-            unitdLogPath = UNITD_LOG_PATH;
-        else
-            unitdLogPath = UNITD_USER_LOG_PATH;
-
+        const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
         UNITD_LOG_FILE = fopen(unitdLogPath, mode);
         if (!UNITD_LOG_FILE) {
             unitdLogError(LOG_UNITD_CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
@@ -39,13 +33,7 @@ unitdCloseLog()
     int rv = 0;
 
     if (UNITD_LOG_FILE) {
-        /* Set log path */
-        const char *unitdLogPath = NULL;
-        if (!USER_INSTANCE)
-            unitdLogPath = UNITD_LOG_PATH;
-        else
-            unitdLogPath = UNITD_USER_LOG_PATH;
-
+        const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
         if ((rv = fclose(UNITD_LOG_FILE)) != 0) {
             unitdLogError(LOG_UNITD_ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
                                          "Unable to close the log '%s'", unitdLogPath);
