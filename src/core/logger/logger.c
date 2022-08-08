@@ -14,19 +14,20 @@ char *UNITD_USER_LOG_PATH;
 int
 unitdOpenLog(const char *mode)
 {
-    const char *unitdLogPath = NULL;
-
-    if (!USER_INSTANCE)
-        unitdLogPath = UNITD_LOG_PATH;
-    else
-        unitdLogPath = UNITD_USER_LOG_PATH;
-
-    if (!UNITD_LOG_FILE)
-        UNITD_LOG_FILE = fopen(unitdLogPath, mode);
     if (!UNITD_LOG_FILE) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
-                      "Unable to open the log %s in mode '%s'", unitdLogPath, mode);
-        return -1;
+        /* Set log path */
+        const char *unitdLogPath = NULL;
+        if (!USER_INSTANCE)
+            unitdLogPath = UNITD_LOG_PATH;
+        else
+            unitdLogPath = UNITD_USER_LOG_PATH;
+
+        UNITD_LOG_FILE = fopen(unitdLogPath, mode);
+        if (!UNITD_LOG_FILE) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
+                          "Unable to open the log %s in mode '%s'", unitdLogPath, mode);
+            return -1;
+        }
     }
 
     return 0;
@@ -36,18 +37,22 @@ int
 unitdCloseLog()
 {
     int rv = 0;
-    const char *unitdLogPath = NULL;
 
-    if (!USER_INSTANCE)
-        unitdLogPath = UNITD_LOG_PATH;
-    else
-        unitdLogPath = UNITD_USER_LOG_PATH;
+    if (UNITD_LOG_FILE) {
+        /* Set log path */
+        const char *unitdLogPath = NULL;
+        if (!USER_INSTANCE)
+            unitdLogPath = UNITD_LOG_PATH;
+        else
+            unitdLogPath = UNITD_USER_LOG_PATH;
 
-    if (UNITD_LOG_FILE && (rv = fclose(UNITD_LOG_FILE)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
-                                     "Unable to close the log '%s'", unitdLogPath);
+        if ((rv = fclose(UNITD_LOG_FILE)) != 0) {
+            unitdLogError(LOG_UNITD_ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
+                                         "Unable to close the log '%s'", unitdLogPath);
+        }
+        UNITD_LOG_FILE = NULL;
     }
-    UNITD_LOG_FILE = NULL;
+
     return rv;
 }
 

@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
         { 0, 0, 0, 0 }
     };
 
-    c = rv = 0;
+    c = rv = userId = 0;
 
     assert(OS_NAME);
     assert(UNITS_PATH);
@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
      * If UNITD_TEST macro is defined then we want the root user.
     */
     userId = getuid();
+    assert(userId >= 0);
 #ifdef UNITD_TEST
     if (userId != 0) {
         unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
@@ -197,21 +198,21 @@ int main(int argc, char **argv) {
         UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
         stringAppendStr(&UNITS_USER_ENAB_PATH, "/units");
 
-        /* Get userId as string */
-        char userIdStr[20] = {0};
-        assert(userId >= 0);
-        sprintf(userIdStr, "%d", userId);
-
-        /* Set user socket path */
-        if ((rv = setUserSocketPath(userId)) != 0)
-            goto out;
-
         /* Assert all variables are defined */
         assert(UNITS_USER_LOCAL_PATH);
         assert(UNITD_USER_CONF_PATH);
         assert(UNITD_USER_LOG_PATH);
         assert(UNITS_USER_ENAB_PATH);
+
+        /* Set user socket path */
+        if ((rv = setUserSocketPath(userId)) != 0)
+            goto out;
         assert(SOCKET_USER_PATH);
+
+        /* Get userId as string */
+        char userIdStr[20] = {0};
+        sprintf(userIdStr, "%d", userId);
+        assert(strlen(userIdStr) > 0);
 
         /* Check the user directories are there and the instance is not already running for this user */
         if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0)
@@ -244,21 +245,20 @@ int main(int argc, char **argv) {
     /* Release all */
     unitdEnd(&unitdData);
 
-    if (!USER_INSTANCE) {
-        if (SHUTDOWN_START) {
-            /* Print Shutdown time */
-            timeSetCurrent(&SHUTDOWN_STOP);
-            char *diff = NULL;
-            stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
-            char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
-            unitdLogInfo(LOG_UNITD_CONSOLE, "%s", msg);
-            printf("\n");
-            objectRelease(&diff);
-            objectRelease(&msg);
-            timeRelease(&SHUTDOWN_START);
-            timeRelease(&SHUTDOWN_STOP);
-        }
+    if (SHUTDOWN_START) {
+        /* Print Shutdown time */
+        timeSetCurrent(&SHUTDOWN_STOP);
+        char *diff = NULL;
+        stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
+        char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
+        unitdLogInfo(LOG_UNITD_ALL, "%s\n", msg);
+        objectRelease(&diff);
+        objectRelease(&msg);
+        timeRelease(&SHUTDOWN_START);
+        timeRelease(&SHUTDOWN_STOP);
+    }
 
+    if (!USER_INSTANCE) {
         /* The system is going down */
 #ifndef UNITD_TEST
         sync();
@@ -302,8 +302,8 @@ int main(int argc, char **argv) {
 #endif
         }
         else {
-            syslog(LOG_DAEMON | LOG_INFO, "Unitd instance for %d userId exited with %d (%s) exit code.\n", userId, rv, strerror(rv));
-            unitdLogInfo(LOG_UNITD_BOOT, "Unitd instance for %d userId exited with %d (%s) exit code.\n", userId, rv, strerror(rv));
+            syslog(LOG_DAEMON | LOG_INFO, "Unitd instance for %d userId exited with %d (%s) exit code.\n",
+                                          userId, rv, strerror(rv));
             unitdCloseLog();
             assert(!UNITD_LOG_FILE);
         }

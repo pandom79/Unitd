@@ -304,13 +304,15 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     listenSocketRequest();
 
     shutdown:
+        /* Shutdown start */
+        timeSetCurrent(&SHUTDOWN_START);
+        unitdCloseLog();
         assert(!UNITD_LOG_FILE);
         unitdOpenLog("a");
         /* Stop the cleaner */
         stopCleaner();
         /* Stop the notifiers */
         stopNotifiers();
-
         //********************* STOPPING UNITS **********************************
         closePipes(units, NULL);
         stopProcesses(units, NULL);

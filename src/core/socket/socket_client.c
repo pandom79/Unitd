@@ -165,36 +165,39 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 {
     assert(command != NO_COMMAND);
 
-    /* Write a broadcast message to all users */
-    if (!noWall)
-        sendWallMsg(command);
+    /* The noWall and force options are only allowed for system instance */
+    if (!USER_INSTANCE) {
+        /* Write a broadcast message to all users */
+        if (!noWall)
+            sendWallMsg(command);
 
-    if (force) {
-        /* Write a wtmp 'shutdown' record */
-        if (!noWtmp && writeWtmp(false) != 0)
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+        if (force) {
+            /* Write a wtmp 'shutdown' record */
+            if (!noWtmp && writeWtmp(false) != 0)
+                unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
 
 #ifndef UNITD_TEST
-        sync();
-        switch (command) {
-            case REBOOT_COMMAND:
-                reboot(RB_AUTOBOOT);
-                break;
-            case POWEROFF_COMMAND:
-                reboot(RB_POWER_OFF);
-                break;
-            case HALT_COMMAND:
-                reboot(RB_HALT_SYSTEM);
-                break;
-            case KEXEC_COMMAND:
-                reboot(RB_KEXEC);
-                break;
-            default:
-                break;
-        }
+            sync();
+            switch (command) {
+                case REBOOT_COMMAND:
+                    reboot(RB_AUTOBOOT);
+                    break;
+                case POWEROFF_COMMAND:
+                    reboot(RB_POWER_OFF);
+                    break;
+                case HALT_COMMAND:
+                    reboot(RB_HALT_SYSTEM);
+                    break;
+                case KEXEC_COMMAND:
+                    reboot(RB_KEXEC);
+                    break;
+                default:
+                    break;
+            }
 #endif
+        }
     }
-    /* Not reached if we are forcing */
+    /* Not reached if we are forcing (system instance) */
 
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection;

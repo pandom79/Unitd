@@ -20,7 +20,10 @@ fi
 # Check UNITS_USER_PATH
 if [ ! -d "$UNITS_USER_PATH" ]; then
     mkdir -p "$UNITS_USER_PATH"
-    chmod 0755 -R "$UNITS_USER_PATH"
+    # The 'users' group must have write permission to allow 'unitctl edit' command (user instance)
+    # to properly work.
+    chown :users -R "$UNITS_USER_PATH"
+    chmod 0775 -R "$UNITS_USER_PATH"
 fi
 
 # Check UNITS_ENAB_PATH

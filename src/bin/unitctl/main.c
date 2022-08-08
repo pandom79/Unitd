@@ -21,7 +21,8 @@ usage(bool fail)
 
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
             "list               List the units\n"
-            "analyze            Analyze the boot process\n"
+            "analyze            Analyze the user instance boot process\n"
+            "poweroff           Shutdown and power off the user instance\n"
 
             WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
             "-d, --debug        Enable the debug\n"
@@ -48,7 +49,7 @@ usage(bool fail)
             "cat                Show the unit content\n"
             "edit               Edit the unit content\n"
             "list               List the units\n"
-            "analyze            Analyze the boot process\n"
+            "analyze            Analyze the system boot process\n"
             "reboot             Shutdown and reboot the system\n"
             "poweroff           Shutdown and power off the system\n"
             "halt               Shutdown and halt the system\n"
@@ -90,8 +91,7 @@ int main(int argc, char **argv) {
         { 0, 0, 0, 0 }
     };
 
-    c = rv = 0;
-    userId = -1;
+    c = rv = userId = 0;
     commandName = arg = NULL;
     force = run = noWtmp = onlyWtmp = noWall = false;
 
@@ -173,14 +173,28 @@ int main(int argc, char **argv) {
         case POWEROFF_COMMAND:
         case HALT_COMMAND:
         case KEXEC_COMMAND:
-            if (argc > 2) {
-                if (argc > 6 || (!force && !UNITCTL_DEBUG && !noWtmp && !noWall))
-                    usage(true);
+            if (!USER_INSTANCE) {
+                if (argc > 2) {
+                    if (argc > 6 || (!force && !UNITCTL_DEBUG && !noWtmp && !noWall))
+                        usage(true);
+                }
+                if (command == KEXEC_COMMAND && !isKexecLoaded()) {
+                    rv = EPERM;
+                    unitdLogErrorStr(LOG_UNITD_CONSOLE, "Kexec is not loaded!\n");
+                    unitdLogInfo(LOG_UNITD_CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
+                    goto out;
+                }
             }
-            if (command == KEXEC_COMMAND && !isKexecLoaded()) {
-                unitdLogErrorStr(LOG_UNITD_CONSOLE, "Kexec is not loaded!\n");
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
-                return rv;
+            else {
+                /* We only use POWEROFF_COMMAND to shutdown an unitd user instance.
+                 * We don't allow force, noWtmp and noWall option.
+                */
+                if (argc > 2) {
+                    if (argc > 4 || (force || noWtmp || noWall))
+                            usage(true);
+                }
+                if (command != POWEROFF_COMMAND)
+                    usage(true);
             }
             rv = unitdShutdown(command, force, noWtmp, noWall);
             break;

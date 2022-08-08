@@ -261,7 +261,7 @@ writeWtmp(bool isBooting) {
     }
 
     if (isBooting) {
-        if ((fd = open(OUR_UTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
+        if ((fd = open(OUR_UTMP_FILE, O_WRONLY | O_APPEND)) < 0) {
             rv = errno;
             syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
                                          "Unable to open '%s' file descriptor! Rv = %d (%s).", OUR_UTMP_FILE,
