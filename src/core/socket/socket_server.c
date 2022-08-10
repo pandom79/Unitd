@@ -951,7 +951,13 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
             if (!(*messages))
                 *messages = arrayNew(objectRelease);
+
+//FIXME replace this line with the commented code below
             arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, unitName));
+//            if (!USER_INSTANCE)
+//                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "", unitName));
+//            else
+//                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "--user ", unitName));
             goto out;
         }
     }
@@ -1212,18 +1218,17 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
             if (!(*messages))
                 *messages = arrayNew(objectRelease);
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, unitName));
+            if (!USER_INSTANCE)
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "", unitName));
+            else
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "--user ", unitName));
             goto out;
         }
     }
 
-    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
-    if ((*unitsDisplay)->size == 0) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
+    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
+    if (rv != 0)
         goto out;
-    }
 
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);

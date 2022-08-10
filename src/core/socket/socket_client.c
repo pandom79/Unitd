@@ -1067,15 +1067,12 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
         case LIST_REQUIRES_COMMAND:
         case LIST_CONFLICTS_COMMAND:
         case LIST_STATES_COMMAND:
-            if ((unitPath = getUnitPathByName(arg))) {
-                if (command == LIST_REQUIRES_COMMAND)
-                    rv = getUnitData(sockMessageOut, arg, true, false, false);
-                else if (command == LIST_CONFLICTS_COMMAND)
-                    rv = getUnitData(sockMessageOut, arg, false, true, false);
-                else if (command == LIST_STATES_COMMAND)
-                    rv = getUnitData(sockMessageOut, arg, false, false, true);
-            }
-            else rv = 1;
+            if (command == LIST_REQUIRES_COMMAND)
+                rv = getUnitData(sockMessageOut, arg, true, false, false);
+            else if (command == LIST_CONFLICTS_COMMAND)
+                rv = getUnitData(sockMessageOut, arg, false, true, false);
+            else if (command == LIST_STATES_COMMAND)
+                rv = getUnitData(sockMessageOut, arg, false, false, true);
             break;
         case GET_DEFAULT_STATE_COMMAND:
             rv = getDefaultState(sockMessageOut);
