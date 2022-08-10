@@ -22,6 +22,9 @@ usage(bool fail)
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
             "stop               Stop the unit\n"
             "status             Get the unit status\n"
+            "list-requires      List the unit dependencies\n"
+            "list-conflicts     List the unit conflicts\n"
+            "list-states        List the unit wanted states\n"
             "list               List the units\n"
             "analyze            Analyze the user instance boot process\n"
             "poweroff           Shutdown the user instance and exit\n"
