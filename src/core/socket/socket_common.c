@@ -277,3 +277,33 @@ fillUnitsDisplayList(Array **units, Array **unitsDisplay)
     for (int i = 0; i < lenUnits; i++)
         arrayAdd(*unitsDisplay, unitNew(arrayGet(*units, i), PARSE_SOCK_RESPONSE_UNITLIST));
 }
+
+int
+loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
+                 bool parse, Array **errors)
+{
+    int rv = 0, *lenUnitsDisplay;
+
+    assert(*unitsDisplay);
+    assert(*unitName);
+    lenUnitsDisplay = &(*unitsDisplay)->size;
+
+    if (!USER_INSTANCE)
+        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE,
+                  isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
+    else {
+        loadUnits(unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
+                  isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
+        if (*lenUnitsDisplay == 0)
+            loadUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
+                      isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
+    }
+    if (*lenUnitsDisplay == 0) {
+        if (!(*errors))
+            *errors = arrayNew(objectRelease);
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
+        rv = 1;
+    }
+
+    return rv;
+}

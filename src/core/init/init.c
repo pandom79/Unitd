@@ -88,7 +88,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     bootUnits = &(*unitdData)->bootUnits;
 
     if (UNITD_DEBUG) {
-        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d....\n", PROJECT_NAME, UNITD_PID);
+        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
         unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
         unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
         unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
@@ -269,6 +269,7 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     bootUnits = &(*unitdData)->bootUnits;
 
     if (UNITD_DEBUG) {
+        unitdLogInfo(LOG_UNITD_BOOT, "%s starting as pid %d\n", PROJECT_USER_NAME, UNITD_PID);
         unitdLogInfo(LOG_UNITD_BOOT, "Units user path = %s\n", UNITS_USER_PATH);
         unitdLogInfo(LOG_UNITD_BOOT, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
         unitdLogInfo(LOG_UNITD_BOOT, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);

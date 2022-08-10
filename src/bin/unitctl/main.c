@@ -20,9 +20,11 @@ usage(bool fail)
             "Usage for user instance: unitctl [COMMAND] [OPTIONS] ... \n\n"
 
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
+            "stop               Stop the unit\n"
+            "status             Get the unit status\n"
             "list               List the units\n"
             "analyze            Analyze the user instance boot process\n"
-            "poweroff           Shutdown and power off the user instance\n"
+            "poweroff           Shutdown the user instance and exit\n"
 
             WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
             "-d, --debug        Enable the debug\n"
@@ -215,12 +217,9 @@ int main(int argc, char **argv) {
         case LIST_CONFLICTS_COMMAND:
         case LIST_STATES_COMMAND:
         case SET_DEFAULT_STATE_COMMAND:
-            if (argc == 2 || (argc > 3 && !UNITCTL_DEBUG))
+            if (argc == 2 || (argc > 4 && !UNITCTL_DEBUG && !USER_INSTANCE))
                 usage(true);
-            if (argc > 3)
-                arg = argv[3];
-            else
-                arg = argv[2];
+            arg = argv[argc - 1];
             if (command == STATUS_COMMAND)
                 rv = showUnitStatus(&sockMessageOut, arg);
             else

@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
     int c, rv, userId;
     UnitdData *unitdData = NULL;
-    bool showEmergencyShell = false;
+    bool showEmergencyShell, hasError;
     const char *shortopts = "hd";
     const struct option longopts[] = {
         { "help", no_argument, NULL, 'h' },
@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
     };
 
     c = rv = userId = 0;
+    showEmergencyShell = hasError = false;
 
     assert(OS_NAME);
     assert(UNITS_PATH);
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
 #ifdef UNITD_TEST
     if (userId != 0) {
         unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
-        showEmergencyShell = true;
+        showEmergencyShell = hasError = true;
         goto out;
     }
 #endif
@@ -123,13 +124,13 @@ int main(int argc, char **argv) {
         if ((rv = chdir("/")) == -1) {
             unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Chdir (system instance) has returned -1 exit code");
-            showEmergencyShell = true;
+            showEmergencyShell = hasError = true;
             goto out;
         }
 
         /* Parsing /proc/cmdline file */
         if ((rv = parseProcCmdLine()) == 1) {
-            showEmergencyShell = true;
+            showEmergencyShell = hasError = true;
             goto out;
         }
 
@@ -162,7 +163,7 @@ int main(int argc, char **argv) {
         else {
             unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", rv,
                           "An error has occurred in virtualization.sh", NULL);
-            showEmergencyShell = true;
+            showEmergencyShell = hasError = true;
             goto out;
         }
     }
@@ -175,6 +176,7 @@ int main(int argc, char **argv) {
             unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Getpwuid has returned a null pointer");
             syslog(LOG_DAEMON | LOG_ERR, "Getpwuid has returned a null pointer for userId = %d", userId);
+            hasError = true;
             goto out;
         }
 
@@ -185,6 +187,7 @@ int main(int argc, char **argv) {
                           strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
             syslog(LOG_DAEMON | LOG_ERR, "Chdir (user instance) for %d userId has returned -1 exit code. "
                                          "Rv = %d (%s)", userId, errno, strerror(errno));
+            hasError = true;
             goto out;
         }
 
@@ -205,8 +208,10 @@ int main(int argc, char **argv) {
         assert(UNITS_USER_ENAB_PATH);
 
         /* Set user socket path */
-        if ((rv = setUserSocketPath(userId)) != 0)
+        if ((rv = setUserSocketPath(userId)) != 0) {
+            hasError = true;
             goto out;
+        }
         assert(SOCKET_USER_PATH);
 
         /* Get userId as string */
@@ -215,8 +220,10 @@ int main(int argc, char **argv) {
         assert(strlen(userIdStr) > 0);
 
         /* Check the user directories are there and the instance is not already running for this user */
-        if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0)
+        if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0) {
+            hasError = true;
             goto out;
+        }
 
         /* For the user instance we never show the emrgency shell and we put whatever error into log which
          * can be already opened in this case (disk already mounted) */
@@ -233,6 +240,7 @@ int main(int argc, char **argv) {
     if ((rv = setSigAction()) != 0) {
         if (!USER_INSTANCE)
             showEmergencyShell = true;
+        hasError = true;
         goto out;
     }
 
@@ -291,8 +299,8 @@ int main(int argc, char **argv) {
         if (showEmergencyShell)
             execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 
-        /* If something went wrong then we try to release all anyway */
-        unitdEnd(&unitdData);
+        if (hasError)
+            unitdEnd(&unitdData);
 
         if (!USER_INSTANCE) {
 #ifndef UNITD_TEST

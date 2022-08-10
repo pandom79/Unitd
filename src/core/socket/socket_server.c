@@ -338,12 +338,11 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
 int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
-    int rv, lenUnitsDisplay;
+    int rv = 0;
     Array **unitsDisplay, **errors;
     char *buffer, *unitName;
     Unit *unit = NULL;
 
-    rv = lenUnitsDisplay = 0;
     buffer = unitName = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
@@ -360,6 +359,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     }
     /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);    
+
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
     if (unit)
@@ -368,11 +368,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
         */
-        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
-        if ((*unitsDisplay)->size == 0) {
-            *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
-        }
+        loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
     }
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
@@ -403,7 +399,6 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     bool isDead = false;
 
     buffer = unitName = NULL;
-
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
     units = &UNITD_DATA->units;
@@ -425,11 +420,11 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     /* Try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-
         /* Close eventual pipe */
         if (unit->pipe)
             closePipes(NULL, unit);
 
+        /* Get unit data */
         pData = &unit->processData;
         pState = &(*pData)->pStateData->pState;
         pType = &unit->type;
@@ -443,14 +438,15 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
-                loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE,
-                          false);
-                goto out;
+                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+                if (rv != 0)
+                    goto out;
             }
             else
                 isDead = true;
         }
     }
+
     if (unit && !isDead) {
         /* Stop the process */
         if (*pType == DAEMON && *pState == RUNNING) {
@@ -463,28 +459,27 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         while (NOTIFIER_WORKING)
             msleep(200);
 
-        if (unit->isChanged || *pType == ONESHOT || (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
+        if (unit->isChanged || *pType == ONESHOT ||
+           (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
-            if (sendResponse)
-                loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
+            if (sendResponse) {
+                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+                if (rv != 0)
+                    goto out;
+            }
         }
         else if (sendResponse)
-                /* Create a copy for client */
-                arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
+            /* Create a copy for client */
+            arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
     else {
         /* We don't parse this unit. We only check the unitname */
-        loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
-        if ((*unitsDisplay)->size == 0) {
-            if (!(*errors))
-                *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
-            rv = 1;
-        }
-        else
+        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+        if (rv == 0)
             isDead = true;
     }
+
     if (isDead && sendResponse) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);

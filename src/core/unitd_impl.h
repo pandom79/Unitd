@@ -5,6 +5,7 @@
 
 /* UNITD */
 #define PROJECT_NAME                "Unitd init system"
+#define PROJECT_USER_NAME           "Unitd user instance"
 #define DEF_STATE_SYML_NAME         "default.state"
 
 #ifndef UNITD_TEST
@@ -366,6 +367,7 @@ Array* getScriptParams(const char *, const char *, const char *);
 int sendWallMsg(Command);
 int checkAdministrator(char **);
 void fillUnitsDisplayList(Array **, Array **);
+int loadAndCheckUnit(Array **, bool, const char *, bool, Array **);
 
 /* Server */
 int listenSocketRequest();

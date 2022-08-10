@@ -1045,9 +1045,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
 
     switch (command) {
         case STOP_COMMAND:
-            if ((unitPath = getUnitPathByName(arg)))
-                rv = stopUnit(sockMessageOut, arg);
-            else rv = 1;
+            rv = stopUnit(sockMessageOut, arg);
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
