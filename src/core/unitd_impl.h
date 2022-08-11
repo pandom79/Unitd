@@ -217,7 +217,8 @@ typedef enum {
     DEFAULT_SYML_BAD_DEST_ERR = 17,
     DEFAULT_SYML_SET_ERR = 18,
     UNIT_CHANGED_ERR = 19,
-    UNIT_ENABLE_STATE_ERR = 20
+    UNIT_ENABLE_STATE_ERR = 20,
+    UNITS_LIST_EMPTY_ERR = 21
 } UnitsErrorsEnum;
 typedef struct {
     UnitsErrorsEnum errorEnum;
@@ -367,7 +368,7 @@ Array* getScriptParams(const char *, const char *, const char *);
 int sendWallMsg(Command);
 int checkAdministrator(char **);
 void fillUnitsDisplayList(Array **, Array **);
-int loadAndCheckUnit(Array **, bool, const char *, bool, Array **);
+int loadAndCheckUnit(Array **, bool, const char *, bool, Array **, const char **);
 
 /* Server */
 int listenSocketRequest();

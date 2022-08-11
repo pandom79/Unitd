@@ -89,11 +89,12 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { DEFAULT_SYML_BAD_DEST_ERR, "The default state symlink points to a bad destination : %s" },
     { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" },
     { UNIT_CHANGED_ERR, "The unit content is changed!" },
-    { UNIT_ENABLE_STATE_ERR, "Unable to perform the enabling!" }
+    { UNIT_ENABLE_STATE_ERR, "Unable to perform the enabling!" },
+    { UNITS_LIST_EMPTY_ERR, "There are no units!" }
 };
 
 const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
-    { UNIT_START_MSG, "Please, run 'unitctl restart %s' to restart it." },
+    { UNIT_START_MSG, "Please, run 'unitctl restart %s%s' to restart it." },
     { UNIT_FORCE_START_CONFLICT_MSG, "Please, use '--force' or '-f' option to force it." },
     { UNIT_REMOVED_SYML_MSG, "Removed symlink '%s' -> '%s'." },
     { UNIT_CREATED_SYML_MSG, "Created symlink '%s' -> '%s'." },
@@ -259,19 +260,21 @@ isEnabledUnit(const char *unitName, State currentState)
     if (currentState != NO_STATE)
         arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[currentState]);
     else {
-        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[REBOOT]);
-        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
-        if (STATE_CMDLINE != NO_STATE)
-            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_CMDLINE]);
+        if (!USER_INSTANCE) {
+            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[REBOOT]);
+            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
+            arrayAdd(statesData,
+                    (void *)&STATE_DATA_ITEMS[STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT]);
+        }
         else
-            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_DEFAULT]);
+            arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[USER]);
     }
 
     len = statesData->size;
     assert(len >= 1);
     for (int i = 0; i < len; i++) {
         stateData = arrayGet(statesData, i);
-        pattern = stringNew(UNITS_ENAB_PATH);
+        pattern = !USER_INSTANCE ? stringNew(UNITS_ENAB_PATH) : stringNew(UNITS_USER_ENAB_PATH);
         stringAppendChr(&pattern, '/');
         stringAppendStr(&pattern, stateData->desc);
         stringAppendStr(&pattern, ".state/");

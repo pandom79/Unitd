@@ -272,6 +272,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     char *buffer = NULL;
     Array *unitsDisplay = NULL;
     Array **messages = &(*sockMessageOut)->messages;
+    Array **errors = &(*sockMessageOut)->errors;
     int rv, lenUnits;
     bool bootAnalyze = false;
 
@@ -316,23 +317,34 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         objectRelease(&diffExecTime);
         timeRelease(&current);
     }
+    /* unitsDisplay could empty or null */
+    if (!bootAnalyze && (!unitsDisplay || unitsDisplay->size == 0)) {
+        if (!(*errors))
+            *errors = arrayNew(objectRelease);
+        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNITS_LIST_EMPTY_ERR].desc));
+        goto out;
+    }
     /* Sorting the array by name */
-    qsort(unitsDisplay->arr, unitsDisplay->size, sizeof(Unit *), sortUnitsByName);
-    /* Adding the sorted array */
-    (*sockMessageOut)->unitsDisplay = unitsDisplay;
-    /* Marshall response */
-    buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
-    if (UNITD_DEBUG)
-        syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%lu): \n%s",
-                                        strlen(buffer), buffer);
-    /* Sending the response */
-    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitListServer."
-                                     "Send func has returned %d = %s", errno, strerror(errno));
+    if (unitsDisplay) {
+        qsort(unitsDisplay->arr, unitsDisplay->size, sizeof(Unit *), sortUnitsByName);
+        /* Adding the sorted array */
+        (*sockMessageOut)->unitsDisplay = unitsDisplay;
     }
 
-    objectRelease(&buffer);
-    return rv;
+    out:
+        /* Marshall response */
+        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
+        if (UNITD_DEBUG)
+            syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%lu): \n%s",
+                                            strlen(buffer), buffer);
+        /* Sending the response */
+        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitListServer."
+                                         "Send func has returned %d = %s", errno, strerror(errno));
+        }
+
+        objectRelease(&buffer);
+        return rv;
 }
 
 int
@@ -368,7 +380,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
         */
-        loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
+        loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, NULL);
     }
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
@@ -438,7 +450,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
-                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
                 if (rv != 0)
                     goto out;
             }
@@ -464,7 +476,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
             if (sendResponse) {
-                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
                 if (rv != 0)
                     goto out;
             }
@@ -475,7 +487,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     }
     else {
         /* We don't parse this unit. We only check the unitname */
-        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
         if (rv == 0)
             isDead = true;
     }
@@ -515,7 +527,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     char *buffer, *unitName, *unitPath;
     Unit *unit, *unitConflict, *unitDep;
     bool force, restart, hasError;
-    const char *dep, *conflict;
+    const char *dep, *conflict, *unitPathSearch;
     PState *pState, *pStateConflict;
     ProcessData *pData, *pDataConflict;
 
@@ -524,6 +536,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     rv = len = 0;
     buffer = unitName = unitPath = NULL;
     dep = conflict = NULL;
+    unitPathSearch = "";
     pData = pDataConflict = NULL;
     pState = pStateConflict = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
@@ -562,7 +575,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             if (sendResponse) {
                 if (!(*messages))
                     *messages = arrayNew(objectRelease);
-                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_START_MSG].desc, unitName));
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_START_MSG].desc,
+                                           !USER_INSTANCE ? "" : "--user ", unitName));
             }
             goto out;
         }
@@ -580,17 +594,13 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
     }
 
-    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, unitName, PARSE_SOCK_RESPONSE, false);
-    if ((*unitsDisplay)->size == 0) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
-    }
-    else {
+    rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
+    if (rv == 0) {
+        assert(strlen(unitPathSearch) > 0);
         /* We only start the dead unit */
         unit = unitNew(NULL, PARSE_UNIT);
         unit->name = stringNew(unitName);
-        unitPath = stringNew(UNITS_PATH);
+        unitPath = stringNew(unitPathSearch);
         stringAppendChr(&unitPath, '/');
         stringAppendStr(&unitPath, unit->name);
         stringAppendStr(&unitPath, ".unit");
@@ -599,10 +609,10 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         /* Aggregate all the errors */
         parseUnit(unitsDisplay, &unit, true, NO_STATE);
         /* Check wanted by */
-        if (STATE_CMDLINE != NO_STATE)
-            checkWantedBy(&unit, STATE_CMDLINE, true);
+        if (!USER_INSTANCE)
+            checkWantedBy(&unit, STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT, true);
         else
-            checkWantedBy(&unit, STATE_DEFAULT, true);
+            checkWantedBy(&unit, STATE_USER, true);
         if (unit->errors->size > 0) {
             *errors = arrayStrCopy(unit->errors);
             unitRelease(&unit);
@@ -689,8 +699,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         arrayAdd(*units, unit);
         /* Creating eventual pipe */
         if (hasPipe(unit)) {
-            if (!unit->pipe)
-                unit->pipe = pipeNew();
+            unit->pipe = pipeNew();
             /* Create process data history array accordingly */
             unit->processDataHistory = arrayNew(processDataRelease);
             openPipes(NULL, unit);
@@ -1218,15 +1227,13 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
             if (!(*messages))
                 *messages = arrayNew(objectRelease);
-            if (!USER_INSTANCE)
-                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "", unitName));
-            else
-                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "--user ", unitName));
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc,
+                                       !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
     }
 
-    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
+    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, NULL);
     if (rv != 0)
         goto out;
 

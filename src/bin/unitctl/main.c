@@ -150,14 +150,17 @@ int main(int argc, char **argv) {
     }
 
     /* Get the command */
-    if ((commandName = argv[optind]))
+    if ((commandName = argv[optind])) {
         command = getCommand(commandName);
+        if (command == NO_COMMAND)
+            usage(true);
+    }
 
     /* Command handling */
     switch (command) {
         case NO_COMMAND:
-        if (argc > 3 ||
-           ((argc == 3 || argc == 2) && !UNITCTL_DEBUG && !onlyWtmp && !USER_INSTANCE))
+            if (argc > 4 ||
+               (argc > 1 && !UNITCTL_DEBUG && !onlyWtmp && !USER_INSTANCE))
                 usage(true);
             else {
                 if (onlyWtmp) {
@@ -179,10 +182,10 @@ int main(int argc, char **argv) {
         case HALT_COMMAND:
         case KEXEC_COMMAND:
             if (!USER_INSTANCE) {
-                if (argc > 2) {
-                    if (argc > 6 || (!force && !UNITCTL_DEBUG && !noWtmp && !noWall))
-                        usage(true);
-                }
+                if (argc > 6 ||
+                   (argc > 2 && !force && !UNITCTL_DEBUG && !noWtmp && !noWall))
+                    usage(true);
+
                 if (command == KEXEC_COMMAND && !isKexecLoaded()) {
                     rv = EPERM;
                     unitdLogErrorStr(LOG_UNITD_CONSOLE, "Kexec is not loaded!\n");
@@ -194,20 +197,17 @@ int main(int argc, char **argv) {
                 /* We only use POWEROFF_COMMAND to shutdown an unitd user instance.
                  * We don't allow force, noWtmp and noWall option.
                 */
-                if (argc > 2) {
-                    if (argc > 4 || (force || noWtmp || noWall))
-                            usage(true);
-                }
-                if (command != POWEROFF_COMMAND)
+                if (argc > 4 || command != POWEROFF_COMMAND ||
+                   (argc > 2 && (force || noWtmp || noWall)))
                     usage(true);
             }
             rv = unitdShutdown(command, force, noWtmp, noWall);
             break;
         case LIST_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
-            if ((argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
-                argc > 4 ||
-                (command == GET_DEFAULT_STATE_COMMAND && USER_INSTANCE))
+            if (argc > 4 ||
+               (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+               (command == GET_DEFAULT_STATE_COMMAND && USER_INSTANCE))
                 usage(true);
             if (command == LIST_COMMAND)
                 rv = showUnitList(&sockMessageOut);
@@ -220,7 +220,9 @@ int main(int argc, char **argv) {
         case LIST_CONFLICTS_COMMAND:
         case LIST_STATES_COMMAND:
         case SET_DEFAULT_STATE_COMMAND:
-            if (argc == 2 || (argc > 4 && !UNITCTL_DEBUG && !USER_INSTANCE))
+            if (argc < 3 || argc > 5 ||
+               (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+               (command == SET_DEFAULT_STATE_COMMAND && USER_INSTANCE))
                 usage(true);
             arg = argv[argc - 1];
             if (command == STATUS_COMMAND)
@@ -230,13 +232,13 @@ int main(int argc, char **argv) {
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
-            if (argc == 2 || (argc > 3 && !force && !UNITCTL_DEBUG))
+            if (argc < 3 || argc > 6 ||
+               (argc > 3 && !force && !UNITCTL_DEBUG && !USER_INSTANCE))
                 usage(true);
             arg = argv[argc - 1];
-            if (command == START_COMMAND)
-                rv = showUnit(command, &sockMessageOut, arg, force, false, false, false);
-            else
-                rv = showUnit(command, &sockMessageOut, arg, force, true, false, false);
+            rv = showUnit(command, &sockMessageOut, arg, force,
+                          command == START_COMMAND ? false : true,
+                          false, false);
             break;
         case DISABLE_COMMAND:
             if (argc == 2 || (argc > 3 && !run && !UNITCTL_DEBUG))

@@ -280,7 +280,7 @@ fillUnitsDisplayList(Array **units, Array **unitsDisplay)
 
 int
 loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
-                 bool parse, Array **errors)
+                 bool parse, Array **errors, const char **unitPathSearch)
 {
     int rv = 0, *lenUnitsDisplay;
 
@@ -288,15 +288,23 @@ loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
     assert(*unitName);
     lenUnitsDisplay = &(*unitsDisplay)->size;
 
-    if (!USER_INSTANCE)
+    if (!USER_INSTANCE) {
+        if (unitPathSearch)
+            *unitPathSearch = UNITS_PATH;
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE,
                   isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
+    }
     else {
+        if (unitPathSearch)
+            *unitPathSearch = UNITS_USER_PATH;
         loadUnits(unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
                   isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
-        if (*lenUnitsDisplay == 0)
+        if (*lenUnitsDisplay == 0) {
+            if (unitPathSearch)
+                *unitPathSearch = UNITS_USER_LOCAL_PATH;
             loadUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
                       isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
+        }
     }
     if (*lenUnitsDisplay == 0) {
         if (!(*errors))
