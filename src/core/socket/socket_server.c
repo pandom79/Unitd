@@ -731,6 +731,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     Array **unitsDisplay, **errors, **messages, *scriptParams, **unitDisplayErrors, *statesData;
     Unit *unit, *unitDisplay;
     char *unitName, *buffer, *stateStr, *from, *to;
+    const char *unitPathSearch = NULL;
     bool run = false;
     int rv, len;
     StateData *stateData = NULL;
@@ -777,14 +778,10 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         }
     }
 
-    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
-
-    if ((*unitsDisplay)->size == 0) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
+    unitPathSearch = "";
+    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPathSearch);
+    if (rv != 0)
         goto out;
-    }
 
     /* If we are come from enableUnitServer func (conflict case) then unitdisplay has index = 1.
      * To avoid to accumulate unit we always release this unit.
@@ -813,18 +810,21 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         goto out;
     }
     /* Call the script to remove symlinks from the states
-     * We always consider the default state (or cmdline ), reboot and poweroff
+     * We always consider the default state (or cmdline ), reboot and poweroff for system instance or
+     * user state for user instance
     */
     statesData = arrayNew(NULL);
-    arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[REBOOT]);
-    arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
-    if (STATE_CMDLINE != NO_STATE)
-        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_CMDLINE]);
+    if (!USER_INSTANCE) {
+        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[REBOOT]);
+        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[POWEROFF]);
+        arrayAdd(statesData,
+                 (void *)&STATE_DATA_ITEMS[STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT]);
+    }
     else
-        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[STATE_DEFAULT]);
+        arrayAdd(statesData, (void *)&STATE_DATA_ITEMS[USER]);
 
     len = statesData->size;
-    assert(len == 3);
+    assert(len >= 1);
     for (int i = 0; i < len; ++i) {
         stateData = arrayGet(statesData, i);
         stateStr = stringNew(stateData->desc);
@@ -833,7 +833,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
 
         if (isEnabledUnit(unitName, state)) {
             /* Get script parameter array */
-            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP);
+            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitPathSearch);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */
@@ -1128,7 +1128,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         assert(state != NO_STATE);
         if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT || state == POWEROFF) {
             /* Get script parameter array */
-            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP);
+//FIXME check getScriptParams args
+            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, NULL);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */

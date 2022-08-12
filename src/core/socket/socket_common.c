@@ -149,19 +149,20 @@ setValueForBuffer(char **buffer, int value)
 }
 
 Array*
-getScriptParams(const char *unitName, const char *stateStr, const char *symlOperation)
+getScriptParams(const char *unitName, const char *stateStr,
+                const char *symlOperation, const char *unitPath)
 {
     Array *scriptParams = NULL;
     char *command, *from, *to;
     command = from = to = NULL;
 
     /* Building 'to' parameter */
-    from = stringNew(UNITS_PATH);
+    from = stringNew(unitPath);
     stringAppendChr(&from, '/');
     stringAppendStr(&from, unitName);
     stringAppendStr(&from, ".unit");
     /* Building 'from' parameter */
-    to = stringNew(UNITS_ENAB_PATH);
+    to = !USER_INSTANCE ? stringNew(UNITS_ENAB_PATH) : stringNew(UNITS_USER_ENAB_PATH);
     stringAppendChr(&to, '/');
     stringAppendStr(&to, stateStr);
     stringAppendChr(&to, '/');

@@ -20,6 +20,9 @@ usage(bool fail)
             "Usage for user instance: unitctl [COMMAND] [OPTIONS] ... \n\n"
 
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
+            "disable            Disable the unit\n"
+            "restart            Restart the unit\n"
+            "start              Start the unit\n"
             "stop               Stop the unit\n"
             "status             Get the unit status\n"
             "list-requires      List the unit dependencies\n"
@@ -241,7 +244,8 @@ int main(int argc, char **argv) {
                           false, false);
             break;
         case DISABLE_COMMAND:
-            if (argc == 2 || (argc > 3 && !run && !UNITCTL_DEBUG))
+            if (argc < 3 || argc > 6 ||
+               (argc > 3 && !run && !UNITCTL_DEBUG && !USER_INSTANCE))
                 usage(true);
             arg = argv[argc - 1];
             rv = showUnit(command, &sockMessageOut, arg, false, false, run, false);

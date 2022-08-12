@@ -1052,9 +1052,7 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
             rv = startUnit(sockMessageOut, arg, force, restart);
             break;
         case DISABLE_COMMAND:
-            if ((unitPath = getUnitPathByName(arg)))
-                rv = disableUnit(sockMessageOut, arg, run);
-            else rv = 1;
+            rv = disableUnit(sockMessageOut, arg, run);
             break;
         case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:

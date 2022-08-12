@@ -364,7 +364,7 @@ void sockMessageInRelease(SockMessageIn **);
 SockMessageOut* sockMessageOutNew();
 int sortUnitsByName(const void *, const void *);
 void setValueForBuffer(char **, int);
-Array* getScriptParams(const char *, const char *, const char *);
+Array* getScriptParams(const char *, const char *, const char *, const char *);
 int sendWallMsg(Command);
 int checkAdministrator(char **);
 void fillUnitsDisplayList(Array **, Array **);
