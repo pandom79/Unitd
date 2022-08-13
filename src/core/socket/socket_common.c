@@ -283,10 +283,11 @@ int
 loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
                  bool parse, Array **errors, const char **unitPathSearch)
 {
-    int rv = 0, *lenUnitsDisplay;
+    int rv = 0, *lenUnitsDisplay, oldLen;
 
     assert(*unitsDisplay);
     assert(*unitName);
+    oldLen = (*unitsDisplay)->size;
     lenUnitsDisplay = &(*unitsDisplay)->size;
 
     if (!USER_INSTANCE) {
@@ -300,14 +301,14 @@ loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
             *unitPathSearch = UNITS_USER_PATH;
         loadUnits(unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
                   isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
-        if (*lenUnitsDisplay == 0) {
+        if (*lenUnitsDisplay == oldLen) {
             if (unitPathSearch)
                 *unitPathSearch = UNITS_USER_LOCAL_PATH;
             loadUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
                       isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
         }
     }
-    if (*lenUnitsDisplay == 0) {
+    if (*lenUnitsDisplay == oldLen) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));

@@ -594,6 +594,14 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
     }
 
+    /* If we are come from enableUnitServer then we can release unitsDisplay to satisfy loadAndCheckUnit.
+     * We need of unitPathSearch to parse the unit
+    */
+    if ((*unitsDisplay)->size > 0) {
+        arrayRelease(unitsDisplay);
+        *unitsDisplay = arrayNew(unitRelease);
+    }
+
     rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
     if (rv == 0) {
         assert(strlen(unitPathSearch) > 0);
@@ -890,13 +898,14 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
           *conflictNames, *unitsConflicts, *wantedBy, *scriptParams, *requires;
     Unit *unit, *unitDisplay, *unitConflict;
     char *unitName, *buffer, *stateStr, *from, *to;
-    const char *conflictName = NULL;
+    const char *conflictName, *unitPath;
     bool force, run, hasError, reEnable, isAlreadyDisabled;
     ProcessData *pDataConflict = NULL;
     PState *pStateConflict = NULL;
 
     rv = len = 0;
     unitName = buffer = stateStr = from = to = NULL;
+    conflictName = unitPath = NULL;
     force = run = hasError = isAlreadyDisabled = false;
     unit = unitDisplay = unitConflict = NULL;
     conflicts = conflictNames = unitsConflicts = requires = NULL;
@@ -941,6 +950,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                 isAlreadyDisabled = true;
                 /* disableUnitServer func could fully release the unit */
                 unit = getUnitByName(*units, unitName);
+                /* Release and create unitsDisplay array to satisfy loadAndCheckUnit */
+                arrayRelease(unitsDisplay);
+                *unitsDisplay = arrayNew(unitRelease);
             }
         }
 
@@ -960,26 +972,24 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
             if (!(*messages))
                 *messages = arrayNew(objectRelease);
-
-//FIXME replace this line with the commented code below
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, unitName));
-//            if (!USER_INSTANCE)
-//                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "", unitName));
-//            else
-//                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc, "--user ", unitName));
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc,
+                                       !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
     }
 
-    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
-    /* Check if unitname exists */
-    if (!unit && (*unitsDisplay)->size == 0) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
+    unitPath = "";
+    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPath);
+    if (rv != 0)
         goto out;
-    }
-
+//    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
+//    /* Check if unitname exists */
+//    if (!unit && (*unitsDisplay)->size == 0) {
+//        if (!(*errors))
+//            *errors = arrayNew(objectRelease);
+//        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
+//        goto out;
+//    }
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
     /* Check if it is already enabled */
@@ -999,11 +1009,17 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
 
     /* Before to perform the checks and enabling, we test that at least a valid state is here */
     wantedBy = unitDisplay->wantedBy;
-    if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[REBOOT].desc) &&
-        !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[POWEROFF].desc) &&
-        !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_CMDLINE].desc) &&
-        !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_DEFAULT].desc))
-        hasError = true;
+    if (!USER_INSTANCE) {
+        if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[REBOOT].desc) &&
+            !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[POWEROFF].desc) &&
+            !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_CMDLINE].desc) &&
+            !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_DEFAULT].desc))
+            hasError = true;
+    }
+    else {
+        if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[USER].desc))
+            hasError = true;
+    }
 
     if (hasError) {
         if (!(*errors))
@@ -1011,12 +1027,27 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLE_STATE_ERR].desc));
         if (!(*messages))
             *messages = arrayNew(objectRelease);
-        if (STATE_CMDLINE != NO_STATE)
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
-                                       STATE_DATA_ITEMS[STATE_CMDLINE].desc));
+
+        /* Building message */
+        char *msg = NULL;
+        if (!USER_INSTANCE) {
+            msg = getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
+                            STATE_DATA_ITEMS[STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT].desc);
+            stringAppendStr(&msg, "/n");
+            stringAppendStr(&msg, STATE_DATA_ITEMS[REBOOT].desc);
+            stringAppendStr(&msg, "/n");
+            stringAppendStr(&msg, STATE_DATA_ITEMS[POWEROFF].desc);
+        }
         else
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
-                                       STATE_DATA_ITEMS[STATE_DEFAULT].desc));
+            msg = getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc, STATE_DATA_ITEMS[USER].desc);
+
+        arrayAdd(*messages, msg);
+//        if (STATE_CMDLINE != NO_STATE)
+//            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
+//                                       STATE_DATA_ITEMS[STATE_CMDLINE].desc));
+//        else
+//            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
+//                                       STATE_DATA_ITEMS[STATE_DEFAULT].desc));
         goto out;
     }
 
@@ -1116,7 +1147,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     }
 
     /* Call the script to add symlinks.
-     * We always consider the default state (or cmdline ), reboot and poweroff
+     * We always consider the default state (or cmdline ), reboot and poweroff for system instance
+     * or user state for user instance
     */
     wantedBy = unitDisplay->wantedBy;
     len = wantedBy->size;
@@ -1126,10 +1158,10 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         stringAppendStr(&stateStr, ".state");
         State state = getStateByStr(stateStr);
         assert(state != NO_STATE);
-        if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT || state == POWEROFF) {
+        if (state == STATE_DEFAULT || state == STATE_CMDLINE ||
+            state == REBOOT || state == POWEROFF || state == USER) {
             /* Get script parameter array */
-//FIXME check getScriptParams args
-            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, NULL);
+            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitPath);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */

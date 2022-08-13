@@ -1056,9 +1056,10 @@ showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
             break;
         case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
-            if ((unitPath = getUnitPathByName(arg)))
-                rv = enableUnit(sockMessageOut, arg, force, run, reEnable);
-            else rv = 1;
+//            if ((unitPath = getUnitPathByName(arg)))
+//                rv = enableUnit(sockMessageOut, arg, force, run, reEnable);
+//            else rv = 1;
+            rv = enableUnit(sockMessageOut, arg, force, run, reEnable);
             break;
         case LIST_REQUIRES_COMMAND:
         case LIST_CONFLICTS_COMMAND:
