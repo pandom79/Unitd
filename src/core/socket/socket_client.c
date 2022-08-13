@@ -446,16 +446,16 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 {
     int rv, len, *finalStatus, *exitCode, *signalNum, *pid, restartNum, lenPDataHistory,
         lenUnitErrors;
-    Array *sockErrors, *units, *unitErrors, *pDatasHistory;
+    Array *sockErrors, *units, *unitErrors, *pDatasHistory, *messages;
     Unit *unit = NULL;
     ProcessData *pData, *pDataHistory;
     PStateData *pStateData, *pStateDataHistory;
-    const char *status, *desc, *dateTimeStart, *dateTimeStop, *duration;
+    const char *status, *desc, *dateTimeStart, *dateTimeStop, *duration, *message;
     PState pState;
 
     rv = len = restartNum = lenPDataHistory = lenUnitErrors = 0;
-    sockErrors = units = unitErrors = pDatasHistory = NULL;
-    status = desc = dateTimeStart = dateTimeStop = NULL;
+    sockErrors = units = unitErrors = pDatasHistory = messages = NULL;
+    status = desc = dateTimeStart = dateTimeStop = message = NULL;
     pData = pDataHistory = NULL;
     pStateData = pStateDataHistory = NULL;
 
@@ -468,6 +468,18 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         len = (sockErrors ? sockErrors->size : 0);
         for (int i = 0; i < len; i++) {
             unitdLogErrorStr(LOG_UNITD_CONSOLE, arrayGet(sockErrors, i));
+            printf("\n");
+        }
+
+        /* Display the messages */
+        messages = (*sockMessageOut)->messages;
+        len = (messages ? messages->size : 0);
+        for (int i = 0; i < len; i++) {
+            message = arrayGet(messages, i);
+            if (stringStartsWithStr(message, "Warning"))
+                unitdLogWarning(LOG_UNITD_CONSOLE, message);
+            else
+                unitdLogInfo(LOG_UNITD_CONSOLE, message);
             printf("\n");
         }
 

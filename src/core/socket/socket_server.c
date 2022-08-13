@@ -351,13 +351,14 @@ int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv = 0;
-    Array **unitsDisplay, **errors;
+    Array **unitsDisplay, **errors, **messages;
     char *buffer, *unitName;
     Unit *unit = NULL;
 
     buffer = unitName = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
+    messages = &(*sockMessageOut)->messages;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
@@ -374,27 +375,40 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
 
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
-    if (unit)
+    if (unit) {
+        if (unit->isChanged) {
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
+            if (!(*messages))
+                *messages = arrayNew(objectRelease);
+            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc,
+                                       !USER_INSTANCE ? "" : "--user ", unitName));
+            goto out;
+        }
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
+    }
     else {
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
         */
         loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, NULL);
     }
-    /* Marshall response */
-    buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
-        syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatusServer::Buffer sent (%lu): \n%s",
-                                        strlen(buffer), buffer);
-    /* Sending the response */
-    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitStatusServer."
-                                     "Send func has returned %d = %s", errno, strerror(errno));
-    }
 
-    objectRelease(&buffer);
-    return rv;
+    out:
+        /* Marshall response */
+        buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
+        if (UNITD_DEBUG)
+            syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatusServer::Buffer sent (%lu): \n%s",
+                                            strlen(buffer), buffer);
+        /* Sending the response */
+        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getUnitStatusServer."
+                                         "Send func has returned %d = %s", errno, strerror(errno));
+        }
+
+        objectRelease(&buffer);
+        return rv;
 }
 
 int
