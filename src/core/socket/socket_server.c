@@ -500,10 +500,13 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
     else {
-        /* We don't parse this unit. We only check the unitname */
-        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
-        if (rv == 0)
-            isDead = true;
+        /* When we come from disabledUnitFunc unitsDisplay is already here */
+        if ((*unitsDisplay)->size == 0) {
+            /* We don't parse this unit. We only check the unitname */
+            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
+            if (rv == 0)
+                isDead = true;
+        }
     }
 
     if (isDead && sendResponse) {
@@ -750,10 +753,10 @@ int
 disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut,
                   const char *unitNameArg, bool sendResponse)
 {
-    Array **unitsDisplay, **errors, **messages, *scriptParams, **unitDisplayErrors, *statesData;
+    Array **unitsDisplay, **errors, **messages, *scriptParams, *statesData;
     Unit *unit, *unitDisplay;
     char *unitName, *buffer, *stateStr, *from, *to;
-    const char *unitPathSearch = NULL;
+    const char *unitPathSearch = "";
     bool run = false;
     int rv, len;
     StateData *stateData = NULL;
@@ -796,15 +799,25 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
+            if (run) {
+                if (!(*messages))
+                    *messages = arrayNew(objectRelease);
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_STOP_MSG].desc,
+                                           !USER_INSTANCE ? "" : "--user ", unitName));
+            }
             goto out;
         }
+        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
-
-    unitPathSearch = "";
-    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPathSearch);
-    if (rv != 0)
-        goto out;
-
+    else {
+        /* If the unit is not in memory then check that unitname is valid.
+         * No need to parse unit, unitDisplay->enabled (required later) is already
+         * available with 'false' parameter.
+        */
+        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
+        if (rv != 0)
+            goto out;
+    }
     /* If we are come from enableUnitServer func (conflict case) then unitdisplay has index = 1.
      * To avoid to accumulate unit we always release this unit.
      * In this way its index will be always equal to 1.
@@ -824,11 +837,6 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
-        goto out;
-    }
-    unitDisplayErrors = &unitDisplay->errors;
-    if (*unitDisplayErrors && (*unitDisplayErrors)->size > 0) {
-        *errors = arrayStrCopy(*unitDisplayErrors);
         goto out;
     }
     /* Call the script to remove symlinks from the states
@@ -854,7 +862,9 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         state = stateData->state;
 
         if (isEnabledUnit(unitName, state)) {
-            /* Get script parameter array */
+            /* Get script parameter array
+             * In this case unitPathSearch is useless
+            */
             scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitPathSearch);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
@@ -1054,14 +1064,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         }
         else
             msg = getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc, STATE_DATA_ITEMS[USER].desc);
-
         arrayAdd(*messages, msg);
-//        if (STATE_CMDLINE != NO_STATE)
-//            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
-//                                       STATE_DATA_ITEMS[STATE_CMDLINE].desc));
-//        else
-//            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
-//                                       STATE_DATA_ITEMS[STATE_DEFAULT].desc));
         goto out;
     }
 
@@ -1259,7 +1262,10 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);
 
-    /* try to get the unit from memory */
+    /* We always read the data from the disk.
+     * If the unit is into memory and its content is changed then show the error.
+     * That means the data are not synchronized between memory and disk.
+     */
     unit = getUnitByName(*units, unitName);
     if (unit) {
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
