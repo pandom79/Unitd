@@ -810,16 +810,24 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
     else {
-        /* If the unit is not in memory then check that unitname is valid.
-         * No need to parse unit, unitDisplay->enabled (required later) is already
-         * available with 'false' parameter.
+//FIXME Test the following if statement
+        /* If we are come from enableUnitServer func then unitsDisplay already contains
+         * our unit which has been already parsed and checked.
         */
-        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
-        if (rv != 0)
-            goto out;
+        if ((*unitsDisplay)->size == 0) {
+            /* If the unit is not in memory then check that unitname is valid.
+             * No need to parse unit because 'unitDisplay->enabled' (required later) is already
+             * available with 'false' parameter.
+             * Additionally, we only have to remove a symlink regardless by
+             * its eventual configuration errors.
+            */
+            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
+            if (rv != 0)
+                goto out;
+        }
     }
     /* If we are come from enableUnitServer func (conflict case) then unitdisplay has index = 1.
-     * To avoid to accumulate unit we always release this unit.
+     * To avoid to accumulate unit we always release it.
      * In this way its index will be always equal to 1.
      * Additionally, even if run = true, we stop nothing because they will be stopped (parallelized)
      * in enableUnitServer func to optimize performance.
@@ -839,9 +847,9 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
         goto out;
     }
-    /* Call the script to remove symlinks from the states
-     * We always consider the default state (or cmdline ), reboot and poweroff for system instance or
-     * user state for user instance
+    /* Call the script to remove symlinks from the states.
+     * We always consider the default state (or cmdline ), reboot and poweroff (system instance) or
+     * user state (user instance)
     */
     statesData = arrayNew(NULL);
     if (!USER_INSTANCE) {
@@ -863,7 +871,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
 
         if (isEnabledUnit(unitName, state)) {
             /* Get script parameter array
-             * In this case unitPathSearch is useless
+             * In this case 'unitPathSearch' is useless because we are removing the symlink
             */
             scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitPathSearch);
             from = arrayGet(scriptParams, 2);
@@ -922,14 +930,14 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
           *conflictNames, *unitsConflicts, *wantedBy, *scriptParams, *requires;
     Unit *unit, *unitDisplay, *unitConflict;
     char *unitName, *buffer, *stateStr, *from, *to;
-    const char *conflictName, *unitPath;
+    const char *conflictName, *unitPathSearch;
     bool force, run, hasError, reEnable, isAlreadyDisabled;
     ProcessData *pDataConflict = NULL;
     PState *pStateConflict = NULL;
 
     rv = len = 0;
     unitName = buffer = stateStr = from = to = NULL;
-    conflictName = unitPath = NULL;
+    conflictName = unitPathSearch = NULL;
     force = run = hasError = isAlreadyDisabled = false;
     unit = unitDisplay = unitConflict = NULL;
     conflicts = conflictNames = unitsConflicts = requires = NULL;
@@ -972,7 +980,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             else {
                 disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
                 isAlreadyDisabled = true;
-                /* disableUnitServer func could fully release the unit */
+                /* disableUnitServer func could fully release the unit thus retry to get it */
                 unit = getUnitByName(*units, unitName);
                 /* Release and create unitsDisplay array to satisfy loadAndCheckUnit */
                 arrayRelease(unitsDisplay);
@@ -984,6 +992,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
+//FIXME show re-enabling message. See disableServer func!
             goto out;
         }
         /* Waiting for notifier. Basically, it should never happen. Extreme case */
@@ -1002,18 +1011,26 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         }
     }
 
-    unitPath = "";
-    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPath);
+//FIXME run loadAndCheckUnit if the unit is not in memory
+    // in this case we can retrieve unitPathSearch from unit->path
+    // checking UNITS_USER_PATH, UNITS_PATH and UNITS_USER_LOCAL_PATH because
+    // UNITS_PATH is included in UNITS_USER_PATH and thus stringStartWith func could fail.
+
+    /* Check the unitName and parse the unit */
+    unitPathSearch = "";
+    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPathSearch);
     if (rv != 0)
         goto out;
-//    loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, true, unitName, PARSE_SOCK_RESPONSE, true);
-//    /* Check if unitname exists */
-//    if (!unit && (*unitsDisplay)->size == 0) {
-//        if (!(*errors))
-//            *errors = arrayNew(objectRelease);
-//        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, unitName));
-//        goto out;
-//    }
+
+    /* The unit could have some configuration errors */
+    unitDisplayErrors = &unitDisplay->errors;
+    if (!(*unitDisplayErrors))
+        *unitDisplayErrors = arrayNew(objectRelease);
+    if ((*unitDisplayErrors)->size > 0) {
+        *errors = arrayStrCopy(*unitDisplayErrors);
+        goto out;
+    }
+
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
     /* Check if it is already enabled */
@@ -1024,12 +1041,10 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         goto out;
     }
     else if (!unit && reEnable && unitDisplay->enabled && !isAlreadyDisabled) {
+//FIXME probably, in disableUnitFunc we can avoid to call loadAndCheckUnit because unitsDisplay is already here
+        //and the unit is already parsed
         disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
     }
-
-    unitDisplayErrors = &unitDisplay->errors;
-    if (!(*unitDisplayErrors))
-        *unitDisplayErrors = arrayNew(objectRelease);
 
     /* Before to perform the checks and enabling, we test that at least a valid state is here */
     wantedBy = unitDisplay->wantedBy;
@@ -1044,14 +1059,12 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[USER].desc))
             hasError = true;
     }
-
     if (hasError) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLE_STATE_ERR].desc));
         if (!(*messages))
             *messages = arrayNew(objectRelease);
-
         /* Building message */
         char *msg = NULL;
         if (!USER_INSTANCE) {
@@ -1088,14 +1101,17 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
 
     /* Before the enable it, we perform the "requires" specific check.
      * Actually, this check has been already called but now, we re-execute it considerating all memory data
-     * to satisfy all checks (syntax and logic errors)
+     * to satisfy all checks (syntax and logic errors).
+     * For logic errors, we mean the errors regard to the "backwards" dependencies
+     * which cause a block to the starting of the threads.
+     * Anyway, the check is there when we start as well.
     */
     checkRequires(units, &unitDisplay, true);
     if ((*unitDisplayErrors)->size > 0) {
         *errors = arrayStrCopy(*unitDisplayErrors);
         goto out;
     }
-    /* Check conflict */
+    /* Check conflicts */
     conflicts = unitDisplay->conflicts;
     len = (conflicts ? conflicts->size : 0);
     for (int i = 0; i < len; i++) {
@@ -1164,10 +1180,11 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     }
 
     /* Call the script to add symlinks.
-     * We always consider the default state (or cmdline ), reboot and poweroff for system instance
-     * or user state for user instance
+     * We always consider the default state (or cmdline ), reboot and poweroff (system instance)
+     * or user state (user instance)
     */
-    wantedBy = unitDisplay->wantedBy;
+//FIXME wantedBy has been already taken
+//    wantedBy = unitDisplay->wantedBy;
     len = wantedBy->size;
     for (int i = 0; i < len; ++i) {
         /* Get wanted state */
@@ -1178,7 +1195,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if (state == STATE_DEFAULT || state == STATE_CMDLINE ||
             state == REBOOT || state == POWEROFF || state == USER) {
             /* Get script parameter array */
-            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitPath);
+            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitPathSearch);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */
