@@ -369,7 +369,7 @@ Array* getScriptParams(const char *, const char *, const char *, const char *);
 int sendWallMsg(Command);
 int checkAdministrator(char **);
 void fillUnitsDisplayList(Array **, Array **);
-int loadAndCheckUnit(Array **, bool, const char *, bool, Array **, const char **);
+int loadAndCheckUnit(Array **, bool, const char *, bool, Array **);
 
 /* Server */
 int listenSocketRequest();

@@ -157,10 +157,11 @@ getScriptParams(const char *unitName, const char *stateStr,
     command = from = to = NULL;
 
     /* Building 'to' parameter */
+//FIXME test From arg. It should have to contain the full path
     from = stringNew(unitPath);
-    stringAppendChr(&from, '/');
-    stringAppendStr(&from, unitName);
-    stringAppendStr(&from, ".unit");
+//    stringAppendChr(&from, '/');
+//    stringAppendStr(&from, unitName);
+//    stringAppendStr(&from, ".unit");
     /* Building 'from' parameter */
     to = !USER_INSTANCE ? stringNew(UNITS_ENAB_PATH) : stringNew(UNITS_USER_ENAB_PATH);
     stringAppendChr(&to, '/');
@@ -281,7 +282,7 @@ fillUnitsDisplayList(Array **units, Array **unitsDisplay)
 
 int
 loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
-                 bool parse, Array **errors, const char **unitPathSearch)
+                 bool parse, Array **errors)
 {
     int rv = 0, *lenUnitsDisplay, oldLen;
 
@@ -291,19 +292,13 @@ loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
     lenUnitsDisplay = &(*unitsDisplay)->size;
 
     if (!USER_INSTANCE) {
-        if (unitPathSearch)
-            *unitPathSearch = UNITS_PATH;
         loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE,
                   isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
     }
     else {
-        if (unitPathSearch)
-            *unitPathSearch = UNITS_USER_PATH;
         loadUnits(unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
                   isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
         if (*lenUnitsDisplay == oldLen) {
-            if (unitPathSearch)
-                *unitPathSearch = UNITS_USER_LOCAL_PATH;
             loadUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
                       isAggregate, unitName, PARSE_SOCK_RESPONSE, parse);
         }

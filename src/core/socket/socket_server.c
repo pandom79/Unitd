@@ -392,7 +392,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
         */
-        loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, NULL);
+        loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
     }
 
     out:
@@ -464,7 +464,9 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
-                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
+                unit = getUnitByName(*units, unitName);
+                assert(unit == NULL);
+                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
                 if (rv != 0)
                     goto out;
             }
@@ -489,8 +491,10 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
            (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
+            unit = getUnitByName(*units, unitName);
+            assert(unit == NULL);
             if (sendResponse) {
-                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
+                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
                 if (rv != 0)
                     goto out;
             }
@@ -503,7 +507,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         /* When we come from disabledUnitFunc unitsDisplay is already here */
         if ((*unitsDisplay)->size == 0) {
             /* We don't parse this unit. We only check the unitname */
-            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, NULL);
+            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
             if (rv == 0)
                 isDead = true;
         }
@@ -542,9 +546,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     Array **unitsDisplay, **errors, **units, *conflicts, *stopConflictsArr,
           **messages, *requires;
     char *buffer, *unitName, *unitPath;
-    Unit *unit, *unitConflict, *unitDep;
+    Unit *unit, *unitDisplay, *unitConflict, *unitDep;
     bool force, restart, hasError;
-    const char *dep, *conflict, *unitPathSearch;
+    const char *dep, *conflict;
     PState *pState, *pStateConflict;
     ProcessData *pData, *pDataConflict;
 
@@ -553,7 +557,6 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     rv = len = 0;
     buffer = unitName = unitPath = NULL;
     dep = conflict = NULL;
-    unitPathSearch = "";
     pData = pDataConflict = NULL;
     pState = pStateConflict = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
@@ -611,126 +614,119 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
     }
 
-    /* If we are come from enableUnitServer then we can release unitsDisplay to satisfy loadAndCheckUnit.
-     * We need of unitPathSearch to parse the unit
-    */
-    if ((*unitsDisplay)->size > 0) {
-        arrayRelease(unitsDisplay);
-        *unitsDisplay = arrayNew(unitRelease);
+    /* Check unit name */
+    if ((*unitsDisplay)->size == 0) {
+        rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+        if (rv != 0)
+            goto out;
     }
+    assert((*unitsDisplay)->size == 1);
+    /* Get unitDisplay to retrieve the path */
+    unitDisplay = arrayGet(*unitsDisplay, 0);
+    /* We only start the dead unit */
+    unit = unitNew(NULL, PARSE_UNIT);
+    unit->name = stringNew(unitName);
+    unit->path = stringNew(unitDisplay->path);
+    unit->enabled = unitDisplay->enabled;
+    /* Aggregate all the errors */
+    parseUnit(unitsDisplay, &unit, true, NO_STATE);
+    /* Check wanted by */
+    if (!USER_INSTANCE)
+        checkWantedBy(&unit, STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT, true);
+    else
+        checkWantedBy(&unit, STATE_USER, true);
+    if (unit->errors->size > 0) {
+        *errors = arrayStrCopy(unit->errors);
+        unitRelease(&unit);
+        goto out;
+    }
+    /* Check dependencies */
+    requires = unit->requires;
+    len = (requires ? requires->size : 0);
+    for (int i = 0; i < len; i++) {
+        dep = arrayGet(requires, i);
+        if (!(unitDep = getUnitByName(*units, dep)) ||
+            *unitDep->processData->finalStatus != FINAL_STATUS_SUCCESS ||
+            (unitDep->errors->size > 0)) {
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
+                                     dep, unitName));
+            hasError = true;
+        }
+    }
+    if (hasError) {
+        unitRelease(&unit);
+        goto out;
+    }
+    /* Check conflict */
+    conflicts = unit->conflicts;
+    len = (conflicts ? conflicts->size : 0);
+    for (int i = 0; i < len; i++) {
+        conflict = arrayGet(conflicts, i);
+        unitConflict = getUnitByName(*units, conflict);
+        if (unitConflict) {
+            pDataConflict = unitConflict->processData;
+            pStateConflict = &pDataConflict->pStateData->pState;
 
-    rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
-    if (rv == 0) {
-        assert(strlen(unitPathSearch) > 0);
-        /* We only start the dead unit */
-        unit = unitNew(NULL, PARSE_UNIT);
-        unit->name = stringNew(unitName);
-        unitPath = stringNew(unitPathSearch);
-        stringAppendChr(&unitPath, '/');
-        stringAppendStr(&unitPath, unit->name);
-        stringAppendStr(&unitPath, ".unit");
-        unit->path = unitPath;
-        unit->enabled = isEnabledUnit(unitName, NO_STATE);
-        /* Aggregate all the errors */
-        parseUnit(unitsDisplay, &unit, true, NO_STATE);
-        /* Check wanted by */
-        if (!USER_INSTANCE)
-            checkWantedBy(&unit, STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT, true);
-        else
-            checkWantedBy(&unit, STATE_USER, true);
-        if (unit->errors->size > 0) {
-            *errors = arrayStrCopy(unit->errors);
-            unitRelease(&unit);
-            goto out;
-        }
-        /* Check dependencies */
-        requires = unit->requires;
-        len = (requires ? requires->size : 0);
-        for (int i = 0; i < len; i++) {
-            dep = arrayGet(requires, i);
-            if (!(unitDep = getUnitByName(*units, dep)) ||
-                *unitDep->processData->finalStatus != FINAL_STATUS_SUCCESS ||
-                (unitDep->errors->size > 0)) {
-                if (!(*errors))
-                    *errors = arrayNew(objectRelease);
-                arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
-                                         dep, unitName));
-                hasError = true;
-            }
-        }
-        if (hasError) {
-            unitRelease(&unit);
-            goto out;
-        }
-        /* Check conflict */
-        conflicts = unit->conflicts;
-        len = (conflicts ? conflicts->size : 0);
-        for (int i = 0; i < len; i++) {
-            conflict = arrayGet(conflicts, i);
-            unitConflict = getUnitByName(*units, conflict);
-            if (unitConflict) {
-                pDataConflict = unitConflict->processData;
-                pStateConflict = &pDataConflict->pStateData->pState;
-
-                if (*pStateConflict != DEAD ||
-                   (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
-                    if (!force) {
-                        if (!(*errors))
-                            *errors = arrayNew(objectRelease);
-                        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
-                                                 unitName, conflict));
-                        hasError = true;
-                    }
-                    else {
-                        /* If we have to force then we create the new array of unit pointers */
-                        if (!stopConflictsArr)
-                            stopConflictsArr = arrayNew(NULL);
-                        arrayAdd(stopConflictsArr, unitConflict);
-                        unitConflict->isStopping = true;
-                        unitConflict->showResult = false;
-                    }
+            if (*pStateConflict != DEAD ||
+               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+                if (!force) {
+                    if (!(*errors))
+                        *errors = arrayNew(objectRelease);
+                    arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
+                                             unitName, conflict));
+                    hasError = true;
+                }
+                else {
+                    /* If we have to force then we create the new array of unit pointers */
+                    if (!stopConflictsArr)
+                        stopConflictsArr = arrayNew(NULL);
+                    arrayAdd(stopConflictsArr, unitConflict);
+                    unitConflict->isStopping = true;
+                    unitConflict->showResult = false;
                 }
             }
         }
-        if (!force && hasError) {
-            if (!(*messages))
-                *messages = arrayNew(objectRelease);
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_FORCE_START_CONFLICT_MSG].desc, unitName));
-            unitRelease(&unit);
-            goto out;
-        }
-        else if (stopConflictsArr) {
-            /* Stopping all conflicts (parallelized) */
-            closePipes(&stopConflictsArr, NULL);
-            stopProcesses(&stopConflictsArr, NULL);
-            len = stopConflictsArr->size;
-            for (int i = 0; i < len; i++) {
-                unitConflict = arrayGet(stopConflictsArr, i);
-                /* Waiting for notifier. Basically, it should never happen. Extreme case */
-                while (NOTIFIER_WORKING)
-                    msleep(200);
-
-                pDataConflict = unitConflict->processData;
-                pStateConflict = &pDataConflict->pStateData->pState;
-
-                /* Release */
-                if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
-                   (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
-                    arrayRemove(*units, unitConflict);
-            }
-            arrayRelease(&stopConflictsArr);
-        }
-        /* Adding the unit into memory */
-        arrayAdd(*units, unit);
-        /* Creating eventual pipe */
-        if (hasPipe(unit)) {
-            unit->pipe = pipeNew();
-            /* Create process data history array accordingly */
-            unit->processDataHistory = arrayNew(processDataRelease);
-            openPipes(NULL, unit);
-        }
-        startProcesses(units, unit);
     }
+    if (!force && hasError) {
+        if (!(*messages))
+            *messages = arrayNew(objectRelease);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_FORCE_START_CONFLICT_MSG].desc, unitName));
+        unitRelease(&unit);
+        goto out;
+    }
+    else if (stopConflictsArr) {
+        /* Stopping all conflicts (parallelized) */
+        closePipes(&stopConflictsArr, NULL);
+        stopProcesses(&stopConflictsArr, NULL);
+        len = stopConflictsArr->size;
+        for (int i = 0; i < len; i++) {
+            unitConflict = arrayGet(stopConflictsArr, i);
+            /* Waiting for notifier. Basically, it should never happen. Extreme case */
+            while (NOTIFIER_WORKING)
+                msleep(200);
+
+            pDataConflict = unitConflict->processData;
+            pStateConflict = &pDataConflict->pStateData->pState;
+
+            /* Release */
+            if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
+               (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
+                arrayRemove(*units, unitConflict);
+        }
+        arrayRelease(&stopConflictsArr);
+    }
+    /* Adding the unit into memory */
+    arrayAdd(*units, unit);
+    /* Creating eventual pipe */
+    if (hasPipe(unit)) {
+        unit->pipe = pipeNew();
+        /* Create process data history array accordingly */
+        unit->processDataHistory = arrayNew(processDataRelease);
+        openPipes(NULL, unit);
+    }
+    startProcesses(units, unit);
 
     out:
         if (sendResponse) {
@@ -756,7 +752,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     Array **unitsDisplay, **errors, **messages, *scriptParams, *statesData;
     Unit *unit, *unitDisplay;
     char *unitName, *buffer, *stateStr, *from, *to;
-    const char *unitPathSearch = "";
+//    const char *unitPathSearch = "";
     bool run = false;
     int rv, len;
     StateData *stateData = NULL;
@@ -821,7 +817,8 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
              * Additionally, we only have to remove a symlink regardless by
              * its eventual configuration errors.
             */
-            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
+//            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
+            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
             if (rv != 0)
                 goto out;
         }
@@ -873,7 +870,8 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             /* Get script parameter array
              * In this case 'unitPathSearch' is useless because we are removing the symlink
             */
-            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitPathSearch);
+//            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitPathSearch);
+            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitDisplay->path);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */
@@ -930,14 +928,15 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
           *conflictNames, *unitsConflicts, *wantedBy, *scriptParams, *requires;
     Unit *unit, *unitDisplay, *unitConflict;
     char *unitName, *buffer, *stateStr, *from, *to;
-    const char *conflictName, *unitPathSearch;
+//    const char *conflictName, *unitPathSearch;
+    const char *conflictName = NULL;
     bool force, run, hasError, reEnable, isAlreadyDisabled;
     ProcessData *pDataConflict = NULL;
     PState *pStateConflict = NULL;
 
     rv = len = 0;
     unitName = buffer = stateStr = from = to = NULL;
-    conflictName = unitPathSearch = NULL;
+//    conflictName = unitPathSearch = NULL;
     force = run = hasError = isAlreadyDisabled = false;
     unit = unitDisplay = unitConflict = NULL;
     conflicts = conflictNames = unitsConflicts = requires = NULL;
@@ -1017,8 +1016,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     // UNITS_PATH is included in UNITS_USER_PATH and thus stringStartWith func could fail.
 
     /* Check the unitName and parse the unit */
-    unitPathSearch = "";
-    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPathSearch);
+//    unitPathSearch = "";
+//    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPathSearch);
+    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
     if (rv != 0)
         goto out;
 
@@ -1195,7 +1195,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if (state == STATE_DEFAULT || state == STATE_CMDLINE ||
             state == REBOOT || state == POWEROFF || state == USER) {
             /* Get script parameter array */
-            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitPathSearch);
+//            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitPathSearch);
+            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitDisplay->path);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
             /* Execute the script */
@@ -1279,8 +1280,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);
 
-    /* We always read the data from the disk.
-     * If the unit is into memory and its content is changed then show the error.
+    /* If the unit is into memory and the file content is changed then show the error.
      * That means the data are not synchronized between memory and disk.
      */
     unit = getUnitByName(*units, unitName);
@@ -1301,11 +1301,14 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                                        !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
+        /* Create a copy for client */
+        arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
-
-    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, NULL);
-    if (rv != 0)
-        goto out;
+    else {
+        rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
+        if (rv != 0)
+            goto out;
+    }
 
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
