@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
             rv = catEditUnit(command, arg);
             break;
         case ANALYZE_COMMAND:
-            if (argc > 4 || (argc == 4 && !UNITCTL_DEBUG && !USER_INSTANCE))
+            if (argc > 4 || (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE))
                 usage(true);
             rv = showBootAnalyze(&sockMessageOut);
         }
