@@ -466,9 +466,11 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
                 arrayRemove(*units, unit);
                 unit = getUnitByName(*units, unitName);
                 assert(unit == NULL);
-                rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
-                if (rv != 0)
-                    goto out;
+                if (sendResponse) {
+                    rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
+                    if (rv != 0)
+                        goto out;
+                }
             }
             else
                 isDead = true;
@@ -505,7 +507,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     }
     else {
         /* When we come from disabledUnitFunc unitsDisplay is already here */
-        if ((*unitsDisplay)->size == 0) {
+        if (sendResponse) {
             /* We don't parse this unit. We only check the unitname */
             rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
             if (rv == 0)
@@ -513,7 +515,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         }
     }
 
-    if (isDead && sendResponse) {
+    if (isDead) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "dead"));
@@ -591,7 +593,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "started"));
-            /* If we are come from enableUnitServer func then we don't add the following msg */
+            /* If we are come from enableUnitServer func then we don't add
+             * the following msg.
+            */
             if (sendResponse) {
                 if (!(*messages))
                     *messages = arrayNew(objectRelease);
@@ -614,8 +618,10 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         }
     }
 
-    /* Check unit name */
-    if ((*unitsDisplay)->size == 0) {
+    /* Check unit name.
+     * When we are come from enableUnit func unitDisplay is already checked and parsed.
+    */
+    if (sendResponse) {
         rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
         if (rv != 0)
             goto out;
@@ -752,7 +758,6 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     Array **unitsDisplay, **errors, **messages, *scriptParams, *statesData;
     Unit *unit, *unitDisplay;
     char *unitName, *buffer, *stateStr, *from, *to;
-//    const char *unitPathSearch = "";
     bool run = false;
     int rv, len;
     StateData *stateData = NULL;
@@ -795,29 +800,21 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
-            if (run) {
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
-                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_STOP_MSG].desc,
-                                           !USER_INSTANCE ? "" : "--user ", unitName));
-            }
             goto out;
         }
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     }
     else {
-//FIXME Test the following if statement
-        /* If we are come from enableUnitServer func then unitsDisplay already contains
-         * our unit which has been already parsed and checked.
+        /* If we are come from 'enableUnitServer' func then we have to run loadAndCheckUnit
+         * even if its size > 0 because we have to check unitNameArg (conflict name) which is not present into array.
         */
-        if ((*unitsDisplay)->size == 0) {
+        if (sendResponse || unitNameArg) {
             /* If the unit is not in memory then check that unitname is valid.
              * No need to parse unit because 'unitDisplay->enabled' (required later) is already
              * available with 'false' parameter.
              * Additionally, we only have to remove a symlink regardless by
              * its eventual configuration errors.
             */
-//            rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors, &unitPathSearch);
             rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
             if (rv != 0)
                 goto out;
@@ -865,12 +862,11 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         stateStr = stringNew(stateData->desc);
         stringAppendStr(&stateStr, ".state");
         state = stateData->state;
-
+        /* Re-execute isEnabledUnit because the symlink could be missing.
+         * We show the message only if it is really there.
+        */
         if (isEnabledUnit(unitName, state)) {
-            /* Get script parameter array
-             * In this case 'unitPathSearch' is useless because we are removing the symlink
-            */
-//            scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitPathSearch);
+            /* Get script parameters */
             scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitDisplay->path);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
@@ -928,7 +924,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
           *conflictNames, *unitsConflicts, *wantedBy, *scriptParams, *requires;
     Unit *unit, *unitDisplay, *unitConflict;
     char *unitName, *buffer, *stateStr, *from, *to;
-//    const char *conflictName, *unitPathSearch;
     const char *conflictName = NULL;
     bool force, run, hasError, reEnable, isAlreadyDisabled;
     ProcessData *pDataConflict = NULL;
@@ -936,7 +931,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
 
     rv = len = 0;
     unitName = buffer = stateStr = from = to = NULL;
-//    conflictName = unitPathSearch = NULL;
     force = run = hasError = isAlreadyDisabled = false;
     unit = unitDisplay = unitConflict = NULL;
     conflicts = conflictNames = unitsConflicts = requires = NULL;
@@ -987,40 +981,43 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             }
         }
 
-        if (unit && unit->enabled) {
-            if (!(*errors))
-                *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
-//FIXME show re-enabling message. See disableServer func!
-            goto out;
-        }
-        /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (NOTIFIER_WORKING)
-            msleep(200);
+        /* disableUnitServer func could remove the unit */
+        if (unit) {
+            if (unit->enabled) {
+                if (!(*errors))
+                    *errors = arrayNew(objectRelease);
+                arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
+                if (!(*messages))
+                    *messages = arrayNew(objectRelease);
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_RE_ENABLE_MSG].desc,
+                                           !USER_INSTANCE ? "" : "--user ", unitName));
+                goto out;
+            }
 
-        if (unit && unit->isChanged) {
-            if (!(*errors))
-                *errors = arrayNew(objectRelease);
-            arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
-            if (!(*messages))
-                *messages = arrayNew(objectRelease);
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc,
-                                       !USER_INSTANCE ? "" : "--user ", unitName));
-            goto out;
+            /* Waiting for notifier. Basically, it should never happen. Extreme case */
+            while (NOTIFIER_WORKING)
+                msleep(200);
+
+            if (unit->isChanged) {
+                if (!(*errors))
+                    *errors = arrayNew(objectRelease);
+                arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
+                if (!(*messages))
+                    *messages = arrayNew(objectRelease);
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc,
+                                           !USER_INSTANCE ? "" : "--user ", unitName));
+                goto out;
+            }
         }
     }
 
-//FIXME run loadAndCheckUnit if the unit is not in memory
-    // in this case we can retrieve unitPathSearch from unit->path
-    // checking UNITS_USER_PATH, UNITS_PATH and UNITS_USER_LOCAL_PATH because
-    // UNITS_PATH is included in UNITS_USER_PATH and thus stringStartWith func could fail.
-
     /* Check the unitName and parse the unit */
-//    unitPathSearch = "";
-//    rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors, &unitPathSearch);
     rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
     if (rv != 0)
         goto out;
+
+    assert((*unitsDisplay)->size == 1);
+    unitDisplay = arrayGet(*unitsDisplay, 0);
 
     /* The unit could have some configuration errors */
     unitDisplayErrors = &unitDisplay->errors;
@@ -1031,20 +1028,19 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         goto out;
     }
 
-    assert((*unitsDisplay)->size == 1);
-    unitDisplay = arrayGet(*unitsDisplay, 0);
     /* Check if it is already enabled */
     if (!unit && !reEnable && unitDisplay->enabled) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
+        if (!(*messages))
+            *messages = arrayNew(objectRelease);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_RE_ENABLE_MSG].desc,
+                                   !USER_INSTANCE ? "" : "--user ", unitName));
         goto out;
     }
-    else if (!unit && reEnable && unitDisplay->enabled && !isAlreadyDisabled) {
-//FIXME probably, in disableUnitFunc we can avoid to call loadAndCheckUnit because unitsDisplay is already here
-        //and the unit is already parsed
+    else if (!unit && reEnable && unitDisplay->enabled && !isAlreadyDisabled)
         disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
-    }
 
     /* Before to perform the checks and enabling, we test that at least a valid state is here */
     wantedBy = unitDisplay->wantedBy;
@@ -1183,8 +1179,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
      * We always consider the default state (or cmdline ), reboot and poweroff (system instance)
      * or user state (user instance)
     */
-//FIXME wantedBy has been already taken
-//    wantedBy = unitDisplay->wantedBy;
     len = wantedBy->size;
     for (int i = 0; i < len; ++i) {
         /* Get wanted state */
@@ -1195,7 +1189,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if (state == STATE_DEFAULT || state == STATE_CMDLINE ||
             state == REBOOT || state == POWEROFF || state == USER) {
             /* Get script parameter array */
-//            scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitPathSearch);
             scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitDisplay->path);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
@@ -1209,6 +1202,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             else {
                 if (unit)
                     unit->enabled = true;
+                unitDisplay->enabled = true;
                 /* Put the result into response */
                 if (!(*messages))
                     *messages = arrayNew(objectRelease);

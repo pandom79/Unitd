@@ -157,11 +157,7 @@ getScriptParams(const char *unitName, const char *stateStr,
     command = from = to = NULL;
 
     /* Building 'to' parameter */
-//FIXME test From arg. It should have to contain the full path
     from = stringNew(unitPath);
-//    stringAppendChr(&from, '/');
-//    stringAppendStr(&from, unitName);
-//    stringAppendStr(&from, ".unit");
     /* Building 'from' parameter */
     to = !USER_INSTANCE ? stringNew(UNITS_ENAB_PATH) : stringNew(UNITS_USER_ENAB_PATH);
     stringAppendChr(&to, '/');

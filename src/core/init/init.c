@@ -266,6 +266,8 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
 
     assert(*unitdData);
     units = &(*unitdData)->units;
+    if (!(*units))
+        *units = arrayNew(unitRelease);
     bootUnits = &(*unitdData)->bootUnits;
 
     if (UNITD_DEBUG) {

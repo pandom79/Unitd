@@ -104,7 +104,7 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
     { UNIT_CHANGED_MSG, "Please, run 'unitctl stop %s%s' to continue working with this unit." },
     { UNIT_ENABLE_STATE_MSG, "The 'wantedBy' property should contain at least one of the following states :\n%s" },
     { UNIT_CHANGED_RE_ENABLE_MSG, "Please, use '--run' or '-r' option to run this operation." },
-    { UNIT_STOP_MSG, "Please, run 'unitctl stop %s%s' to stop it."}
+    { UNIT_RE_ENABLE_MSG, "Please, run 'unitctl re-enable %s%s' to re-enable it." }
 };
 
 /* Return the unit name by unit path or unit name with ".unit" suffix */

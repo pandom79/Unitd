@@ -259,15 +259,6 @@ int main(int argc, char **argv) {
             rv = showUnit(command, &sockMessageOut, arg, force, false, run,
                           command == ENABLE_COMMAND ? false : true);
             break;
-
-//            if (argc == 2 || (argc > 3 && !run && !force && !UNITCTL_DEBUG))
-//                usage(true);
-//            arg = argv[argc - 1];
-//            if (command == ENABLE_COMMAND)
-//                rv = showUnit(command, &sockMessageOut, arg, force, false, run, false);
-//            else
-//                rv = showUnit(command, &sockMessageOut, arg, force, false, run, true);
-//            break;
         case CAT_COMMAND:
         case EDIT_COMMAND:
             if (argc != 3)
