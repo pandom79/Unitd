@@ -10,6 +10,10 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 bool UNITCTL_DEBUG = false;
 bool USER_INSTANCE;
+char *UNITS_USER_LOCAL_PATH;
+char *UNITS_USER_ENAB_PATH;
+char *UNITD_USER_CONF_PATH;
+char *UNITD_USER_LOG_PATH;
 char *SOCKET_USER_PATH;
 
 static void __attribute__((noreturn))
@@ -20,6 +24,8 @@ usage(bool fail)
             "Usage for user instance: unitctl [COMMAND] [OPTIONS] ... \n\n"
 
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
+            "enable             Enable the unit\n"
+            "re-enable          Re-enable the unit\n"
             "disable            Disable the unit\n"
             "restart            Restart the unit\n"
             "start              Start the unit\n"
@@ -28,11 +34,15 @@ usage(bool fail)
             "list-requires      List the unit dependencies\n"
             "list-conflicts     List the unit conflicts\n"
             "list-states        List the unit wanted states\n"
+            "cat                Show the unit content\n"
+            "edit               Edit the unit content\n"
             "list               List the units\n"
             "analyze            Analyze the user instance boot process\n"
             "poweroff           Shutdown the user instance and exit\n"
 
             WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
+            "-r, --run          Run the operation\n"
+            "-f, --force        Force the operation\n"
             "-d, --debug        Enable the debug\n"
             "-h, --help         Show usage\n\n"
         );
@@ -76,7 +86,7 @@ usage(bool fail)
     }
 
     /* Release resources */
-    objectRelease(&SOCKET_USER_PATH);
+    userDataRelease();
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
@@ -147,6 +157,17 @@ int main(int argc, char **argv) {
         }
     }
     else {
+        struct passwd *userInfo = NULL;
+        /* Set user data */
+        if ((rv = setUserData(userId, &userInfo)) != 0)
+            goto out;
+        /* Assert all variables are defined */
+        assert(userInfo);
+        assert(UNITS_USER_LOCAL_PATH);
+        assert(UNITD_USER_CONF_PATH);
+        assert(UNITD_USER_LOG_PATH);
+        assert(UNITS_USER_ENAB_PATH);
+
         if ((rv = setUserSocketPath(userId)) != 0)
             goto out;
         assert(SOCKET_USER_PATH);
@@ -261,10 +282,10 @@ int main(int argc, char **argv) {
             break;
         case CAT_COMMAND:
         case EDIT_COMMAND:
-            if (argc != 3)
+            if (argc < 3 || argc > 5 ||
+               (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE))
                 usage(true);
-            else
-                arg = argv[argc -1];
+            arg = argv[argc -1];
             rv = catEditUnit(command, arg);
             break;
         case ANALYZE_COMMAND:
@@ -275,7 +296,7 @@ int main(int argc, char **argv) {
 
     out:
         /* Release resources */
-        objectRelease(&SOCKET_USER_PATH);
+        userDataRelease();
 
         return rv;
 }

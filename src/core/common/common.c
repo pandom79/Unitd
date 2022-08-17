@@ -11,7 +11,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 char *UNITS_USER_LOCAL_PATH;
 char *UNITS_USER_ENAB_PATH;
 
-
 int
 msleep(long msec)
 {
@@ -299,7 +298,6 @@ unitdUserCheck(const char *userIdStr, const char *userName)
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
-    addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
     /* Must be null terminated */
     arrayAdd(envVars, NULL);
 
@@ -319,14 +317,18 @@ unitdUserCheck(const char *userIdStr, const char *userName)
 
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd-user-check.sh", scriptParams->arr, envVars->arr);
-    /* If rv == 1 then the instance is already running */
     if (rv != 0) {
-        if (rv != 1)
-            unitdLogError(LOG_UNITD_BOOT, "src/core/common/common.c",
-                          "unitdUserCheck", rv, strerror(rv), "ExecScript error");
-        else {
-            unitdLogErrorStr(LOG_UNITD_BOOT, "Unitd instance is already running for %s user!\n", userName);
+        /* If rv == 114 then the instance is already running */
+        if (rv == 114) {
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "Unitd instance is already running for %s user!\n", userName);
             syslog(LOG_DAEMON | LOG_ERR, "Unitd instance is already running for %s user!\n", userName);
+        }
+        else {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c",
+                          "unitdUserCheck", rv, strerror(rv), "ExecScript error");
+            syslog(LOG_DAEMON | LOG_ERR, "unitdUserCheck has returned %d exit code (%s) for %s user!\n",
+                   rv, strerror(rv), userName);
+
         }
     }
 
@@ -412,13 +414,55 @@ setSigAction()
 }
 
 int
+setUserData(int userId, struct passwd **userInfo)
+{
+    int rv = 0;
+
+    /* Get user info */
+    errno = 0;
+    *userInfo = getpwuid(userId);
+    if (!(*userInfo)) {
+        rv = errno;
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserData", errno,
+                      strerror(errno), "Getpwuid has returned a null pointer");
+        syslog(LOG_DAEMON | LOG_ERR, "Getpwuid has returned a null pointer for userId = %d", userId);
+        rv = 1;
+        goto out;
+    }
+
+    /* Change the current working directory to user home */
+    char *userHome = (*userInfo)->pw_dir;
+    if ((rv = chdir(userHome)) == -1) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserData", errno,
+                      strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
+        syslog(LOG_DAEMON | LOG_ERR, "Chdir (user instance) for %d userId has returned -1 exit code. "
+                                     "Rv = %d (%s)", userId, errno, strerror(errno));
+        rv = 1;
+        goto out;
+    }
+
+    /* Set user dirs */
+    UNITS_USER_LOCAL_PATH = stringNew(userHome);
+    stringAppendStr(&UNITS_USER_LOCAL_PATH, "/.config/unitd/units");
+    UNITD_USER_CONF_PATH = stringNew(userHome);
+    stringAppendStr(&UNITD_USER_CONF_PATH, "/.local/share/unitd");
+    UNITD_USER_LOG_PATH = stringNew(UNITD_USER_CONF_PATH);
+    stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
+    UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
+    stringAppendStr(&UNITS_USER_ENAB_PATH, "/units");
+
+    out:
+        return rv;
+}
+
+int
 setUserSocketPath(int userId)
 {
     int rv = 0;
     /* Set user socket path */
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
     if (!xdgRunTimeDir) {
-        rv = EPERM;
+        rv = 1;
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserSocketPath", rv,
                       strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
         syslog(LOG_DAEMON | LOG_ERR, "XDG_RUNTIME_DIR for %d userId is not set", userId);
@@ -429,4 +473,14 @@ setUserSocketPath(int userId)
     }
 
     return rv;
+}
+
+void
+userDataRelease()
+{
+    objectRelease(&UNITS_USER_LOCAL_PATH);
+    objectRelease(&UNITD_USER_CONF_PATH);
+    objectRelease(&UNITD_USER_LOG_PATH);
+    objectRelease(&UNITS_USER_ENAB_PATH);
+    objectRelease(&SOCKET_USER_PATH);
 }

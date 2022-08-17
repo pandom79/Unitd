@@ -419,7 +419,9 @@ int writeWtmp(bool);
 int unitdUserCheck(const char *, const char *);
 int parseProcCmdLine();
 int setSigAction();
+int setUserData(int, struct passwd **);
 int setUserSocketPath(int);
+void userDataRelease();
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

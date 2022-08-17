@@ -331,11 +331,7 @@ unitdEnd(UnitdData **unitdData)
     objectRelease(&STATE_CMDLINE_DIR);
     timeRelease(&BOOT_START);
     timeRelease(&BOOT_STOP);
-    objectRelease(&UNITS_USER_LOCAL_PATH);
-    objectRelease(&UNITD_USER_CONF_PATH);
-    objectRelease(&UNITD_USER_LOG_PATH);
-    objectRelease(&UNITS_USER_ENAB_PATH);
-    objectRelease(&SOCKET_USER_PATH);
+    userDataRelease();
     if (*unitdData) {
         arrayRelease(&(*unitdData)->bootUnits);
         arrayRelease(&(*unitdData)->initUnits);

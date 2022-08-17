@@ -168,40 +168,14 @@ int main(int argc, char **argv) {
         }
     }
     else {
-        /* Get user info */
-        errno = 0;
-        struct passwd *userInfo = getpwuid(userId);
-        if (!userInfo) {
-            rv = errno;
-            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", errno,
-                          strerror(errno), "Getpwuid has returned a null pointer");
-            syslog(LOG_DAEMON | LOG_ERR, "Getpwuid has returned a null pointer for userId = %d", userId);
+        struct passwd *userInfo = NULL;
+        /* Set user data */
+        if ((rv = setUserData(userId, &userInfo)) != 0) {
             hasError = true;
             goto out;
         }
-
-        /* Change the current working directory to user home */
-        char *userHome = userInfo->pw_dir;
-        if ((rv = chdir(userHome)) == -1) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitd/main.c", "main", errno,
-                          strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
-            syslog(LOG_DAEMON | LOG_ERR, "Chdir (user instance) for %d userId has returned -1 exit code. "
-                                         "Rv = %d (%s)", userId, errno, strerror(errno));
-            hasError = true;
-            goto out;
-        }
-
-        /* Set user dirs */
-        UNITS_USER_LOCAL_PATH = stringNew(userHome);
-        stringAppendStr(&UNITS_USER_LOCAL_PATH, "/.config/unitd/units");
-        UNITD_USER_CONF_PATH = stringNew(userHome);
-        stringAppendStr(&UNITD_USER_CONF_PATH, "/.local/share/unitd");
-        UNITD_USER_LOG_PATH = stringNew(UNITD_USER_CONF_PATH);
-        stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
-        UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
-        stringAppendStr(&UNITS_USER_ENAB_PATH, "/units");
-
         /* Assert all variables are defined */
+        assert(userInfo);
         assert(UNITS_USER_LOCAL_PATH);
         assert(UNITD_USER_CONF_PATH);
         assert(UNITD_USER_LOG_PATH);

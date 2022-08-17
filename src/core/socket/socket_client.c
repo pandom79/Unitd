@@ -23,26 +23,38 @@ bool UNITCTL_DEBUG;
 static char*
 getUnitPathByName(const char *arg)
 {
-    FILE *fp = NULL;
-    char *unitPath = stringNew(UNITS_PATH);
-    stringAppendChr(&unitPath, '/');
-    stringAppendStr(&unitPath, arg);
-    if (!stringEndsWithStr(arg, ".unit"))
-        stringAppendStr(&unitPath, ".unit");
+    Array *unitsDisplay = arrayNew(unitRelease);
+    Array *errors = arrayNew(objectRelease);
+    char *unitName, *unitPath;
+    int rv = 0;
 
-    if ((fp = fopen(unitPath, "r")) == NULL) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, UNITS_ERRORS_ITEMS[UNIT_NOT_EXIST_ERR].desc, arg);
+    unitName = unitPath = NULL;
+
+    /* Unit name could contain ".unit" suffix */
+    unitName = getUnitName(arg);
+    if (!unitName)
+        unitName = stringNew(arg);
+
+    rv = loadAndCheckUnit(&unitsDisplay, false, unitName, false, &errors);
+    if (rv != 0) {
+        assert(errors->size == 1);
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, (char *)arrayGet(errors, 0));
         printf("\n");
-        objectRelease(&unitPath);
+        goto out;
     }
     else {
-        /* Close file */
-        fclose(fp);
-        fp = NULL;
+        assert(unitsDisplay->size == 1);
+        unitPath = stringNew(((Unit *)arrayGet(unitsDisplay, 0))->path);
     }
+
+    out:
+        objectRelease(&unitName);
+        arrayRelease(&unitsDisplay);
+        arrayRelease(&errors);
 
     return unitPath;
 }
+
 
 static void
 printBar(int len)
@@ -1154,6 +1166,7 @@ catEditUnit(Command command, const char *arg)
         arrayAdd(scriptParams, NULL); //4
         /* Execute the script */
         rv = execScript(UNITD_DATA_PATH, "/scripts/cat-edit.sh", scriptParams->arr, envVars->arr);
+        /* Release resources */
         arrayRelease(&scriptParams);
         arrayRelease(&envVars);
         objectRelease(&unitPath);

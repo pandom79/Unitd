@@ -2,8 +2,6 @@
 
 export PATH=$PATH
 
-. $UNITD_DATA_PATH/functions/functions
-
 USER_STATE="user.state"
 # $1 = UNITS_USER_LOCAL_PATH ($HOME/.config/unitd/units)
 # $2 = UNITS_USER_ENAB_PATH ($HOME/.local/share/unitd/units/user.state)
@@ -31,6 +29,5 @@ fi
 # Please note that if we run the instance under valgrind supervision then this check fails!!
 NUM_INSTANCES=$(pgrep -l -u "$USER_UID" -U "$USER_UID" -x unitd | wc -l)
 if [ $NUM_INSTANCES -gt 1 ]; then
-    msg_error "Unitd instance is already running for $USER_NAME user!"
-    exit 1
+    exit 114
 fi

@@ -98,10 +98,7 @@ getMaxFd()
 static void
 unlinkSocket()
 {
-    if (!USER_INSTANCE)
-        unlink(SOCKET_PATH);
-    else
-        unlink(SOCKET_USER_PATH);
+    unlink(!USER_INSTANCE ? SOCKET_PATH : SOCKET_USER_PATH);
 }
 
 int
