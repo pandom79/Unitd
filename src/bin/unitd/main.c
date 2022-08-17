@@ -174,19 +174,6 @@ int main(int argc, char **argv) {
             hasError = true;
             goto out;
         }
-        /* Assert all variables are defined */
-        assert(userInfo);
-        assert(UNITS_USER_LOCAL_PATH);
-        assert(UNITD_USER_CONF_PATH);
-        assert(UNITD_USER_LOG_PATH);
-        assert(UNITS_USER_ENAB_PATH);
-
-        /* Set user socket path */
-        if ((rv = setUserSocketPath(userId)) != 0) {
-            hasError = true;
-            goto out;
-        }
-        assert(SOCKET_USER_PATH);
 
         /* Get userId as string */
         char userIdStr[20] = {0};

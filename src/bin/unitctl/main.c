@@ -161,16 +161,6 @@ int main(int argc, char **argv) {
         /* Set user data */
         if ((rv = setUserData(userId, &userInfo)) != 0)
             goto out;
-        /* Assert all variables are defined */
-        assert(userInfo);
-        assert(UNITS_USER_LOCAL_PATH);
-        assert(UNITD_USER_CONF_PATH);
-        assert(UNITD_USER_LOG_PATH);
-        assert(UNITS_USER_ENAB_PATH);
-
-        if ((rv = setUserSocketPath(userId)) != 0)
-            goto out;
-        assert(SOCKET_USER_PATH);
     }
 
     /* Get the command */

@@ -422,13 +422,13 @@ setUserData(int userId, struct passwd **userInfo)
     errno = 0;
     *userInfo = getpwuid(userId);
     if (!(*userInfo)) {
-        rv = errno;
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserData", errno,
                       strerror(errno), "Getpwuid has returned a null pointer");
         syslog(LOG_DAEMON | LOG_ERR, "Getpwuid has returned a null pointer for userId = %d", userId);
         rv = 1;
         goto out;
     }
+    assert(*userInfo);
 
     /* Change the current working directory to user home */
     char *userHome = (*userInfo)->pw_dir;
@@ -450,15 +450,11 @@ setUserData(int userId, struct passwd **userInfo)
     stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
     UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
     stringAppendStr(&UNITS_USER_ENAB_PATH, "/units");
+    assert(UNITS_USER_LOCAL_PATH);
+    assert(UNITD_USER_CONF_PATH);
+    assert(UNITD_USER_LOG_PATH);
+    assert(UNITS_USER_ENAB_PATH);
 
-    out:
-        return rv;
-}
-
-int
-setUserSocketPath(int userId)
-{
-    int rv = 0;
     /* Set user socket path */
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
     if (!xdgRunTimeDir) {
@@ -466,13 +462,14 @@ setUserSocketPath(int userId)
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserSocketPath", rv,
                       strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
         syslog(LOG_DAEMON | LOG_ERR, "XDG_RUNTIME_DIR for %d userId is not set", userId);
+        goto out;
     }
-    else {
-        SOCKET_USER_PATH = stringNew(xdgRunTimeDir);
-        stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
-    }
+    SOCKET_USER_PATH = stringNew(xdgRunTimeDir);
+    stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
+    assert(SOCKET_USER_PATH);
 
-    return rv;
+    out:
+        return rv;
 }
 
 void
