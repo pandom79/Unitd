@@ -187,7 +187,8 @@ typedef enum {
     CAT_COMMAND = 16,
     EDIT_COMMAND = 17,
     ANALYZE_COMMAND = 18,
-    RE_ENABLE_COMMAND = 19
+    RE_ENABLE_COMMAND = 19,
+    CREATE_COMMAND = 20
 } Command;
 
 /* Socket */

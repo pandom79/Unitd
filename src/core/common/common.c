@@ -328,7 +328,6 @@ unitdUserCheck(const char *userIdStr, const char *userName)
                           "unitdUserCheck", rv, strerror(rv), "ExecScript error");
             syslog(LOG_DAEMON | LOG_ERR, "unitdUserCheck has returned %d exit code (%s) for %s user!\n",
                    rv, strerror(rv), userName);
-
         }
     }
 

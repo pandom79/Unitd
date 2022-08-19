@@ -38,6 +38,7 @@ showUsage()
             "list-states        List the unit wanted states\n"
             "cat                Show the unit content\n"
             "edit               Edit the unit content\n"
+            "create             Create the unit\n"
             "list               List the units\n"
     );
     fprintf(stdout,
@@ -292,6 +293,7 @@ int main(int argc, char **argv) {
             break;
         case CAT_COMMAND:
         case EDIT_COMMAND:
+        case CREATE_COMMAND:
             if (argc < 3 || argc > 5 ||
                (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE)) {
                 showUsage();
@@ -299,6 +301,13 @@ int main(int argc, char **argv) {
                 goto out;
             }
             arg = argv[argc -1];
+            if (command == CREATE_COMMAND) {
+                if ((rv = createUnit(arg)) != 0)
+                    goto out;
+                else
+                    /* Edit the unit */
+                    command = EDIT_COMMAND;
+            }
             rv = catEditUnit(command, arg);
             break;
         case ANALYZE_COMMAND:

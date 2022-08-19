@@ -43,8 +43,9 @@ CommandData COMMANDS_DATA[] = {
     { EDIT_COMMAND, "edit" },
     { ANALYZE_COMMAND, "analyze" },
     { RE_ENABLE_COMMAND, "re-enable" },
+    { CREATE_COMMAND, "create" }
 };
-int COMMANDS_LEN = 20;
+int COMMANDS_LEN = 21;
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;
 State STATE_CMDLINE;

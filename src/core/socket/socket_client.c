@@ -21,7 +21,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 bool UNITCTL_DEBUG;
 
 static char*
-getUnitPathByName(const char *arg)
+getUnitPathByName(const char *arg, bool showErr)
 {
     Array *unitsDisplay = arrayNew(unitRelease);
     Array *errors = arrayNew(objectRelease);
@@ -38,8 +38,8 @@ getUnitPathByName(const char *arg)
     rv = loadAndCheckUnit(&unitsDisplay, false, unitName, false, &errors);
     if (rv != 0) {
         assert(errors->size == 1);
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, (char *)arrayGet(errors, 0));
-        printf("\n");
+        if (showErr)
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s\n", (char *)arrayGet(errors, 0));
         goto out;
     }
     else {
@@ -1146,7 +1146,7 @@ catEditUnit(Command command, const char *arg)
     assert(command != NO_COMMAND);
     assert(arg);
 
-    unitPath = getUnitPathByName(arg);
+    unitPath = getUnitPathByName(arg, true);
     if (unitPath) {
         /* Env vars */
         Array *envVars = arrayNew(objectRelease);
@@ -1173,6 +1173,146 @@ catEditUnit(Command command, const char *arg)
     }
 
     return rv;
+}
+
+int
+createUnit(const char *arg)
+{
+    int rv = 0;
+    char *unitPath, *unitName, *err, *destDefStateSyml = NULL;
+    FILE *fp = NULL;
+    const char *propertyName = NULL;
+    State defaultState = NO_STATE;
+
+    unitPath = unitName = err = destDefStateSyml = NULL;
+
+    assert(arg);
+
+    /* Check the unit name not exists */
+    unitPath = getUnitPathByName(arg, false);
+    if (unitPath) {
+        err = getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_EXIST_ERR].desc, arg);
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s\n", err);
+        rv = 1;
+        goto out;
+    }
+
+    /* Building unit path */
+    unitPath = stringNew(!USER_INSTANCE ? UNITS_PATH : UNITS_USER_LOCAL_PATH);
+    stringAppendChr(&unitPath, '/');
+    stringAppendStr(&unitPath, arg);
+    if (!stringEndsWithStr(arg, ".unit"))
+        stringAppendStr(&unitPath, ".unit");
+    assert(unitPath);
+
+    /* Get unit name */
+    unitName = getUnitName(unitPath);
+    assert(unitName);
+
+    /* Get the default state for system instance */
+    if (!USER_INSTANCE) {
+        if (getDefaultStateStr(&destDefStateSyml) != 0) {
+            rv = 1;
+            goto out;
+        }
+        defaultState = getStateByStr(destDefStateSyml);
+        if (defaultState == NO_STATE) {
+            /* If we are here then the symlink points to a bad destination */
+            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
+                             destDefStateSyml);
+            rv = 1;
+            goto out;
+        }
+    }
+
+    /* Open unit file in write mode */
+    if ((fp = fopen(unitPath, "w")) == NULL) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c",
+                      "createUnit", errno, strerror(errno), "Unable to open (write mode) %s unit", unitPath);
+        rv = 1;
+        goto out;
+    }
+
+    /* UNIT SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[0].sectionName.desc);
+    /* Description property */
+    fprintf(fp, "%s = set the description for %s unit ...\n\n", UNITS_PROPERTIES_ITEMS[0].propertyName.desc,
+            unitName);
+    /* Requires property */
+    propertyName = UNITS_PROPERTIES_ITEMS[1].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+    /* Type property */
+    propertyName = UNITS_PROPERTIES_ITEMS[2].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Available values : oneshot, daemon (default).\n");
+    fprintf(fp, "# %s = set the type ...\n\n", propertyName);
+    /* Restart property */
+    propertyName = UNITS_PROPERTIES_ITEMS[3].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Available values : true, false (default).\n");
+    fprintf(fp, "# %s = set the value ...\n\n", propertyName);
+    /* RestartMax property */
+    propertyName = UNITS_PROPERTIES_ITEMS[4].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "# If it is set then Restart property will be ignored.\n");
+    fprintf(fp, "# %s = set the number ...\n\n", propertyName);
+    /* Conflicts property */
+    propertyName = UNITS_PROPERTIES_ITEMS[5].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+
+    /* COMAND SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[1].sectionName.desc);
+    /* Run property */
+    fprintf(fp, "%s = set the command to run ...\n\n", UNITS_PROPERTIES_ITEMS[6].propertyName.desc);
+    /* Stop property */
+    propertyName = UNITS_PROPERTIES_ITEMS[7].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# %s = set the command to stop ...\n\n", propertyName);
+
+    /* STATE SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
+    /* WantedBy property */
+    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    if (!USER_INSTANCE) {
+        fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
+        /* In this case, we don't consider the cmdline state which is an exception
+         * but we set the default state instead.
+         * Anyway, the user can change in whatever way wants.
+        */
+        for (State state = POWEROFF; state <= REBOOT; state++) {
+            if (state == defaultState)
+                fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+            else
+                fprintf(fp, "# %s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+        }
+    }
+    else
+        fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[USER].desc);
+    fprintf(fp, "\n");
+
+    /* Close file */
+    fclose(fp);
+    fp = NULL;
+
+    out:
+        /* Release resources */
+        objectRelease(&unitPath);
+        objectRelease(&unitName);
+        objectRelease(&err);
+        objectRelease(&destDefStateSyml);
+        if (fp) {
+            fclose(fp);
+            fp = NULL;
+        }
+
+        return rv;
 }
 
 int

@@ -90,7 +90,8 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" },
     { UNIT_CHANGED_ERR, "The unit content is changed!" },
     { UNIT_ENABLE_STATE_ERR, "Unable to perform the enabling!" },
-    { UNITS_LIST_EMPTY_ERR, "There are no units!" }
+    { UNITS_LIST_EMPTY_ERR, "There are no units!" } ,
+    { UNIT_EXIST_ERR, "The '%s' unit already exists!"}
 };
 
 const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {

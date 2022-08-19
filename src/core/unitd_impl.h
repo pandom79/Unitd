@@ -218,7 +218,8 @@ typedef enum {
     DEFAULT_SYML_SET_ERR = 18,
     UNIT_CHANGED_ERR = 19,
     UNIT_ENABLE_STATE_ERR = 20,
-    UNITS_LIST_EMPTY_ERR = 21
+    UNITS_LIST_EMPTY_ERR = 21,
+    UNIT_EXIST_ERR = 22
 } UnitsErrorsEnum;
 typedef struct {
     UnitsErrorsEnum errorEnum;
@@ -386,9 +387,10 @@ int setDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 
 /* Client */
 int showUnitList(SockMessageOut **);
-int showUnitStatus(SockMessageOut **, const char *unitName);
+int showUnitStatus(SockMessageOut **, const char *);
 int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
-int catEditUnit(Command, const char *unitName);
+int catEditUnit(Command, const char *);
+int createUnit(const char *);
 int showBootAnalyze(SockMessageOut **);
 
 /* Request */
