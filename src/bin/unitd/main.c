@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
         char *diff = NULL;
         stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
         char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
-        unitdLogInfo(LOG_UNITD_ALL, "%s\n", msg);
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "%s\n", msg);
         objectRelease(&diff);
         objectRelease(&msg);
         timeRelease(&SHUTDOWN_START);

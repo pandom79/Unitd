@@ -89,12 +89,12 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     bootUnits = &(*unitdData)->bootUnits;
 
     if (UNITD_DEBUG) {
-        unitdLogInfo(LOG_UNITD_ALL, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
-        unitdLogInfo(LOG_UNITD_ALL, "Units path = %s\n", UNITS_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Units enab path = %s\n", UNITS_ENAB_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Unitd data path = %s\n", UNITD_DATA_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Unitd Log path = %s\n", UNITD_LOG_PATH);
-        unitdLogInfo(LOG_UNITD_ALL, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Units path = %s\n", UNITS_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Units enab path = %s\n", UNITS_ENAB_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Unitd data path = %s\n", UNITD_DATA_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Unitd Log path = %s\n", UNITD_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
     }
 
     /* For each terminated state, we check if "SHUTDOWN_COMMAND" is set by signal handler.
@@ -203,7 +203,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Stop the notifiers */
         stopNotifiers();
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
-        unitdLogInfo(LOG_UNITD_ALL, "The system is going down ...\n");
+        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "The system is going down ...\n");
         if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;
         if (SHUTDOWN_COMMAND == HALT_COMMAND) {
             shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);

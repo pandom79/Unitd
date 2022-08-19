@@ -101,6 +101,7 @@ extern int COMMANDS_LEN;
 
 #define LOG_UNITD_CONSOLE   0x0001
 #define LOG_UNITD_BOOT      0x0010
+#define LOG_UNITD_SYSTEM    0x0100
 #define LOG_UNITD_ALL       0x1111
 
 extern FILE *UNITD_LOG_FILE;

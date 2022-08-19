@@ -253,11 +253,11 @@ startProcess(void *arg)
     /* show the result */
     if (unit->showResult) {
         if (*finalStatus == FINAL_STATUS_SUCCESS) {
-            unitdLogInfo(LOG_UNITD_ALL, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
+            unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
                          WHITE_COLOR, (desc ? desc : ""), DEFAULT_COLOR);
         }
         else
-            unitdLogInfo(LOG_UNITD_ALL, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR,
+            unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR,
                          WHITE_COLOR, (desc ? desc : ""), DEFAULT_COLOR);
     }
 
@@ -422,11 +422,11 @@ stopProcess(void *arg)
     out:
         if (unit->showResult) {
             if (*finalStatus == FINAL_STATUS_NOT_READY) {
-                unitdLogInfo(LOG_UNITD_ALL, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
+                unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
                              WHITE_COLOR, unit->desc, DEFAULT_COLOR);
             }
             else
-                unitdLogInfo(LOG_UNITD_ALL, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR,
+                unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR,
                              WHITE_COLOR, unit->desc, DEFAULT_COLOR);
         }
 
