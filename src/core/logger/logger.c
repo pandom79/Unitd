@@ -20,8 +20,8 @@ unitdLogSystem(int priority, const char *color, const char *format, va_list *arg
             stringPrependStr(&colorStr, color);
             stringAppendStr(&colorStr, DEFAULT_COLOR);
         }
-        /* To 'va_start' function we pass format to avoid compiler warning.
-         * We can do that because the "args" are only present in "format" not "colorStr"
+        /* To 'va_start' function we pass 'format' to avoid compiler warning.
+         * We can do that because the same "args" present in "format", are present in "colorStr" as well.
          */
         vsyslog(priority, colorStr ? colorStr : format, *args);
         objectRelease(&colorStr);
@@ -231,14 +231,23 @@ unitdLogError(int options, const char *transUnit, const char *funcName,
         fflush(UNITD_LOG_FILE);
     }
     if (options & LOG_UNITD_SYSTEM) {
-        syslog(LOG_DAEMON | LOG_ERR, "%sAn error has occurred\n", RED_COLOR);
-        syslog(LOG_DAEMON | LOG_ERR, "File: %s", transUnit);
-        syslog(LOG_DAEMON | LOG_ERR, "Function: %s", funcName);
-        syslog(LOG_DAEMON | LOG_ERR, "Return value: %s", returnValueStr);
-        syslog(LOG_DAEMON | LOG_ERR, "Description: %s", errDesc);
+        char *all = stringNew("An error has occurred! File =");
+        stringConcat(&all, transUnit);
+        stringConcat(&all, ", Function = ");
+        stringConcat(&all, funcName);
+        stringConcat(&all, ", Return value = ");
+        stringConcat(&all, returnValueStr);
+        stringConcat(&all, ", Description = ");
+        stringConcat(&all, errDesc);
+        stringConcat(&all, ". ");
+        stringConcat(&all, format);
+        /* To 'va_start' function we pass 'format' to avoid compiler warning.
+         * We can do that because the same "args" present in "format", are present in "all" as well.
+         */
         va_start(args, format);
-        unitdLogSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, format, &args);
+        unitdLogSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, all, &args);
         va_end(args);
+        objectRelease(&all);
     }
 }
 
