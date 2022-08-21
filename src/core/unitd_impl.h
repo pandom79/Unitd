@@ -369,7 +369,6 @@ int sortUnitsByName(const void *, const void *);
 void setValueForBuffer(char **, int);
 Array* getScriptParams(const char *, const char *, const char *, const char *);
 int sendWallMsg(Command);
-int checkAdministrator(char **);
 void fillUnitsDisplayList(Array **, Array **);
 int loadAndCheckUnit(Array **, bool, const char *, bool, Array **);
 
@@ -393,6 +392,7 @@ int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
 int catEditUnit(Command, const char *);
 int createUnit(const char *);
 int showBootAnalyze(SockMessageOut **);
+int checkAdministrator(char **);
 
 /* Request */
 extern int SOCKREQ_PROPERTIES_ITEMS_LEN;
