@@ -619,12 +619,12 @@ listenPipe(Unit *unit)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     if ((rv = pthread_create(&unitThreadData->thread, &attr, listenPipeThread, unitThreadData)) != 0) {
-        syslog(LOG_DAEMON | LOG_ERR, "Unable to create the pipe thread for the '%s' unit",
-               unitName);
+        unitdLogError(LOG_UNITD_BOOT | LOG_UNITD_CONSOLE, "src/core/processes/process.c", "listenPipe",
+                      rv, strerror(rv), "Unable to create the pipe thread for the '%s' unit", unitName);
     }
     else {
         if (UNITD_DEBUG)
-            syslog(LOG_DAEMON | LOG_DEBUG, "Pipe Thread created succesfully for the %s unit\n", unitName);
+            unitdLogInfo(LOG_UNITD_BOOT, "Pipe Thread created succesfully for the %s unit\n", unitName);
     }
 }
 

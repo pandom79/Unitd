@@ -135,7 +135,7 @@ getMaxLen(Array *unitsDisplay, const char *param)
         }
         else if (strcmp(param, "desc") == 0) {
             desc = unit->desc;
-            if (desc && (len = strlen(unit->desc)) > rv)
+            if (desc && (len = strlen(desc)) > rv)
                 rv = len;
         }
     }

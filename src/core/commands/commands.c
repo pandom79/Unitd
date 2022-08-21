@@ -189,7 +189,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
                 stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
                 if ((*unit)->showResult)
-                    unitdLogErrorStr(LOG_UNITD_ALL, "Timeout expired for the %s unit!\n", (*unit)->name);
+                    unitdLogErrorStr(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Timeout expired for the %s unit!\n", (*unit)->name);
                 arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc,
                                                 (*unit)->name));
             }
