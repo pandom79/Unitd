@@ -1166,6 +1166,10 @@ catEditUnit(Command command, const char *arg)
         arrayAdd(scriptParams, NULL); //4
         /* Execute the script */
         rv = execScript(UNITD_DATA_PATH, "/scripts/cat-edit.sh", scriptParams->arr, envVars->arr);
+        if (rv != 0) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "catEditUnit",
+                          rv, strerror(rv), NULL);
+        }
         /* Release resources */
         arrayRelease(&scriptParams);
         arrayRelease(&envVars);
