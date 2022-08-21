@@ -224,10 +224,9 @@ sendWallMsg(Command command)
 
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/send-wallmsg.sh", scriptParams->arr, envVars->arr);
-    if (rv != 0) {
+    if (rv != 0)
         unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_common.c",
-                      "sendWallMsg", rv, strerror(rv), "ExecScript error");
-    }
+                      "sendWallMsg", rv, strerror(rv), NULL);
 
     arrayRelease(&envVars);
     arrayRelease(&scriptParams);
