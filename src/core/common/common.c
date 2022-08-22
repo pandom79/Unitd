@@ -322,14 +322,13 @@ unitdUserCheck(const char *userIdStr, const char *userName)
     if (rv != 0) {
         /* If rv == 114 then the instance is already running */
         if (rv == 114) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "Unitd instance is already running for %s user!\n", userName);
-            syslog(LOG_DAEMON | LOG_ERR, "Unitd instance is already running for %s user!\n", userName);
+            unitdLogErrorStr(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM,
+                             "Unitd instance is already running for %s user!", userName);
+            printf("\n");
         }
         else {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c",
+            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c",
                           "unitdUserCheck", rv, strerror(rv), "ExecScript error");
-            syslog(LOG_DAEMON | LOG_ERR, "unitdUserCheck has returned %d exit code (%s) for %s user!\n",
-                   rv, strerror(rv), userName);
         }
     }
 
