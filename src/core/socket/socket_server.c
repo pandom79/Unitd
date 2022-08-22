@@ -933,14 +933,18 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     unitName = buffer = stateStr = from = to = NULL;
     force = run = hasError = isAlreadyDisabled = false;
     unit = unitDisplay = unitConflict = NULL;
-    conflicts = conflictNames = unitsConflicts = requires = NULL;
+    conflicts = conflictNames = unitsConflicts = requires = scriptParams = NULL;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
     units = &UNITD_DATA->units;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
+    if (!(*errors))
+        *errors = arrayNew(objectRelease);
     messages = &(*sockMessageOut)->messages;
+    if (!(*messages))
+        *messages = arrayNew(objectRelease);
 
     /* Unit name could contain ".unit" suffix */
     unitName = getUnitName(sockMessageIn->arg);
@@ -962,11 +966,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     if (unit) {
         if (reEnable) {
             if (!run && unit->isChanged) {
-                if (!(*errors))
-                    *errors = arrayNew(objectRelease);
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_RE_ENABLE_MSG].desc));
                 goto out;
             }
@@ -984,11 +984,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         /* disableUnitServer func could remove the unit */
         if (unit) {
             if (unit->enabled) {
-                if (!(*errors))
-                    *errors = arrayNew(objectRelease);
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_RE_ENABLE_MSG].desc,
                                            !USER_INSTANCE ? "" : "--user ", unitName));
                 goto out;
@@ -999,11 +995,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                 msleep(200);
 
             if (unit->isChanged) {
-                if (!(*errors))
-                    *errors = arrayNew(objectRelease);
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_MSG].desc,
                                            !USER_INSTANCE ? "" : "--user ", unitName));
                 goto out;
@@ -1024,17 +1016,14 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     if (!(*unitDisplayErrors))
         *unitDisplayErrors = arrayNew(objectRelease);
     if ((*unitDisplayErrors)->size > 0) {
+        arrayRelease(errors);
         *errors = arrayStrCopy(*unitDisplayErrors);
         goto out;
     }
 
     /* Check if it is already enabled */
     if (!unit && !reEnable && unitDisplay->enabled) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
-        if (!(*messages))
-            *messages = arrayNew(objectRelease);
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_RE_ENABLE_MSG].desc,
                                    !USER_INSTANCE ? "" : "--user ", unitName));
         goto out;
@@ -1056,11 +1045,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             hasError = true;
     }
     if (hasError) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLE_STATE_ERR].desc));
-        if (!(*messages))
-            *messages = arrayNew(objectRelease);
         /* Building message */
         char *msg = NULL;
         if (!USER_INSTANCE) {
@@ -1083,8 +1068,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     for (int i = 0; i < len; i++) {
         const char *depName = arrayGet(requires, i);
         if (!isEnabledUnit(depName, NO_STATE)) {
-            if (!(*errors))
-                *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
                                      depName, unitName));
             hasError = true;
@@ -1104,6 +1087,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     */
     checkRequires(units, &unitDisplay, true);
     if ((*unitDisplayErrors)->size > 0) {
+        arrayRelease(errors);
         *errors = arrayStrCopy(*unitDisplayErrors);
         goto out;
     }
@@ -1116,8 +1100,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         if ((unitConflict && unitConflict->enabled) ||
             (!unitConflict && isEnabledUnit(conflictName, NO_STATE))) {
             if (!force) {
-                if (!(*errors))
-                    *errors = arrayNew(objectRelease);
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
                                          unitName, conflictName));
                 hasError = true;
@@ -1138,8 +1120,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         }
     }
     if (!force && hasError) {
-        if (!(*messages))
-            *messages = arrayNew(objectRelease);
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_FORCE_START_CONFLICT_MSG].desc, unitName));
         goto out;
     }
@@ -1195,17 +1175,18 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             /* Execute the script */
             rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
             if (rv != 0) {
-                /* We don't put this error into response because it should never occurred */
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
-                                             "ExecScript func has returned %d = %s", rv, strerror(rv));
+                arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
+                arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
+                /* Write the details into system log */
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
+                              rv, strerror(rv), "ExecScript error!");
+                goto out;
             }
             else {
                 if (unit)
                     unit->enabled = true;
                 unitDisplay->enabled = true;
                 /* Put the result into response */
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,
                                            to, from));
             }
@@ -1225,10 +1206,12 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                    strlen(buffer), buffer);
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::enableUnitServer."
-                                         "Send func has returned %d = %s", errno, strerror(errno));
+            unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
+                          errno, strerror(errno), "Send func has returned -1 exit code!");
         }
 
+        arrayRelease(&scriptParams);
+        objectRelease(&stateStr);
         objectRelease(&buffer);
         return rv;
 }
