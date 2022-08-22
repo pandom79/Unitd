@@ -1352,8 +1352,8 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
                strlen(buffer), buffer);
     /* Sending the response */
     if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
-                                     "Send func has returned %d = %s", errno, strerror(errno));
+        unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "getDefaultStateServer",
+                      errno, strerror(errno), "Send func has returned -1 exit code!");
     }
 
     objectRelease(&buffer);
@@ -1386,10 +1386,11 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (newDefaultState == defaultState) {
         if (STATE_NEW_DEFAULT != NO_STATE) {
             /* Create symlink */
-            setNewDefaultStateSyml(defaultState, messages);
-            STATE_NEW_DEFAULT = NO_STATE;
-            arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_RESTORED_MSG].desc,
-                                       STATE_DATA_ITEMS[defaultState].desc));
+            if ((rv = setNewDefaultStateSyml(defaultState, messages, errors)) == 0) {
+                STATE_NEW_DEFAULT = NO_STATE;
+                arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[DEFAULT_STATE_SYML_RESTORED_MSG].desc,
+                                           STATE_DATA_ITEMS[defaultState].desc));
+            }
         }
         else {
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEFAULT_SYML_SET_ERR].desc,
@@ -1399,18 +1400,18 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     else {
         STATE_NEW_DEFAULT = newDefaultState;
         /* Create symlink */
-        setNewDefaultStateSyml(STATE_NEW_DEFAULT, messages);
+        rv = setNewDefaultStateSyml(STATE_NEW_DEFAULT, messages, errors);
     }
 
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
     if (UNITD_DEBUG)
-        syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
+        syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
     /* Sending the response */
     if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::getDefaultStateServer."
-                                     "Send func has returned %d = %s", errno, strerror(errno));
+        unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "setDefaultStateServer",
+                      errno, strerror(errno), "Send func has returned -1 exit code!");
     }
 
     objectRelease(&buffer);

@@ -138,7 +138,7 @@ getDefaultStateStr(char **destDefStateSyml)
 }
 
 int
-setNewDefaultStateSyml(State newDefaultState, Array **messages)
+setNewDefaultStateSyml(State newDefaultState, Array **messages, Array **errors)
 {
     int rv = 0;
     Array *scriptParams = arrayNew(objectRelease);
@@ -167,9 +167,11 @@ setNewDefaultStateSyml(State newDefaultState, Array **messages)
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
     if (rv != 0) {
-        /* We don't put this error into response because it should never occurred */
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common.c::setNewDefaultStateSyml."
-                                     "ExecScript func has returned %d = %s", rv, strerror(rv));
+        arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
+        arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
+        /* Write the details into system log */
+        unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "setNewDefaultStateSyml",
+                      rv, strerror(rv), "ExecScript error!");
     }
     else
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,

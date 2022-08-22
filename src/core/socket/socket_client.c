@@ -1010,8 +1010,10 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
         case REBOOT:
         case FINAL:
             unitdLogErrorStr(LOG_UNITD_CONSOLE, "The '%s' argument is not valid!\n", stateStr);
-            unitdLogInfo(LOG_UNITD_CONSOLE, "Please, use one of the following values :\n"
-                                            "single-user\nmulti-user\nmulti-user-net\ncustom\ngraphical\n");
+            unitdLogInfo(LOG_UNITD_CONSOLE, "Please, use one of the following values :\n%s\n%s\n%s\n%s\n%s\n",
+                                            STATE_DATA_ITEMS[SINGLE_USER].desc, STATE_DATA_ITEMS[MULTI_USER].desc,
+                                            STATE_DATA_ITEMS[MULTI_USER_NET].desc, STATE_DATA_ITEMS[CUSTOM].desc,
+                                            STATE_DATA_ITEMS[GRAPHICAL].desc);
             rv = 1;
             goto out;
         default:

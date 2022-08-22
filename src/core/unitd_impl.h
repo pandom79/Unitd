@@ -437,7 +437,7 @@ int msleep(long);
 void addEnvVar(Array **, const char *, const char *);
 State getStateByStr(char *);
 int getDefaultStateStr(char **);
-int setNewDefaultStateSyml(State, Array **);
+int setNewDefaultStateSyml(State, Array **, Array **);
 void arrayPrint(int options, Array **, bool);
 bool isKexecLoaded();
 int writeWtmp(bool);
