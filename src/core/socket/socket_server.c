@@ -769,7 +769,11 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     assert(*socketFd != -1);
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
+    if (!(*errors))
+        *errors = arrayNew(objectRelease);
     messages = &(*sockMessageOut)->messages;
+    if (!(*messages))
+        *messages = arrayNew(objectRelease);
 
     /* UnitNameArg is comes from enableUnitServer */
     if (unitNameArg)
@@ -794,8 +798,6 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     unit = getUnitByName(UNITD_DATA->units, unitName);
     if (unit) {
         if (!unit->enabled) {
-            if (!(*errors))
-                *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
             goto out;
         }
@@ -833,8 +835,6 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         unitDisplay = arrayGet(*unitsDisplay, 0);
     }
     if (!unit && !unitDisplay->enabled) {
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
         goto out;
     }
@@ -870,16 +870,17 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             /* Execute the script */
             rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
             if (rv != 0) {
-                /* We don't put this error into response because it should never occurred */
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::disableUnitServer."
-                                             "ExecScript func has returned %d = %s", rv, strerror(rv));
+                arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
+                arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
+                /* Write the details into system log */
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
+                              rv, strerror(rv), "ExecScript error!");
+                goto out;
             }
             else {
                 if (unit)
                     unit->enabled = false;
                 /* Put the result into response */
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_REMOVED_SYML_MSG].desc,
                                            to, from));
             }
@@ -900,8 +901,8 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                        strlen(buffer), buffer);
             /* Sending the response */
             if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in socket_server::disableUnitServer."
-                                             "Send func has returned %d = %s", errno, strerror(errno));
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
+                              errno, strerror(errno), "Send func has returned -1 exit code!");
             }
             objectRelease(&buffer);
         }
@@ -910,6 +911,8 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             objectRelease(&unitName);
         }
         arrayRelease(&statesData);
+        objectRelease(&stateStr);
+        arrayRelease(&scriptParams);
         return rv;
 }
 

@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
         }
         else {
             unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", rv,
-                          "An error has occurred in virtualization.sh", NULL);
+                          strerror(rv), "An error has occurred in virtualization.sh");
             showEmergencyShell = hasError = true;
             goto out;
         }

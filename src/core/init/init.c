@@ -45,6 +45,17 @@ CommandData COMMANDS_DATA[] = {
     { RE_ENABLE_COMMAND, "re-enable" },
     { CREATE_COMMAND, "create" }
 };
+
+/* Unitd errors */
+const UnitdErrorsData UNITD_ERRORS_ITEMS[] = {
+    { UNITD_GENERIC_ERR, "An error has occurred!" }
+};
+/* Unitd messages */
+const UnitdMessagesData UNITD_MESSAGES_ITEMS[] = {
+    { UNITD_SYSTEM_LOG_MSG, "Please, check the system log for details." }
+};
+
+
 int COMMANDS_LEN = 21;
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;

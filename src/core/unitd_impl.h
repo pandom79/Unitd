@@ -194,6 +194,28 @@ char* getMsg(int numLine, const char *message, ...);
 void parserEnd(Array **, bool);
 /*********************************************************************************/
 
+/* UNITD */
+
+/* Errors */
+typedef enum {
+    UNITD_GENERIC_ERR = 0,
+} UnitdErrorsEnum;
+typedef struct {
+    UnitdErrorsEnum errorEnum;
+    const char *desc;
+} UnitdErrorsData;
+extern const UnitdErrorsData UNITD_ERRORS_ITEMS[];
+
+/* Messages */
+typedef enum {
+    UNITD_SYSTEM_LOG_MSG = 0,
+} UnitdMessagesEnum;
+typedef struct {
+    UnitdMessagesEnum errorEnum;
+    const char *desc;
+} UnitdMessagesData;
+extern const UnitdMessagesData UNITD_MESSAGES_ITEMS[];
+
 /* UNITS */
 
 /* Specific Errors */

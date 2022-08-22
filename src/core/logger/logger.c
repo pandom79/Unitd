@@ -212,7 +212,6 @@ unitdLogError(int options, const char *transUnit, const char *funcName,
         va_start(args, format);
         if (returnValueStr[0] == ' ')
             sprintf(returnValueStr, "%d", returnValue);
-
         fprintf(UNITD_LOG_FILE, RED_COLOR);
         fprintf(UNITD_LOG_FILE, "\nAn error has occurred\n");
         fprintf(UNITD_LOG_FILE, "File: ");
@@ -231,7 +230,9 @@ unitdLogError(int options, const char *transUnit, const char *funcName,
         fflush(UNITD_LOG_FILE);
     }
     if (options & LOG_UNITD_SYSTEM) {
-        char *all = stringNew("An error has occurred! File =");
+        if (returnValueStr[0] == ' ')
+            sprintf(returnValueStr, "%d", returnValue);
+        char *all = stringNew("An error has occurred! File = ");
         stringConcat(&all, transUnit);
         stringConcat(&all, ", Function = ");
         stringConcat(&all, funcName);
