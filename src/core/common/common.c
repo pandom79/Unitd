@@ -224,9 +224,8 @@ writeWtmp(bool isBooting) {
 
     if ((fd = open(OUR_WTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
         rv = errno;
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                     "Unable to open '%s' file descriptor! Rv = %d (%s).", OUR_WTMP_FILE,
-                                     rv, strerror(rv));
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+                      rv, strerror(rv), "Unable to open '%s' file descriptor!", OUR_WTMP_FILE);
         return rv;
     }
 
@@ -248,40 +247,35 @@ writeWtmp(bool isBooting) {
 
     if (write(fd, (char *)&utmp, sizeof(utmp)) == -1) {
         rv = errno;
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                     "Unable to write into '%s' file! Rv = %d (%s).", OUR_WTMP_FILE,
-                                     rv, strerror(rv));
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+                      rv, strerror(rv), "Unable to write into '%s' file!!", OUR_WTMP_FILE);
         return rv;
     }
     if (close(fd) == -1) {
         rv = errno;
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                     "Unable to close '%s' file descriptor! Rv = %d (%s).", OUR_WTMP_FILE,
-                                     rv, strerror(rv));
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+                      rv, strerror(rv), "Unable to close '%s' file descriptor!", OUR_WTMP_FILE);
         return rv;
     }
 
     if (isBooting) {
         if ((fd = open(OUR_UTMP_FILE, O_WRONLY | O_APPEND)) < 0) {
             rv = errno;
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                         "Unable to open '%s' file descriptor! Rv = %d (%s).", OUR_UTMP_FILE,
-                                         rv, strerror(rv));
+            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+                          rv, strerror(rv), "Unable to open '%s' file descriptor!", OUR_UTMP_FILE);
             return rv;
         }
 
         if (write(fd, (char *)&utmp, sizeof utmp) == -1) {
             rv = errno;
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                         "Unable to write into '%s' file! Rv = %d (%s).", OUR_UTMP_FILE,
-                                         rv, strerror(rv));
+            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+                          rv, strerror(rv), "Unable to write into '%s' file!", OUR_UTMP_FILE);
             return rv;
         }
         if (close(fd) == -1) {
             rv = errno;
-            syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::writeWtmp.\n"
-                                         "Unable to close '%s' file descriptor! Rv = %d (%s).", OUR_UTMP_FILE,
-                                         rv, strerror(rv));
+            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+                          rv, strerror(rv), "Unable to close '%s' file descriptor!", OUR_UTMP_FILE);
             return rv;
         }
     }

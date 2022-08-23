@@ -178,8 +178,6 @@ int main(int argc, char **argv) {
                     if (!USER_INSTANCE) {
                         /* Write a wtmp/utmp 'reboot' record and exit */
                         rv = writeWtmp(true);
-                        if (rv != 0)
-                            unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
                     }
                     else {
                         showUsage();

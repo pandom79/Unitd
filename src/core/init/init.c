@@ -150,7 +150,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     if (getDefaultStateStr(&destDefStateSyml) != 0) {
         /* If we are here then the symlink is not valid or missing */
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-        unitdCloseLog();
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
@@ -161,7 +160,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
                          destDefStateSyml);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-        unitdCloseLog();
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
@@ -186,7 +184,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     /* Zero units are not allowed in this state (default/cmdline) */
     if (rv == GLOB_NOMATCH) {
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-        unitdCloseLog();
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
@@ -207,8 +204,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     shutdown:
         /* Shutdown start */
         timeSetCurrent(&SHUTDOWN_START);
-        assert(!UNITD_LOG_FILE);
-        unitdOpenLog("a");
+        /* Open the log in append mode if it is closed */
+        if (!UNITD_LOG_FILE)
+            unitdOpenLog("a");
         /* Stop the cleaner */
         stopCleaner();
         /* Stop the notifiers */
@@ -236,8 +234,8 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         stopProcesses(initUnits, NULL);
         unitdCloseLog();
         /* Write a wtmp 'shutdown' record */
-        if (!NO_WTMP && writeWtmp(false) != 0)
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+        if (!NO_WTMP)
+            rv = writeWtmp(false);
 
         //********************* FINAL STATE ************************************
         /* Parsing and starting the finalization units
@@ -321,9 +319,9 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     shutdown:
         /* Shutdown start */
         timeSetCurrent(&SHUTDOWN_START);
-        unitdCloseLog();
-        assert(!UNITD_LOG_FILE);
-        unitdOpenLog("a");
+        /* Open the log in append mode if it is closed */
+        if (!UNITD_LOG_FILE)
+            unitdOpenLog("a");
         /* Stop the cleaner */
         stopCleaner();
         /* Stop the notifiers */
@@ -332,7 +330,9 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
         closePipes(units, NULL);
         stopProcesses(units, NULL);
 
+        /* Release resources */
         objectRelease(&STATE_USER_DIR);
+
         return rv;
 }
 

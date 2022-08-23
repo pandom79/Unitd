@@ -189,8 +189,8 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 
         if (force) {
             /* Write a wtmp 'shutdown' record */
-            if (!noWtmp && writeWtmp(false) != 0)
-                unitdLogErrorStr(LOG_UNITD_CONSOLE, "An error has occurred in writeWtmp!\n");
+            if (!noWtmp)
+                writeWtmp(false);
 
 #ifndef UNITD_TEST
             sync();
