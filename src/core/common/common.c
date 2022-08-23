@@ -422,9 +422,8 @@ setUserData(int userId, struct passwd **userInfo)
     errno = 0;
     *userInfo = getpwuid(userId);
     if (!(*userInfo)) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserData", errno,
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "setUserData", errno,
                       strerror(errno), "Getpwuid has returned a null pointer");
-        syslog(LOG_DAEMON | LOG_ERR, "Getpwuid has returned a null pointer for userId = %d", userId);
         rv = 1;
         goto out;
     }
@@ -433,10 +432,8 @@ setUserData(int userId, struct passwd **userInfo)
     /* Change the current working directory to user home */
     char *userHome = (*userInfo)->pw_dir;
     if ((rv = chdir(userHome)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserData", errno,
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "setUserData", errno,
                       strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
-        syslog(LOG_DAEMON | LOG_ERR, "Chdir (user instance) for %d userId has returned -1 exit code. "
-                                     "Rv = %d (%s)", userId, errno, strerror(errno));
         rv = 1;
         goto out;
     }
@@ -459,9 +456,8 @@ setUserData(int userId, struct passwd **userInfo)
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
     if (!xdgRunTimeDir) {
         rv = 1;
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "setUserSocketPath", rv,
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "setUserSocketPath", rv,
                       strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
-        syslog(LOG_DAEMON | LOG_ERR, "XDG_RUNTIME_DIR for %d userId is not set", userId);
         goto out;
     }
     SOCKET_USER_PATH = stringNew(xdgRunTimeDir);
