@@ -130,9 +130,8 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                          * That will can also be confirmed by system log.
                          */
                         if (kill(infoPid, SIGCONT) == -1) {
-                                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::signals.c. "
-                                                             "Unable to send SIGCONT for %d pid. Rv = %d (%s)\n",
-                                                             infoPid, errno, strerror(errno));
+                            unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/signals.c", "signalsHandler",
+                                            errno, strerror(errno), "Unable to send SIGCONT to %d pid!", infoPid);
                         }
                         else
                             syslog(LOG_DAEMON | LOG_DEBUG, "The '%s' unit with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...\n",
