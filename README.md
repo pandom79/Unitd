@@ -15,13 +15,14 @@ The main features are the following:
 - A POSIX awk
 - procps-ng (needs pkill -s0,1)
 
+
 ### States
 
 For this init system, every process is named "**unit**" and will has "**.unit**" as configuration file extension.<br/>
 Unlike the others init systems, Unit daemon doesn't run a "**level**" or strike a "**target**".<br/>
 It brings the system in a "**state**".<br/>
-The available states are:
 
+For the system instance, the available states are:
 - init
 - poweroff
 - single-user
@@ -31,6 +32,9 @@ The available states are:
 - graphical
 - reboot
 - final
+
+For the user instance we have only one state: 
+- user
 
 The **init** and **final** states are excluded by normal units handling. In these states are only present the units which "initialize" and "finalize" the system. An example, could be the mounting and unmounting the disk, etc... Normally, the final user should not consider these states.
 
@@ -50,8 +54,9 @@ meson install
 
 According the default options, you should see the following folders:<br>
 
-- /usr/lib64/unitd/units   (system units path)
-- /etc/unitd/units         (system units enable path)
+- /usr/lib64/unitd/units        (system units path)
+- /usr/lib64/unitd/units/user   (user units path)
+- /etc/unitd/units              (system units enabling path)
     - custom.state
     - default.state -> /etc/unitd/units/multi-user-net.state
     - graphical.state
@@ -69,6 +74,15 @@ After that, check the **Run** property of the **Command** section works and enab
 ln -s /usr/lib64/unitd/units/agetty-1.unit /etc/unitd/units/multi-user-net.state/.
 ```
 You should repeat this operation for all the states except **reboot** and **poweroff**.<br/>
+
+About the user instance, you should see the following folders:<br>
+
+- $HOME/.config/unitd/units         (local user units path)
+- $HOME/.local/share/unitd/units    (user units enabling path)
+
+Usually, the user units installed from distro packages will be placed in **/usr/lib64/unitd/units/user**.<br/>
+Some examples could be **pipewire**, **wireplumbler** and so on.<br/>
+The units created from user will be placed in **$HOME/.config/unitd/units**.
 
 ### Unit configuration file
 
@@ -91,19 +105,21 @@ Run = /sbin/NetworkManager          (required and not repeatable)
 Stop = /sbin/NetworkManager -stop   (optional and not repeatable)
 
 [State]                             (required and not repeatable)
-WantedBy = multi-user-net           (required and repeatable)
+WantedBy = multi-user-net           (required and repeatable for system instance)
 WantedBy = ...
+WantedBy = user                     (required and not repeatable for user instance)
 ```
-Please note, if **Restart** and **RestartMax** properties are defined then RestartMax will have the precedence.<br/>
-In this case Restart property will be  fully ignored.
+Please note, if **Restart** and **RestartMax** properties are defined then Restart property will be ignored.<br>
 
 ### Unitctl 
 
 The units handling is possible via **unitctl** command.<br/>
-Run ```unitctl --help or -h``` to know the usage.<br/>
+Run ```unitctl --help or -h``` to know the usage for the system instance.<br/>
+Add ```--user or -u``` to know the usage for the user instance.<br/>
 
 
 ### Note
+
 The initialization and finalization units are based on [Void Linux Runit](https://github.com/void-linux/void-runit)<br/>
 Thanks to Void linux Team for providing them.<br/>
 Another thanks to Leah Neukirchen which provides "zzz" script for the hibernate/suspend management.<br/>
