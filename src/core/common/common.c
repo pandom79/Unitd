@@ -203,8 +203,8 @@ isKexecLoaded()
     size_t len = 0;
 
     if ((fp = fopen("/sys/kernel/kexec_loaded", "r")) == NULL) {
-        syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in common::isKexecLoaded.\n"
-                                     "Unable to open '/sys/kernel/kexec_loaded' file!");
+        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "isKexecLoaded",
+                      errno, strerror(errno), "Unable to open '/sys/kernel/kexec_loaded' file!");
         return res;
     }
     if (getline(&line, &len, fp) != -1) {
