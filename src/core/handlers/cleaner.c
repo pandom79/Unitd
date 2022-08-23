@@ -96,9 +96,8 @@ runCleanerThread()
             continue;
         if (FD_ISSET(fd, &fds)) {
             if ((rv = read(fd, &input, sizeof(int))) == -1) {
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::cleaner! "
-                                             "Unable to read from pipe for the cleaner. Rv = %d (%s)",
-                                             errno, strerror(errno));
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/cleaner.c", "runCleanerThread",
+                              errno, strerror(errno), "Unable to read from pipe for the cleaner!");
                 goto out;
             }
             if (input == THREAD_EXIT)
