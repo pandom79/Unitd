@@ -115,7 +115,7 @@ Please note, if **Restart** and **RestartMax** properties are defined then Resta
 
 The units handling is possible via **unitctl** command.<br/>
 Run ```unitctl --help or -h``` to know the usage for the system instance.<br/>
-Add ```--user or -u``` to know the usage for the user instance.<br/>
+Run ```unitctl --user --help or -uh``` to know the usage for the user instance.<br/>
 
 
 ### Note
