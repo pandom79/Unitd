@@ -181,9 +181,9 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
     unit->processData = (unitFrom ? processDataNew(unitFrom->processData, funcType) :
                                     processDataNew(NULL, funcType));
     unit->desc = (unitFrom ? stringNew(unitFrom->desc) : NULL);
+    unit->restartNum = (unitFrom ? unitFrom->restartNum : 0);
 
     if (funcType == PARSE_SOCK_RESPONSE || funcType == PARSE_UNIT) {
-        unit->restartNum = (unitFrom ? unitFrom->restartNum : 0);
         unit->type = (unitFrom ? unitFrom->type : DAEMON);
         unit->restart = (unitFrom ? unitFrom->restart : false);
         unit->restartMax = (unitFrom ? unitFrom->restartMax : -1);

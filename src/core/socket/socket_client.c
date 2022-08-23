@@ -358,7 +358,11 @@ showUnitList(SockMessageOut **sockMessageOut)
 
             /* Unit name */
             unitName = unitDisplay->name;
-            printf("%s", unitName);
+            /* The restarted units require attention */
+            if (unitDisplay->restartNum > 0)
+                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", unitName);
+            else
+                printf("%s", unitName);
             len = strlen(unitName);
             if (maxLenName < len)
                 maxLenName = len;
