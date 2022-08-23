@@ -161,9 +161,8 @@ runNotifiersThread(void *arg)
         select(maxFd, &fds, NULL, NULL, NULL);
         if (FD_ISSET(*fdPipe, &fds)) {
             if ((length = read(*fdPipe, &input, sizeof(int))) == -1) {
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::notifier!"
-                                             "Unable to read from pipe for the notifier (%s). Rv = %d (%s)",
-                                             watchDir, errno, strerror(errno));
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                              errno, strerror(errno), "Unable to read from pipe for the notifier (%s)!", watchDir);
                 goto out;
             }
             if (input == THREAD_EXIT)
@@ -171,9 +170,8 @@ runNotifiersThread(void *arg)
         }
         else if (FD_ISSET(*fd, &fds)) {
             if ((length = read(*fd, buffer, EVENT_BUF_LEN)) == -1) {
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in handlers::notifier!"
-                                             "Unable to read from inotify fd for the notifier (%s). Rv = %d (%s)",
-                                             watchDir, errno, strerror(errno));
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                              errno, strerror(errno), "Unable to read from inotify fd for the notifier (%s)!", watchDir);
                 goto out;
             }
 
