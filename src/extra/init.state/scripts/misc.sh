@@ -19,5 +19,5 @@ if [ -n "$HOSTNAME" ]; then
 fi
 
 if [ -n "$TIMEZONE" ]; then
-    ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
+    ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime || true
 fi

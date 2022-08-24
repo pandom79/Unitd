@@ -128,6 +128,12 @@ execProcess(const char *command, char **argv, Unit **unit)
              * the signal handler will catch it
             */
             while (waitpid(child, &status, WNOHANG) == 0) {
+                /* The daemon sends the broadcast signal too fast.
+                 * That means the units which depends on this daemon could fail the start.
+                 * For this reason we slow it down.
+                 * 200 ms looks like a reasonable time.
+                */
+                msleep(200);
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
                 break;

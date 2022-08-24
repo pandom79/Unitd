@@ -190,16 +190,16 @@ sendWallMsg(Command command)
 
     switch (command) {
         case REBOOT_COMMAND:
-            msg = stringNew("Reboot the system ...");
+            msg = stringNew("System reboot in 5 seconds ...");
            break;
         case POWEROFF_COMMAND:
-            msg = stringNew("Power off the system ...");
+            msg = stringNew("System power off in 5 seconds ...");
             break;
         case HALT_COMMAND:
-            msg = stringNew("Halt the system ...");
+            msg = stringNew("System halt in 5 seconds ...");
             break;
         case KEXEC_COMMAND:
-            msg = stringNew("Reboot the system with kexec ...");
+            msg = stringNew("System reboot with kexec in 5 seconds ...");
             break;
         default:
             break;

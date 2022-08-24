@@ -229,13 +229,6 @@ startProcess(void *arg)
             break;
     }
 
-    /* The daemons fastly signal the dependencies.
-     * For this reason the dependency could fail and then we slow it down.
-     * 200 ms looks like a reasonable time.
-    */
-    if (unit->type == DAEMON)
-        msleep(200);
-
     /* Broadcast signal and unlock */
     if ((rv = pthread_cond_broadcast(unit->cv)) != 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
