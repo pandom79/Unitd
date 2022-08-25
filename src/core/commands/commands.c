@@ -124,9 +124,6 @@ execProcess(const char *command, char **argv, Unit **unit)
         default:
             break;
         case DAEMON:
-            /* We don't wait for the daemon. If it will exit or will be signaled for some reason then
-             * the signal handler will catch it
-            */
             while (waitpid(child, &status, WNOHANG) == 0) {
                 /* The daemon sends the broadcast signal too fast.
                  * That means the units which depends on this daemon could fail the start.
