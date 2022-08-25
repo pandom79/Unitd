@@ -133,9 +133,14 @@ execProcess(const char *command, char **argv, Unit **unit)
                  * For this reason we slow it down.
                  * 200 ms looks like a reasonable time.
                 */
+//FIXME what do we make with 200 ms?
                 msleep(200);
-                *pData->exitCode = -1;
-                *pData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
+                /* Meanwhile, it could be catched by signal handler and restarts eventually */
+                if ((pData->pStateData->pState == DEAD || pData->pStateData->pState == RESTARTING)
+                    && *pData->exitCode == -1) {
+                    *pData->exitCode = -1;
+                    *pData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
+                }
                 break;
             }
             break;
