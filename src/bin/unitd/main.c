@@ -235,19 +235,19 @@ int main(int argc, char **argv) {
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
         switch (SHUTDOWN_COMMAND) {
             case REBOOT_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...");
+                unitdLogInfo(LOG_UNITD_CONSOLE, "System reboot ...");
                 reboot(RB_AUTOBOOT);
                 break;
             case POWEROFF_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Power off the system ...");
+                unitdLogInfo(LOG_UNITD_CONSOLE, "System power off ...");
                 reboot(RB_POWER_OFF);
                 break;
             case HALT_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Halt the system ...");
+                unitdLogInfo(LOG_UNITD_CONSOLE, "System halt ...");
                 reboot(RB_HALT_SYSTEM);
                 break;
             case KEXEC_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system with kexec ...");
+                unitdLogInfo(LOG_UNITD_CONSOLE, "System reboot with kexec ...");
                 reboot(RB_KEXEC);
                 break;
             default:
