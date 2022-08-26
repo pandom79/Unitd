@@ -432,6 +432,10 @@ int unmarshallResponse(char *, SockMessageOut **);
 /*********************************************************************************/
 
 /* COMMON */
+typedef struct {
+    pthread_mutex_t *mutex;
+    bool lock;
+} MutexThreadData;
 int readSymLink(const char *, char **);
 int msleep(long);
 void addEnvVar(Array **, const char *, const char *);
@@ -446,6 +450,8 @@ int parseProcCmdLine();
 int setSigAction();
 int setUserData(int, struct passwd **);
 void userDataRelease();
+int handleMutex(pthread_mutex_t *, int);
+void* handleMutexThread(void *);
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

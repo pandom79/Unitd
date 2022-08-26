@@ -511,14 +511,14 @@ listenPipeThread(void *arg)
 {
     UnitThreadData *unitThreadData = NULL;
     Unit *unit = NULL;
-    int rv, input, restartMax, *restartNum;
+    int rv, input, restartMax, *restartNum, rvMutex;
     bool restart = false;
     ProcessData **pData = NULL;
     Array *pDataHistory = NULL;
     Pipe *unitPipe = NULL;
     const char *unitName = NULL;
 
-    rv = input = 0;
+    rv = input = rvMutex = 0;
 
     assert(arg);
     unitThreadData = (UnitThreadData *)arg;
@@ -559,6 +559,15 @@ listenPipeThread(void *arg)
 
         if ((restartMax > 0 && *restartNum < restartMax) ||
             (restartMax == -1 && restart)) {
+            /* We lock the mutex to allow unitStatusServer func to retrieve the completed data.
+             * If the lock fails then it's not a problem. We will see the incompleted data but
+             * a next unit status execution will show the completed data.
+            */
+            if ((rvMutex = pthread_mutex_lock(unit->mutex)) != 0) {
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/processes/process.c", "listenPipeThread",
+                              rvMutex, strerror(rvMutex), "Unable to acquire the lock of the mutex for the %s unit",
+                              unitName);
+            }
             /* Before the restart the daemon, we add the current processData to
              * processDataHistory.
              * If restartNum achieved the 'SHOW_MAX_RESULTS' value, we increment it but we will always
@@ -573,6 +582,12 @@ listenPipeThread(void *arg)
             resetPDataForRestart(pData);
             /* Incrementing restartNum */
             (*restartNum)++;
+            /* Unlock only if it's locked */
+            if (rvMutex == 0 && (rvMutex = pthread_mutex_unlock(unit->mutex)) != 0) {
+                unitdLogError(LOG_UNITD_SYSTEM, "src/core/processes/process.c", "listenPipeThread",
+                              rvMutex, strerror(rvMutex), "Unable to unlock the mutex for the %s unit",
+                              unitName);
+            }
             if (SHUTDOWN_COMMAND == NO_COMMAND) {
                 if (UNITD_DEBUG)
                     syslog(LOG_DAEMON | LOG_DEBUG, "%s unit is restarting ....", unitName);

@@ -471,3 +471,58 @@ userDataRelease()
     objectRelease(&UNITS_USER_ENAB_PATH);
     objectRelease(&SOCKET_USER_PATH);
 }
+
+void*
+handleMutexThread(void *arg)
+{
+    MutexThreadData *mutexThreadData = NULL;
+    int *rvThread = NULL, rv = 0;
+
+    assert(arg);
+
+    mutexThreadData = (MutexThreadData *)arg;
+
+    if (mutexThreadData->lock) {
+        if ((rv = pthread_mutex_lock(mutexThreadData->mutex)) != 0) {
+            unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutexThread",
+                          rv, strerror(rv), "Unable to acquire the lock of the mutex");
+        }
+    }
+    else {
+        if ((rv = pthread_mutex_unlock(mutexThreadData->mutex)) != 0) {
+            unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutexThread",
+                          rv, strerror(rv), "Unable to unlock the mutex");
+        }
+    }
+
+    rvThread = calloc(1, sizeof(int));
+    assert(rvThread);
+    *rvThread = rv;
+    return rvThread;
+}
+
+int
+handleMutex(pthread_mutex_t *mutex, int lock)
+{
+    int rv = 0, *rvThread = NULL;
+
+    assert(mutex);
+
+    pthread_t thread;
+    MutexThreadData mutextThreadData = { .mutex = mutex, .lock = lock };
+
+    if ((rv = pthread_create(&thread, NULL, handleMutexThread, &mutextThreadData)) != 0) {
+        unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutex", errno,
+                      strerror(errno), "Unable to create the thread for the mutex");
+    }
+    if ((rv = pthread_join(thread, (void **)&rvThread)) != EXIT_SUCCESS) {
+        unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutex", errno,
+                      strerror(errno), "Unable to join the thread for the mutex");
+    }
+    if (rv == 0 && *rvThread != 0)
+        rv = *rvThread;
+
+    objectRelease(&rvThread);
+
+    return rv;
+}

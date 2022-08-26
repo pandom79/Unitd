@@ -347,11 +347,12 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
 int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
-    int rv = 0;
+    int rv, rvMutex;
     Array **unitsDisplay, **errors, **messages;
     char *buffer, *unitName;
     Unit *unit = NULL;
 
+    rv = rvMutex = 0;
     buffer = unitName = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
@@ -383,7 +384,18 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
                                        !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
+
+        /* We lock the mutex for the same reasons explained in listenPipeThread Func.
+         * Take a quick look there.
+        */
+        if ((rvMutex = handleMutex(unit->mutex, true)) != 0)
+            unitdLogErrorStr(LOG_UNITD_SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
+
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
+
+        /* Unlock only if it's locked */
+        if (rvMutex == 0 && (rvMutex = handleMutex(unit->mutex, false)) != 0)
+            unitdLogErrorStr(LOG_UNITD_SYSTEM, "Unable to unlock the mutex in getUnitStatusServer func");
     }
     else {
         /* Check and parse unitName. We don't consider the units into memory
