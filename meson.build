@@ -30,6 +30,7 @@ conf_data.set('UNITD_DATA_PATH', unitd_data_path)
 conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
 conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
+conf_data.set('DAEMON_SIGNAL_TIME', get_option('DAEMON_SIGNAL_TIME'))
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Dependencies

@@ -182,9 +182,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
         /* Write a broadcast message to all users */
         if (!noWall) {
             sendWallMsg(command);
-            /* If we are not forcing then we slow it otherwise we are not able to see it */
-            if (!force)
-                msleep(5000);
+            msleep(5000);
         }
 
         if (force) {

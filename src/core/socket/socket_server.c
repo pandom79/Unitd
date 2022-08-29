@@ -314,7 +314,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         objectRelease(&diffExecTime);
         timeRelease(&current);
     }
-    /* unitsDisplay could empty or null */
+    /* unitsDisplay could be empty or null */
     if (!bootAnalyze && (!unitsDisplay || unitsDisplay->size == 0)) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);

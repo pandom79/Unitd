@@ -287,6 +287,7 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
         unitdLogInfo(LOG_UNITD_BOOT, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
         unitdLogInfo(LOG_UNITD_BOOT, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
         unitdLogInfo(LOG_UNITD_BOOT, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
+        unitdLogInfo(LOG_UNITD_BOOT, "socket user path = %s\n", SOCKET_USER_PATH);
         unitdLogInfo(LOG_UNITD_BOOT, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
     }
 

@@ -458,6 +458,15 @@ setUserData(int userId, struct passwd **userInfo)
     stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
     assert(SOCKET_USER_PATH);
 
+    if (UNITCTL_DEBUG) {
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user path = %s\n", UNITS_USER_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "socket user path = %s\n", SOCKET_USER_PATH);
+    }
+
     out:
         return rv;
 }

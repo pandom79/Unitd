@@ -125,13 +125,8 @@ execProcess(const char *command, char **argv, Unit **unit)
             break;
         case DAEMON:
             while (waitpid(child, &status, WNOHANG) == 0) {
-                /* The daemon sends the broadcast signal too fast.
-                 * That means the units which depends on this daemon could fail the start.
-                 * For this reason we slow it down.
-                 * 200 ms looks like a reasonable time.
-                */
-//FIXME what do we make with 200 ms?
-                msleep(200);
+                if (DAEMON_SIGNAL_TIME > 0)
+                    msleep(DAEMON_SIGNAL_TIME);
                 /* Meanwhile, it could be catched by signal handler and restarts eventually */
                 if ((pData->pStateData->pState == DEAD || pData->pStateData->pState == RESTARTING)
                     && *pData->exitCode == -1) {
