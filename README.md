@@ -51,6 +51,23 @@ meson configure -DOS_NAME="Slackware Linux"
 meson compile
 meson install
 ```
+**Meson build option (DAEMON_SIGNAL_TIME)**<br>
+It represents the time (milliseconds) between the execution of the daemon and the signal to the units which depend on it.<br>
+The higher its value, the more likely it is that units that depend on it will start successfully.<br>
+Consequently, the startup time will also be longer.<br>
+Conversely, a smaller value will reverse the one just said.<br>
+In this case, the units that are most likely to fail may require setting the Restart or RestartMax properties to correct the problem.<br>
+To get the fastest boot time you will need to set this value to zero (fast boot mode).<br>
+Its default value is 200ms which seems a reasonable time.<br>
+Note that if you have an oneshot unit that takes 3-4 seconds (just an example) to do its job,<br>
+you will most likely not notice any change in boot time regardless of this value.<br>
+I'd recommend to properly evaluate your use case before to change this value to avoid to get a more "dirty" starting<br>
+without some advantages about the boot time.
+
+**Why ?**<br>
+This value affects on the speed and starting behaviour.<br>
+For this reason, I've chosen to make it a your choice rather than a fixed parameter.<br>
+Could be there some contexts (Container, VM...etc) where in wait for 200 ms (more or less) is basically useless.<br>
 
 According the default options, you should see the following folders:<br>
 
