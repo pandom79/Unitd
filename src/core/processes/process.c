@@ -357,14 +357,13 @@ stopProcess(void *arg)
 {
     UnitThreadData *unitThreadData = NULL;
     Unit *unit = NULL;
-    const char *command, *unitName;
-    char **cmdline = NULL;
+    const char *unitName = NULL;
+    char **cmdline = NULL, *command = NULL;
     int statusThread, *finalStatus, rv;
     int *rvThread = NULL;
     ProcessData *pData = NULL;
     pthread_mutex_t *unitMutex = NULL;
 
-    command = unitName = NULL;
     rv = 0;
 
     assert(arg);
@@ -389,6 +388,13 @@ stopProcess(void *arg)
 
     command = unit->stopCmd;
     if (command) {
+        /* Replace PID_CMD_VAR */
+        if (stringContainsStr(command, PID_CMD_VAR)) {
+            char pidStr[30] = {0};
+            sprintf(pidStr, "%d", *pData->pid);
+            stringReplaceStr(&command, PID_CMD_VAR, pidStr);
+        }
+        /* Split cmdline */
         cmdline = cmdlineSplit(command);
         assert(cmdline);
         /* Execute the command */

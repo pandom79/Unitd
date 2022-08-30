@@ -729,12 +729,12 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                     case RUN:
                         (*unit)->runCmd = stringNew(value);
                         if (currentState == INIT || currentState == FINAL)
-                            stringReplaceStr(&(*unit)->runCmd, "$UNITD_DATA_PATH", UNITD_DATA_PATH);
+                            stringReplaceStr(&(*unit)->runCmd, UNITD_DATA_PATH_CMD_VAR, UNITD_DATA_PATH);
                         break;
                     case STOP:
                         (*unit)->stopCmd = stringNew(value);
                         if (currentState == INIT || currentState == FINAL)
-                            stringReplaceStr(&(*unit)->stopCmd, "$UNITD_DATA_PATH", UNITD_DATA_PATH);
+                            stringReplaceStr(&(*unit)->stopCmd, UNITD_DATA_PATH_CMD_VAR, UNITD_DATA_PATH);
                         break;
                     case WANTEDBY:
                         arrayAdd(wantedBy, stringNew(value));

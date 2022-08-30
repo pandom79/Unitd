@@ -217,6 +217,7 @@ typedef struct {
 extern const UnitdMessagesData UNITD_MESSAGES_ITEMS[];
 
 /* UNITS */
+#define UNITD_DATA_PATH_CMD_VAR  "$UNITD_DATA_PATH"
 
 /* Specific Errors */
 typedef enum {
@@ -313,6 +314,7 @@ void reapPendingChild();
 /*********************************************************************************/
 
 /* PROCESSES */
+#define PID_CMD_VAR             "$PID"
 #define SHOW_MAX_RESULTS        10
 #define THREAD_EXIT             -1
 typedef struct {
