@@ -69,6 +69,8 @@ This value affects on the speed and starting behaviour.<br>
 For this reason, I've chosen to make it a your choice rather than a fixed parameter.<br>
 Could be there some contexts (Container, VM...etc) where in wait for 200 ms (more or less) is basically useless.<br>
 
+For the other build options, please consult **meson_options.txt**
+
 According the default options, you should see the following folders:<br>
 
 - /usr/lib64/unitd/units        (system units path)
@@ -126,7 +128,12 @@ WantedBy = multi-user-net           (required and repeatable for system instance
 WantedBy = ...
 WantedBy = user                     (required and not repeatable for user instance)
 ```
-Please note, if **Restart** and **RestartMax** properties are defined then Restart property will be ignored.<br>
+**Restart** and **RestartMax**<br>
+Please note, if both are defined then Restart property will be ignored.<br><br>
+**Stop**<br>
+This property could use the variable **$PID** which can be passed as argument to a custom stop command.<br>
+Example:<br>
+```Stop = /path/your/command $PID```
 
 ### Unitctl 
 
