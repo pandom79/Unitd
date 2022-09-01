@@ -101,7 +101,7 @@ About the user instance, you should see the following folders:<br>
 
 Usually, the user units installed from distro packages will be placed in **/usr/lib64/unitd/units/user**.<br/>
 Some examples could be **pipewire**, **wireplumbler** and so on.<br/>
-The units created from user will be placed in **$HOME/.config/unitd/units**.
+The units created by user will be placed in **$HOME/.config/unitd/units**.
 
 ### Unit configuration file
 
@@ -112,7 +112,7 @@ Description = NetworkManager	    (required and not repeatable)
 Requires = dbus                     (optional and repeatable)
 Requires = ...
 
-Conflict = dhcpcd                   (optional and repeatable)<br/>
+Conflict = dhcpcd                   (optional and repeatable)
 Conflict = ...
 
 Type = oneshot|daemon               (optional and not repeatable. If omitted is "daemon")
