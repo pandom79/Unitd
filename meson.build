@@ -37,6 +37,21 @@ configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configurati
 libwrapper = meson.get_compiler('c').find_library('libwrapper', required : true)
 deps = [dependency('threads'), libwrapper]
 
+# Checking commands/packages dependencies
+# If it is not exists then meson will show us the error
+# We set 'check: false' because we don't interest about its exit code
+# Awk
+message('Checking awk command ...')
+run_command('awk', check: false)
+message('Awk command found!')
+# Pkill and pgrep (procps-ng package)
+message('Checking pkill command ...')
+run_command('pkill', check: false)
+message('Pkill command found!')
+message('Checking pgrep command ...')
+run_command('pgrep', check: false)
+message('Pgrep command found!')
+
 # Unitd lib
 libunitd = library('unitd',
                    'src/include/unitd.h', 'src/include/unitd_types.h', 'src/core/unitd_impl.h',
