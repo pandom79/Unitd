@@ -267,18 +267,20 @@ int
 getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     char *buffer = NULL;
-    Array *unitsDisplay = NULL;
+    Array *unitsDisplay = arrayNew(unitRelease);
     Array **messages = &(*sockMessageOut)->messages;
     Array **errors = &(*sockMessageOut)->errors;
+    Array *options = sockMessageIn->options;
     int rv, lenUnits;
     bool bootAnalyze = false;
 
     rv = lenUnits = 0;
+    (*sockMessageOut)->unitsDisplay = unitsDisplay;
 
     assert(*socketFd != -1);
 
     //Get bootAnalyze
-    bootAnalyze = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[ANALYZE_OPT].name);
+    bootAnalyze = arrayContainsStr(options, OPTIONS_DATA[ANALYZE_OPT].name);
     if (!bootAnalyze) {
         fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay);
         if (!USER_INSTANCE) {
@@ -293,6 +295,10 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             loadUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
                       false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
         }
+        /* Try to apply an eventual filter */
+        ListFilter listFilter = getListFilterByOpt(options);
+        if (listFilter != NO_FILTER)
+            applyListFilter(&unitsDisplay, listFilter);
     }
     else {
         fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay);
@@ -314,19 +320,18 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         objectRelease(&diffExecTime);
         timeRelease(&current);
     }
-    /* unitsDisplay could be empty or null */
-    if (!bootAnalyze && (!unitsDisplay || unitsDisplay->size == 0)) {
+    /* unitsDisplay could be empty */
+    if (!bootAnalyze && unitsDisplay->size == 0) {
+        /* We put this simple msg to satisfy the buffer check.
+         * Actually, will be shown the empty list
+        */
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNITS_LIST_EMPTY_ERR].desc));
         goto out;
     }
     /* Sorting the array by name */
-    if (unitsDisplay) {
-        qsort(unitsDisplay->arr, unitsDisplay->size, sizeof(Unit *), sortUnitsByName);
-        /* Adding the sorted array */
-        (*sockMessageOut)->unitsDisplay = unitsDisplay;
-    }
+    qsort(unitsDisplay->arr, unitsDisplay->size, sizeof(Unit *), sortUnitsByName);
 
     out:
         /* Marshall response */

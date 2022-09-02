@@ -271,6 +271,14 @@ typedef struct {
 } UnitsMessagesData;
 extern const UnitsMessagesData UNITS_MESSAGES_ITEMS[];
 
+/* List filter */
+typedef struct {
+    ListFilter listFilter;
+    const char *desc;
+} ListFilterData;
+extern const ListFilterData LIST_FILTER_DATA[];
+extern int LIST_FILTER_LEN;
+
 /* Functions */
 Unit* unitNew(Unit *, ParserFuncType);
 void unitRelease(Unit **);
@@ -395,6 +403,9 @@ Array* getScriptParams(const char *, const char *, const char *, const char *);
 int sendWallMsg(Command);
 void fillUnitsDisplayList(Array **, Array **);
 int loadAndCheckUnit(Array **, bool, const char *, bool, Array **);
+ListFilter getListFilterByCommand(Command);
+ListFilter getListFilterByOpt(Array *);
+void applyListFilter(Array **, ListFilter);
 
 /* Server */
 int listenSocketRequest();
@@ -410,7 +421,7 @@ int getDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 int setDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 
 /* Client */
-int showUnitList(SockMessageOut **);
+int showUnitList(SockMessageOut **, ListFilter);
 int showUnitStatus(SockMessageOut **, const char *);
 int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
 int catEditUnit(Command, const char *);

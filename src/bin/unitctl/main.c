@@ -16,6 +16,31 @@ char *UNITD_USER_CONF_PATH;
 char *UNITD_USER_LOG_PATH;
 char *SOCKET_USER_PATH;
 
+static bool
+getSkipCheckAdmin(Command command)
+{
+    switch (command) {
+        case STATUS_COMMAND:
+        case LIST_REQUIRES_COMMAND:
+        case LIST_CONFLICTS_COMMAND:
+        case LIST_STATES_COMMAND:
+        case CAT_COMMAND:
+        case LIST_COMMAND:
+        case LIST_ENABLED_COMMAND:
+        case LIST_DISABLED_COMMAND:
+        case LIST_STARTED_COMMAND:
+        case LIST_DEAD_COMMAND:
+        case LIST_FAILED_COMMAND:
+        case LIST_RESTARTED_COMMAND:
+        case ANALYZE_COMMAND:
+        case GET_DEFAULT_STATE_COMMAND:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
 static void
 showUsage()
 {
@@ -40,6 +65,12 @@ showUsage()
             "edit               Edit the unit content\n"
             "create             Create the unit\n"
             "list               List the units\n"
+            "list-enabled       List the enabled units\n"
+            "list-disabled      List the disabled units\n"
+            "list-started       List the started units\n"
+            "list-dead          List the dead units\n"
+            "list-failed        List the failed units\n"
+            "list-restarted     List the restarted units\n"
     );
     fprintf(stdout,
             "analyze            Analyze the %s boot process\n",
@@ -80,7 +111,7 @@ showUsage()
 
 int main(int argc, char **argv) {
     int c, rv, userId;
-    bool force, run, noWtmp, onlyWtmp, noWall;
+    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin;
     const char *shortopts = "hrfdnowu";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
@@ -99,7 +130,7 @@ int main(int argc, char **argv) {
 
     c = rv = userId = 0;
     commandName = arg = NULL;
-    force = run = noWtmp = onlyWtmp = noWall = false;
+    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = false;
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -136,13 +167,30 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* Get user id */
-    userId = getuid();
-    assert(userId >= 0);
+    /* Get the command */
+    if ((commandName = argv[optind])) {
+        command = getCommand(commandName);
+        if (command == NO_COMMAND) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+    }
 
     /* Check instance */
+    userId = getuid();
+    assert(userId >= 0);
     if (!USER_INSTANCE) {
-        if (userId != 0) {
+
+        /* The interaction commands require the administrator check.
+         * For the consultation commands instead, it is not required.
+        */
+        if (command == NO_COMMAND && !onlyWtmp) //LIST_COMMAND is a default command
+            skipCheckAdmin = true;
+        else
+            skipCheckAdmin = getSkipCheckAdmin(command);
+
+        if (userId != 0 && !skipCheckAdmin) {
             rv = checkAdministrator(argv);
             goto out;
         }
@@ -152,16 +200,6 @@ int main(int argc, char **argv) {
         struct passwd *userInfo = NULL;
         if ((rv = setUserData(userId, &userInfo)) != 0)
             goto out;
-    }
-
-    /* Get the command */
-    if ((commandName = argv[optind])) {
-        command = getCommand(commandName);
-        if (command == NO_COMMAND) {
-            showUsage();
-            rv = 1;
-            goto out;
-        }
     }
 
     /* Command handling */
@@ -187,7 +225,7 @@ int main(int argc, char **argv) {
                 }
                 else
                     /* List command as default */
-                    rv = showUnitList(&sockMessageOut);
+                    rv = showUnitList(&sockMessageOut, NO_FILTER);
             }
             break;
         case REBOOT_COMMAND:
@@ -222,6 +260,12 @@ int main(int argc, char **argv) {
             rv = unitdShutdown(command, force, noWtmp, noWall);
             break;
         case LIST_COMMAND:
+        case LIST_ENABLED_COMMAND:
+        case LIST_DISABLED_COMMAND:
+        case LIST_STARTED_COMMAND:
+        case LIST_DEAD_COMMAND:
+        case LIST_FAILED_COMMAND:
+        case LIST_RESTARTED_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             if (argc > 4 ||
                (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
@@ -230,10 +274,10 @@ int main(int argc, char **argv) {
                 rv = 1;
                 goto out;
             }
-            if (command == LIST_COMMAND)
-                rv = showUnitList(&sockMessageOut);
-            else
+            if (command == GET_DEFAULT_STATE_COMMAND)
                 rv = showUnit(command, &sockMessageOut, NULL, false, false, false, false);
+            else
+                rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
             break;
         case STATUS_COMMAND:
         case STOP_COMMAND:

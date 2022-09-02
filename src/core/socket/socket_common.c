@@ -237,8 +237,7 @@ void
 fillUnitsDisplayList(Array **units, Array **unitsDisplay)
 {
     int lenUnits = (*units ? (*units)->size : 0);
-    if (lenUnits > 0 && !(*unitsDisplay))
-        *unitsDisplay = arrayNew(unitRelease);
+    assert(*unitsDisplay);
     for (int i = 0; i < lenUnits; i++)
         arrayAdd(*unitsDisplay, unitNew(arrayGet(*units, i), PARSE_SOCK_RESPONSE_UNITLIST));
 }
@@ -274,4 +273,105 @@ loadAndCheckUnit(Array **unitsDisplay, bool isAggregate, const char *unitName,
     }
 
     return rv;
+}
+
+ListFilter
+getListFilterByCommand(Command command)
+{
+    ListFilter listFilter = NO_FILTER;
+    if (command != NO_COMMAND && command != LIST_COMMAND) {
+        switch (command) {
+            case LIST_ENABLED_COMMAND:
+                listFilter = ENABLED_FILTER;
+                break;
+            case LIST_DISABLED_COMMAND:
+                listFilter = DISABLED_FILTER;
+                break;
+            case LIST_STARTED_COMMAND:
+                listFilter = STARTED_FILTER;
+                break;
+            case LIST_DEAD_COMMAND:
+                listFilter = DEAD_FILTER;
+                break;
+            case LIST_FAILED_COMMAND:
+                listFilter = FAILED_FILTER;
+                break;
+            case LIST_RESTARTED_COMMAND:
+                listFilter = RESTARTED_FILTER;
+                break;
+            default:
+                break;
+        }
+    }
+    return listFilter;
+}
+
+ListFilter
+getListFilterByOpt(Array *options)
+{
+    const char *listFilterOpt = NULL;
+    int len = options ? options->size : 0;
+    for (int i = 0; i < len; i++) {
+        listFilterOpt = arrayGet(options, i);
+        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= RESTARTED_FILTER; listFilter++) {
+            if (strcmp(listFilterOpt, LIST_FILTER_DATA[listFilter].desc) == 0) {
+                return listFilter;
+            }
+        }
+    }
+    return NO_FILTER;
+}
+
+void
+applyListFilter(Array **unitsDisplay, ListFilter listFilter)
+{
+    Unit *unitDisplay = NULL;
+    ProcessData *pData = NULL;
+    bool match, remove;
+    assert(*unitsDisplay);
+    assert(listFilter != NO_FILTER);
+    int *len = &(*unitsDisplay)->size;
+
+    for (int i = 0; i < *len; i++) {
+        unitDisplay = arrayGet(*unitsDisplay, i);
+        pData = unitDisplay->processData;
+        match = remove = false;
+        switch (listFilter) {
+            case ENABLED_FILTER:
+                if (!unitDisplay->enabled)
+                    remove = true;
+                break;
+            case DISABLED_FILTER:
+                if (unitDisplay->enabled)
+                    remove = true;
+                break;
+            case STARTED_FILTER:
+                match = ((pData->pStateData->pState == RUNNING || pData->pStateData->pState == EXITED) &&
+                        *pData->finalStatus == FINAL_STATUS_SUCCESS);
+                if (!match)
+                    remove = true;
+                break;
+            case DEAD_FILTER:
+                match = (pData->pStateData->pState == DEAD &&
+                        (*pData->finalStatus == FINAL_STATUS_READY || *pData->finalStatus == FINAL_STATUS_NOT_READY));
+                if (!match)
+                    remove = true;
+                break;
+            case FAILED_FILTER:
+                if (*pData->finalStatus != FINAL_STATUS_FAILURE)
+                    remove = true;
+                break;
+            case RESTARTED_FILTER:
+                if (unitDisplay->restartNum == 0)
+                    remove = true;
+                break;
+            default:
+                break;
+        }
+        if (remove) {
+            arrayRemove(*unitsDisplay, unitDisplay);
+            i--;
+        }
+    }
+
 }

@@ -252,7 +252,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 }
 
 int
-getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze)
+getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter listFilter)
 {
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection, bufferSize, lenUnits, maxLen, len;
@@ -265,6 +265,8 @@ getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze)
 
     if (bootAnalyze)
         arrayAdd(options, stringNew(OPTIONS_DATA[ANALYZE_OPT].name));
+    else if (listFilter != NO_FILTER)
+        arrayAdd(options, stringNew(LIST_FILTER_DATA[listFilter].desc));
 
     /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_COMMAND, NULL, options)) != 0)
@@ -308,7 +310,7 @@ getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze)
 }
 
 int
-showUnitList(SockMessageOut **sockMessageOut)
+showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
 {
     int rv, lenUnits, maxLenName, maxLenDesc, len, *finalStatus;
     Array *unitsDisplay = NULL;
@@ -321,7 +323,7 @@ showUnitList(SockMessageOut **sockMessageOut)
     rv = lenUnits = maxLenName = maxLenDesc = len = -1;
 
     /* Filling sockMessageOut */
-    if ((rv = getUnitList(sockMessageOut, false)) == 0) {
+    if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
         unitsDisplay = (*sockMessageOut)->unitsDisplay;
         maxLenName = getMaxLen(unitsDisplay, "name");
         maxLenDesc = getMaxLen(unitsDisplay, "desc");
@@ -1340,7 +1342,7 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
     unitsDisplay = messages = NULL;
 
     /* Filling sockMessageOut */
-    if ((rv = getUnitList(sockMessageOut, true)) == 0) {
+    if ((rv = getUnitList(sockMessageOut, true, NO_FILTER)) == 0) {
         unitsDisplay = (*sockMessageOut)->unitsDisplay;
         messages = (*sockMessageOut)->messages;
         maxLenName = getMaxLen(unitsDisplay, "name");

@@ -188,7 +188,13 @@ typedef enum {
     EDIT_COMMAND = 17,
     ANALYZE_COMMAND = 18,
     RE_ENABLE_COMMAND = 19,
-    CREATE_COMMAND = 20
+    CREATE_COMMAND = 20,
+    LIST_ENABLED_COMMAND = 21,
+    LIST_DISABLED_COMMAND = 22,
+    LIST_STARTED_COMMAND = 23,
+    LIST_DEAD_COMMAND = 24,
+    LIST_FAILED_COMMAND = 25,
+    LIST_RESTARTED_COMMAND = 26,
 } Command;
 
 /* Socket */
@@ -198,5 +204,15 @@ typedef struct {
     Array *messages;
 } SockMessageOut;
 
+/* List filter */
+typedef enum {
+    NO_FILTER = -1,
+    ENABLED_FILTER = 0,
+    DISABLED_FILTER = 1,
+    STARTED_FILTER = 2,
+    DEAD_FILTER = 3,
+    FAILED_FILTER = 4,
+    RESTARTED_FILTER = 5
+} ListFilter ;
 
 #endif //UNITD_TYPES_H

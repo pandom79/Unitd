@@ -21,6 +21,7 @@ OptionData OPTIONS_DATA[] = {
     { RE_ENABLE_OPT, "re-enable"}
 };
 int OPTIONS_LEN = 9;
+
 /* Commands */
 CommandData COMMANDS_DATA[] = {
     { REBOOT_COMMAND, "reboot" },
@@ -43,8 +44,26 @@ CommandData COMMANDS_DATA[] = {
     { EDIT_COMMAND, "edit" },
     { ANALYZE_COMMAND, "analyze" },
     { RE_ENABLE_COMMAND, "re-enable" },
-    { CREATE_COMMAND, "create" }
+    { CREATE_COMMAND, "create" },
+    { LIST_ENABLED_COMMAND, "list-enabled" },
+    { LIST_DISABLED_COMMAND, "list-disabled" },
+    { LIST_STARTED_COMMAND, "list-started" },
+    { LIST_DEAD_COMMAND, "list-dead" },
+    { LIST_FAILED_COMMAND, "list-failed" },
+    { LIST_RESTARTED_COMMAND, "list-restarted" }
 };
+int COMMANDS_LEN = 27;
+
+/* List Filter */
+const ListFilterData LIST_FILTER_DATA[] = {
+    { ENABLED_FILTER, "enable" },
+    { DISABLED_FILTER, "disable" },
+    { STARTED_FILTER, "started" },
+    { DEAD_FILTER, "dead" },
+    { FAILED_FILTER, "failed" },
+    { RESTARTED_FILTER, "restarted" }
+};
+int LIST_FILTER_LEN = 6;
 
 /* Unitd errors */
 const UnitdErrorsData UNITD_ERRORS_ITEMS[] = {
@@ -55,8 +74,6 @@ const UnitdMessagesData UNITD_MESSAGES_ITEMS[] = {
     { UNITD_SYSTEM_LOG_MSG, "Please, check the system log for details." }
 };
 
-
-int COMMANDS_LEN = 21;
 State STATE_DEFAULT;
 State STATE_NEW_DEFAULT;
 State STATE_CMDLINE;
