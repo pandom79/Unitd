@@ -40,7 +40,6 @@ getSkipCheckAdmin(Command command)
     }
 }
 
-
 static void
 showUsage()
 {
@@ -181,7 +180,6 @@ int main(int argc, char **argv) {
     userId = getuid();
     assert(userId >= 0);
     if (!USER_INSTANCE) {
-
         /* The interaction commands require the administrator check.
          * For the consultation commands instead, it is not required.
         */
