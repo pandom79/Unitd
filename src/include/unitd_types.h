@@ -72,7 +72,6 @@ static const struct PTypeData PTYPE_DATA_ITEMS[] = {
 };
 
 typedef enum {
-    FINAL_STATUS_NOT_READY = -2,
     FINAL_STATUS_READY = -1,
     FINAL_STATUS_SUCCESS = 0,
     FINAL_STATUS_FAILURE = 1

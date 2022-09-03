@@ -67,7 +67,10 @@ printStatus(PState pState, const char *status, int finalStatus, bool newline)
 {
     switch (finalStatus) {
         case FINAL_STATUS_SUCCESS:
-            unitdLogSuccess(LOG_UNITD_CONSOLE, "%s", status);
+            if (pState == DEAD)
+                printf("%s%s%s", GREY_COLOR, status, DEFAULT_COLOR);
+            else
+                unitdLogSuccess(LOG_UNITD_CONSOLE, "%s", status);
             break;
         case FINAL_STATUS_FAILURE:
                 unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s", "Failed");

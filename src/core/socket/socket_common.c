@@ -353,7 +353,7 @@ applyListFilter(Array **unitsDisplay, ListFilter listFilter)
                 break;
             case DEAD_FILTER:
                 match = (pData->pStateData->pState == DEAD &&
-                        (*pData->finalStatus == FINAL_STATUS_READY || *pData->finalStatus == FINAL_STATUS_NOT_READY));
+                        (*pData->finalStatus == FINAL_STATUS_READY || *pData->finalStatus == FINAL_STATUS_SUCCESS));
                 if (!match)
                     remove = true;
                 break;

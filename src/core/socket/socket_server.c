@@ -690,7 +690,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             pStateConflict = &pDataConflict->pStateData->pState;
 
             if (*pStateConflict != DEAD ||
-               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_SUCCESS)) {
                 if (!force) {
                     if (!(*errors))
                         *errors = arrayNew(objectRelease);

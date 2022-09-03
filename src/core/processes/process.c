@@ -79,7 +79,7 @@ startProcess(void *arg)
             pDataConflict = unitConflict->processData;
             pStateConflict = &pDataConflict->pStateData->pState;
             if (*pStateConflict != DEAD ||
-               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_NOT_READY)) {
+               (*pStateConflict == DEAD && *pDataConflict->finalStatus != FINAL_STATUS_SUCCESS)) {
                 arrayAdd(unit->errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_EXEC_ERROR].desc,
                                               unitName, unitNameconflict));
                 *finalStatus = FINAL_STATUS_FAILURE;
@@ -407,7 +407,7 @@ stopProcess(void *arg)
     /* Evaluating the final status */
     if (statusThread == -1 && *pData->exitCode == -1 && *pData->pid != -1 &&
         pData->pStateData->pState == DEAD)
-        *finalStatus = FINAL_STATUS_NOT_READY;
+        *finalStatus = FINAL_STATUS_SUCCESS;
     else
         *finalStatus = FINAL_STATUS_FAILURE;
 
@@ -420,7 +420,7 @@ stopProcess(void *arg)
 
     out:
         if (unit->showResult) {
-            if (*finalStatus == FINAL_STATUS_NOT_READY) {
+            if (*finalStatus == FINAL_STATUS_SUCCESS) {
                 unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
                              WHITE_COLOR, unit->desc, DEFAULT_COLOR);
             }
