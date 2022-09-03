@@ -3,22 +3,28 @@
 #This program is free software; you can redistribute it and/or modify
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
-
-project('Unitd', 'c', version: '1.0.0', default_options: ['warning_level=3', 'prefix=/usr'] )
-
+#
+project('Unitd', 'c', version: '2.0.2', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
+ver = '2.0.2'
 project_name = 'unitd'
 log_name = 'unitd.log'
-unitd_conf_path = get_option('sysconfdir')/project_name
 
+# Get paths
+unitd_conf_path = get_option('sysconfdir')/project_name
 sbin_path = get_option('sbindir')
 units_path = get_option('prefix')/get_option('libdir')/project_name/'units'
 units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = get_option('prefix')/get_option('datadir')/project_name
 unitd_log_path = get_option('localstatedir')/'log'/log_name
+doc_path = get_option('DOC_PATH')
+if doc_path == ''
+    doc_path  = get_option('prefix')/get_option('datadir')/'doc'/project_name+'-'+ver
+endif
 
+# Configuration
 conf_data = configuration_data()
 conf_data.set('OS_NAME', get_option('OS_NAME'))
 conf_data.set('OUR_UTMP_FILE', get_option('OUR_UTMP_FILE'))
@@ -63,7 +69,7 @@ libunitd = library('unitd',
                    'src/core/commands/commands.c', 'src/core/processes/process.c',
                    'src/core/handlers/signals.c', 'src/core/handlers/cleaner.c', 'src/core/handlers/notifier.c',
                    dependencies: deps,
-                   version: '1.0.0',
+                   version: ver,
                    soversion: '0', install: true
                    )
 
@@ -102,6 +108,10 @@ install_subdir('src/extra/functions', install_dir : unitd_data_path)
 install_subdir('src/extra/scripts', install_dir : unitd_data_path)
 install_subdir('src/extra/init.state', install_dir : unitd_data_path)
 install_subdir('src/extra/final.state', install_dir : unitd_data_path)
+
+# Install documentation
+install_data('LICENSE', install_dir : doc_path)
+install_data('README.md', install_dir : doc_path)
 
 # zzz script
 install_data('src/extra/scripts/zzz', install_dir : sbin_path)
