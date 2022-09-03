@@ -28,6 +28,7 @@ FinalStatus=value       (optional and repeatable)
 Desc=value              (optional and repeatable)
 Duration=value          (optional and repeatable)
 RestartNum=value        (optional and repeatable)
+Restartable=value       (optional and repeatable)
 */
 
 /* PARSE_SOCK_RESPONSE functionality
@@ -51,8 +52,8 @@ FinalStatus=value       (optional and repeatable)
 Desc=value              (optional and repeatable)
 Duration=value          (optional and repeatable)
 RestartNum=value        (optional and repeatable)
-Path=value              (optional and repeatable)
 Restartable=value       (optional and repeatable)
+Path=value              (optional and repeatable)
 RestartMax=value        (optional and repeatable)
 Type=value              (optional and repeatable)
 UnitError=value1        (optional and repeatable)
@@ -94,8 +95,8 @@ enum PropertyNameEnum  {
     DESC = 7,
     DURATION = 8,
     RESTARTNUM = 9,
-    PATH = 10,
-    RESTARTABLE = 11,
+    RESTARTABLE = 10,
+    PATH = 11,
     RESTARTMAX = 12,
     TYPE = 13,
     UNITERROR = 14,
@@ -133,8 +134,8 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { DESC, "Desc" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DURATION, "Duration" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTNUM, "RestartNum" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTABLE, "Restartable" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTMAX, "RestartMax" }, true, false, false, 0, NULL, NULL },
     { UNIT, { TYPE, "Type" }, true, false, false, 0, NULL, NULL },
     { UNIT, { UNITERROR, "UnitError" }, true, false, false, 0, NULL, NULL },
@@ -286,6 +287,11 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringConcat(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, unit->restartNum);
         stringConcat(&buffer, TOKEN);
+        /* Restartable */
+        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTABLE].propertyName.desc);
+        stringConcat(&buffer, ASSIGNER);
+        stringConcat(&buffer, ((unit->restart || unit->restartMax > 0) ? "1" : "0"));
+        stringConcat(&buffer, TOKEN);
 
         if (funcType == PARSE_SOCK_RESPONSE) {
             /* Path */
@@ -293,11 +299,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATH].propertyName.desc);
             stringConcat(&buffer, ASSIGNER);
             stringConcat(&buffer, (unitPath ? unitPath : NONE));
-            stringConcat(&buffer, TOKEN);
-            /* Restartable */
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTABLE].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
-            stringConcat(&buffer, ((unit->restart || unit->restartMax > 0) ? "1" : "0"));
             stringConcat(&buffer, TOKEN);
             /* RestartMax */
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTMAX].propertyName.desc);

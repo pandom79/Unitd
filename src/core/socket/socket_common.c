@@ -296,8 +296,8 @@ getListFilterByCommand(Command command)
             case LIST_FAILED_COMMAND:
                 listFilter = FAILED_FILTER;
                 break;
-            case LIST_RESTARTED_COMMAND:
-                listFilter = RESTARTED_FILTER;
+            case LIST_RESTARTABLE_COMMAND:
+                listFilter = RESTARTABLE_FILTER;
                 break;
             default:
                 break;
@@ -313,7 +313,7 @@ getListFilterByOpt(Array *options)
     int len = options ? options->size : 0;
     for (int i = 0; i < len; i++) {
         listFilterOpt = arrayGet(options, i);
-        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= RESTARTED_FILTER; listFilter++) {
+        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= RESTARTABLE_FILTER; listFilter++) {
             if (strcmp(listFilterOpt, LIST_FILTER_DATA[listFilter].desc) == 0) {
                 return listFilter;
             }
@@ -361,8 +361,8 @@ applyListFilter(Array **unitsDisplay, ListFilter listFilter)
                 if (*pData->finalStatus != FINAL_STATUS_FAILURE)
                     remove = true;
                 break;
-            case RESTARTED_FILTER:
-                if (unitDisplay->restartNum == 0)
+            case RESTARTABLE_FILTER:
+                if (!unitDisplay->restart && unitDisplay->restartMax <= 0)
                     remove = true;
                 break;
             default:

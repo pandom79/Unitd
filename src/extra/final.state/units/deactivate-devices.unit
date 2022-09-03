@@ -1,5 +1,5 @@
 [Unit]
-Description = Deactivated devices
+Description = Devices deactivated
 Requires = umount-filesystems
 Type = oneshot
 

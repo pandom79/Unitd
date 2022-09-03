@@ -50,7 +50,7 @@ CommandData COMMANDS_DATA[] = {
     { LIST_STARTED_COMMAND, "list-started" },
     { LIST_DEAD_COMMAND, "list-dead" },
     { LIST_FAILED_COMMAND, "list-failed" },
-    { LIST_RESTARTED_COMMAND, "list-restarted" }
+    { LIST_RESTARTABLE_COMMAND, "list-restartable" }
 };
 int COMMANDS_LEN = 27;
 
@@ -61,7 +61,7 @@ const ListFilterData LIST_FILTER_DATA[] = {
     { STARTED_FILTER, "started" },
     { DEAD_FILTER, "dead" },
     { FAILED_FILTER, "failed" },
-    { RESTARTED_FILTER, "restarted" }
+    { RESTARTABLE_FILTER, "restartable" }
 };
 int LIST_FILTER_LEN = 6;
 

@@ -182,11 +182,11 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
                                     processDataNew(NULL, funcType));
     unit->desc = (unitFrom ? stringNew(unitFrom->desc) : NULL);
     unit->restartNum = (unitFrom ? unitFrom->restartNum : 0);
+    unit->restart = (unitFrom ? unitFrom->restart : false);
+    unit->restartMax = (unitFrom ? unitFrom->restartMax : -1);
 
     if (funcType == PARSE_SOCK_RESPONSE || funcType == PARSE_UNIT) {
         unit->type = (unitFrom ? unitFrom->type : DAEMON);
-        unit->restart = (unitFrom ? unitFrom->restart : false);
-        unit->restartMax = (unitFrom ? unitFrom->restartMax : -1);
         /* Requires */
         unit->requires = (unitFrom ? arrayStrCopy(unitFrom->requires) : NULL);
         /* Conflicts */
