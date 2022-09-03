@@ -423,7 +423,7 @@ int setDefaultStateServer(int *, SockMessageIn *, SockMessageOut **);
 /* Client */
 int showUnitList(SockMessageOut **, ListFilter);
 int showUnitStatus(SockMessageOut **, const char *);
-int showUnit(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
+int showData(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
 int catEditUnit(Command, const char *);
 int createUnit(const char *);
 int showBootAnalyze(SockMessageOut **);

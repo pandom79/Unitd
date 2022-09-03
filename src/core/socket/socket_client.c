@@ -1070,7 +1070,7 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
 }
 
 int
-showUnit(Command command, SockMessageOut **sockMessageOut, const char *arg,
+showData(Command command, SockMessageOut **sockMessageOut, const char *arg,
          bool force, bool restart, bool run, bool reEnable)
 {
     int rv, len, lenErrors;

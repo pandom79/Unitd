@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
             if (command == GET_DEFAULT_STATE_COMMAND)
-                rv = showUnit(command, &sockMessageOut, NULL, false, false, false, false);
+                rv = showData(command, &sockMessageOut, NULL, false, false, false, false);
             else
                 rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
             break;
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
             if (command == STATUS_COMMAND)
                 rv = showUnitStatus(&sockMessageOut, arg);
             else
-                rv = showUnit(command, &sockMessageOut, arg, false, false, false, false);
+                rv = showData(command, &sockMessageOut, arg, false, false, false, false);
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
@@ -305,7 +305,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
             arg = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, arg, force,
+            rv = showData(command, &sockMessageOut, arg, force,
                           command == START_COMMAND ? false : true,
                           false, false);
             break;
@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
             arg = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, arg, false, false, run, false);
+            rv = showData(command, &sockMessageOut, arg, false, false, run, false);
             break;
         case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
             arg = argv[argc - 1];
-            rv = showUnit(command, &sockMessageOut, arg, force, false, run,
+            rv = showData(command, &sockMessageOut, arg, force, false, run,
                           command == ENABLE_COMMAND ? false : true);
             break;
         case CAT_COMMAND:
