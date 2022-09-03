@@ -264,6 +264,7 @@ int main(int argc, char **argv) {
         case LIST_DEAD_COMMAND:
         case LIST_FAILED_COMMAND:
         case LIST_RESTARTABLE_COMMAND:
+        case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             if (argc > 4 ||
                (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
@@ -272,10 +273,17 @@ int main(int argc, char **argv) {
                 rv = 1;
                 goto out;
             }
-            if (command == GET_DEFAULT_STATE_COMMAND)
-                rv = showData(command, &sockMessageOut, NULL, false, false, false, false);
-            else
-                rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
+            switch (command) {
+                case GET_DEFAULT_STATE_COMMAND:
+                    rv = showData(command, &sockMessageOut, NULL, false, false, false, false);
+                    break;
+                case ANALYZE_COMMAND:
+                    rv = showBootAnalyze(&sockMessageOut);
+                    break;
+                default:
+                    rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
+                    break;
+            }
             break;
         case STATUS_COMMAND:
         case STOP_COMMAND:
@@ -350,13 +358,6 @@ int main(int argc, char **argv) {
             }
             rv = catEditUnit(command, arg);
             break;
-        case ANALYZE_COMMAND:
-            if (argc > 4 || (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            rv = showBootAnalyze(&sockMessageOut);
         }
 
     out:
