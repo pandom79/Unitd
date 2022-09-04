@@ -113,6 +113,10 @@ install_subdir('src/extra/final.state', install_dir : unitd_data_path)
 install_data('LICENSE', install_dir : doc_path)
 install_data('README.md', install_dir : doc_path)
 
+# Install bash completion
+install_data('src/extra/completion/bash/unitctl',
+             install_dir : get_option('prefix')/get_option('datadir')/'bash-completion'/'completions')
+
 # zzz script
 install_data('src/extra/scripts/zzz', install_dir : sbin_path)
 install_man('src/extra/man/man8/zzz.8')

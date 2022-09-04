@@ -145,7 +145,7 @@ _unitctl () {
     done
     comps=${new_entries}
 
-    #Show data
+    # Show data
     COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
     unset COMMAND
     return 0
