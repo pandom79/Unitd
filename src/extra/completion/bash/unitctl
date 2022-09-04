@@ -1,0 +1,155 @@
+# unitctl(1) completion                                 -*- shell-script -*-
+#
+# This file is part of unitd.
+#
+# Copyright © 2022 Domenico Panella <pandom79@gmail.com>
+
+COMMAND=
+
+__unitctl() {
+    local mode=$1; shift 1
+    case $COMMAND in
+        "enable")
+           unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "disable")
+           unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "re-enable"|"restart"|"status"|"list-requires"|"list-conflicts"|"list-states"|"cat"|"edit")
+           unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "start")
+           unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "stop")
+           unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
+           unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+    esac;
+}
+
+__contains_word () {
+    local w word=$1; shift
+    for w in "$@"; do
+        [[ $w = "$word" ]] && return
+    done
+}
+
+__get_units() { { __unitctl $1; } | { while read -r a; do echo "$a"; done; }; }
+
+_unitctl () {
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local line=${COMP_WORDS[*]}
+    local -A COMMANDS=(
+        [SYSTEM]='enable re-enable disable restart start stop status list-requires list-conflicts list-states cat edit create list list-enabled list-disabled list-started list-dead list-failed list-restartable analyze poweroff reboot halt kexec get-default set-default'
+        [USER]='enable re-enable disable restart start stop status list-requires list-conflicts list-states cat edit create list list-enabled list-disabled list-started list-dead list-failed list-restartable analyze poweroff'
+    )
+    local -A OPTS=(
+        [SYSTEM]=' --run --force --debug --help --no-wtmp --only-wtmp --no-wall --user '
+        [USER]=' --run --force --debug --help '
+    )
+    local mode comps cur_orig
+    local -a entries new_entries
+
+    cur_orig=$cur
+    if [[ $cur =~ '\\' ]]; then
+        cur="$(echo $cur | xargs echo)"
+    else
+        cur_orig="$(printf '%q' $cur)"
+    fi
+
+    # Check mode
+    if __contains_word "--user" ${line}; then
+        mode="--user"
+        entries=${COMMANDS[USER]}
+        entries+=${OPTS[USER]}
+    else
+        mode=""
+        entries=${COMMANDS[SYSTEM]}
+        entries+=${OPTS[SYSTEM]}
+    fi
+
+    # Command handling
+    if __contains_word "enable" ${line}; then
+         COMMAND="enable"
+    elif __contains_word "re-enable" ${line}; then
+        COMMAND="re-enable"
+    elif __contains_word "disable" ${line}; then
+        COMMAND="disable"
+    elif __contains_word "restart" ${line}; then
+        COMMAND="restart"
+    elif __contains_word "start" ${line}; then
+        COMMAND="start"
+    elif __contains_word "stop" ${line}; then
+        COMMAND="stop"
+    elif __contains_word "status" ${line}; then
+        COMMAND="status"
+    elif __contains_word "list-requires" ${line}; then
+        COMMAND="list-requires"
+    elif __contains_word "list-conflicts" ${line}; then
+        COMMAND="list-conflicts"
+    elif __contains_word "list-states" ${line}; then
+        COMMAND="list-states"
+    elif __contains_word "cat" ${line}; then
+        COMMAND="cat"
+    elif __contains_word "edit" ${line}; then
+        COMMAND="edit"
+    elif __contains_word "set-default" ${line}; then
+        local -a states=('reboot poweroff multi-user multi-user-net graphical custom single-user')
+        entries=${states}
+    elif __contains_word "get-default" ${line}; then
+        COMMAND="get-default"
+    elif __contains_word "create" ${line}; then
+        COMMAND="create"
+    elif __contains_word "list" ${line}; then
+        COMMAND="list"
+    elif __contains_word "list-enabled" ${line}; then
+        COMMAND="list-enabled"
+    elif __contains_word "list-disabled" ${line}; then
+        COMMAND="list-disabled"
+    elif __contains_word "list-started" ${line}; then
+        COMMAND="list-started"
+    elif __contains_word "list-dead" ${line}; then
+        COMMAND="list-dead"
+    elif __contains_word "list-failed" ${line}; then
+        COMMAND="list-failed"
+    elif __contains_word "list-restartable" ${line}; then
+        COMMAND="list-restartable"
+    elif __contains_word "analyze" ${line}; then
+        COMMAND="analyze"
+    elif __contains_word "poweroff" ${line}; then
+        COMMAND="poweroff"
+    elif __contains_word "reboot" ${line}; then
+        COMMAND="reboot"
+    elif __contains_word "halt" ${line}; then
+        COMMAND="halt"
+    elif __contains_word "kexec" ${line}; then
+        COMMAND="kexec"
+    fi
+
+    if [ ! -z $COMMAND ]; then
+        entries=$( __get_units $mode )
+        if [[ "$mode" = '--user' ]]; then
+            entries+=${OPTS[USER]}
+        else
+            entries+=${OPTS[SYSTEM]}
+        fi
+    fi
+
+    # Remove duplicate entries
+    for entry in ${entries};
+    do
+        if ! __contains_word "$entry" ${line}; then
+            new_entries+="$entry "
+        fi
+    done
+    comps=${new_entries}
+
+    #Show data
+    COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
+    unset COMMAND
+    return 0
+}
+
+complete -F _unitctl unitctl
+
