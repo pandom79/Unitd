@@ -13,28 +13,35 @@ project_name = 'unitd'
 log_name = 'unitd.log'
 
 # Get paths
-unitd_conf_path = get_option('sysconfdir')/project_name
+prefix = get_option('prefix')
+sysconfdir = get_option('sysconfdir')
+datadir = get_option('datadir')
+localstatedir = get_option('localstatedir')
 sbin_path = get_option('sbindir')
-units_path = get_option('prefix')/get_option('libdir')/project_name/'units'
+libdir = get_option('libdir')
+
+# Setting unitd macro path
+unitd_conf_path = sysconfdir/project_name
+units_path = prefix/libdir/project_name/'units'
 units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
-unitd_data_path = get_option('prefix')/get_option('datadir')/project_name
-unitd_log_path = get_option('localstatedir')/'log'/log_name
+unitd_data_path = prefix/datadir/project_name
+unitd_log_path = localstatedir/'log'/log_name
 doc_path = get_option('DOC_PATH')
 if doc_path == ''
-    doc_path  = get_option('prefix')/get_option('datadir')/'doc'/project_name+'-'+ver
+    doc_path  = prefix/datadir/'doc'/project_name+'-'+ver
 endif
 bash_comp_path = get_option('BASH_COMP_PATH')
 if (bash_comp_path == '')
-    bash_comp_path = get_option('prefix')/get_option('datadir')/'bash-completion'/'completions'
+    bash_comp_path = prefix/datadir/'bash-completion'/'completions'
 endif
 our_utmp_file = get_option('OUR_UTMP_FILE')
 if (our_utmp_file == '')
-    our_utmp_file = get_option('localstatedir')/'run'/'utmp'
+    our_utmp_file = localstatedir/'run'/'utmp'
 endif
 our_wtmp_file = get_option('OUR_WTMP_FILE')
 if (our_wtmp_file == '')
-    our_wtmp_file = get_option('localstatedir')/'log'/'wtmp'
+    our_wtmp_file = localstatedir/'log'/'wtmp'
 endif
 
 # Configuration
@@ -53,8 +60,7 @@ conf_data.set('DAEMON_SIGNAL_TIME', get_option('DAEMON_SIGNAL_TIME'))
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Dependencies
-libwrapper = meson.get_compiler('c').find_library('libwrapper', required : true)
-deps = [dependency('threads'), libwrapper]
+deps = [dependency('threads'), dependency('wrapper')]
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error
 # We set 'check: false' because we don't interest about its exit code
@@ -71,7 +77,7 @@ run_command('pgrep', check: false)
 message('Pgrep command found!')
 
 # Unitd lib
-libunitd = library('unitd',
+libunitd = library(project_name,
                    'src/include/unitd.h', 'src/include/unitd_types.h', 'src/core/unitd_impl.h',
                    'src/core/init/init.c', 'src/core/logger/logger.c',
                    'src/core/common/common.c', 'src/core/socket/socket_client.c',
@@ -85,13 +91,20 @@ libunitd = library('unitd',
                    soversion: so_ver, install: true
                    )
 
+# Generate pc file
+pkg = import('pkgconfig')
+pkg.generate(libunitd,
+             description: 'Unitd init system library',
+             subdirs: project_name
+            )
+
 # Headers
-install_headers('src/include/unitd.h', subdir : 'unitd')
-install_headers('src/include/unitd_types.h', subdir : 'unitd')
-install_headers('build/unitd_config.h', subdir : 'unitd')
+install_headers('src/include/unitd.h', subdir : project_name)
+install_headers('src/include/unitd_types.h', subdir : project_name)
+install_headers('build/unitd_config.h', subdir : project_name)
 
 # Executables
-executable('unitd', 'src/bin/unitd/main.c',
+executable(project_name, 'src/bin/unitd/main.c',
            link_with: libunitd,
            install: true,
            dependencies: deps,
@@ -122,14 +135,14 @@ install_subdir('src/extra/init.state', install_dir : unitd_data_path)
 install_subdir('src/extra/final.state', install_dir : unitd_data_path)
 
 # Install documentation
-install_data('LICENSE', install_dir : doc_path)
-install_data('README.md', install_dir : doc_path)
+install_data('LICENSE', install_dir: doc_path)
+install_data('README.md', install_dir: doc_path)
 
 # Install bash completion
-install_data('src/extra/completion/bash/unitctl', install_dir : bash_comp_path)
+install_data('src/extra/completion/bash/unitctl', install_dir: bash_comp_path)
 
 # zzz script
-install_data('src/extra/scripts/zzz', install_dir : sbin_path)
+install_data('src/extra/scripts/zzz', install_dir: sbin_path)
 install_man('src/extra/man/man8/zzz.8')
 
 # Execute 'unitd-check' initialization unit to create the folders tree
