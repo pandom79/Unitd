@@ -8,6 +8,7 @@ project('Unitd', 'c', version: '2.0.2', default_options: ['warning_level=3', 'pr
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
 ver = '2.0.2'
+so_ver = '2'
 project_name = 'unitd'
 log_name = 'unitd.log'
 
@@ -81,7 +82,7 @@ libunitd = library('unitd',
                    'src/core/handlers/signals.c', 'src/core/handlers/cleaner.c', 'src/core/handlers/notifier.c',
                    dependencies: deps,
                    version: ver,
-                   soversion: '0', install: true
+                   soversion: so_ver, install: true
                    )
 
 # Headers
