@@ -23,12 +23,24 @@ doc_path = get_option('DOC_PATH')
 if doc_path == ''
     doc_path  = get_option('prefix')/get_option('datadir')/'doc'/project_name+'-'+ver
 endif
+bash_comp_path = get_option('BASH_COMP_PATH')
+if (bash_comp_path == '')
+    bash_comp_path = get_option('prefix')/get_option('datadir')/'bash-completion'/'completions'
+endif
+our_utmp_file = get_option('OUR_UTMP_FILE')
+if (our_utmp_file == '')
+    our_utmp_file = get_option('localstatedir')/'run'/'utmp'
+endif
+our_wtmp_file = get_option('OUR_WTMP_FILE')
+if (our_wtmp_file == '')
+    our_wtmp_file = get_option('localstatedir')/'log'/'wtmp'
+endif
 
 # Configuration
 conf_data = configuration_data()
 conf_data.set('OS_NAME', get_option('OS_NAME'))
-conf_data.set('OUR_UTMP_FILE', get_option('OUR_UTMP_FILE'))
-conf_data.set('OUR_WTMP_FILE', get_option('OUR_WTMP_FILE'))
+conf_data.set('OUR_UTMP_FILE', our_utmp_file)
+conf_data.set('OUR_WTMP_FILE', our_wtmp_file)
 conf_data.set('UNITS_PATH', units_path)
 conf_data.set('UNITS_USER_PATH', units_user_path)
 conf_data.set('UNITS_ENAB_PATH', units_enab_path)
@@ -42,7 +54,6 @@ configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configurati
 # Dependencies
 libwrapper = meson.get_compiler('c').find_library('libwrapper', required : true)
 deps = [dependency('threads'), libwrapper]
-
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error
 # We set 'check: false' because we don't interest about its exit code
@@ -114,8 +125,7 @@ install_data('LICENSE', install_dir : doc_path)
 install_data('README.md', install_dir : doc_path)
 
 # Install bash completion
-install_data('src/extra/completion/bash/unitctl',
-             install_dir : get_option('prefix')/get_option('datadir')/'bash-completion'/'completions')
+install_data('src/extra/completion/bash/unitctl', install_dir : bash_comp_path)
 
 # zzz script
 install_data('src/extra/scripts/zzz', install_dir : sbin_path)
