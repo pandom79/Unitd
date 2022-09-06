@@ -306,7 +306,7 @@ void notifierRelease(Notifier **);
 /*********************************************************************************/
 
 /* COMMANDS */
-#define TIMEOUT_INC_MS            250
+#define TIMEOUT_INC_MS            100
 //Start
 #define TIMEOUT_MS              15000
 #define MIN_TIMEOUT_MS           3500
@@ -369,7 +369,6 @@ void* startNotifiersThread(void *);
 void* runNotifiersThread(void *);
 void stopNotifiers();
 void* stopNotifiersThread(void *);
-
 /*********************************************************************************/
 
 /* SOCKET */

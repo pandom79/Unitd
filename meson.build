@@ -10,7 +10,6 @@ add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 ver = '2.0.2'
 so_ver = '2'
 project_name = 'unitd'
-log_name = 'unitd.log'
 
 # Get paths
 prefix = get_option('prefix')
@@ -26,7 +25,7 @@ units_path = prefix/libdir/project_name/'units'
 units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = prefix/datadir/project_name
-unitd_log_path = localstatedir/'log'/log_name
+unitd_log_path = localstatedir/'log'/project_name+'.log'
 doc_path = get_option('DOC_PATH')
 if doc_path == ''
     doc_path  = prefix/datadir/'doc'/project_name+'-'+ver
@@ -98,12 +97,12 @@ pkg.generate(libunitd,
              subdirs: project_name
             )
 
-# Headers
+# Install headers
 install_headers('src/include/unitd.h', subdir : project_name)
 install_headers('src/include/unitd_types.h', subdir : project_name)
 install_headers('build/unitd_config.h', subdir : project_name)
 
-# Executables
+# Install executables
 executable(project_name, 'src/bin/unitd/main.c',
            link_with: libunitd,
            install: true,
@@ -123,7 +122,7 @@ executable('seedrng', 'src/extra/src/seedrng.c',
            install_dir: sbin_path
            )
 
-# Configuration
+# Install Configuration
 install_data(project_name + '.conf', install_dir: unitd_conf_path)
 install_data(project_name + '.conf', install_dir: unitd_data_path,
              rename: project_name + '.conf.sample')
@@ -141,7 +140,7 @@ install_data('README.md', install_dir: doc_path)
 # Install bash completion
 install_data('src/extra/completion/bash/unitctl', install_dir: bash_comp_path)
 
-# zzz script
+# Install zzz script and man page
 install_data('src/extra/scripts/zzz', install_dir: sbin_path)
 install_man('src/extra/man/man8/zzz.8')
 

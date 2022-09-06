@@ -318,11 +318,11 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
     int rv, lenUnits, maxLenName, maxLenDesc, len, *finalStatus;
     Array *unitsDisplay = NULL;
     Unit *unitDisplay = NULL;
-    const char *unitName, *status;
+    const char *unitName, *status, *unitDesc;
     bool enabled = false;
     pid_t *pid;
 
-    unitName = status = NULL;
+    unitName = status = unitDesc = NULL;
     rv = lenUnits = maxLenName = maxLenDesc = len = -1;
 
     /* Filling sockMessageOut */
@@ -359,13 +359,11 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
             PStateData *pStateData = pData->pStateData;
             PState pState = pStateData->pState;
 
-            /* Unit name */
+            /* Unit name
+             * Warning: don't color unit name because the bash completion fails
+            */
             unitName = unitDisplay->name;
-            /* The restarted units require attention */
-            if (unitDisplay->restartNum > 0)
-                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", unitName);
-            else
-                printf("%s", unitName);
+            printf("%s", unitName);
             len = strlen(unitName);
             if (maxLenName < len)
                 maxLenName = len;
@@ -400,7 +398,12 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
             else
                 printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
             /* Description */
-            printf("%s", unitDisplay->desc);
+            unitDesc = unitDisplay->desc;
+            /* The restarted units require attention */
+            if (unitDisplay->restartNum > 0)
+                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", unitDesc);
+            else
+                printf("%s", unitDesc);
             printf("\n");
         }
         printf("\n%d units found\n", lenUnits);
