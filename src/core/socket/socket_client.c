@@ -318,11 +318,11 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
     int rv, lenUnits, maxLenName, maxLenDesc, len, *finalStatus;
     Array *unitsDisplay = NULL;
     Unit *unitDisplay = NULL;
-    const char *unitName, *status, *unitDesc;
+    const char *unitName, *status;
     bool enabled = false;
     pid_t *pid;
 
-    unitName = status = unitDesc = NULL;
+    unitName = status = NULL;
     rv = lenUnits = maxLenName = maxLenDesc = len = -1;
 
     /* Filling sockMessageOut */
@@ -386,7 +386,11 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
             }
             else
                 sprintf(pidStr, "%d", *pid);
-            printf("%s", pidStr);
+            /* The restarted units require attention */
+            if (unitDisplay->restartNum > 0)
+                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", pidStr);
+            else
+                printf("%s", pidStr);
             printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
 
             /* STATUS */
@@ -398,12 +402,7 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
             else
                 printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
             /* Description */
-            unitDesc = unitDisplay->desc;
-            /* The restarted units require attention */
-            if (unitDisplay->restartNum > 0)
-                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", unitDesc);
-            else
-                printf("%s", unitDesc);
+            printf("%s", unitDisplay->desc);
             printf("\n");
         }
         printf("\n%d units found\n", lenUnits);

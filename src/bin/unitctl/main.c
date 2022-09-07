@@ -32,6 +32,7 @@ getSkipCheckAdmin(Command command)
         case LIST_DEAD_COMMAND:
         case LIST_FAILED_COMMAND:
         case LIST_RESTARTABLE_COMMAND:
+        case LIST_RESTARTED_COMMAND:
         case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             return true;
@@ -70,6 +71,7 @@ showUsage()
             "list-dead          List the dead units\n"
             "list-failed        List the failed units\n"
             "list-restartable   List the restartable units\n"
+            "list-restarted     List the restarted units\n"
     );
     fprintf(stdout,
             "analyze            Analyze the %s boot process\n",
@@ -264,6 +266,7 @@ int main(int argc, char **argv) {
         case LIST_DEAD_COMMAND:
         case LIST_FAILED_COMMAND:
         case LIST_RESTARTABLE_COMMAND:
+        case LIST_RESTARTED_COMMAND:
         case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             if (argc > 4 ||

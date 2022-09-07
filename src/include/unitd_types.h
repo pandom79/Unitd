@@ -194,6 +194,7 @@ typedef enum {
     LIST_DEAD_COMMAND = 24,
     LIST_FAILED_COMMAND = 25,
     LIST_RESTARTABLE_COMMAND = 26,
+    LIST_RESTARTED_COMMAND = 27,
 } Command;
 
 /* Socket */
@@ -211,7 +212,8 @@ typedef enum {
     STARTED_FILTER = 2,
     DEAD_FILTER = 3,
     FAILED_FILTER = 4,
-    RESTARTABLE_FILTER = 5
+    RESTARTABLE_FILTER = 5,
+    RESTARTED_FILTER = 6
 } ListFilter ;
 
 #endif //UNITD_TYPES_H

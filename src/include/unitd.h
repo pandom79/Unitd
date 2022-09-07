@@ -26,7 +26,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall);
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
-getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter);
+getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter listFilter);
 
 /* Get the unit data.
  * The "unit name" argument can also contain the ".unit" suffix.
