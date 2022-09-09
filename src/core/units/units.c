@@ -688,7 +688,6 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                 /* The error string is allocated even if the stringSplit
                  * has been called with 'false' argument
                 */
-                objectRelease(&error);
                 if (!isAggregate)
                     break;
                 else {

@@ -24,8 +24,7 @@ static ErrorsData ERRORS_ITEMS[] = {
     { ACCEPTED_VALUE_ERR, "The '%s' value for the '%s' property is not allowed!" },
     { DUPLICATE_VALUE_ERR, "Duplicate value for the '%s' property!" },
     { REQUIRED_VALUE_ERR, "The '%s' %s is required!" },
-    { NUMERIC_ERR, "The '%s' property only accepts a numeric value greater than zero!" },
-    { OCCURRENCES_EQUAL_ERR, "Bad occurrences number of the equal (=) symbol!" },
+    { NUMERIC_ERR, "The '%s' property only accepts a numeric value greater than zero!" }
 };
 
 void
@@ -146,18 +145,12 @@ parseLine(char *line, int numLine, Array **keyVal, PropertyData **propertyData)
             return rv;
 
         /* Split */
-        *keyVal = stringSplit(line, "=", false);
+        *keyVal = stringSplitFirst(line, "=");
         if (!(*keyVal)) {
-            *keyVal = arrayNew(NULL);
+            *keyVal = arrayNew(objectRelease);
             /* Adding only the key which represents a Section */
-            arrayAdd(*keyVal, line);
+            arrayAdd(*keyVal, stringNew(line));
             arrayAdd(*keyVal, NULL);
-        }
-        else if (*keyVal && (*keyVal)->size > 2) {
-            arraySet(*keyVal, getMsg(numLine, ERRORS_ITEMS[OCCURRENCES_EQUAL_ERR].desc), 2);
-            rv = 1;
-            goto out;
-
         }
         key = arrayGet(*keyVal, 0);
         value = arrayGet(*keyVal, 1);
@@ -174,8 +167,7 @@ parseLine(char *line, int numLine, Array **keyVal, PropertyData **propertyData)
         rv = 1;
     }
 
-    out:
-        return rv;
+    return rv;
 }
 
 char*

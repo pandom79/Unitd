@@ -137,8 +137,7 @@ typedef enum {
     ACCEPTED_VALUE_ERR = 4,
     DUPLICATE_VALUE_ERR = 5,
     REQUIRED_VALUE_ERR = 6,
-    NUMERIC_ERR = 7,
-    OCCURRENCES_EQUAL_ERR = 8,
+    NUMERIC_ERR = 7
 } ErrorsEnum;
 
 typedef struct {
