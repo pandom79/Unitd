@@ -59,9 +59,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
 
             if (unit->type == ONESHOT) {
                 if (infoCode == CLD_EXITED) {
-                    timeSetCurrent(&pData->timeStop);
-                    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
-                    stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
+                    setStopAndDuration(&pData);
                     *pData->exitCode = info->si_status;
                     *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
                 }
@@ -72,9 +70,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                         *exitCode = info->si_status;
                         *finalStatus = FINAL_STATUS_FAILURE;
                         *pStateData = PSTATE_DATA_ITEMS[EXITED];
-                        timeSetCurrent(&pData->timeStop);
-                        stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
-                        stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
+                        setStopAndDuration(&pData);
                         if (UNITD_DEBUG) {
                             syslog(LOG_DAEMON | LOG_DEBUG,
                                    "The process %s with pid %d is exited with the following values: "
@@ -98,9 +94,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                         *finalStatus = FINAL_STATUS_FAILURE;
                         *pStateData = PSTATE_DATA_ITEMS[KILLED];
                         *pData->signalNum = info->si_status;
-                        timeSetCurrent(&pData->timeStop);
-                        stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
-                        stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
+                        setStopAndDuration(&pData);
                         if (UNITD_DEBUG) {
                             syslog(LOG_DAEMON | LOG_DEBUG,
                                    "The process %s with pid %d is terminated with the following values: "

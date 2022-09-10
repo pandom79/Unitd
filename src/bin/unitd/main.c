@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
     }
 
     /* Boot start */
-    timeSetCurrent(&BOOT_START);
+    BOOT_START = timeNew(NULL);
 
     /* Set PID */
     UNITD_PID = setsid();
@@ -216,9 +216,8 @@ int main(int argc, char **argv) {
 
     if (SHUTDOWN_START) {
         /* Print Shutdown time */
-        timeSetCurrent(&SHUTDOWN_STOP);
-        char *diff = NULL;
-        stringSetDiffTime(&diff, SHUTDOWN_STOP, SHUTDOWN_START);
+        SHUTDOWN_STOP = timeNew(NULL);
+        char *diff = stringGetDiffTime(SHUTDOWN_STOP, SHUTDOWN_START);
         char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
         unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "%s\n", msg);
         objectRelease(&diff);

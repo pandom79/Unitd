@@ -137,7 +137,7 @@ listenSocketRequest()
     addToMonitoredFdSet(socketConnection);
 
     /* Stop boot */
-    timeSetCurrent(&BOOT_STOP);
+    BOOT_STOP = timeNew(NULL);
 
     /* Main loop */
     while (!IS_SHUTDOWN_COMMAND) {
@@ -304,12 +304,10 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay);
         fillUnitsDisplayList(&UNITD_DATA->initUnits, &unitsDisplay);
         /* Adding "boot and system execution time like messages" */
-        char *diffBooTime, *diffExecTime;
-        diffBooTime = diffExecTime = NULL;
         Time *current = timeNew(NULL);
         /* Computing the duration */
-        stringSetDiffTime(&diffBooTime, BOOT_STOP, BOOT_START);
-        stringSetDiffTime(&diffExecTime, current, BOOT_START);
+        char *diffBooTime = stringGetDiffTime(BOOT_STOP, BOOT_START);
+        char *diffExecTime = stringGetDiffTime(current, BOOT_START);
         /* Adding the messages */
         if (!(*messages))
             *messages = arrayNew(objectRelease);

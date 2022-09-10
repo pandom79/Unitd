@@ -463,6 +463,7 @@ int setUserData(int, struct passwd **);
 void userDataRelease();
 int handleMutex(pthread_mutex_t *, int);
 void* handleMutexThread(void *);
+void setStopAndDuration(ProcessData **);
 /*********************************************************************************/
 
 #endif // UNITD_IMPL_H

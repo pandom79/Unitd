@@ -272,8 +272,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         else {
             if (pData->timeStart) {
                 Time *currentTimeStop = timeNew(NULL);
-                char *diff = NULL;
-                stringSetDiffTime(&diff, currentTimeStop, pData->timeStart);
+                char *diff = stringGetDiffTime(currentTimeStop, pData->timeStart);
                 stringConcat(&buffer, diff);
                 timeRelease(&currentTimeStop);
                 objectRelease(&diff);

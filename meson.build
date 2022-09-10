@@ -4,11 +4,11 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '2.0.2', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '3.0.0', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '2.0.2'
-so_ver = '2'
+ver = '3.0.0'
+so_ver = '3'
 project_name = 'unitd'
 
 # Get paths
@@ -59,7 +59,7 @@ conf_data.set('DAEMON_SIGNAL_TIME', get_option('DAEMON_SIGNAL_TIME'))
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Dependencies
-deps = [dependency('threads'), dependency('wrapper')]
+deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.0')]
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error
 # We set 'check: false' because we don't interest about its exit code

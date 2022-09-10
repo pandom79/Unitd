@@ -147,9 +147,7 @@ execProcess(const char *command, char **argv, Unit **unit)
 
                     /* If the values has not been set by signal handler then we set them here */
                     if (*pData->exitCode == -1) {
-                        timeSetCurrent(&pData->timeStop);
-                        stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
-                        stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
+                        setStopAndDuration(&pData);
                         *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
                         *pData->exitCode = WEXITSTATUS(status);
                     }
@@ -184,13 +182,10 @@ execProcess(const char *command, char **argv, Unit **unit)
                  * to avoid zombie process creation
                 */
                 waitpid(child, &status, WNOHANG);
-
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
                 *pData->signalNum = SIGKILL;
-                timeSetCurrent(&pData->timeStop);
-                stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
-                stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
+                setStopAndDuration(&pData);
                 if ((*unit)->showResult)
                     unitdLogErrorStr(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "Timeout expired for the %s unit!\n", (*unit)->name);
                 arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc,
@@ -308,10 +303,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
     *pData->exitCode = -1;
     *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
     *pData->signalNum = SIGKILL;
-    timeSetCurrent(&pData->timeStop);
-    stringSetTimeStamp(&pData->dateTimeStopStr, pData->timeStop);
-    stringSetDiffTime(&pData->duration, pData->timeStop, pData->timeStart);
-
+    setStopAndDuration(&pData);
     if (UNITD_DEBUG)
         unitdLogInfo(LOG_UNITD_BOOT, "The %s unit has been stopped with the following values:\n"
                                      "type = %s\n"

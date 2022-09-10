@@ -41,8 +41,13 @@ startProcess(void *arg)
     unitMutex = unit->mutex;
     finalStatus = pData->finalStatus;
     pDataHistory = unit->processDataHistory;
-    timeSetCurrent(&pData->timeStart);
-    stringSetTimeStamp(&pData->dateTimeStartStr, pData->timeStart);
+
+    /* Time start */
+    timeRelease(&pData->timeStart);
+    pData->timeStart = timeNew(NULL);
+    /* Timestamp start */
+    objectRelease(&pData->dateTimeStartStr);
+    pData->dateTimeStartStr = stringGetTimeStamp(pData->timeStart, false);
 
     /* Lock the mutex */
     if ((rv = pthread_mutex_lock(unitMutex)) != 0) {

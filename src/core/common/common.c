@@ -535,3 +535,18 @@ handleMutex(pthread_mutex_t *mutex, int lock)
 
     return rv;
 }
+
+void
+setStopAndDuration(ProcessData **processData)
+{
+    assert(*processData);
+    // Time stop
+    timeRelease(&(*processData)->timeStop);
+    (*processData)->timeStop = timeNew(NULL);
+    // Date time stop
+    objectRelease(&(*processData)->dateTimeStopStr);
+    (*processData)->dateTimeStopStr = stringGetTimeStamp((*processData)->timeStop, false);
+    // Duration
+    objectRelease(&(*processData)->duration);
+    (*processData)->duration = stringGetDiffTime((*processData)->timeStop, (*processData)->timeStart);
+}

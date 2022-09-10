@@ -212,17 +212,17 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     startProcesses(units, NULL);
     ENABLE_RESTART = true;
     unitdCloseLog();
+    /* Create the boot units array */
+    addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
 
-    /* Create the boot units array */
-    addBootUnits(bootUnits, units);
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
     shutdown:
         /* Shutdown start */
-        timeSetCurrent(&SHUTDOWN_START);
+        SHUTDOWN_START = timeNew(NULL);
         /* Open the log in append mode if it is closed */
         if (!UNITD_LOG_FILE)
             unitdOpenLog("a");
@@ -338,7 +338,8 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
 
     shutdown:
         /* Shutdown start */
-        timeSetCurrent(&SHUTDOWN_START);
+        SHUTDOWN_START = timeNew(NULL);
+
         /* Open the log in append mode if it is closed */
         if (!UNITD_LOG_FILE)
             unitdOpenLog("a");
