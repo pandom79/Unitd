@@ -1,0 +1,216 @@
+.Dd September 11, 2022
+.Dt unitctl 8
+.Sh NAME
+.Nm unitctl
+.Nd unitd client
+.Sh SYNOPSIS
+.Nm unitctl [sub-command]
+.Op Fl rfdhnowu
+.Sh DESCRIPTION
+.Nm
+is the unitd client which takes care to make the requests for units handling.
+.Ss Sub-commands
+.Bd -tag -width indent
+enable
+.Ed
+.Bd -ragged -offset indent
+Enable the unit
+.Ed
+.Bd -tag -width indent
+re-enable
+.Ed
+.Bd -ragged -offset indent
+Re-enable the unit
+.Ed
+.Bd -tag -width indent
+disable
+.Ed
+.Bd -ragged -offset indent
+Disable the unit
+.Ed
+.Bd -tag -width indent
+restart
+.Ed
+.Bd -ragged -offset indent
+Restart the unit
+.Ed
+.Bd -tag -width indent
+start
+.Ed
+.Bd -ragged -offset indent
+Start the unit
+.Ed
+.Bd -tag -width indent
+stop
+.Ed
+.Bd -ragged -offset indent
+Stop the unit
+.Ed
+.Bd -tag -width indent
+status
+.Ed
+.Bd -ragged -offset indent
+Status the unit
+.Ed
+.Bd -tag -width indent
+list-requires
+.Ed
+.Bd -ragged -offset indent
+List the unit dependencies
+.Ed
+.Bd -tag -width indent
+list-conflicts
+.Ed
+.Bd -ragged -offset indent
+List the unit conflicts
+.Ed
+.Bd -tag -width indent
+list-states
+.Ed
+.Bd -ragged -offset indent
+List the unit wanted states
+.Ed
+.Bd -tag -width indent
+cat
+.Ed
+.Bd -ragged -offset indent
+Show the unit content
+.Ed
+.Bd -tag -width indent
+edit
+.Ed
+.Bd -ragged -offset indent
+Edit the unit content
+.Ed
+.Bd -tag -width indent
+list
+.Ed
+.Bd -ragged -offset indent
+List the units
+.Ed
+.Bd -tag -width indent
+list-enabled
+.Ed
+.Bd -ragged -offset indent
+List the enabled units
+.Ed
+.Bd -tag -width indent
+list-disabled
+.Ed
+.Bd -ragged -offset indent
+List the disabled units
+.Ed
+.Bd -tag -width indent
+list-started
+.Ed
+.Bd -ragged -offset indent
+List the started units
+.Ed
+.Bd -tag -width indent
+list-dead
+.Ed
+.Bd -ragged -offset indent
+List the dead units
+.Ed
+.Bd -tag -width indent
+list-failed
+.Ed
+.Bd -ragged -offset indent
+List the failed units
+.Ed
+.Bd -tag -width indent
+list-restartable
+.Ed
+.Bd -ragged -offset indent
+List the restartable units
+.Ed
+.Bd -tag -width indent
+list-restarted
+.Ed
+.Bd -ragged -offset indent
+List the restarted units
+.Ed
+.Bd -tag -width indent
+analyze
+.Ed
+.Bd -ragged -offset indent
+Analyze the system boot process
+.Ed
+.Bd -tag -width indent
+poweroff
+.Ed
+.Bd -ragged -offset indent
+Shutdown and power off the system
+.Ed
+.Bd -tag -width indent
+reboot
+.Ed
+.Bd -ragged -offset indent
+Shutdown and reboot the system
+.Ed
+.Bd -tag -width indent
+halt
+.Ed
+.Bd -ragged -offset indent
+Shutdown and halt the system
+.Ed
+.Bd -tag -width indent
+kexec
+.Ed
+.Bd -ragged -offset indent
+Shutdown and reboot the system with kexec
+.Ed
+.Bd -tag -width indent
+get-default
+.Ed
+.Bd -ragged -offset indent
+Get the default state
+.Ed
+.Bd -tag -width indent
+set-default
+.Ed
+.Bd -ragged -offset indent
+Set the default state
+.Ed
+.It
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl r
+Run the operation
+.Bd -tag -width indent
+It works with the following sub-commands: enable, disable and re-enable
+.Ed
+.It Fl f
+Force the operation
+.Bd -tag -width indent
+It works with the following sub-commands: enable, disable, re-enable, reboot, halt, poweroff, kexec, start and restart.
+.Ed
+.It Fl d
+Enable the debug
+.It Fl h
+Show the usage
+.It Fl n
+Don't write a wtmp record
+.Bd -tag -width indent
+It works with the following sub-commands: reboot, halt, poweroff and kexec.
+.Ed
+.It Fl o
+Only write a wtmp/utmp reboot record and exit
+.It Fl w
+Don't write a message to all users
+.Bd -tag -width indent
+It works with the following sub-commands: reboot, halt, poweroff and kexec.
+.Ed
+.It Fl u
+Connect to user unitd instance
+
+.Sh SEE ALSO
+.Xr unitd 8
+.Sh AUTHOR
+.An Domenico Panella <pandom79@gmail.com>
+.Sh BUGS
+Open an issue on
+.Mt https://github.com/pandom79/Unitd/issues
+.Sh LICENSE
+.Nm
+is distributed under GNU General Public License v3.0 conditions.

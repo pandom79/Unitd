@@ -18,6 +18,7 @@ datadir = get_option('datadir')
 localstatedir = get_option('localstatedir')
 sbin_path = get_option('sbindir')
 libdir = get_option('libdir')
+mandir = get_option('mandir')
 
 # Setting unitd macro path
 unitd_conf_path = sysconfdir/project_name
@@ -128,10 +129,10 @@ install_data(project_name + '.conf', install_dir: unitd_data_path,
              rename: project_name + '.conf.sample')
 
 # Install extra data
-install_subdir('src/extra/functions', install_dir : unitd_data_path)
-install_subdir('src/extra/scripts', install_dir : unitd_data_path)
-install_subdir('src/extra/init.state', install_dir : unitd_data_path)
-install_subdir('src/extra/final.state', install_dir : unitd_data_path)
+install_subdir('src/extra/functions', install_dir: unitd_data_path)
+install_subdir('src/extra/scripts', install_dir: unitd_data_path)
+install_subdir('src/extra/init.state', install_dir: unitd_data_path)
+install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 
 # Install documentation
 install_data('LICENSE', install_dir: doc_path)
@@ -140,9 +141,11 @@ install_data('README.md', install_dir: doc_path)
 # Install bash completion
 install_data('src/extra/completion/bash/unitctl', install_dir: bash_comp_path)
 
-# Install zzz script and man page
+# Install zzz script
 install_data('src/extra/scripts/zzz', install_dir: sbin_path)
-install_man('src/extra/man/man8/zzz.8')
+
+# Install man pages
+install_subdir('src/extra/man/man8', install_dir: mandir)
 
 # Execute 'unitd-check' initialization unit to create the folders tree
 env = environment()

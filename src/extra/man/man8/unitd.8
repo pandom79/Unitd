@@ -1,0 +1,39 @@
+.Dd September 11, 2022
+.Dt unitd 8
+.Sh NAME
+.Nm unitd
+.Nd init system
+.Sh SYNOPSIS
+.Nm unitd
+.Op Fl dh
+.Sh DESCRIPTION
+.Nm
+(Unit daemon) is a simple, fast and modern init system which is mainly focused
+.It
+on an accurate processes supervision.
+.It
+It can be started as a system or user instance.
+.It
+In the first case, it will be the first process to be started (Pid 1).
+.It
+Every process is named "unit" and will has ".unit" as configuration file extension
+.It
+The units handling is possible via
+.Pa unitctl
+command.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl d
+Enable the debug
+.It Fl h
+Show usage
+.Sh SEE ALSO
+.Xr unitctl 8
+.Sh AUTHOR
+.An Domenico Panella <pandom79@gmail.com>
+.Sh BUGS
+Open an issue on
+.Mt https://github.com/pandom79/Unitd/issues
+.Sh LICENSE
+.Nm
+is distributed under GNU General Public License v3.0 conditions.
