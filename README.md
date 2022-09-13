@@ -36,7 +36,10 @@ For the system instance, the available states are:
 For the user instance we have only one state: 
 - user
 
-The **init** and **final** states are excluded by normal units handling. In these states are only present the units which "initialize" and "finalize" the system. An example, could be the mounting and unmounting the disk, etc... Normally, the final user should not consider these states.
+The **init** and **final** states are excluded by normal units handling.<br>
+In these states are only present the units which "initialize" and "finalize" the system.<br>
+An example could be the mounting and unmounting the disk, etc...<br>
+Normally, the final user should not consider these states.
 
 ### Build instructions
 
@@ -128,6 +131,19 @@ WantedBy = multi-user-net           (required and repeatable for system instance
 WantedBy = ...
 WantedBy = user                     (required and not repeatable for user instance)
 ```
+**Dependencies vs Conflicts**<br>
+The dependencies are **uni-directionals**.<br>
+That mean if the **Unit B** depends on **Unit A** then
+we can assert the **Unit A** cannot depends on **Unit B**.<br>
+If not, we'll have a block when the system starts because **Unit B** wait for **Unit A** to terminate and the inverse.<br>
+Another axample could be **Unit A** depends on **Unit B**, Unit B depends on **Unit C** and **Unit C** depends on **Unit A**.<br>
+Also this case will fail.<br>
+The dependencies have a unique sense and must not come back.<br>
+Unlike the dependencies, the conflicts are **bi-directionals** instead.<br>
+That mean if the **Unit A** has a conflict with **Unit B** then
+we can assert the **Unit B** has a conflict with the **Unit A**.<br>
+In the conflict case, I'd recommend to set the Conflict property in both the units.<br>
+
 **Restart** and **RestartMax**<br>
 Please note, if both are defined then Restart property will be ignored.<br><br>
 **Stop**<br>
