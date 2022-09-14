@@ -1,4 +1,6 @@
-# Unitd
+<img src="src/extra/artwork/unitd-logo.svg" alt="Unitd init system" />
+
+# Init system
 
 Unit daemon is a simple, fast and modern init system which is mainly focused on an accurate processes supervision.<br/>
 The main features are the following:
