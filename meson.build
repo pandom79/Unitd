@@ -147,6 +147,15 @@ install_data('src/extra/scripts/zzz', install_dir: sbin_path)
 # Install man pages
 install_subdir('src/extra/man/man8', install_dir: mandir)
 
+# Install mime-type
+install_data('src/extra/mime-type/unit.xml', install_dir: prefix/datadir/'mime'/'packages')
+
+# Install icon
+install_data('src/extra/artwork/unit.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable')
+
+# Install unitd logo
+install_data('src/extra/artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
+
 # Execute 'unitd-check' initialization unit to create the folders tree
 env = environment()
 env.set('UNITS_PATH', units_path)

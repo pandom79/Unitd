@@ -4,5 +4,6 @@
         <sub-class-of type="text/plain"/>
         <comment>Unitd unit</comment>
         <glob pattern="*.unit"/>
+        <icon name="unit.svg"/>
     </mime-type>
 </mime-info>
