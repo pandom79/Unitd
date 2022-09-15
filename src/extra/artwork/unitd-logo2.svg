@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.2" width="52.18mm" height="32.7mm" viewBox="5195 12750 5218 3270" preserveAspectRatio="xMidYMid" fill-rule="evenodd" stroke-width="28.222" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" xmlns:ooo="http://xml.openoffice.org/svg/export" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:presentation="http://sun.com/xmlns/staroffice/presentation" xmlns:smil="http://www.w3.org/2001/SMIL20/" xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" xml:space="preserve">
+<svg version="1.2" width="41.81mm" height="23.26mm" viewBox="5320 12992 4181 2326" preserveAspectRatio="xMidYMid" fill-rule="evenodd" stroke-width="28.222" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" xmlns:ooo="http://xml.openoffice.org/svg/export" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:presentation="http://sun.com/xmlns/staroffice/presentation" xmlns:smil="http://www.w3.org/2001/SMIL20/" xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" xml:space="preserve">
  <defs>
   <font id="EmbeddedFont_1" horiz-adv-x="2048">
    <font-face font-family="SF Pro Rounded embedded" units-per-em="2048" font-weight="normal" font-style="normal" ascent="1958" descent="489"/>
@@ -46,14 +46,14 @@
  <g class="Page">
   <g class="Graphic">
    <g id="id3">
-    <rect class="BoundingBox" stroke="none" fill="none" x="5195" y="12750" width="3001" height="3270"/>
-    <image x="5218" y="12775" width="2954" height="3219" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAACIUlEQVR4nO2ZSyhEURjHPxqvMgtFEQuPKIq1hWw8slESS5Q1KQusFFaShVjZSBYWbJSdrLASM7IyFoo0dl5FHuH/de7UNJ3LOWdMh+b869fM/e49p+9/7nfPPZ0boH+ugO0EkpUzYFvOgG2ZGMgGM6APfII1MAleDXPIBA2g3Du+AKfgQ6WxiYFpMBZ3PO79Thj0xaoHtXHHdd7viUpjEwP9ktgAmRuokMQqKYUGSiSxYoN+YsqTxHJVG6flQ/yn5AzYljNgW86AbTkDtuUM2JYzYFvOgG05A7aVlgYeQVASD3rndJTlE39T7cDEQJTkBqpAWLOvfJ/4s2oHJgYuQY0k3kn6Bkp94k+qHZgY2AGtkvgwWAAPiv1w+cgGghVVTcbEwBaYlcSLwAropZ+3BTNAI8jxOX+tmoyJgTOwC1ok57rBBhgE9z7teeQ5+TKf8zekMRmYTqO8H3pIYiQTxSaawSLYBhHwQuKB5ZrnsvEbed4sDuskYmrgCCyRqHuZCsGUB+sW7JO4O+/f9BvxrlVWMi+yURI7ybJSSlQBiVmKte5zDZdOSDeJZAzwSPaATVIzwWoiuQFO/oBECWkp2aXEHegA82CIxMcKHXHCXDYhMkie9RtrIb4TI2CVxPQqe0fEtBf3n0c9TJo1n6jfXMwdgzZQDbpAO4nlBX9P4KUBT73L4IrEPK+7bpIqFavRczDnkXKl5XL6T8kZsK1/b+ALK1NTCRbQFnIAAAAASUVORK5CYII="/>
+    <rect class="BoundingBox" stroke="none" fill="none" x="5320" y="12992" width="2073" height="2259"/>
+    <image x="5336" y="13010" width="2039" height="2223" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAC70lEQVR4nO2Zy2sUQRDGa5ONJkYTNYIYX0QJCIKKl3jx5kEUD6I3H2f/GcGTZ/HiUfCYixfBJyqKogc1+FaiRNGoxLh+H1VDxp5Ztqd3x5ll54NfmOnN9FR1d1XP1NQbjYZ0s+r8U6vVirYjWPWiDWhXlQNFq2cd2Az2gHXgM7gPXoLQlDYM1oJB8At8At99LgxxYBM4BU7Y8VtwCVwEMwH9rQATYCsYAj9FB+OZeDgR4sA+UQd22PkIOGk3nAnob0zU+BE7HwBbwFfJyQHebCKlbXtAX9Sw4bat9Lk4xIHlRlzLUtp81Qf6U9r6fC4OcaBZoBaynfdkGv1fM+DVXzUDMYXOQFvP89UMxNQ1WagK4k6qDDNQBXFWVTHQSZVhBqoYyKqu38hKpTLPQG5ZaBH8keQrX7+xmLG/NEMbdo+WCnHgB5iX5Et39CL+JUNf9SY2cBB++3aQVd/AnCQdWC9aDnmYoS8WstyKBLVgtFSIA7PgjWhRKy7WiabAY/FfRqOiFTlXrM7N+3QQ4sALUSOnnHaO/mFwR7TU2EqrwEZZKmjFxYKW11IMcYClxHvgKFgda2dFbT84A86DR9J8Jmj8NjAuyWTApUPjc6uNMohvgRvgoPMby4THRR27DB6IOhwZM2i/jRtDzvXMPjT+vXguw9CNjKN7BewyQ+KiE8fAXtHl9Fw06GnYR9ER5gykVd5Y2H0nWp32UqgDzETTooF7Wv5dSlG/kwbF0WTw3wZXzUhXdIwj/0o8U2h0o1CxGn0BrAFHJOlEXNzgmGZZ2eYsuA7Q+A/WZ5Z9pO1nIa7xc6IzQifc1OqKS2csds41z5RJh2j8bFYD2nWAS+MuOCuaXg+B3aKzkiYG85wdL9gxg5z7SqaRj9Spp1GOHlPndXBANLj5DWGDaJ4fMANv2v+8lqWgZsB67bpp6uTjNEf3mmjm4QePnaKbG3daOsBvaVxyT0RHnssu64NfQnm8DzAVPjVyV0++0JRKlQNF6y8md5hcHgA/rgAAAABJRU5ErkJggg=="/>
    </g>
   </g>
   <g class="TextShape">
    <g id="id4">
-    <rect class="BoundingBox" stroke="none" fill="none" x="7700" y="13950" width="2713" height="1933"/>
-    <text class="SVGTextShape"><tspan class="TextParagraph" font-family="SF Pro Rounded" font-size="1411px" font-weight="400"><tspan class="TextPosition" x="7950" y="15417"><tspan fill="rgb(0,0,0)" stroke="none" style="white-space: pre">nitd</tspan></tspan></tspan></text>
+    <rect class="BoundingBox" stroke="none" fill="none" x="6999" y="13544" width="2502" height="1774"/>
+    <text class="SVGTextShape" transform="rotate(-0.1 7252 14885)"><tspan class="TextParagraph" font-family="SF Pro Rounded" font-size="1270px" font-weight="400"><tspan class="TextPosition" x="7252" y="14885"><tspan fill="rgb(0,0,0)" stroke="none" style="white-space: pre">nitd</tspan></tspan></tspan></text>
    </g>
   </g>
  </g>
