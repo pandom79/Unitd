@@ -151,7 +151,7 @@ install_subdir('src/extra/man/man8', install_dir: mandir)
 install_data('src/extra/mime-type/unit.xml', install_dir: prefix/datadir/'mime'/'packages')
 
 # Install icon
-install_data('src/extra/artwork/unit.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable')
+install_data('src/extra/artwork/unit.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable'/'apps')
 
 # Install unitd logo
 install_data('src/extra/artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
