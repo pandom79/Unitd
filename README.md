@@ -54,6 +54,14 @@ meson configure -DOS_NAME="Slackware Linux"
 meson compile
 meson install
 ```
+After that, you should regenerate the icons and mime types cache.<br>
+To do that, on slackware, according the default options, I run :
+```
+gtk-update-icon-cache -f /usr/share/icons/*
+update-mime-database /usr/share/mime
+```
+Note that If you use a different distro or build options then you should check the paths and command names.
+
 **Meson build option (DAEMON_SIGNAL_TIME)**<br>
 It represents the time (milliseconds) between the execution of the daemon and the signal to the units which depend on it.<br>
 The higher its value, the more likely it is that units that depend on it will start successfully.<br>
