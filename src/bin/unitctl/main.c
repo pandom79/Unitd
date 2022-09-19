@@ -112,7 +112,7 @@ showUsage()
 
 int main(int argc, char **argv) {
     int c, rv, userId;
-    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin;
+    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin, usage;
     const char *shortopts = "hrfdnowu";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
@@ -131,14 +131,13 @@ int main(int argc, char **argv) {
 
     c = rv = userId = 0;
     commandName = arg = NULL;
-    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = false;
+    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = usage = false;
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
             case 'h':
-                showUsage();
-                goto out;
+                usage = true;
                 break;
             case 'r':
                 run = true;
@@ -162,10 +161,15 @@ int main(int argc, char **argv) {
                 USER_INSTANCE = true;
                 break;
             default:
-                showUsage();
+                usage = true;
                 rv = 1;
-                goto out;
+                break;
         }
+    }
+
+    if (usage) {
+        showUsage();
+        goto out;
     }
 
     /* Get the command */
