@@ -10,6 +10,7 @@ add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 ver = '3.0.1'
 so_ver = '3'
 project_name = 'unitd'
+magazined_name = 'magazined'
 
 # Get paths
 prefix = get_option('prefix')
@@ -27,6 +28,12 @@ units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = prefix/datadir/project_name
 unitd_log_path = localstatedir/'log'/project_name+'.log'
+# Magazine daemon
+magazined_path = localstatedir/'log'/magazined_name
+magazined_log_path = magazined_path/magazined_name+'.log'
+magazined_index_path = magazined_path/'index.dat'
+magazined_boot_log_path = magazined_path/'boot.log'
+
 doc_path = get_option('DOC_PATH')
 if doc_path == ''
     doc_path  = prefix/datadir/'doc'/project_name+'-'+ver
@@ -57,6 +64,11 @@ conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
 conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
 conf_data.set('DAEMON_SIGNAL_TIME', get_option('DAEMON_SIGNAL_TIME'))
+# Magazine
+conf_data.set('MAGAZINED_PATH', magazined_path)
+conf_data.set('MAGAZINED_LOG_PATH', magazined_log_path)
+conf_data.set('MAGAZINED_INDEX_PATH', magazined_index_path)
+conf_data.set('MAGAZINED_BOOT_LOG_PATH', magazined_boot_log_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Dependencies
@@ -104,35 +116,35 @@ install_headers('src/include/unitd_types.h', subdir : project_name)
 install_headers('build/unitd_config.h', subdir : project_name)
 
 # Install executables
-executable(project_name, 'src/bin/unitd/main.c',
-           link_with: libunitd,
-           install: true,
-           dependencies: deps,
-           install_dir: sbin_path
-          )
+#executable(project_name, 'src/bin/unitd/main.c',
+#           link_with: libunitd,
+#           install: true,
+#           dependencies: deps,
+#           install_dir: sbin_path
+#          )
 
-executable('unitctl', 'src/bin/unitctl/main.c',
-           link_with: libunitd,
-           install: true,
-           dependencies: deps,
-           install_dir: sbin_path
-           )
+#executable('unitctl', 'src/bin/unitctl/main.c',
+#           link_with: libunitd,
+#           install: true,
+#           dependencies: deps,
+#           install_dir: sbin_path
+#           )
 
-executable('seedrng', 'src/extra/src/seedrng.c',
-           install: true,
-           install_dir: sbin_path
-           )
+#executable('seedrng', 'src/extra/src/seedrng.c',
+#           install: true,
+#           install_dir: sbin_path
+#           )
 
 # Install Configuration
-install_data(project_name + '.conf', install_dir: unitd_conf_path)
-install_data(project_name + '.conf', install_dir: unitd_data_path,
-             rename: project_name + '.conf.sample')
+#install_data(project_name + '.conf', install_dir: unitd_conf_path)
+#install_data(project_name + '.conf', install_dir: unitd_data_path,
+#             rename: project_name + '.conf.sample')
 
 # Install extra data
-install_subdir('src/extra/functions', install_dir: unitd_data_path)
-install_subdir('src/extra/scripts', install_dir: unitd_data_path)
-install_subdir('src/extra/init.state', install_dir: unitd_data_path)
-install_subdir('src/extra/final.state', install_dir: unitd_data_path)
+#install_subdir('src/extra/functions', install_dir: unitd_data_path)
+#install_subdir('src/extra/scripts', install_dir: unitd_data_path)
+#install_subdir('src/extra/init.state', install_dir: unitd_data_path)
+#install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 
 # Install documentation
 install_data('LICENSE', install_dir: doc_path)

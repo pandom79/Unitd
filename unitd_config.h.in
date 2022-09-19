@@ -17,3 +17,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define UNITD_CONF_PATH "@UNITD_CONF_PATH@"
 #define DAEMON_SIGNAL_TIME @DAEMON_SIGNAL_TIME@
 #mesondefine UNITD_TEST
+
+/* Magazine daemon */
+#define MAGAZINED_PATH "@MAGAZINED_PATH@"
+#define MAGAZINED_LOG_PATH "@MAGAZINED_LOG_PATH@"
+#define MAGAZINED_INDEX_PATH "@MAGAZINED_INDEX_PATH@"
+#define MAGAZINED_BOOT_LOG_PATH "@MAGAZINED_BOOT_LOG_PATH@"
