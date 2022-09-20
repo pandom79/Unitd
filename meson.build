@@ -28,12 +28,14 @@ units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = prefix/datadir/project_name
 unitd_log_path = localstatedir/'log'/project_name+'.log'
+
 # Setting unitlogd macro path
 unitlogd_path = localstatedir/'log'/unitlogd_name
 unitlogd_log_path = unitlogd_path/unitlogd_name+'.log'
 unitlogd_index_path = unitlogd_path/'index.dat'
 unitlogd_boot_log_path = unitlogd_path/'boot.log'
 
+# Setting build options macro paths
 doc_path = get_option('DOC_PATH')
 if doc_path == ''
     doc_path  = prefix/datadir/'doc'/project_name+'-'+ver
@@ -74,8 +76,8 @@ configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configurati
 # Dependencies
 deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.0')]
 # Checking commands/packages dependencies
-# If it is not exists then meson will show us the error
-# We set 'check: false' because we don't interest about its exit code
+# If it is not exists then meson will show us the error.
+# We set 'check: false' because we don't interest about its exit code.
 # Awk
 message('Checking awk command ...')
 run_command('awk', check: false)
