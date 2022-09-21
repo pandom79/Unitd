@@ -11,6 +11,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "unitd_impl.h"
 
+extern bool UNITLOGD_DEBUG;
+
 void assertMacroPaths();
+int setSigAction();
 
 #endif // UNITLOGD_IMPL_H

@@ -8,6 +8,10 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../../core/unitlogd_impl.h"
 
+int SELF_PIPE[2];
+int UNITLOGD_PID = 0;
+bool UNITLOGD_DEBUG = false;
+
 static void __attribute__((noreturn))
 usage(bool fail)
 {
@@ -23,10 +27,44 @@ usage(bool fail)
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
+static void
+exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
+{
+    int rv = 0, output = THREAD_EXIT;
+
+    if (UNITLOGD_DEBUG)
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
+
+    if ((rv = write(SELF_PIPE[1], &output, sizeof(int))) == -1) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "exitSignal", errno,
+                      strerror(errno), "Unable to write into self pipe. Rv = %d.", rv);
+    }
+}
+
+int
+setSigAction()
+{
+    int rv = 0;
+    struct sigaction act = {0};
+
+    act.sa_flags = SA_SIGINFO | SA_RESTART;
+    act.sa_sigaction = exitSignal;
+    if (sigaction(SIGTERM, &act, NULL) == -1 ||
+        sigaction(SIGQUIT, &act, NULL)  == -1 ||
+        sigaction(SIGINT, &act, NULL)  == -1) {
+        rv = -1;
+        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "setSigAction", errno, strerror(errno),
+                      "Sigaction has returned %d exit code", rv);
+    }
+
+    return rv;
+}
+
 int main(int argc, char **argv) {
 
-    int c, rv;
+    int c, rv, numSocket, input;
     const char *shortopts = "hdck";
+    bool console, kernel;
     const struct option longopts[] = {
         { "console", no_argument, NULL, 'c' },
         { "kernel", no_argument, NULL, 'k' },
@@ -34,10 +72,80 @@ int main(int argc, char **argv) {
         { "debug", optional_argument, NULL, 'd' },
         { 0, 0, 0, 0 }
     };
+    c = rv = numSocket = input = 0;
+    console = kernel = false;
 
-    c = rv = 0;
+    while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+        switch (c) {
+            case 'c':
+                console = true;
+                break;
+            case 'k':
+                kernel = true;
+                break;
+            case 'h':
+                usage(false);
+                break;
+            case 'd':
+                UNITLOGD_DEBUG = true;
+                break;
+        }
+    }
 
+    /* Assert the macro paths value */
     assertMacroPaths();
 
-    return rv;
+    /* Set pid */
+    UNITLOGD_PID = getpid();
+
+    if (UNITLOGD_DEBUG) {
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd path = %s\n", UNITLOGD_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd boot log path = %s\n", UNITLOGD_BOOT_LOG_PATH);
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
+    }
+
+    /* Set sigaction */
+    if ((rv = setSigAction()) != 0)
+        goto out;
+
+    /* "/dev/log" is the default socket */
+    numSocket = 1;
+    if (console) numSocket++;
+    if (kernel) numSocket++;
+
+    /* Self pipe */
+    if ((rv = pipe(SELF_PIPE)) != 0) {
+        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
+                      strerror(errno), "Pipe func has returned %d", rv);
+        goto out;
+    }
+
+//FIXME change logger.c to handle unitlogd file as well
+//FIXME start sockets
+
+    while (true) {
+        /* Unitlogd is blocked here waiting for a SIGTERM/SIG_INT signal */
+        if ((rv = read(SELF_PIPE[0], &input, sizeof(int))) == -1) {
+            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
+                          strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
+            goto out;
+        }
+        else
+            rv = 0;
+
+        if (input == THREAD_EXIT)
+            break;
+    }
+
+    out:
+        close(SELF_PIPE[0]);
+        close(SELF_PIPE[1]);
+
+        if (UNITLOGD_DEBUG)
+            unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd exited with rv = %d.\n", rv);
+
+        return rv;
 }
