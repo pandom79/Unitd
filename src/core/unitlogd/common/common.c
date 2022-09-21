@@ -9,7 +9,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../../unitlogd_impl.h"
 
 void
-assertMacroPaths()
+assertMacros()
 {
     assert(UNITLOGD_PATH);
     assert(UNITLOGD_LOG_PATH);

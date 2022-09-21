@@ -13,7 +13,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 extern bool UNITLOGD_DEBUG;
 
-void assertMacroPaths();
+void assertMacros();
 int setSigAction();
 
 #endif // UNITLOGD_IMPL_H

@@ -33,7 +33,8 @@ int main(int argc, char **argv) {
 
     c = rv = 0;
 
-    assertMacroPaths();
+    /* Assert the macros */
+    assertMacros();
 
     return rv;
 }

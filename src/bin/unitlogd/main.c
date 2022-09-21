@@ -19,8 +19,8 @@ usage(bool fail)
             "Usage: unitlogd [OPTION] \n\n"
 
             WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
-            "-c, --console      Enable console messages forward\n"
-            "-k, --kernel       Enable kernel messages forward\n"
+            "-c, --console      Enable the console messages forward\n"
+            "-k, --kernel       Enable the kernel messages forward\n"
             "-d, --debug        Enable the debug\n"
             "-h, --help         Show usage\n\n"
     );
@@ -63,7 +63,7 @@ setSigAction()
 int main(int argc, char **argv) {
 
     int c, rv, numSocket, input;
-    const char *shortopts = "hdck";
+    const char *shortopts = "hdsck";
     bool console, kernel;
     const struct option longopts[] = {
         { "console", no_argument, NULL, 'c' },
@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* Assert the macro paths value */
-    assertMacroPaths();
+    /* Assert the macros */
+    assertMacros();
 
     /* Set pid */
     UNITLOGD_PID = getpid();
@@ -107,14 +107,13 @@ int main(int argc, char **argv) {
         unitdLogInfo(LOG_UNITD_CONSOLE, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
     }
 
+//FIXME
+    /* unitlogd_init */
+    /* Create folder and file with permissions */
+
     /* Set sigaction */
     if ((rv = setSigAction()) != 0)
         goto out;
-
-    /* "/dev/log" is the default socket */
-    numSocket = 1;
-    if (console) numSocket++;
-    if (kernel) numSocket++;
 
     /* Self pipe */
     if ((rv = pipe(SELF_PIPE)) != 0) {
@@ -124,10 +123,15 @@ int main(int argc, char **argv) {
     }
 
 //FIXME change logger.c to handle unitlogd file as well
+
+    /* Calculate the number of threads */
+    if (console) numSocket++;
+    if (kernel) numSocket++;
+
 //FIXME start sockets
 
     while (true) {
-        /* Unitlogd is blocked here waiting for a SIGTERM/SIG_INT signal */
+        /* Unitlogd is blocked here waiting for a signal */
         if ((rv = read(SELF_PIPE[0], &input, sizeof(int))) == -1) {
             unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
                           strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
