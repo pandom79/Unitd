@@ -474,4 +474,16 @@ void* handleMutexThread(void *);
 void setStopAndDuration(ProcessData **);
 /*********************************************************************************/
 
+/* UNITLOGD */
+extern bool UNITLOGD_DEBUG;
+extern int SELF_PIPE[2];
+
+/* Common */
+void assertMacros();
+int unitlogdInit();
+
+/* Signals */
+int setUnitlogdSigAction();
+void exitSignal(int, siginfo_t *, void *);
+
 #endif // UNITD_IMPL_H

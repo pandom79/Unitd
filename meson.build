@@ -114,8 +114,8 @@ sources = files(
 
 # Unitlogd sources
 sources += files(
-                'src/core/unitlogd_impl.h',
-                'src/core/unitlog/common/common.c',
+                'src/core/unitlogd/common.c',
+                'src/core/unitlogd/signals.c',
                 )
 
 # Unitd lib
@@ -178,8 +178,8 @@ executable('unitlogctl', 'src/bin/unitlogctl/main.c',
 #             rename: project_name + '.conf.sample')
 
 # Install extra data
-#install_subdir('src/extra/functions', install_dir: unitd_data_path)
-#install_subdir('src/extra/scripts', install_dir: unitd_data_path)
+install_subdir('src/extra/functions', install_dir: unitd_data_path)
+install_subdir('src/extra/scripts', install_dir: unitd_data_path)
 #install_subdir('src/extra/init.state', install_dir: unitd_data_path)
 #install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 

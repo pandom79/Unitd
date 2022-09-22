@@ -6,7 +6,7 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#include "../../core/unitlogd_impl.h"
+#include "../../core/unitd_impl.h"
 
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
@@ -16,9 +16,10 @@ static void __attribute__((noreturn))
 usage(bool fail)
 {
     fprintf(stdout,
-            "Usage: unitlogd [OPTION] \n\n"
+            "Usage: unitlogd [OPTIONS] \n\n"
 
             WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
+            "-l, --log          Log the system messages\n"
             "-c, --console      Enable the console messages forward\n"
             "-k, --kernel       Enable the kernel messages forward\n"
             "-d, --debug        Enable the debug\n"
@@ -27,69 +28,58 @@ usage(bool fail)
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
-static void
-exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
-{
-    int rv = 0, output = THREAD_EXIT;
-
-    if (UNITLOGD_DEBUG)
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
-
-    if ((rv = write(SELF_PIPE[1], &output, sizeof(int))) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "exitSignal", errno,
-                      strerror(errno), "Unable to write into self pipe. Rv = %d.", rv);
-    }
-}
-
-int
-setSigAction()
-{
-    int rv = 0;
-    struct sigaction act = {0};
-
-    act.sa_flags = SA_SIGINFO | SA_RESTART;
-    act.sa_sigaction = exitSignal;
-    if (sigaction(SIGTERM, &act, NULL) == -1 ||
-        sigaction(SIGQUIT, &act, NULL)  == -1 ||
-        sigaction(SIGINT, &act, NULL)  == -1) {
-        rv = -1;
-        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "setSigAction", errno, strerror(errno),
-                      "Sigaction has returned %d exit code", rv);
-    }
-
-    return rv;
-}
 
 int main(int argc, char **argv) {
 
-    int c, rv, numSocket, input;
-    const char *shortopts = "hdsck";
-    bool console, kernel;
+    int c, rv, numThreads, input;
+    const char *shortopts = "lckhd";
+    bool log, console, kernel;
     const struct option longopts[] = {
+        { "log", no_argument, NULL, 'l' },
         { "console", no_argument, NULL, 'c' },
         { "kernel", no_argument, NULL, 'k' },
-        { "help", no_argument, NULL, 'h' },
         { "debug", optional_argument, NULL, 'd' },
+        { "help", no_argument, NULL, 'h' },
         { 0, 0, 0, 0 }
     };
-    c = rv = numSocket = input = 0;
-    console = kernel = false;
+    c = rv = numThreads = input = 0;
+    log = console = kernel = false;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
+            case 'l':
+                log = true;
+                break;
             case 'c':
                 console = true;
                 break;
             case 'k':
                 kernel = true;
                 break;
-            case 'h':
-                usage(false);
-                break;
             case 'd':
                 UNITLOGD_DEBUG = true;
                 break;
+            case 'h':
+                usage(false);
+                break;
+            default:
+                usage(true);
+                break;
         }
+    }
+
+    /* Check user id and options */
+    if (getuid() != 0) {
+        rv = 1;
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
+        goto out;
+    }
+    else if (!log && !console && !kernel) {
+        rv = 1;
+        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Nothing to do!\n");
+        unitdLogInfo(LOG_UNITD_CONSOLE, "Please, provide at least one of the following options: "
+                                        "\nlog\nconsole\nkernel\n");
+        goto out;
     }
 
     /* Assert the macros */
@@ -107,12 +97,14 @@ int main(int argc, char **argv) {
         unitdLogInfo(LOG_UNITD_CONSOLE, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
     }
 
-//FIXME
-    /* unitlogd_init */
-    /* Create folder and file with permissions */
+    /* We run "init" script only if we have to log the messages.
+     * No need that for the forwarders.
+    */
+    if (log && (rv = unitlogdInit()) != 0)
+        goto out;
 
     /* Set sigaction */
-    if ((rv = setSigAction()) != 0)
+    if ((rv = setUnitlogdSigAction()) != 0)
         goto out;
 
     /* Self pipe */
@@ -125,8 +117,9 @@ int main(int argc, char **argv) {
 //FIXME change logger.c to handle unitlogd file as well
 
     /* Calculate the number of threads */
-    if (console) numSocket++;
-    if (kernel) numSocket++;
+    if (log) numThreads++;
+    if (console) numThreads++;
+    if (kernel) numThreads++;
 
 //FIXME start sockets
 

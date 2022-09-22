@@ -6,7 +6,7 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#include "../../core/unitlogd_impl.h"
+#include "../../core/unitd_impl.h"
 
 static void __attribute__((noreturn))
 usage(bool fail)
