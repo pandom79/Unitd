@@ -475,8 +475,14 @@ void setStopAndDuration(ProcessData **);
 /*********************************************************************************/
 
 /* UNITLOGD */
+typedef struct {
+    pthread_t thread;
+    char *devName;
+} SocketThread;
+
 extern bool UNITLOGD_DEBUG;
 extern int SELF_PIPE[2];
+extern int UNITLOGD_PID;
 
 /* Common */
 void assertMacros();
@@ -485,5 +491,12 @@ int unitlogdInit();
 /* Signals */
 int setUnitlogdSigAction();
 void exitSignal(int, siginfo_t *, void *);
+
+/* Socket */
+SocketThread * socketThreadNew();
+void socketThreadRelease(SocketThread **);
+int startSockets(Array *);
+void *startSocket(void *);
+void *startSocketThread(void *);
 
 #endif // UNITD_IMPL_H

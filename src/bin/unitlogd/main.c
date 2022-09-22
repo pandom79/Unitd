@@ -28,12 +28,22 @@ usage(bool fail)
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
+static void
+addSocketThread(Array **socketThreads, const char *devName)
+{
+    assert(*socketThreads);
+    assert(devName);
+    SocketThread *socketThread = socketThreadNew();
+    socketThread->devName = stringNew(devName);
+    arrayAdd(*socketThreads, socketThread);
+}
 
 int main(int argc, char **argv) {
 
-    int c, rv, numThreads, input;
+    int c, rv, input;
     const char *shortopts = "lckhd";
     bool log, console, kernel;
+    Array *socketThreads = arrayNew(socketThreadRelease);
     const struct option longopts[] = {
         { "log", no_argument, NULL, 'l' },
         { "console", no_argument, NULL, 'c' },
@@ -42,7 +52,7 @@ int main(int argc, char **argv) {
         { "help", no_argument, NULL, 'h' },
         { 0, 0, 0, 0 }
     };
-    c = rv = numThreads = input = 0;
+    c = rv = input = 0;
     log = console = kernel = false;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -117,11 +127,16 @@ int main(int argc, char **argv) {
 //FIXME change logger.c to handle unitlogd file as well
 
     /* Calculate the number of threads */
-    if (log) numThreads++;
-    if (console) numThreads++;
-    if (kernel) numThreads++;
+    if (log)
+        addSocketThread(&socketThreads, "/dev/log");
+    if (console)
+        addSocketThread(&socketThreads, "/dev/console");
+    if (kernel)
+        addSocketThread(&socketThreads, "/dev/kmsg");
 
-//FIXME start sockets
+    /* Start sockets */
+    if ((rv = startSockets(socketThreads)) != 0)
+        goto out;
 
     while (true) {
         /* Unitlogd is blocked here waiting for a signal */
@@ -140,6 +155,7 @@ int main(int argc, char **argv) {
     out:
         close(SELF_PIPE[0]);
         close(SELF_PIPE[1]);
+        arrayRelease(&socketThreads);
 
         if (UNITLOGD_DEBUG)
             unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd exited with rv = %d.\n", rv);

@@ -116,6 +116,7 @@ sources = files(
 sources += files(
                 'src/core/unitlogd/common.c',
                 'src/core/unitlogd/signals.c',
+                'src/core/unitlogd/socket.c',
                 )
 
 # Unitd lib
