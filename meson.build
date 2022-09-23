@@ -109,7 +109,8 @@ sources = files(
                 'src/core/socket/socket_server.c',
                 'src/core/socket/socket_common.c',
                 'src/core/socket/socket_request.c',
-                'src/core/socket/socket_response.c'
+                'src/core/socket/socket_response.c',
+                'src/core/file/file.c'
                 )
 
 # Unitlogd sources

@@ -28,40 +28,6 @@ logSystem(int priority, const char *color, const char *format, va_list *args)
     }
 }
 
-
-int
-unitdOpenLog(const char *mode)
-{
-    if (!UNITD_LOG_FILE) {
-        const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
-        UNITD_LOG_FILE = fopen(unitdLogPath, mode);
-        if (!UNITD_LOG_FILE) {
-            logError(CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
-                          "Unable to open the log %s in mode '%s'", unitdLogPath, mode);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-int
-unitdCloseLog()
-{
-    int rv = 0;
-
-    if (UNITD_LOG_FILE) {
-        const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
-        if ((rv = fclose(UNITD_LOG_FILE)) != 0) {
-            logError(ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
-                                         "Unable to close the log '%s'", unitdLogPath);
-        }
-        UNITD_LOG_FILE = NULL;
-    }
-
-    return rv;
-}
-
 void
 logInfo(int options, const char *format, ...)
 {

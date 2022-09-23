@@ -115,14 +115,24 @@ extern int COMMANDS_LEN;
 
 extern FILE *UNITD_LOG_FILE;
 
-int unitdOpenLog(const char *);
-int unitdCloseLog();
 void logInfo(int options, const char *format, ...);
 void logWarning(int options, const char *format, ...);
 void logError(int options, const char *transUnit, const char *funcName, int returnValue,
                    const char *errDesc, const char *format, ...);
 void logErrorStr(int options, const char *format, ...);
 void logSuccess(int options, const char *format, ...);
+/*********************************************************************************/
+
+/* FILE */
+
+int unitdOpenLog(const char *);
+int unitdCloseLog();
+int unitlogdOpenLog(const char *);
+int unitlogdOpenBootLog(const char *);
+int unitlogdOpenIndex(const char *);
+int unitlogdCloseLog();
+int unitlogdCloseBootLog();
+int unitlogdCloseIndex();
 /*********************************************************************************/
 
 /* PARSER */
