@@ -124,11 +124,11 @@ getDefaultStateStr(char **destDefStateSyml)
     if ((rv = readSymLink(defStateSymlPath, destDefStateSyml)) != 0) {
         /* These errors would have to never happen */
         if (rv == 1) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "getDefaultStateStr", EPERM,
+            logError(CONSOLE, "src/core/common/common.c", "getDefaultStateStr", EPERM,
                           strerror(EPERM), "The '%s' symlink is missing", defStateSymlPath);
         }
         else if (rv == 2) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/common/common.c", "getDefaultStateStr", EPERM,
+            logError(CONSOLE, "src/core/common/common.c", "getDefaultStateStr", EPERM,
                           strerror(EPERM), "The '%s' doesn't look like a symlink", defStateSymlPath);
         }
     }
@@ -170,7 +170,7 @@ setNewDefaultStateSyml(State newDefaultState, Array **messages, Array **errors)
         arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
         arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
         /* Write the details into system log */
-        unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "setNewDefaultStateSyml",
+        logError(SYSTEM, "src/core/socket/socket_server.c", "setNewDefaultStateSyml",
                       rv, strerror(rv), "ExecScript error!");
     }
     else
@@ -186,11 +186,11 @@ arrayPrint(int options, Array **array, bool hasStrings)
     int len = (*array ? (*array)->size : 0);
     if (hasStrings) {
         for (int i = 0; i < len; i++)
-            unitdLogInfo(options, "%s\n", (char *)(*array)->arr[i]);
+            logInfo(options, "%s\n", (char *)(*array)->arr[i]);
     }
     else {
         for (int i = 0; i < len; i++)
-            unitdLogInfo(options, "%p\n", (*array)->arr[i]);
+            logInfo(options, "%p\n", (*array)->arr[i]);
     }
 }
 
@@ -203,7 +203,7 @@ isKexecLoaded()
     size_t len = 0;
 
     if ((fp = fopen("/sys/kernel/kexec_loaded", "r")) == NULL) {
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "isKexecLoaded",
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "isKexecLoaded",
                       errno, strerror(errno), "Unable to open '/sys/kernel/kexec_loaded' file!");
         return res;
     }
@@ -224,7 +224,7 @@ writeWtmp(bool isBooting) {
 
     if ((fd = open(OUR_WTMP_FILE, O_WRONLY|O_APPEND)) < 0) {
         rv = errno;
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                       rv, strerror(rv), "Unable to open '%s' file descriptor!", OUR_WTMP_FILE);
         return rv;
     }
@@ -247,13 +247,13 @@ writeWtmp(bool isBooting) {
 
     if (write(fd, (char *)&utmp, sizeof(utmp)) == -1) {
         rv = errno;
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                       rv, strerror(rv), "Unable to write into '%s' file!!", OUR_WTMP_FILE);
         return rv;
     }
     if (close(fd) == -1) {
         rv = errno;
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                       rv, strerror(rv), "Unable to close '%s' file descriptor!", OUR_WTMP_FILE);
         return rv;
     }
@@ -261,20 +261,20 @@ writeWtmp(bool isBooting) {
     if (isBooting) {
         if ((fd = open(OUR_UTMP_FILE, O_WRONLY | O_APPEND)) < 0) {
             rv = errno;
-            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+            logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                           rv, strerror(rv), "Unable to open '%s' file descriptor!", OUR_UTMP_FILE);
             return rv;
         }
 
         if (write(fd, (char *)&utmp, sizeof utmp) == -1) {
             rv = errno;
-            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+            logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                           rv, strerror(rv), "Unable to write into '%s' file!", OUR_UTMP_FILE);
             return rv;
         }
         if (close(fd) == -1) {
             rv = errno;
-            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "writeWtmp",
+            logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                           rv, strerror(rv), "Unable to close '%s' file descriptor!", OUR_UTMP_FILE);
             return rv;
         }
@@ -316,12 +316,12 @@ unitdUserCheck(const char *userIdStr, const char *userName)
     if (rv != 0) {
         /* If rv == 114 then the instance is already running */
         if (rv == 114) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM,
+            logErrorStr(CONSOLE | SYSTEM,
                              "Unitd instance is already running for %s user!", userName);
             printf("\n");
         }
         else {
-            unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c",
+            logError(CONSOLE | SYSTEM, "src/core/common/common.c",
                           "unitdUserCheck", rv, strerror(rv), "ExecScript error");
         }
     }
@@ -342,7 +342,7 @@ parseProcCmdLine()
     assert(PROC_CMDLINE_PATH);
     if ((fp = fopen(PROC_CMDLINE_PATH, "r")) == NULL) {
         rv = 1;
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "src/core/common/common.c", "parseProcCmdLine", errno,
+        logError(CONSOLE | UNITD_BOOT, "src/core/common/common.c", "parseProcCmdLine", errno,
                       strerror(errno), "Unable to open %s", PROC_CMDLINE_PATH, NULL);
         return rv;
     }
@@ -400,7 +400,7 @@ setSigAction()
         sigaction(SIGINT, &act, NULL)  == -1 ||
         sigaction(SIGCHLD, &act, NULL) == -1) {
         rv = -1;
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
+        logError(CONSOLE | UNITD_BOOT, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
                       "Sigaction has returned -1 exit code");
     }
 
@@ -416,7 +416,7 @@ setUserData(int userId, struct passwd **userInfo)
     errno = 0;
     *userInfo = getpwuid(userId);
     if (!(*userInfo)) {
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "setUserData", errno,
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "setUserData", errno,
                       strerror(errno), "Getpwuid has returned a null pointer");
         rv = 1;
         goto out;
@@ -426,7 +426,7 @@ setUserData(int userId, struct passwd **userInfo)
     /* Change the current working directory to user home */
     char *userHome = (*userInfo)->pw_dir;
     if ((rv = chdir(userHome)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "setUserData", errno,
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "setUserData", errno,
                       strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
         rv = 1;
         goto out;
@@ -450,7 +450,7 @@ setUserData(int userId, struct passwd **userInfo)
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
     if (!xdgRunTimeDir) {
         rv = 1;
-        unitdLogError(LOG_UNITD_CONSOLE | LOG_UNITD_SYSTEM, "src/core/common/common.c", "setUserSocketPath", rv,
+        logError(CONSOLE | SYSTEM, "src/core/common/common.c", "setUserSocketPath", rv,
                       strerror(rv), "XDG_RUNTIME_DIR for %d userId is not set", userId);
         goto out;
     }
@@ -459,12 +459,12 @@ setUserData(int userId, struct passwd **userInfo)
     assert(SOCKET_USER_PATH);
 
     if (UNITCTL_DEBUG) {
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user path = %s\n", UNITS_USER_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "socket user path = %s\n", SOCKET_USER_PATH);
+        logInfo(CONSOLE, "Units user path = %s\n", UNITS_USER_PATH);
+        logInfo(CONSOLE, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
+        logInfo(CONSOLE, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
+        logInfo(CONSOLE, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
+        logInfo(CONSOLE, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
+        logInfo(CONSOLE, "socket user path = %s\n", SOCKET_USER_PATH);
     }
 
     out:
@@ -493,13 +493,13 @@ handleMutexThread(void *arg)
 
     if (mutexThreadData->lock) {
         if ((rv = pthread_mutex_lock(mutexThreadData->mutex)) != 0) {
-            unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutexThread",
+            logError(SYSTEM, "src/core/common/common.c", "handleMutexThread",
                           rv, strerror(rv), "Unable to acquire the lock of the mutex");
         }
     }
     else {
         if ((rv = pthread_mutex_unlock(mutexThreadData->mutex)) != 0) {
-            unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutexThread",
+            logError(SYSTEM, "src/core/common/common.c", "handleMutexThread",
                           rv, strerror(rv), "Unable to unlock the mutex");
         }
     }
@@ -521,11 +521,11 @@ handleMutex(pthread_mutex_t *mutex, int lock)
     MutexThreadData mutextThreadData = { .mutex = mutex, .lock = lock };
 
     if ((rv = pthread_create(&thread, NULL, handleMutexThread, &mutextThreadData)) != 0) {
-        unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutex", errno,
+        logError(SYSTEM, "src/core/common/common.c", "handleMutex", errno,
                       strerror(errno), "Unable to create the thread for the mutex");
     }
     if ((rv = pthread_join(thread, (void **)&rvThread)) != EXIT_SUCCESS) {
-        unitdLogError(LOG_UNITD_SYSTEM, "src/core/common/common.c", "handleMutex", errno,
+        logError(SYSTEM, "src/core/common/common.c", "handleMutex", errno,
                       strerror(errno), "Unable to join the thread for the mutex");
     }
     if (rv == 0 && *rvThread != 0)

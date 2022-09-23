@@ -12,7 +12,7 @@ FILE *UNITD_LOG_FILE = NULL;
 char *UNITD_USER_LOG_PATH;
 
 static void
-unitdLogSystem(int priority, const char *color, const char *format, va_list *args)
+logSystem(int priority, const char *color, const char *format, va_list *args)
 {
     if (format) {
         char *colorStr = color ? stringNew(format) : NULL;
@@ -36,7 +36,7 @@ unitdOpenLog(const char *mode)
         const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
         UNITD_LOG_FILE = fopen(unitdLogPath, mode);
         if (!UNITD_LOG_FILE) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
+            logError(CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
                           "Unable to open the log %s in mode '%s'", unitdLogPath, mode);
             return -1;
         }
@@ -53,7 +53,7 @@ unitdCloseLog()
     if (UNITD_LOG_FILE) {
         const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
         if ((rv = fclose(UNITD_LOG_FILE)) != 0) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
+            logError(ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
                                          "Unable to close the log '%s'", unitdLogPath);
         }
         UNITD_LOG_FILE = NULL;
@@ -63,10 +63,10 @@ unitdCloseLog()
 }
 
 void
-unitdLogInfo(int options, const char *format, ...)
+logInfo(int options, const char *format, ...)
 {
     va_list args;
-    if (options & LOG_UNITD_CONSOLE) {
+    if (options & CONSOLE) {
         fflush(stdout);
         va_start(args, format);
         printf(LIGHT_WHITE_COLOR);
@@ -75,7 +75,7 @@ unitdLogInfo(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & LOG_UNITD_BOOT)) {
+    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
         fflush(UNITD_LOG_FILE);
         va_start(args, format);
         vfprintf(UNITD_LOG_FILE, LIGHT_WHITE_COLOR, NULL);
@@ -84,18 +84,18 @@ unitdLogInfo(int options, const char *format, ...)
         va_end(args);
         fflush(UNITD_LOG_FILE);
     }
-    if (options & LOG_UNITD_SYSTEM) {
+    if (options & SYSTEM) {
         va_start(args, format);
-        unitdLogSystem(LOG_DAEMON | LOG_INFO, NULL, format, &args);
+        logSystem(LOG_DAEMON | LOG_INFO, NULL, format, &args);
         va_end(args);
     }
 }
 
 void
-unitdLogWarning(int options, const char *format, ...)
+logWarning(int options, const char *format, ...)
 {
     va_list args;
-    if (options & LOG_UNITD_CONSOLE) {
+    if (options & CONSOLE) {
         fflush(stdout);
         va_start(args, format);
         printf(YELLOW_COLOR);
@@ -104,7 +104,7 @@ unitdLogWarning(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & LOG_UNITD_BOOT)) {
+    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
         fflush(UNITD_LOG_FILE);
         va_start(args, format);
         vfprintf(UNITD_LOG_FILE, YELLOW_COLOR, NULL);
@@ -113,18 +113,18 @@ unitdLogWarning(int options, const char *format, ...)
         va_end(args);
         fflush(UNITD_LOG_FILE);
     }
-    if (options & LOG_UNITD_SYSTEM) {
+    if (options & SYSTEM) {
         va_start(args, format);
-        unitdLogSystem(LOG_DAEMON | LOG_INFO, YELLOW_COLOR, format, &args);
+        logSystem(LOG_DAEMON | LOG_INFO, YELLOW_COLOR, format, &args);
         va_end(args);
     }
 }
 
 void
-unitdLogErrorStr(int options, const char *format, ...)
+logErrorStr(int options, const char *format, ...)
 {
     va_list args;
-    if (options & LOG_UNITD_CONSOLE) {
+    if (options & CONSOLE) {
         fflush(stdout);
         va_start(args, format);
         printf(RED_COLOR);
@@ -133,7 +133,7 @@ unitdLogErrorStr(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & LOG_UNITD_BOOT)) {
+    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
         fflush(UNITD_LOG_FILE);
         va_start(args, format);
         vfprintf(UNITD_LOG_FILE, RED_COLOR, NULL);
@@ -142,18 +142,18 @@ unitdLogErrorStr(int options, const char *format, ...)
         va_end(args);
         fflush(UNITD_LOG_FILE);
     }
-    if (options & LOG_UNITD_SYSTEM) {
+    if (options & SYSTEM) {
         va_start(args, format);
-        unitdLogSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, format, &args);
+        logSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, format, &args);
         va_end(args);
     }
 }
 
 void
-unitdLogSuccess(int options, const char *format, ...)
+logSuccess(int options, const char *format, ...)
 {
     va_list args;
-    if (options & LOG_UNITD_CONSOLE) {
+    if (options & CONSOLE) {
         fflush(stdout);
         va_start(args, format);
         printf(GREEN_COLOR);
@@ -162,7 +162,7 @@ unitdLogSuccess(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & LOG_UNITD_BOOT)) {
+    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
         fflush(UNITD_LOG_FILE);
         va_start(args, format);
         vfprintf(UNITD_LOG_FILE, GREEN_COLOR, NULL);
@@ -171,22 +171,22 @@ unitdLogSuccess(int options, const char *format, ...)
         va_end(args);
         fflush(UNITD_LOG_FILE);
     }
-    if (options & LOG_UNITD_SYSTEM) {
+    if (options & SYSTEM) {
         va_start(args, format);
-        unitdLogSystem(LOG_DAEMON | LOG_INFO, GREEN_COLOR, format, &args);
+        logSystem(LOG_DAEMON | LOG_INFO, GREEN_COLOR, format, &args);
         va_end(args);
     }
 }
 
 void
-unitdLogError(int options, const char *transUnit, const char *funcName,
+logError(int options, const char *transUnit, const char *funcName,
          int returnValue, const char *errDesc, const char *format, ...)
 {
     va_list args;
     char returnValueStr[100];
     memset(&returnValueStr, ' ', sizeof(returnValueStr));
 
-    if (options & LOG_UNITD_CONSOLE) {
+    if (options & CONSOLE) {
         fflush(stdout);
         va_start(args, format);
         sprintf(returnValueStr, "%d", returnValue);
@@ -207,7 +207,7 @@ unitdLogError(int options, const char *transUnit, const char *funcName,
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & LOG_UNITD_BOOT)) {
+    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
         fflush(UNITD_LOG_FILE);
         va_start(args, format);
         if (returnValueStr[0] == ' ')
@@ -229,7 +229,7 @@ unitdLogError(int options, const char *transUnit, const char *funcName,
         va_end(args);
         fflush(UNITD_LOG_FILE);
     }
-    if (options & LOG_UNITD_SYSTEM) {
+    if (options & SYSTEM) {
         if (returnValueStr[0] == ' ')
             sprintf(returnValueStr, "%d", returnValue);
         char *all = stringNew("An error has occurred! File = ");
@@ -246,7 +246,7 @@ unitdLogError(int options, const char *transUnit, const char *funcName,
          * We can do that because the same "args" present in "format", are present in "all" as well.
          */
         va_start(args, format);
-        unitdLogSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, all, &args);
+        logSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, all, &args);
         va_end(args);
         objectRelease(&all);
     }

@@ -11,6 +11,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
 bool UNITLOGD_DEBUG = false;
+FILE *UNITLOGD_INDEX = NULL;
+FILE *UNITLOGD_LOG = NULL;
+FILE *UNITLOGD_BOOT_LOG = NULL;
 
 static void __attribute__((noreturn))
 usage(bool fail)
@@ -81,13 +84,13 @@ int main(int argc, char **argv) {
     /* Check user id and options */
     if (getuid() != 0) {
         rv = 1;
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator.\n");
+        logErrorStr(CONSOLE, "Please, run this program as administrator.\n");
         goto out;
     }
     else if (!log && !console && !kernel) {
         rv = 1;
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Nothing to do!\n");
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Please, provide at least one of the following options: "
+        logErrorStr(CONSOLE, "Nothing to do!\n");
+        logInfo(CONSOLE, "Please, provide at least one of the following options: "
                                         "\nlog\nconsole\nkernel\n");
         goto out;
     }
@@ -99,12 +102,12 @@ int main(int argc, char **argv) {
     UNITLOGD_PID = getpid();
 
     if (UNITLOGD_DEBUG) {
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd path = %s\n", UNITLOGD_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd boot log path = %s\n", UNITLOGD_BOOT_LOG_PATH);
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
+        logInfo(CONSOLE, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
+        logInfo(CONSOLE, "Unitlogd path = %s\n", UNITLOGD_PATH);
+        logInfo(CONSOLE, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
+        logInfo(CONSOLE, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
+        logInfo(CONSOLE, "Unitlogd boot log path = %s\n", UNITLOGD_BOOT_LOG_PATH);
+        logInfo(CONSOLE, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
     }
 
     /* We run "init" script only if we have to log the messages.
@@ -119,7 +122,7 @@ int main(int argc, char **argv) {
 
     /* Self pipe */
     if ((rv = pipe(SELF_PIPE)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
+        logError(CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
                       strerror(errno), "Pipe func has returned %d", rv);
         goto out;
     }
@@ -141,7 +144,7 @@ int main(int argc, char **argv) {
     while (true) {
         /* Unitlogd is blocked here waiting for a signal */
         if ((rv = read(SELF_PIPE[0], &input, sizeof(int))) == -1) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
+            logError(CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
                           strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
             goto out;
         }
@@ -161,7 +164,7 @@ int main(int argc, char **argv) {
         arrayRelease(&socketThreads);
 
         if (UNITLOGD_DEBUG)
-            unitdLogInfo(LOG_UNITD_CONSOLE, "Unitlogd exited with rv = %d.\n", rv);
+            logInfo(CONSOLE, "Unitlogd exited with rv = %d.\n", rv);
 
         return rv;
 }

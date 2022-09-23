@@ -83,7 +83,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                         if (unitPipe) {
                             output = CLD_EXITED;
                             if (write(unitPipe->fds[1], &output, sizeof(int)) == -1) {
-                                unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
+                                logError(CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
                                               errno, strerror(errno), "Unable to write into pipe for the %s unit (exit case)",
                                               unitName);
                             }
@@ -107,7 +107,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                         if (unitPipe) {
                             output = CLD_KILLED;
                             if (write(unitPipe->fds[1], &output, sizeof(int)) == -1) {
-                                unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
+                                logError(CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
                                               errno, strerror(errno), "Unable to write into pipe for the %s unit (kill case)",
                                               unitName);
                             }
@@ -124,7 +124,7 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                          * That will can also be confirmed by system log.
                          */
                         if (kill(infoPid, SIGCONT) == -1) {
-                            unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/signals.c", "signalsHandler",
+                            logError(SYSTEM, "src/core/handlers/signals.c", "signalsHandler",
                                             errno, strerror(errno), "Unable to send SIGCONT to %d pid!", infoPid);
                         }
                         else

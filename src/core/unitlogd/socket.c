@@ -47,13 +47,13 @@ startSocketThread(void *arg)
 
     /* Open pipe */
     if ((rv = pipe(socketPipe->fds)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/unitlogd/socket.c", "startSocketThread", errno,
+        logError(ALL, "src/core/unitlogd/socket.c", "startSocketThread", errno,
                       strerror(errno), "Unable to run pipe for the dev (%s)", devName);
         goto out;
     }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutexPipe)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/unitlogd/socket.c", "startSocketThread",
+        logError(ALL, "src/core/unitlogd/socket.c", "startSocketThread",
                       rv, strerror(rv), "Unable to acquire the pipe mutex lock (%s)", devName);
         goto out;
     }
@@ -74,7 +74,7 @@ startSocketThread(void *arg)
         select(maxFd, &fds, NULL, NULL, NULL);
         if (FD_ISSET(pipeFd, &fds)) {
             if ((length = read(pipeFd, &input, sizeof(int))) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/unitlogd/socket.c", "startSocketThread",
+                logError(SYSTEM, "src/core/unitlogd/socket.c", "startSocketThread",
                               errno, strerror(errno), "Unable to read from pipe for the dev (%s)!", devName);
                 goto out;
             }
@@ -87,7 +87,7 @@ startSocketThread(void *arg)
             buffer = calloc(bufferSize, sizeof(char));
             assert(buffer);
             if ((rv = recv(socketFd, buffer, bufferSize, 0)) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/unitlogd/socket.c", "startSocketThread",
+                logError(SYSTEM, "src/core/unitlogd/socket.c", "startSocketThread",
                               errno, strerror(errno), "Unable to read from socket for the dev (%s)!", devName);
                 goto out;
             }
@@ -100,7 +100,7 @@ startSocketThread(void *arg)
         close(socketFd);
         unlink(devName);
         if ((rv = pthread_mutex_unlock(mutexPipe)) != 0) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/unitlogd/socket.c", "startSocketThread",
+            logError(ALL, "src/core/unitlogd/socket.c", "startSocketThread",
                           rv, strerror(rv), "Unable to unlock the pipe mutex for (%s)", devName);
         }
         pthread_exit(0);
@@ -125,13 +125,13 @@ startSocket(void *arg)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if ((rv = pthread_create(&thread, &attr, startSocketThread, socketThread)) != 0) {
 //FIXME evaluate where to log.....
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "startSocket", errno,
+        logError(CONSOLE, "src/core/unitlogd/socket.c", "startSocket", errno,
                       strerror(errno), "Unable to create the socket thread (detached) (%s)", devName);
     }
     else {
 //FIXME evaluate where to log.....
         if (UNITLOGD_DEBUG)
-            unitdLogInfo(LOG_UNITD_CONSOLE, "Socket thread (detached) created successfully (%s)\n", devName);
+            logInfo(CONSOLE, "Socket thread (detached) created successfully (%s)\n", devName);
     }
 
     /* It will be freed in startSockets func */
@@ -157,14 +157,14 @@ startSockets(Array *socketThreads)
         devName = socketThread->devName;
         if ((rv = pthread_create(&socketThread->thread, NULL, startSocket, socketThread)) != 0) {
 //FIXME evaluate where to log.....
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "startSockets", errno,
+            logError(CONSOLE, "src/core/unitlogd/socket.c", "startSockets", errno,
                           strerror(errno), "Unable to create the thread for the '%s' dev", devName);
             break;
         }
         else {
 //FIXME evaluate where to log.....
             if (UNITLOGD_DEBUG)
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Thread created succesfully for the '%s' dev\n", devName);
+                logInfo(CONSOLE, "Thread created succesfully for the '%s' dev\n", devName);
         }
 
     }
@@ -174,13 +174,13 @@ startSockets(Array *socketThreads)
         if (pthread_join(socketThread->thread, (void **)&rvThread) != EXIT_SUCCESS) {
             rv = 1;
 //FIXME evaluate where to log.....
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "startSockets", rv,
+            logError(CONSOLE, "src/core/processes/process.c", "startSockets", rv,
                           strerror(rv), "Unable to join the thread for the '%s' dev", devName);
         }
         else {
 //FIXME evaluate where to log.....
             if (UNITLOGD_DEBUG)
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Thread joined successfully for the '%s' dev! Return code = %d\n",
+                logInfo(CONSOLE, "Thread joined successfully for the '%s' dev! Return code = %d\n",
                              devName, *rvThread);
         }
         if (*rvThread == 1)
@@ -204,14 +204,14 @@ getUnixSocketFd(const char *socketPath) {
 
     if ((socketFd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) {
 //FIXME check where to log
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "socketUnix",
+        logError(CONSOLE, "src/core/unitlogd/socket.c", "socketUnix",
                       errno, strerror(errno), "Socket error");
         goto out;
     }
 
     if (bind(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1)
 //FIXME check where to log
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "socketUnix",
+        logError(CONSOLE, "src/core/unitlogd/socket.c", "socketUnix",
                       errno, strerror(errno), "Bind error");
     out:
         return socketFd;
@@ -229,20 +229,20 @@ stopSocket(void *arg)
 
     if ((rv = write(pipe->fds[1], &output, sizeof(int))) == -1) {
 //FIXME where to log.....
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "stopSocket",
+        logError(CONSOLE, "src/core/unitlogd/socket.c", "stopSocket",
                       errno, strerror(errno), "Unable to write into pipe for the %s dev", devName);
         goto out;
     }
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
 //FIXME where to log.....
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "stopSocket",
+        logError(CONSOLE, "src/core/unitlogd/socket.c", "stopSocket",
                       rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s dev",
                       devName);
         goto out;
     }
     if ((rv = pthread_mutex_unlock(mutex)) != 0) {
 //FIXME where to log.....
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "stopSocket",
+        logError(CONSOLE, "src/core/unitlogd/socket.c", "stopSocket",
                       rv, strerror(rv), "Unable to unlock the pipe mutex for the %s dev", devName);
         goto out;
     }
@@ -270,14 +270,14 @@ stopSockets(Array *socketThreads)
         devName = socketThread->devName;
         if ((rv = pthread_create(&socketThread->thread, NULL, stopSocket, socketThread)) != 0) {
 //FIXME evaluate where to log.....
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/unitlogd/socket.c", "stopSockets", errno,
+            logError(CONSOLE, "src/core/unitlogd/socket.c", "stopSockets", errno,
                           strerror(errno), "Unable to create the thread for the '%s' dev", devName);
             break;
         }
         else {
 //FIXME evaluate where to log.....
             if (UNITLOGD_DEBUG)
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Thread created succesfully for the '%s' dev\n", devName);
+                logInfo(CONSOLE, "Thread created succesfully for the '%s' dev\n", devName);
         }
     }
     for (int i = 0; i < len; i++) {
@@ -286,13 +286,13 @@ stopSockets(Array *socketThreads)
         if (pthread_join(socketThread->thread, (void **)&rvThread) != EXIT_SUCCESS) {
             rv = 1;
 //FIXME evaluate where to log.....
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "stopSockets", rv,
+            logError(CONSOLE, "src/core/processes/process.c", "stopSockets", rv,
                           strerror(rv), "Unable to join the thread for the '%s' dev", devName);
         }
         else {
 //FIXME evaluate where to log.....
             if (UNITLOGD_DEBUG)
-                unitdLogInfo(LOG_UNITD_CONSOLE, "Thread joined successfully for the '%s' dev! Return code = %d\n",
+                logInfo(CONSOLE, "Thread joined successfully for the '%s' dev! Return code = %d\n",
                              devName, *rvThread);
         }
         if (*rvThread == 1)

@@ -20,6 +20,9 @@ typedef struct {
 extern bool UNITLOGD_DEBUG;
 extern int SELF_PIPE[2];
 extern int UNITLOGD_PID;
+extern FILE *UNITLOGD_INDEX;
+extern FILE *UNITLOGD_LOG;
+extern FILE *UNITLOGD_BOOT_LOG;
 
 /* Common */
 void assertMacros();

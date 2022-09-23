@@ -26,7 +26,7 @@ cleanerNew()
     assert(mutex);
     cleaner->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/cleaner.c", "cleanerNew", rv, strerror(rv),
+        logError(UNITD_BOOT, "src/core/handlers/cleaner.c", "cleanerNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
@@ -45,7 +45,7 @@ cleanerRelease(Cleaner **cleaner)
         /* Destroy and free the mutex */
         if ((mutex = cleanerTemp->mutex)) {
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "cleanerRelease", rv,
+                logError(CONSOLE, "src/core/handlers/cleaner.c", "cleanerRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             assert(rv == 0);
@@ -74,13 +74,13 @@ runCleanerThread()
 
     /* Open pipe */
     if ((rv = pipe(CLEANER->fds)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
+        logError(ALL, "src/core/handlers/cleaner.c", "runCleanerThread", errno,
                       strerror(errno), "Unable to run pipe for the cleaner");
         goto out;
     }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "runCleanerThread",
+        logError(ALL, "src/core/handlers/cleaner.c", "runCleanerThread",
                       rv, strerror(rv), "Unable to acquire the cleaner mutex lock");
         goto out;
     }
@@ -96,7 +96,7 @@ runCleanerThread()
             continue;
         if (FD_ISSET(fd, &fds)) {
             if ((rv = read(fd, &input, sizeof(int))) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/cleaner.c", "runCleanerThread",
+                logError(SYSTEM, "src/core/handlers/cleaner.c", "runCleanerThread",
                               errno, strerror(errno), "Unable to read from pipe for the cleaner!");
                 goto out;
             }
@@ -112,7 +112,7 @@ runCleanerThread()
     out:
         /* Unlock mutex */
         if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "runCleanerThread",
+            logError(CONSOLE, "src/core/handlers/cleaner.c", "runCleanerThread",
                           rv, strerror(rv), "Unable to unlock the cleaner mutex");
         }
         pthread_exit(0);
@@ -129,12 +129,12 @@ startCleanerThread(void *arg UNUSED)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     if ((rv = pthread_create(&thread, &attr, runCleanerThread, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "startCleanerThread", errno,
+        logError(ALL, "src/core/handlers/cleaner.c", "startCleanerThread", errno,
                       strerror(errno), "Unable to create the runCleaner thread (detached)");
     }
     else {
         if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Run cleaner thread (detached) created successfully\n");
+            logInfo(UNITD_BOOT, "Run cleaner thread (detached) created successfully\n");
     }
     return NULL;
 }
@@ -146,21 +146,21 @@ startCleaner()
     int rv = 0;
 
     if ((rv = pthread_create(&thread, NULL, startCleanerThread, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "startCleaner", errno,
+        logError(ALL, "src/core/handlers/cleaner.c", "startCleaner", errno,
                       strerror(errno), "Unable to create the thread for the cleaner");
     }
     else {
         if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the cleaner\n");
+            logInfo(UNITD_BOOT, "Thread created successfully for the cleaner\n");
     }
     /* Waiting for the thread to terminate */
     if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/cleaner.c", "startCleaner", rv,
+        logError(ALL, "src/core/handlers/cleaner.c", "startCleaner", rv,
                       strerror(rv), "Unable to join the thread for the cleaner");
     }
     else {
         if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the cleaner\n");
+            logInfo(UNITD_BOOT, "Thread joined successfully for the cleaner\n");
     }
 
 }
@@ -174,19 +174,19 @@ stopCleanerThread(void *arg UNUSED)
     pthread_mutex_t *mutex = CLEANER->mutex;
 
     if ((rv = write(CLEANER->fds[1], &output, sizeof(int))) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleanerThread",
+        logError(CONSOLE, "src/core/handlers/cleaner.c", "stopCleanerThread",
                       errno, strerror(errno), "Unable to write into pipe for the cleaner");
         goto out;
     }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleanerThread",
+        logError(CONSOLE, "src/core/handlers/cleaner.c", "stopCleanerThread",
                       rv, strerror(rv), "Unable to acquire the cleaner mutex lock");
         goto out;
     }
     /* Unlock mutex */
     if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleanerThread",
+        logError(CONSOLE, "src/core/handlers/cleaner.c", "stopCleanerThread",
                       rv, strerror(rv), "Unable to unlock the cleaner mutex");
     }
 
@@ -203,21 +203,21 @@ stopCleaner()
 
     if (CLEANER) {
         if ((rv = pthread_create(&thread, NULL, stopCleanerThread, NULL)) != 0) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleaner", errno,
+            logError(CONSOLE, "src/core/handlers/cleaner.c", "stopCleaner", errno,
                           strerror(errno), "Unable to create the thread for the cleaner (stop)");
         }
         else {
             if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the cleaner (stop)\n");
+                logInfo(UNITD_BOOT, "Thread created successfully for the cleaner (stop)\n");
         }
         /* Waiting for the thread to terminate */
         if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/cleaner.c", "stopCleaner", rv,
+            logError(CONSOLE, "src/core/handlers/cleaner.c", "stopCleaner", rv,
                           strerror(rv), "Unable to join the thread for the cleaner (stop)");
         }
         else {
             if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the cleaner (stop)\n");
+                logInfo(UNITD_BOOT, "Thread joined successfully for the cleaner (stop)\n");
         }
     }
 }

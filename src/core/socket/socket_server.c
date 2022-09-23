@@ -122,13 +122,13 @@ listenSocketRequest()
     /* Binding */
     if ((rv = bind(socketConnection, (const struct sockaddr *)&name,
                    sizeof(struct sockaddr_un))) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest",
+        logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest",
                       errno, strerror(errno), "Bind error");
         goto out;
     }    
     /* Listening */
     if ((rv = listen(socketConnection, BACK_LOG)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest",
+        logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest",
                       errno, strerror(errno), "Listen error");
         goto out;
 
@@ -151,7 +151,7 @@ listenSocketRequest()
         */
         if (FD_ISSET(socketConnection, &readFds)) {
             if ((socketData = accept(socketConnection, NULL, NULL)) == -1 && errno != EAGAIN) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c",
+                logError(CONSOLE, "src/core/socket/socket_server.c",
                               "listenSocketRequest", errno, strerror(errno), "Accept error");
                 goto out;
             }
@@ -339,7 +339,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                                             strlen(buffer), buffer);
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "getUnitListServer",
+            logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitListServer",
                           errno, strerror(errno), "Send func has returned -1 exit code!");
         }
 
@@ -392,13 +392,13 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
          * Take a quick look there.
         */
         if ((rvMutex = handleMutex(unit->mutex, true)) != 0)
-            unitdLogErrorStr(LOG_UNITD_SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
+            logErrorStr(SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
 
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
 
         /* Unlock only if it's locked */
         if (rvMutex == 0 && (rvMutex = handleMutex(unit->mutex, false)) != 0)
-            unitdLogErrorStr(LOG_UNITD_SYSTEM, "Unable to unlock the mutex in getUnitStatusServer func");
+            logErrorStr(SYSTEM, "Unable to unlock the mutex in getUnitStatusServer func");
     }
     else {
         /* Check and parse unitName. We don't consider the units into memory
@@ -415,7 +415,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
                                             strlen(buffer), buffer);
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "getUnitStatusServer",
+            logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitStatusServer",
                           errno, strerror(errno), "Send func has returned -1 exit code!");
         }
 
@@ -543,7 +543,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
                                                 strlen(buffer), buffer);
             /* Sending the response */
             if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "stopUnitServer",
+                logError(SYSTEM, "src/core/socket/socket_server.c", "stopUnitServer",
                               errno, strerror(errno), "Send func has returned -1 exit code!");
             }
             objectRelease(&buffer);
@@ -755,7 +755,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
                                                 strlen(buffer), buffer);
             /* Sending the response */
             if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
+                logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
                               errno, strerror(errno), "Send func has returned -1 exit code!");
             }
             objectRelease(&buffer);
@@ -888,7 +888,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                 arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
                 arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
                 /* Write the details into system log */
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
+                logError(SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
                               rv, strerror(rv), "ExecScript error!");
                 goto out;
             }
@@ -916,7 +916,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                        strlen(buffer), buffer);
             /* Sending the response */
             if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
+                logError(SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
                               errno, strerror(errno), "Send func has returned -1 exit code!");
             }
             objectRelease(&buffer);
@@ -1193,7 +1193,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                 arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
                 arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
                 /* Write the details into system log */
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
+                logError(SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
                               rv, strerror(rv), "ExecScript error!");
                 goto out;
             }
@@ -1221,7 +1221,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                    strlen(buffer), buffer);
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
+            logError(SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
                           errno, strerror(errno), "Send func has returned -1 exit code!");
         }
 
@@ -1325,7 +1325,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                    strlen(buffer), buffer);
         /* Sending the response */
         if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-            unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "getUnitDataServer",
+            logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitDataServer",
                           errno, strerror(errno), "Send func has returned -1 exit code!");
         }
 
@@ -1367,7 +1367,7 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
                strlen(buffer), buffer);
     /* Sending the response */
     if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "getDefaultStateServer",
+        logError(SYSTEM, "src/core/socket/socket_server.c", "getDefaultStateServer",
                       errno, strerror(errno), "Send func has returned -1 exit code!");
     }
 
@@ -1425,7 +1425,7 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
                strlen(buffer), buffer);
     /* Sending the response */
     if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
-        unitdLogError(LOG_UNITD_SYSTEM, "src/core/socket/socket_server.c", "setDefaultStateServer",
+        logError(SYSTEM, "src/core/socket/socket_server.c", "setDefaultStateServer",
                       errno, strerror(errno), "Send func has returned -1 exit code!");
     }
 

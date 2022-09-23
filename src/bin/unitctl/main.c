@@ -245,8 +245,8 @@ int main(int argc, char **argv) {
                 }
                 if (command == KEXEC_COMMAND && !isKexecLoaded()) {
                     rv = 1;
-                    unitdLogErrorStr(LOG_UNITD_CONSOLE, "Kexec is not loaded!\n");
-                    unitdLogInfo(LOG_UNITD_CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
+                    logErrorStr(CONSOLE, "Kexec is not loaded!\n");
+                    logInfo(CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
                     goto out;
                 }
             }

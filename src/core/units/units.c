@@ -220,7 +220,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(mutex);
         unit->mutex = mutex;
         if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-            unitdLogError(LOG_UNITD_BOOT, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
+            logError(UNITD_BOOT, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
                           "Unable to run pthread_mutex_init");
         }
         assert(rv == 0);
@@ -231,7 +231,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(cv);
         unit->cv = cv;
         if ((rv = pthread_cond_init(cv, NULL)) != 0) {
-            unitdLogError(LOG_UNITD_BOOT, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
+            logError(UNITD_BOOT, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
                           "Unable to run pthread_cond_init");
         }
         assert(rv == 0);
@@ -538,14 +538,14 @@ loadUnits(Array **units, const char *path, const char *dirName,
 
     /* Executing the glob function */
     if (UNITD_DEBUG && currentState != NO_STATE)
-        unitdLogWarning(LOG_UNITD_BOOT, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
+        logWarning(UNITD_BOOT, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         lenResults = results.gl_pathc;
         assert(lenResults > 0);
         if (!(*units))
             *units = arrayNew(unitRelease);
         if (UNITD_DEBUG && currentState != NO_STATE)
-            unitdLogInfo(LOG_UNITD_BOOT, "Found %d units in %s/%s!\n", lenResults, path, dirName);
+            logInfo(UNITD_BOOT, "Found %d units in %s/%s!\n", lenResults, path, dirName);
         for (size_t i = 0; i < lenResults; i++) {
             /* Get the unit path */
             unitPath = results.gl_pathv[i];
@@ -566,7 +566,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                 }
                 unit->enabled = (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
                 if (UNITD_DEBUG)
-                    unitdLogInfo(LOG_UNITD_BOOT, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
+                    logInfo(UNITD_BOOT, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
                 /* Parse the Unit file */
                 if (parse) {
                     rv = parseUnit(units, &unit, isAggregate, currentState);
@@ -592,21 +592,21 @@ loadUnits(Array **units, const char *path, const char *dirName,
             /* If we are in the init or final state then show the configuration error and emergency shell */
             if (currentState == INIT || currentState == FINAL) {
                 if (rv == 1) {
-                    unitdLogWarning(LOG_UNITD_CONSOLE, "[*] CONFIGURATION ERRORS\n");
+                    logWarning(CONSOLE, "[*] CONFIGURATION ERRORS\n");
                     for (size_t i = 0; i < lenResults; i++) {
                         unit = arrayGet(*units, i);
-                        unitdLogInfo(LOG_UNITD_CONSOLE, "Unit name = '%s'\n", unit->name);
-                        arrayPrint(LOG_UNITD_CONSOLE, &((Unit *)arrayGet(*units, i))->errors, true);
+                        logInfo(CONSOLE, "Unit name = '%s'\n", unit->name);
+                        arrayPrint(CONSOLE, &((Unit *)arrayGet(*units, i))->errors, true);
                     }
                 }
             }
             else {
                 if (UNITD_DEBUG) {
-                    unitdLogWarning(LOG_UNITD_BOOT, "\n[*] CONFIGURATION ERRORS\n");
+                    logWarning(UNITD_BOOT, "\n[*] CONFIGURATION ERRORS\n");
                     for (size_t i = 0; i < lenResults; i++) {
                         unit = arrayGet(*units, i);
-                        unitdLogInfo(LOG_UNITD_BOOT, "Unit name = '%s'\n", unit->name);
-                        arrayPrint(LOG_UNITD_BOOT, &((Unit *)arrayGet(*units, i))->errors, true);
+                        logInfo(UNITD_BOOT, "Unit name = '%s'\n", unit->name);
+                        arrayPrint(UNITD_BOOT, &((Unit *)arrayGet(*units, i))->errors, true);
                     }
                 }
             }
@@ -615,11 +615,11 @@ loadUnits(Array **units, const char *path, const char *dirName,
     else if (rv == GLOB_NOMATCH && currentState != NO_STATE) {
         /* Zero units are allowed only for Reboot and Poweroff State otherwise we show the errors */
         if (currentState != REBOOT && currentState != POWEROFF && currentState != USER)
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
+            logError(CONSOLE, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
                           "GLOB_NOMATCH", "Zero units found for %s state", STATE_DATA_ITEMS[currentState].desc);
         else {
             if (UNITD_DEBUG)
-                unitdLogWarning(LOG_UNITD_BOOT, "Zero units found for %s state\n",
+                logWarning(UNITD_BOOT, "Zero units found for %s state\n",
                                 STATE_DATA_ITEMS[currentState].desc);
         }
     }
@@ -810,7 +810,7 @@ unitRelease(Unit **unit)
         /* Destroy and free the condition variable */
         if ((cv = unitTemp->cv)) {
             if ((rv = pthread_cond_destroy(cv)) != 0) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/units/units.c", "unitRelease", rv,
+                logError(CONSOLE, "src/core/units/units.c", "unitRelease", rv,
                               strerror(rv), "Unable to run pthread_cond_destroy");
             }
             assert(rv == 0);
@@ -821,7 +821,7 @@ unitRelease(Unit **unit)
         if ((mutex = unitTemp->mutex)) {
             /* Destroy and free the mutex */
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/units/units.c", "unitRelease", rv,
+                logError(CONSOLE, "src/core/units/units.c", "unitRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             assert(rv == 0);
@@ -986,7 +986,7 @@ pipeNew()
     assert(mutex);
     pipe->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
+        logError(UNITD_BOOT, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
@@ -1005,7 +1005,7 @@ pipeRelease(Pipe **pipe)
         /* Destroy and free the mutex */
         if ((mutex = pipeTemp->mutex)) {
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/units/units.c", "pipeRelease", rv,
+                logError(CONSOLE, "src/core/units/units.c", "pipeRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             assert(rv == 0);

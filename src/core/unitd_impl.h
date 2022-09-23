@@ -108,21 +108,21 @@ extern int COMMANDS_LEN;
 #define DEFAULT_COLOR "\033[0m"
 #define WHITE_UNDERLINE_COLOR "\033[37;4m"
 
-#define LOG_UNITD_CONSOLE   0x0001
-#define LOG_UNITD_BOOT      0x0010
-#define LOG_UNITD_SYSTEM    0x0100
-#define LOG_UNITD_ALL       0x1111
+#define CONSOLE         0x1
+#define UNITD_BOOT      0x10
+#define SYSTEM          0x100
+#define ALL             0x1111
 
 extern FILE *UNITD_LOG_FILE;
 
 int unitdOpenLog(const char *);
 int unitdCloseLog();
-void unitdLogInfo(int options, const char *format, ...);
-void unitdLogWarning(int options, const char *format, ...);
-void unitdLogError(int options, const char *transUnit, const char *funcName, int returnValue,
+void logInfo(int options, const char *format, ...);
+void logWarning(int options, const char *format, ...);
+void logError(int options, const char *transUnit, const char *funcName, int returnValue,
                    const char *errDesc, const char *format, ...);
-void unitdLogErrorStr(int options, const char *format, ...);
-void unitdLogSuccess(int options, const char *format, ...);
+void logErrorStr(int options, const char *format, ...);
+void logSuccess(int options, const char *format, ...);
 /*********************************************************************************/
 
 /* PARSER */

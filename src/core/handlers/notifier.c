@@ -46,7 +46,7 @@ notifierNew()
     assert(mutex);
     notifier->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        unitdLogError(LOG_UNITD_BOOT, "src/core/handlers/notifier.c", "notifierNew", rv, strerror(rv),
+        logError(UNITD_BOOT, "src/core/handlers/notifier.c", "notifierNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
@@ -69,7 +69,7 @@ notifierRelease(Notifier **notifier)
         /* Destroy and free the mutex */
         if ((mutex = notifierTemp->mutex)) {
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "notifierRelease", rv,
+                logError(CONSOLE, "src/core/handlers/notifier.c", "notifierRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             assert(rv == 0);
@@ -115,27 +115,27 @@ runNotifiersThread(void *arg)
 
     /* Open pipe */
     if ((rv = pipe(notifier->fds)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifiersThread", errno,
+        logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread", errno,
                       strerror(errno), "Unable to run pipe for the notifier (%s)", watchDir);
         goto out;
     }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
+        logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
                       rv, strerror(rv), "Unable to acquire the notifier mutex lock (%s)", watchDir);
         goto out;
     }
 
     /* Creating the inotify instance */
     if ((*fd = inotify_init()) == -1) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
+        logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
                       errno, strerror(errno), "Inotify_init has returned -1");
         goto out;
     }
 
     /* Adding the "watchDir" directory into watch list. */
     if ((*wd = inotify_add_watch(*fd, watchDir, IN_MODIFY)) == -1) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifierThread",
+        logError(ALL, "src/core/handlers/notifier.c", "runNotifierThread",
                       errno, strerror(errno), "Inotify_add_watch has returned -1");
         goto out;
     }
@@ -151,7 +151,7 @@ runNotifiersThread(void *arg)
         select(maxFd, &fds, NULL, NULL, NULL);
         if (FD_ISSET(*fdPipe, &fds)) {
             if ((length = read(*fdPipe, &input, sizeof(int))) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                logError(SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
                               errno, strerror(errno), "Unable to read from pipe for the notifier (%s)!", watchDir);
                 goto out;
             }
@@ -160,7 +160,7 @@ runNotifiersThread(void *arg)
         }
         else if (FD_ISSET(*fd, &fds)) {
             if ((length = read(*fd, buffer, EVENT_BUF_LEN)) == -1) {
-                unitdLogError(LOG_UNITD_SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                logError(SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
                               errno, strerror(errno), "Unable to read from inotify fd for the notifier (%s)!", watchDir);
                 goto out;
             }
@@ -198,20 +198,20 @@ runNotifiersThread(void *arg)
             if (*wd != -1) {
                 /* Removing the "watchDir" directory from watch list. */
                 if ((rv = inotify_rm_watch(*fd, *wd)) == -1) {
-                    unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
+                    logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
                                   errno, strerror(errno), "Inotify_rm_watch has returned -1 (%s)", watchDir);
                 }
             }
             /* Close the inotify instance */
             if ((rv = close(*fd)) == -1) {
-                unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
+                logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
                               errno, strerror(errno), "Close has returned -1 (%s)", watchDir);
             }
         }
 
         /* Unlock mutex */
         if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
+            logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
                           rv, strerror(rv), "Unable to unlock the notifier mutex (%s)", watchDir);
         }
         pthread_exit(0);
@@ -235,12 +235,12 @@ startNotifiersThread(void *arg)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if ((rv = pthread_create(&thread, &attr, runNotifiersThread, notifier)) != 0) {
-        unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "startNotifierThread", errno,
+        logError(ALL, "src/core/handlers/notifier.c", "startNotifierThread", errno,
                       strerror(errno), "Unable to create the runNotifiersThread thread (detached) (%s)", watchDir);
     }
     else {
         if (UNITD_DEBUG)
-            unitdLogInfo(LOG_UNITD_BOOT, "Run notifiers thread (detached) created successfully (%s)\n", watchDir);
+            logInfo(UNITD_BOOT, "Run notifiers thread (detached) created successfully (%s)\n", watchDir);
     }
     return NULL;
 }
@@ -283,13 +283,13 @@ startNotifiers()
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
         if ((rv = pthread_create(&threads[i], NULL, startNotifiersThread, notifier)) != 0) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "startNotifiers", errno,
+            logError(ALL, "src/core/handlers/notifier.c", "startNotifiers", errno,
                           strerror(errno), "Unable to create the thread for the notifier (%s)",
                           watchDir);
         }
         else {
             if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the notifier (%s)\n",
+                logInfo(UNITD_BOOT, "Thread created successfully for the notifier (%s)\n",
                              watchDir);
         }
     }
@@ -298,12 +298,12 @@ startNotifiers()
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
         if ((rv = pthread_join(threads[i], NULL)) != EXIT_SUCCESS) {
-            unitdLogError(LOG_UNITD_ALL, "src/core/handlers/notifier.c", "startNotifiers", rv,
+            logError(ALL, "src/core/handlers/notifier.c", "startNotifiers", rv,
                           strerror(rv), "Unable to join the thread for the notifier (%s)", watchDir);
         }
         else {
             if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the notifier (%s)\n", watchDir);
+                logInfo(UNITD_BOOT, "Thread joined successfully for the notifier (%s)\n", watchDir);
         }
     }
 }
@@ -322,21 +322,21 @@ stopNotifiersThread(void *arg)
     watchDir = notifier->watchDir;
 
     if ((rv = write(notifier->fds[1], &output, sizeof(int))) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
+        logError(CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
                       errno, strerror(errno), "Unable to write into fd for the notifier (%s)", watchDir);
         goto out;
     }
 
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
+        logError(CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
                       rv, strerror(rv), "Unable to acquire the notifier mutex lock (%s)", watchDir);
         goto out;
     }
 
     /* Unlock mutex */
     if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
+        logError(CONSOLE, "src/core/handlers/notifier.c", "stopNotifiersThread",
                       rv, strerror(rv), "Unable to unlock the notifier mutex (%s)", watchDir);
     }
 
@@ -358,13 +358,13 @@ stopNotifiers()
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
         if ((rv = pthread_create(&threads[i], NULL, stopNotifiersThread, notifier)) != 0) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiers", errno,
+            logError(CONSOLE, "src/core/handlers/notifier.c", "stopNotifiers", errno,
                           strerror(errno), "Unable to create the thread for the notifier (stop) (%s)",
                           watchDir);
         }
         else {
             if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "Thread created successfully for the notifier (stop) (%s)\n",
+                logInfo(UNITD_BOOT, "Thread created successfully for the notifier (stop) (%s)\n",
                              watchDir);
         }
     }
@@ -373,13 +373,13 @@ stopNotifiers()
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
         if ((rv = pthread_join(threads[i], NULL)) != EXIT_SUCCESS) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/handlers/notifier.c", "stopNotifiers", rv,
+            logError(CONSOLE, "src/core/handlers/notifier.c", "stopNotifiers", rv,
                           strerror(rv), "Unable to join the thread for the notifier (stop) (%s)",
                           watchDir);
         }
         else {
             if (UNITD_DEBUG)
-                unitdLogInfo(LOG_UNITD_BOOT, "Thread joined successfully for the notifier (stop) (%s)\n",
+                logInfo(UNITD_BOOT, "Thread joined successfully for the notifier (stop) (%s)\n",
                              watchDir);
         }
     }

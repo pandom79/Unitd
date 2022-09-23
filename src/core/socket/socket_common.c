@@ -69,7 +69,7 @@ initSocket(struct sockaddr_un *name)
 
     /* Connection */
     if ((socketConnection = socket(AF_UNIX, SOCK_SEQPACKET, 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_server.c", "initSocket",
+        logError(CONSOLE, "src/core/socket/socket_server.c", "initSocket",
                       errno, strerror(errno), "Socket error");
     }
     else {
@@ -90,7 +90,7 @@ unitdSockConn(int *socketConnection, struct sockaddr_un *name)
     int rv = 0;
     if ((rv = connect(*socketConnection, (const struct sockaddr *)name,
                       sizeof(struct sockaddr_un))) == -1) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE,
+        logErrorStr(CONSOLE,
                          !USER_INSTANCE ?
                          "Unitd system instance could be not running!\n" :
                          "Unitd user instance could be not running!\n");
@@ -109,7 +109,7 @@ readMessage(int *socketFd, char **buffer, int *bufferSize)
 
     while (1) {
         if ((rv = recv(*socketFd, *buffer, *bufferSize, MSG_PEEK | MSG_TRUNC)) == -1) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_common.c",
+            logError(CONSOLE, "src/core/socket/socket_common.c",
                           "readMessage", errno, strerror(errno), "Recv error");
             goto out;
         }
@@ -225,7 +225,7 @@ sendWallMsg(Command command)
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/send-wallmsg.sh", scriptParams->arr, envVars->arr);
     if (rv != 0)
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_common.c",
+        logError(CONSOLE, "src/core/socket/socket_common.c",
                       "sendWallMsg", rv, strerror(rv), NULL);
 
     arrayRelease(&envVars);

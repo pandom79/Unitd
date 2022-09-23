@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     if (!USER_INSTANCE) {
         /* Change the current working directory to root */
         if ((rv = chdir("/")) == -1) {
-            unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", errno,
+            logError(ALL, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Chdir (system instance) has returned -1 exit code");
             showEmergencyShell = hasError = true;
             goto out;
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
         }
 
         /* Welcome msg */
-        unitdLogInfo(LOG_UNITD_CONSOLE, "Welcome to %s!\n", OS_NAME);
+        logInfo(CONSOLE, "Welcome to %s!\n", OS_NAME);
 
         /* Detecting virtualization environment */
         rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
             arrayAdd(UNITD_ENV_VARS, NULL);
         }
         else {
-            unitdLogError(LOG_UNITD_ALL, "src/bin/unitd/main.c", "main", rv,
+            logError(ALL, "src/bin/unitd/main.c", "main", rv,
                           strerror(rv), "An error has occurred in virtualization.sh");
             showEmergencyShell = hasError = true;
             goto out;
@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
         SHUTDOWN_STOP = timeNew(NULL);
         char *diff = stringGetDiffTime(SHUTDOWN_STOP, SHUTDOWN_START);
         char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
-        unitdLogInfo(LOG_UNITD_CONSOLE | LOG_UNITD_BOOT, "%s\n", msg);
+        logInfo(CONSOLE | UNITD_BOOT, "%s\n", msg);
         objectRelease(&diff);
         objectRelease(&msg);
         timeRelease(&SHUTDOWN_START);
@@ -234,19 +234,19 @@ int main(int argc, char **argv) {
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
         switch (SHUTDOWN_COMMAND) {
             case REBOOT_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "System reboot ...");
+                logInfo(CONSOLE, "System reboot ...");
                 reboot(RB_AUTOBOOT);
                 break;
             case POWEROFF_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "System power off ...");
+                logInfo(CONSOLE, "System power off ...");
                 reboot(RB_POWER_OFF);
                 break;
             case HALT_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "System halt ...");
+                logInfo(CONSOLE, "System halt ...");
                 reboot(RB_HALT_SYSTEM);
                 break;
             case KEXEC_COMMAND:
-                unitdLogInfo(LOG_UNITD_CONSOLE, "System reboot with kexec ...");
+                logInfo(CONSOLE, "System reboot with kexec ...");
                 reboot(RB_KEXEC);
                 break;
             default:
@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
 
         if (!USER_INSTANCE) {
 #ifndef UNITD_TEST
-            unitdLogInfo(LOG_UNITD_CONSOLE, "Reboot the system ...\n");
+            logInfo(CONSOLE, "Reboot the system ...\n");
             sync();
             reboot(RB_AUTOBOOT);
 #endif

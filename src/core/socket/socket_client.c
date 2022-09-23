@@ -39,7 +39,7 @@ getUnitPathByName(const char *arg, bool showErr)
     if (rv != 0) {
         assert(errors->size == 1);
         if (showErr)
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s\n", (char *)arrayGet(errors, 0));
+            logErrorStr(CONSOLE, "%s\n", (char *)arrayGet(errors, 0));
         goto out;
     }
     else {
@@ -70,14 +70,14 @@ printStatus(PState pState, const char *status, int finalStatus, bool newline)
             if (pState == DEAD)
                 printf("%s%s%s", GREY_COLOR, status, DEFAULT_COLOR);
             else
-                unitdLogSuccess(LOG_UNITD_CONSOLE, "%s", status);
+                logSuccess(CONSOLE, "%s", status);
             break;
         case FINAL_STATUS_FAILURE:
-                unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s", "Failed");
+                logErrorStr(CONSOLE, "%s", "Failed");
             break;
         case FINAL_STATUS_READY:
             if (pState == RESTARTING)
-                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", status);
+                logWarning(CONSOLE, "%s", status);
             else
                 printf("%s%s%s", GREY_COLOR, status, DEFAULT_COLOR);
             break;
@@ -94,9 +94,9 @@ printExitCode(int exitCode)
     if (exitCode != -1) {
         printf("%*s ", MAX_LEN_KEY, "Exit code :");
         if (exitCode == EXIT_SUCCESS)
-            unitdLogSuccess(LOG_UNITD_CONSOLE, "%d (%s)\n", exitCode, "Success");
+            logSuccess(CONSOLE, "%d (%s)\n", exitCode, "Success");
         else if (exitCode != EXIT_SUCCESS)
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "%d (%s)\n", exitCode, strerror(exitCode));
+            logErrorStr(CONSOLE, "%d (%s)\n", exitCode, strerror(exitCode));
     }
 }
 
@@ -106,11 +106,11 @@ printSignalNum(int signalNum)
     if (signalNum != -1) {
         printf("%*s ", MAX_LEN_KEY, "Signal :");
         if (signalNum != SIGSTOP && signalNum != SIGTSTP && signalNum != SIGCONT)
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
+            logErrorStr(CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
         else if (signalNum == SIGSTOP || signalNum == SIGTSTP)
-            unitdLogInfo(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
+            logInfo(CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
         else if (signalNum == SIGCONT)
-            unitdLogSuccess(LOG_UNITD_CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
+            logSuccess(CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
     }
 }
 
@@ -240,7 +240,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 
     /* Sending the message */
     if ((rv = send(socketConnection, buffer, strlen(buffer), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "unitdShutdown",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "unitdShutdown",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -283,7 +283,7 @@ getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter listFi
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "getUnitsList",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitsList",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -388,7 +388,7 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                 sprintf(pidStr, "%d", *pid);
             /* The restarted units require attention */
             if (unitDisplay->restartNum > 0)
-                unitdLogWarning(LOG_UNITD_CONSOLE, "%s", pidStr);
+                logWarning(CONSOLE, "%s", pidStr);
             else
                 printf("%s", pidStr);
             printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
@@ -437,7 +437,7 @@ getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "getUnitStatus",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitStatus",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -492,7 +492,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         sockErrors = (*sockMessageOut)->errors;
         len = (sockErrors ? sockErrors->size : 0);
         for (int i = 0; i < len; i++) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, arrayGet(sockErrors, i));
+            logErrorStr(CONSOLE, arrayGet(sockErrors, i));
             printf("\n");
         }
 
@@ -502,9 +502,9 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         for (int i = 0; i < len; i++) {
             message = arrayGet(messages, i);
             if (stringStartsWithStr(message, "Warning"))
-                unitdLogWarning(LOG_UNITD_CONSOLE, message);
+                logWarning(CONSOLE, message);
             else
-                unitdLogInfo(LOG_UNITD_CONSOLE, message);
+                logInfo(CONSOLE, message);
             printf("\n");
         }
 
@@ -572,7 +572,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             if (lenUnitErrors > 0) {
                 printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "UNIT ERRORS", DEFAULT_COLOR);
                 for (int j = 0; j < lenUnitErrors; j++) {
-                    unitdLogErrorStr(LOG_UNITD_CONSOLE, "[%d] %s", j + 1, arrayGet(unitErrors, j));
+                    logErrorStr(CONSOLE, "[%d] %s", j + 1, arrayGet(unitErrors, j));
                     printf("\n");
                 }
             }
@@ -582,12 +582,12 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             if (restartNum > 0) {
                 printf("\n%s%s%s", WHITE_UNDERLINE_COLOR, "PROCESS DATA HISTORY", DEFAULT_COLOR);
                 if (restartNum == 1)
-                    unitdLogWarning(LOG_UNITD_CONSOLE, "\nThe unit has been restarted %d time.\n", restartNum);
+                    logWarning(CONSOLE, "\nThe unit has been restarted %d time.\n", restartNum);
                 else
-                    unitdLogWarning(LOG_UNITD_CONSOLE, "\nThe unit has been restarted %d times.\n", restartNum);
+                    logWarning(CONSOLE, "\nThe unit has been restarted %d times.\n", restartNum);
 
                 if (restartNum > SHOW_MAX_RESULTS)
-                    unitdLogWarning(LOG_UNITD_CONSOLE, "Following are shown the last %d results.\n",
+                    logWarning(CONSOLE, "Following are shown the last %d results.\n",
                                                         SHOW_MAX_RESULTS);
                 pDatasHistory = unit->processDataHistory;
                 lenPDataHistory = (pDatasHistory ? pDatasHistory->size : 0 );
@@ -650,7 +650,7 @@ stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "stopUnit",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "stopUnit",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -716,7 +716,7 @@ startUnit(SockMessageOut **sockMessageOut, const char *unitName,
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "startUnit",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "startUnit",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -776,7 +776,7 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "disableUnit",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "disableUnit",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -846,7 +846,7 @@ enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bo
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "enableUnit",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "enableUnit",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -916,7 +916,7 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "getUnitData",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitData",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -968,7 +968,7 @@ getDefaultState(SockMessageOut **sockMessageOut)
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "getDefaultState",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "getDefaultState",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -1018,8 +1018,8 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
         case POWEROFF:
         case REBOOT:
         case FINAL:
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The '%s' argument is not valid!\n", stateStr);
-            unitdLogInfo(LOG_UNITD_CONSOLE, "Please, use one of the following values :\n%s\n%s\n%s\n%s\n%s\n",
+            logErrorStr(CONSOLE, "The '%s' argument is not valid!\n", stateStr);
+            logInfo(CONSOLE, "Please, use one of the following values :\n%s\n%s\n%s\n%s\n%s\n",
                                             STATE_DATA_ITEMS[SINGLE_USER].desc, STATE_DATA_ITEMS[MULTI_USER].desc,
                                             STATE_DATA_ITEMS[MULTI_USER_NET].desc, STATE_DATA_ITEMS[CUSTOM].desc,
                                             STATE_DATA_ITEMS[GRAPHICAL].desc);
@@ -1041,7 +1041,7 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
 
     /* Sending the request */
     if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "setDefaultState",
+        logError(CONSOLE, "src/core/socket/socket_client.c", "setDefaultState",
                       errno, strerror(errno), "Send error");
         goto out;
     }
@@ -1122,7 +1122,7 @@ showData(Command command, SockMessageOut **sockMessageOut, const char *arg,
         sockErrors = (*sockMessageOut)->errors;
         lenErrors = (sockErrors ? sockErrors->size : 0);
         for (int i = 0; i < lenErrors; i++) {
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, arrayGet(sockErrors, i));
+            logErrorStr(CONSOLE, arrayGet(sockErrors, i));
             printf("\n");
         }
         /* Display the messages */
@@ -1131,9 +1131,9 @@ showData(Command command, SockMessageOut **sockMessageOut, const char *arg,
         for (int i = 0; i < len; i++) {
             message = arrayGet(messages, i);
             if (stringStartsWithStr(message, "Warning"))
-                unitdLogWarning(LOG_UNITD_CONSOLE, message);
+                logWarning(CONSOLE, message);
             else
-                unitdLogInfo(LOG_UNITD_CONSOLE, message);
+                logInfo(CONSOLE, message);
             printf("\n");
         }
         /* If there are not errors then show the unit detail */
@@ -1182,7 +1182,7 @@ catEditUnit(Command command, const char *arg)
         /* Execute the script */
         rv = execScript(UNITD_DATA_PATH, "/scripts/cat-edit.sh", scriptParams->arr, envVars->arr);
         if (rv != 0) {
-            unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c", "catEditUnit",
+            logError(CONSOLE, "src/core/socket/socket_client.c", "catEditUnit",
                           rv, strerror(rv), NULL);
         }
         /* Release resources */
@@ -1211,7 +1211,7 @@ createUnit(const char *arg)
     unitPath = getUnitPathByName(arg, false);
     if (unitPath) {
         err = getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_EXIST_ERR].desc, arg);
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "%s\n", err);
+        logErrorStr(CONSOLE, "%s\n", err);
         rv = 1;
         goto out;
     }
@@ -1237,7 +1237,7 @@ createUnit(const char *arg)
         defaultState = getStateByStr(destDefStateSyml);
         if (defaultState == NO_STATE) {
             /* If we are here then the symlink points to a bad destination */
-            unitdLogErrorStr(LOG_UNITD_CONSOLE, "The default state symlink points to a bad destination (%s)\n",
+            logErrorStr(CONSOLE, "The default state symlink points to a bad destination (%s)\n",
                              destDefStateSyml);
             rv = 1;
             goto out;
@@ -1246,7 +1246,7 @@ createUnit(const char *arg)
 
     /* Open unit file in write mode */
     if ((fp = fopen(unitPath, "w")) == NULL) {
-        unitdLogError(LOG_UNITD_CONSOLE, "src/core/socket/socket_client.c",
+        logError(CONSOLE, "src/core/socket/socket_client.c",
                       "createUnit", errno, strerror(errno), "Unable to open (write mode) %s unit", unitPath);
         rv = 1;
         goto out;
@@ -1387,7 +1387,7 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
             //Duration
             duration = unitDisplay->processData->duration;
             if (duration)
-                unitdLogSuccess(LOG_UNITD_CONSOLE, "%s", duration);
+                logSuccess(CONSOLE, "%s", duration);
             else
                 printf("-");
             len = (duration ? strlen(duration) : 1);
@@ -1417,9 +1417,9 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
         for (int i = 0; i < len; i++) {
             char *message = arrayGet(messages, i);
             if (stringStartsWithStr(message, "Boot"))
-                unitdLogInfo(LOG_UNITD_CONSOLE, "     %s", message);
+                logInfo(CONSOLE, "     %s", message);
             else
-                unitdLogInfo(LOG_UNITD_CONSOLE, "%s", message);
+                logInfo(CONSOLE, "%s", message);
             printf("\n");
         }
 
