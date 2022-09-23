@@ -10,6 +10,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define UNITD_IMPL_H
 
 #include "../include/unitd.h"
+#include "unitlogd/unitlogd_impl.h"
 
 /* UNITD */
 #define PROJECT_NAME                "Unitd init system"
@@ -472,31 +473,7 @@ void userDataRelease();
 int handleMutex(pthread_mutex_t *, int);
 void* handleMutexThread(void *);
 void setStopAndDuration(ProcessData **);
+int getMaxFileDesc(int *, int *);
 /*********************************************************************************/
-
-/* UNITLOGD */
-typedef struct {
-    pthread_t thread;
-    char *devName;
-} SocketThread;
-
-extern bool UNITLOGD_DEBUG;
-extern int SELF_PIPE[2];
-extern int UNITLOGD_PID;
-
-/* Common */
-void assertMacros();
-int unitlogdInit();
-
-/* Signals */
-int setUnitlogdSigAction();
-void exitSignal(int, siginfo_t *, void *);
-
-/* Socket */
-SocketThread * socketThreadNew();
-void socketThreadRelease(SocketThread **);
-int startSockets(Array *);
-void *startSocket(void *);
-void *startSocketThread(void *);
 
 #endif // UNITD_IMPL_H

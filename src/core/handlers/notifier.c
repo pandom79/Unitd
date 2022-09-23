@@ -15,16 +15,6 @@ bool USER_INSTANCE;
 Array *NOTIFIERS;
 bool NOTIFIER_WORKING;
 
-static int
-getMaxFd(int *fdInotify, int *fdPipe)
-{
-    int max = *fdInotify + 1;
-    if (*fdInotify < *fdPipe)
-        max = *fdPipe + 1;
-
-    return max;
-}
-
 Notifier*
 notifierNew()
 {
@@ -151,7 +141,7 @@ runNotifiersThread(void *arg)
     }
 
     fdPipe = &notifier->fds[0];
-    maxFd = getMaxFd(fd, fdPipe);
+    maxFd = getMaxFileDesc(fd, fdPipe);
     while (1) {
         FD_ZERO(&fds);
         FD_SET(*fdPipe, &fds);

@@ -550,3 +550,13 @@ setStopAndDuration(ProcessData **processData)
     objectRelease(&(*processData)->duration);
     (*processData)->duration = stringGetDiffTime((*processData)->timeStop, (*processData)->timeStart);
 }
+
+int
+getMaxFileDesc(int *fdA, int *fdB)
+{
+    int max = *fdA + 1;
+    if (*fdA < *fdB)
+        max = *fdB + 1;
+
+    return max;
+}

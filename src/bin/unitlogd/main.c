@@ -152,6 +152,9 @@ int main(int argc, char **argv) {
             break;
     }
 
+    /* Stop sockets */
+    rv = stopSockets(socketThreads);
+
     out:
         close(SELF_PIPE[0]);
         close(SELF_PIPE[1]);

@@ -114,6 +114,7 @@ sources = files(
 
 # Unitlogd sources
 sources += files(
+                'src/core/unitlogd/unitlogd_impl.h',
                 'src/core/unitlogd/common.c',
                 'src/core/unitlogd/signals.c',
                 'src/core/unitlogd/socket.c',
@@ -166,12 +167,12 @@ executable('unitlogd', 'src/bin/unitlogd/main.c',
            install_dir: sbin_path
           )
 
-executable('unitlogctl', 'src/bin/unitlogctl/main.c',
-           link_with: libunitd,
-           install: true,
-           dependencies: deps,
-           install_dir: sbin_path
-          )
+#executable('unitlogctl', 'src/bin/unitlogctl/main.c',
+#           link_with: libunitd,
+#           install: true,
+#           dependencies: deps,
+#           install_dir: sbin_path
+#          )
 
 # Install configuration
 #install_data(project_name + '.conf', install_dir: unitd_conf_path)

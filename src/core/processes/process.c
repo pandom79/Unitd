@@ -828,10 +828,9 @@ closePipe(void *arg)
                           unitName);
             goto out;
         }
-        /* Unlock the pipe mutex */
         if ((rv = pthread_mutex_unlock(mutex)) != 0) {
             unitdLogError(LOG_UNITD_CONSOLE, "src/core/processes/process.c", "closePipe",
-                          rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
+                          rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
                           unitName);
         }
         pipeRelease(&unit->pipe);
