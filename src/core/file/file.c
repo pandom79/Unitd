@@ -50,29 +50,34 @@ unitlogdOpenLog(const char *mode)
 int
 unitlogdOpenBootLog(const char *mode)
 {
+//FIXME
     return 0;
 }
 
 int
 unitlogdOpenIndex(const char *mode)
 {
+//FIXME
     return 0;
 }
 
 int
 unitlogdCloseLog()
 {
+//FIXME
     return 0;
 }
 
 int
 unitlogdCloseBootLog()
 {
+//FIXME
     return 0;
 }
 
 int
 unitlogdCloseIndex()
 {
+//FIXME
     return 0;
 }
