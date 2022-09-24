@@ -96,29 +96,48 @@ sources = files(
                 'src/include/unitd_types.h',
                 'src/core/unitd_impl.h',
                 'src/core/init/init.c',
+                'src/core/init/init.h',
                 'src/core/logger/logger.c',
+                'src/core/logger/logger.h',
                 'src/core/common/common.c',
+                'src/core/common/common.h',
                 'src/core/parser/parser.c',
+                'src/core/parser/parser.h',
                 'src/core/units/units.c',
+                'src/core/units/units.h',
                 'src/core/commands/commands.c',
+                'src/core/commands/commands.h',
                 'src/core/processes/process.c',
+                'src/core/processes/process.h',
                 'src/core/handlers/signals.c',
+                'src/core/handlers/signals.h',
                 'src/core/handlers/cleaner.c',
+                'src/core/handlers/cleaner.h',
                 'src/core/handlers/notifier.c',
+                'src/core/handlers/notifier.h',
                 'src/core/socket/socket_client.c',
+                'src/core/socket/socket_client.h',
                 'src/core/socket/socket_server.c',
+                'src/core/socket/socket_server.h',
                 'src/core/socket/socket_common.c',
+                'src/core/socket/socket_common.h',
                 'src/core/socket/socket_request.c',
+                'src/core/socket/socket_request.h',
                 'src/core/socket/socket_response.c',
-                'src/core/file/file.c'
+                'src/core/socket/socket_response.h',
+                'src/core/file/file.c',
+                'src/core/file/file.h'
                 )
 
 # Unitlogd sources
 sources += files(
                 'src/core/unitlogd/unitlogd_impl.h',
-                'src/core/unitlogd/common.c',
-                'src/core/unitlogd/signals.c',
-                'src/core/unitlogd/socket.c',
+                'src/core/unitlogd/common/common.c',
+                'src/core/unitlogd/common/common.h',
+                'src/core/unitlogd/signals/signals.c',
+                'src/core/unitlogd/signals/signals.h',
+                'src/core/unitlogd/socket/socket.c',
+                'src/core/unitlogd/socket/socket.h',
                 )
 
 # Unitd lib
