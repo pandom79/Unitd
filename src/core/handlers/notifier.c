@@ -46,7 +46,7 @@ notifierNew()
     assert(mutex);
     notifier->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(UNITD_BOOT, "src/core/handlers/notifier.c", "notifierNew", rv, strerror(rv),
+        logError(UNITD_BOOT_LOG, "src/core/handlers/notifier.c", "notifierNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
@@ -240,7 +240,7 @@ startNotifiersThread(void *arg)
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT, "Run notifiers thread (detached) created successfully (%s)\n", watchDir);
+            logInfo(UNITD_BOOT_LOG, "Run notifiers thread (detached) created successfully (%s)\n", watchDir);
     }
     return NULL;
 }
@@ -289,7 +289,7 @@ startNotifiers()
         }
         else {
             if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT, "Thread created successfully for the notifier (%s)\n",
+                logInfo(UNITD_BOOT_LOG, "Thread created successfully for the notifier (%s)\n",
                              watchDir);
         }
     }
@@ -303,7 +303,7 @@ startNotifiers()
         }
         else {
             if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT, "Thread joined successfully for the notifier (%s)\n", watchDir);
+                logInfo(UNITD_BOOT_LOG, "Thread joined successfully for the notifier (%s)\n", watchDir);
         }
     }
 }
@@ -364,7 +364,7 @@ stopNotifiers()
         }
         else {
             if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT, "Thread created successfully for the notifier (stop) (%s)\n",
+                logInfo(UNITD_BOOT_LOG, "Thread created successfully for the notifier (stop) (%s)\n",
                              watchDir);
         }
     }
@@ -379,7 +379,7 @@ stopNotifiers()
         }
         else {
             if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT, "Thread joined successfully for the notifier (stop) (%s)\n",
+                logInfo(UNITD_BOOT_LOG, "Thread joined successfully for the notifier (stop) (%s)\n",
                              watchDir);
         }
     }

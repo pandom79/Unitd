@@ -11,9 +11,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
 bool UNITLOGD_DEBUG = false;
-FILE *UNITLOGD_INDEX = NULL;
-FILE *UNITLOGD_LOG = NULL;
-FILE *UNITLOGD_BOOT_LOG = NULL;
+FILE *UNITLOGD_INDEX_FILE = NULL;
+FILE *UNITLOGD_LOG_FILE = NULL;
+FILE *UNITLOGD_BOOT_LOG_FILE = NULL;
 
 static void __attribute__((noreturn))
 usage(bool fail)
@@ -126,8 +126,6 @@ int main(int argc, char **argv) {
                       strerror(errno), "Pipe func has returned %d", rv);
         goto out;
     }
-
-//FIXME change logger.c to handle unitlogd file as well
 
     /* Calculate the number of threads */
     if (log)

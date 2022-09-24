@@ -55,7 +55,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
 
             _exit(errno);
         case -1:
-            logError(UNITD_BOOT, "src/core/commands/commands.c", "execScript", errno,
+            logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "execScript", errno,
                           strerror(errno), "Unable to execute fork");
             return EXIT_FAILURE;
     }
@@ -64,7 +64,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
         exitCode = WEXITSTATUS(status);
 
     if (exitCode == -1) {
-        logError(UNITD_BOOT, "src/core/commands/commands.c", "execScript", -1,
+        logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "execScript", -1,
                       "Bad exit code for the %s script", relScriptName);
     }
 
@@ -110,7 +110,7 @@ execProcess(const char *command, char **argv, Unit **unit)
 
             _exit(errno);
         case -1:
-            logError(UNITD_BOOT, "src/core/commands/commands.c", "execProcess", errno,
+            logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "execProcess", errno,
                           strerror(errno), "Unable to execute fork");
             *pData->exitCode = EXIT_FAILURE;
             return EXIT_FAILURE;
@@ -187,7 +187,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 *pData->signalNum = SIGKILL;
                 setStopAndDuration(&pData);
                 if ((*unit)->showResult)
-                    logErrorStr(CONSOLE | UNITD_BOOT, "Timeout expired for the %s unit!\n", (*unit)->name);
+                    logErrorStr(CONSOLE | UNITD_BOOT_LOG, "Timeout expired for the %s unit!\n", (*unit)->name);
                 arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc,
                                                 (*unit)->name));
             }
@@ -195,7 +195,7 @@ execProcess(const char *command, char **argv, Unit **unit)
     }
 
     if (UNITD_DEBUG) {
-        logInfo(UNITD_BOOT, "The %s unit with the %s command has returned the following values:\n"
+        logInfo(UNITD_BOOT_LOG, "The %s unit with the %s command has returned the following values:\n"
                                      "type = %s\n"
                                      "pid = %d\n"
                                      "exitcode = %d\n"
@@ -238,7 +238,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
         if (waitPidRes == 0) {
             if (command && argv) {
                 if (UNITD_DEBUG)
-                    logInfo(UNITD_BOOT, "To stop the %s unit will be used a COMMAND\n",
+                    logInfo(UNITD_BOOT_LOG, "To stop the %s unit will be used a COMMAND\n",
                                  unitName);
                 child = fork();
                 switch (child) {
@@ -255,7 +255,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
 
                         _exit(errno);
                     case -1:
-                        logError(UNITD_BOOT, "src/core/commands/commands.c", "stopDaemon", errno,
+                        logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "stopDaemon", errno,
                                       strerror(errno), "Unable to execute fork");
                         *pData->exitCode = EXIT_FAILURE;
                         return EXIT_FAILURE;
@@ -263,7 +263,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             }
             else {
                 if (UNITD_DEBUG)
-                    logInfo(UNITD_BOOT, "To stop the %s unit will be used a SIGTERM signal\n",
+                    logInfo(UNITD_BOOT_LOG, "To stop the %s unit will be used a SIGTERM signal\n",
                                  unitName);
                 kill(pid, SIGTERM);
             }
@@ -305,7 +305,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
     *pData->signalNum = SIGKILL;
     setStopAndDuration(&pData);
     if (UNITD_DEBUG)
-        logInfo(UNITD_BOOT, "The %s unit has been stopped with the following values:\n"
+        logInfo(UNITD_BOOT_LOG, "The %s unit has been stopped with the following values:\n"
                                      "type = %s\n"
                                      "pid = %d\n"
                                      "exitcode = %d\n"

@@ -342,7 +342,7 @@ parseProcCmdLine()
     assert(PROC_CMDLINE_PATH);
     if ((fp = fopen(PROC_CMDLINE_PATH, "r")) == NULL) {
         rv = 1;
-        logError(CONSOLE | UNITD_BOOT, "src/core/common/common.c", "parseProcCmdLine", errno,
+        logError(CONSOLE | UNITD_BOOT_LOG, "src/core/common/common.c", "parseProcCmdLine", errno,
                       strerror(errno), "Unable to open %s", PROC_CMDLINE_PATH, NULL);
         return rv;
     }
@@ -400,7 +400,7 @@ setSigAction()
         sigaction(SIGINT, &act, NULL)  == -1 ||
         sigaction(SIGCHLD, &act, NULL) == -1) {
         rv = -1;
-        logError(CONSOLE | UNITD_BOOT, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
+        logError(CONSOLE | UNITD_BOOT_LOG, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
                       "Sigaction has returned -1 exit code");
     }
 

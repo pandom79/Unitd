@@ -26,7 +26,7 @@ cleanerNew()
     assert(mutex);
     cleaner->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(UNITD_BOOT, "src/core/handlers/cleaner.c", "cleanerNew", rv, strerror(rv),
+        logError(UNITD_BOOT_LOG, "src/core/handlers/cleaner.c", "cleanerNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
@@ -134,7 +134,7 @@ startCleanerThread(void *arg UNUSED)
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT, "Run cleaner thread (detached) created successfully\n");
+            logInfo(UNITD_BOOT_LOG, "Run cleaner thread (detached) created successfully\n");
     }
     return NULL;
 }
@@ -151,7 +151,7 @@ startCleaner()
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT, "Thread created successfully for the cleaner\n");
+            logInfo(UNITD_BOOT_LOG, "Thread created successfully for the cleaner\n");
     }
     /* Waiting for the thread to terminate */
     if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
@@ -160,7 +160,7 @@ startCleaner()
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT, "Thread joined successfully for the cleaner\n");
+            logInfo(UNITD_BOOT_LOG, "Thread joined successfully for the cleaner\n");
     }
 
 }
@@ -208,7 +208,7 @@ stopCleaner()
         }
         else {
             if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT, "Thread created successfully for the cleaner (stop)\n");
+                logInfo(UNITD_BOOT_LOG, "Thread created successfully for the cleaner (stop)\n");
         }
         /* Waiting for the thread to terminate */
         if ((rv = pthread_join(thread, NULL)) != EXIT_SUCCESS) {
@@ -217,7 +217,7 @@ stopCleaner()
         }
         else {
             if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT, "Thread joined successfully for the cleaner (stop)\n");
+                logInfo(UNITD_BOOT_LOG, "Thread joined successfully for the cleaner (stop)\n");
         }
     }
 }

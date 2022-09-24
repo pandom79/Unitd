@@ -220,7 +220,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(mutex);
         unit->mutex = mutex;
         if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-            logError(UNITD_BOOT, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
+            logError(UNITD_BOOT_LOG, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
                           "Unable to run pthread_mutex_init");
         }
         assert(rv == 0);
@@ -231,7 +231,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(cv);
         unit->cv = cv;
         if ((rv = pthread_cond_init(cv, NULL)) != 0) {
-            logError(UNITD_BOOT, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
+            logError(UNITD_BOOT_LOG, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
                           "Unable to run pthread_cond_init");
         }
         assert(rv == 0);
@@ -538,14 +538,14 @@ loadUnits(Array **units, const char *path, const char *dirName,
 
     /* Executing the glob function */
     if (UNITD_DEBUG && currentState != NO_STATE)
-        logWarning(UNITD_BOOT, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
+        logWarning(UNITD_BOOT_LOG, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         lenResults = results.gl_pathc;
         assert(lenResults > 0);
         if (!(*units))
             *units = arrayNew(unitRelease);
         if (UNITD_DEBUG && currentState != NO_STATE)
-            logInfo(UNITD_BOOT, "Found %d units in %s/%s!\n", lenResults, path, dirName);
+            logInfo(UNITD_BOOT_LOG, "Found %d units in %s/%s!\n", lenResults, path, dirName);
         for (size_t i = 0; i < lenResults; i++) {
             /* Get the unit path */
             unitPath = results.gl_pathv[i];
@@ -566,7 +566,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                 }
                 unit->enabled = (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
                 if (UNITD_DEBUG)
-                    logInfo(UNITD_BOOT, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
+                    logInfo(UNITD_BOOT_LOG, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
                 /* Parse the Unit file */
                 if (parse) {
                     rv = parseUnit(units, &unit, isAggregate, currentState);
@@ -602,11 +602,11 @@ loadUnits(Array **units, const char *path, const char *dirName,
             }
             else {
                 if (UNITD_DEBUG) {
-                    logWarning(UNITD_BOOT, "\n[*] CONFIGURATION ERRORS\n");
+                    logWarning(UNITD_BOOT_LOG, "\n[*] CONFIGURATION ERRORS\n");
                     for (size_t i = 0; i < lenResults; i++) {
                         unit = arrayGet(*units, i);
-                        logInfo(UNITD_BOOT, "Unit name = '%s'\n", unit->name);
-                        arrayPrint(UNITD_BOOT, &((Unit *)arrayGet(*units, i))->errors, true);
+                        logInfo(UNITD_BOOT_LOG, "Unit name = '%s'\n", unit->name);
+                        arrayPrint(UNITD_BOOT_LOG, &((Unit *)arrayGet(*units, i))->errors, true);
                     }
                 }
             }
@@ -619,7 +619,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
                           "GLOB_NOMATCH", "Zero units found for %s state", STATE_DATA_ITEMS[currentState].desc);
         else {
             if (UNITD_DEBUG)
-                logWarning(UNITD_BOOT, "Zero units found for %s state\n",
+                logWarning(UNITD_BOOT_LOG, "Zero units found for %s state\n",
                                 STATE_DATA_ITEMS[currentState].desc);
         }
     }
@@ -986,7 +986,7 @@ pipeNew()
     assert(mutex);
     pipe->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(UNITD_BOOT, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
+        logError(UNITD_BOOT_LOG, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);

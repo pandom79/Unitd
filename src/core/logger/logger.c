@@ -8,8 +8,49 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-FILE *UNITD_LOG_FILE = NULL;
+FILE *UNITD_BOOT_LOG_FILE = NULL;
 char *UNITD_USER_LOG_PATH;
+FILE *UNITLOGD_BOOT_LOG_FILE;
+FILE *UNITLOGD_INDEX_FILE;
+FILE *UNITLOGD_LOG_FILE;
+
+static void
+writeFile(FILE **file, const char *color, const char *format, va_list *args)
+{
+    if (*file && format) {
+        fflush(*file);
+        fprintf(*file, color);
+        vfprintf(*file, format, args);
+        fprintf(*file, DEFAULT_COLOR);
+        fflush(*file);
+    }
+}
+
+static void
+writeErrorFile(FILE **file, const char *transUnit, const char *funcName, int returnValue,
+               char *returnValueStr, const char *errDesc, const char *format, va_list *args)
+{
+    if (*file && format) {
+        fflush(*file);
+        if (!(*returnValueStr))
+            sprintf(returnValueStr, "%d", returnValue);
+        fprintf(*file, RED_COLOR);
+        fprintf(*file, "\nAn error has occurred\n");
+        fprintf(*file, "File: ");
+        fprintf(*file, transUnit);
+        fprintf(*file, "\nFunction: ");
+        fprintf(*file, funcName);
+        fprintf(*file, "\nReturn value: ");
+        fprintf(*file, returnValueStr);
+        fprintf(*file, "\nDescription: ");
+        fprintf(*file, errDesc);
+        fprintf(*file, "\n");
+        vfprintf(*file, format, args);
+        fprintf(*file, "\n");
+        fprintf(*file, DEFAULT_COLOR);
+        fflush(*file);
+    }
+}
 
 static void
 logSystem(int priority, const char *color, const char *format, va_list *args)
@@ -41,14 +82,25 @@ logInfo(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
-        fflush(UNITD_LOG_FILE);
+    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
         va_start(args, format);
-        vfprintf(UNITD_LOG_FILE, LIGHT_WHITE_COLOR, NULL);
-        vfprintf(UNITD_LOG_FILE, format, args);
-        vfprintf(UNITD_LOG_FILE, DEFAULT_COLOR, NULL);
+        writeFile(&UNITD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
         va_end(args);
-        fflush(UNITD_LOG_FILE);
+    }
+    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_INDEX_FILE, LIGHT_WHITE_COLOR, format, &args);
+        va_end(args);
     }
     if (options & SYSTEM) {
         va_start(args, format);
@@ -70,14 +122,25 @@ logWarning(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
-        fflush(UNITD_LOG_FILE);
+    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
         va_start(args, format);
-        vfprintf(UNITD_LOG_FILE, YELLOW_COLOR, NULL);
-        vfprintf(UNITD_LOG_FILE, format, args);
-        vfprintf(UNITD_LOG_FILE, DEFAULT_COLOR, NULL);
+        writeFile(&UNITD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
         va_end(args);
-        fflush(UNITD_LOG_FILE);
+    }
+    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_INDEX_FILE, YELLOW_COLOR, format, &args);
+        va_end(args);
     }
     if (options & SYSTEM) {
         va_start(args, format);
@@ -99,14 +162,25 @@ logErrorStr(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
-        fflush(UNITD_LOG_FILE);
+    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
         va_start(args, format);
-        vfprintf(UNITD_LOG_FILE, RED_COLOR, NULL);
-        vfprintf(UNITD_LOG_FILE, format, args);
-        vfprintf(UNITD_LOG_FILE, DEFAULT_COLOR, NULL);
+        writeFile(&UNITD_BOOT_LOG_FILE, RED_COLOR, format, &args);
         va_end(args);
-        fflush(UNITD_LOG_FILE);
+    }
+    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, RED_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, RED_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_INDEX_FILE, RED_COLOR, format, &args);
+        va_end(args);
     }
     if (options & SYSTEM) {
         va_start(args, format);
@@ -128,14 +202,25 @@ logSuccess(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
-        fflush(UNITD_LOG_FILE);
+    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
         va_start(args, format);
-        vfprintf(UNITD_LOG_FILE, GREEN_COLOR, NULL);
-        vfprintf(UNITD_LOG_FILE, format, args);
-        vfprintf(UNITD_LOG_FILE, DEFAULT_COLOR, NULL);
+        writeFile(&UNITD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
         va_end(args);
-        fflush(UNITD_LOG_FILE);
+    }
+    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
+        va_start(args, format);
+        writeFile(&UNITLOGD_INDEX_FILE, GREEN_COLOR, format, &args);
+        va_end(args);
     }
     if (options & SYSTEM) {
         va_start(args, format);
@@ -149,8 +234,7 @@ logError(int options, const char *transUnit, const char *funcName,
          int returnValue, const char *errDesc, const char *format, ...)
 {
     va_list args;
-    char returnValueStr[100];
-    memset(&returnValueStr, ' ', sizeof(returnValueStr));
+    char returnValueStr[100] = {0};
 
     if (options & CONSOLE) {
         fflush(stdout);
@@ -173,30 +257,32 @@ logError(int options, const char *transUnit, const char *funcName,
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_LOG_FILE && (options & UNITD_BOOT)) {
-        fflush(UNITD_LOG_FILE);
+    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
         va_start(args, format);
-        if (returnValueStr[0] == ' ')
-            sprintf(returnValueStr, "%d", returnValue);
-        fprintf(UNITD_LOG_FILE, RED_COLOR);
-        fprintf(UNITD_LOG_FILE, "\nAn error has occurred\n");
-        fprintf(UNITD_LOG_FILE, "File: ");
-        fprintf(UNITD_LOG_FILE, transUnit);
-        fprintf(UNITD_LOG_FILE, "\nFunction: ");
-        fprintf(UNITD_LOG_FILE, funcName);
-        fprintf(UNITD_LOG_FILE, "\nReturn value: ");
-        fprintf(UNITD_LOG_FILE, returnValueStr);
-        fprintf(UNITD_LOG_FILE, "\nDescription: ");
-        fprintf(UNITD_LOG_FILE, errDesc);
-        fprintf(UNITD_LOG_FILE, "\n");
-        vfprintf(UNITD_LOG_FILE, format, args);
-        fprintf(UNITD_LOG_FILE, "\n");
-        fprintf(UNITD_LOG_FILE, DEFAULT_COLOR);
+        writeErrorFile(&UNITD_BOOT_LOG_FILE, transUnit, funcName, returnValue,
+                       returnValueStr, errDesc, format, &args);
         va_end(args);
-        fflush(UNITD_LOG_FILE);
+    }
+    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
+        va_start(args, format);
+        writeErrorFile(&UNITLOGD_BOOT_LOG_FILE, transUnit, funcName, returnValue,
+                       returnValueStr, errDesc, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
+        va_start(args, format);
+        writeErrorFile(&UNITLOGD_LOG_FILE, transUnit, funcName, returnValue,
+                       returnValueStr, errDesc, format, &args);
+        va_end(args);
+    }
+    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
+        va_start(args, format);
+        writeErrorFile(&UNITLOGD_INDEX_FILE, transUnit, funcName, returnValue,
+                       returnValueStr, errDesc, format, &args);
+        va_end(args);
     }
     if (options & SYSTEM) {
-        if (returnValueStr[0] == ' ')
+        if (!(*returnValueStr))
             sprintf(returnValueStr, "%d", returnValue);
         char *all = stringNew("An error has occurred! File = ");
         stringConcat(&all, transUnit);
@@ -217,4 +303,3 @@ logError(int options, const char *transUnit, const char *funcName,
         objectRelease(&all);
     }
 }
-
