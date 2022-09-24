@@ -15,6 +15,15 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define DEFAULT_COLOR "\033[0m"
 #define WHITE_UNDERLINE_COLOR "\033[37;4m"
 
+/* The following macros follow this schema in binary mode :
+ * 0x1
+ * 0x10
+ * 0x100
+ * 0x1000
+ * ....
+ * 0x11111 (ALL)
+ * To have the values more short, we convert them in hex mode.
+*/
 #define CONSOLE             0x1
 #define UNITD_BOOT_LOG      0x2
 #define SYSTEM              0x4
