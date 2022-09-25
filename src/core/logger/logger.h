@@ -22,7 +22,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
  * 0x1000
  * ....
  * 0x11111 (ALL)
- * To have the values more short, we convert them in hex mode.
+ * To get these values more short, convert them in hex mode.
 */
 #define CONSOLE             0x1
 #define UNITD_BOOT_LOG      0x2

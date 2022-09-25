@@ -46,7 +46,7 @@ unitlogdInit()
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitlogd.sh", scriptParams->arr, envVars->arr);
     if (rv != 0) {
-        logError(CONSOLE, "src/core/unitlogd/common.c",
+        logError(CONSOLE, "src/core/unitlogd/common/common.c",
                       "unitlogdInit", rv, strerror(rv), "ExecScript error");
     }
 

@@ -8,6 +8,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../../core/unitd_impl.h"
 
+static const char *DEV_LOG_NAME = "/dev/log";
+static const char *DEV_KMSG_NAME = "/dev/kmsg";
+static const char *DEV_CONSOLE_NAME = "/dev/console";
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
 bool UNITLOGD_DEBUG = false;
@@ -38,6 +41,10 @@ addSocketThread(Array **socketThreads, const char *devName)
     assert(devName);
     SocketThread *socketThread = socketThreadNew();
     socketThread->devName = stringNew(devName);
+    if (strcmp(devName, DEV_LOG_NAME) == 0)
+        socketThread->sockType = UNIX;
+    else
+        socketThread->sockType = FORWARDER;
     arrayAdd(*socketThreads, socketThread);
 }
 
@@ -129,11 +136,11 @@ int main(int argc, char **argv) {
 
     /* Calculate the number of threads */
     if (log)
-        addSocketThread(&socketThreads, "/dev/log");
+        addSocketThread(&socketThreads, DEV_LOG_NAME);
     if (console)
-        addSocketThread(&socketThreads, "/dev/console");
+        addSocketThread(&socketThreads, DEV_CONSOLE_NAME);
     if (kernel)
-        addSocketThread(&socketThreads, "/dev/kmsg");
+        addSocketThread(&socketThreads, DEV_KMSG_NAME);
 
     /* Start sockets */
     if ((rv = startSockets(socketThreads)) != 0)
@@ -157,6 +164,7 @@ int main(int argc, char **argv) {
     rv = stopSockets(socketThreads);
 
     out:
+        /* Release resources */
         close(SELF_PIPE[0]);
         close(SELF_PIPE[1]);
         arrayRelease(&socketThreads);
