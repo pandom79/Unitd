@@ -129,17 +129,6 @@ sources = files(
                 'src/core/file/file.h'
                 )
 
-# Unitlogd sources
-sources += files(
-                'src/core/unitlogd/unitlogd_impl.h',
-                'src/core/unitlogd/common/common.c',
-                'src/core/unitlogd/common/common.h',
-                'src/core/unitlogd/signals/signals.c',
-                'src/core/unitlogd/signals/signals.h',
-                'src/core/unitlogd/socket/socket.c',
-                'src/core/unitlogd/socket/socket.h',
-                )
-
 # Unitd lib
 libunitd = library(project_name,
                    sources,
@@ -175,57 +164,46 @@ executable('unitctl', 'src/bin/unitctl/main.c',
            install_dir: sbin_path
           )
 
-executable('seedrng', 'src/extra/src/seedrng.c',
+executable('seedrng', 'external/seedrng.c',
            install: true,
            install_dir: sbin_path
           )
 
-executable('unitlogd', 'src/bin/unitlogd/main.c',
-           link_with: libunitd,
-           install: true,
-           dependencies: deps,
-           install_dir: sbin_path
-          )
-
-#executable('unitlogctl', 'src/bin/unitlogctl/main.c',
-#           link_with: libunitd,
-#           install: true,
-#           dependencies: deps,
-#           install_dir: sbin_path
-#          )
+# Unitlogd
+subdir('src'/unitlogd_name)
 
 # Install configuration
-#install_data(project_name + '.conf', install_dir: unitd_conf_path)
-#install_data(project_name + '.conf', install_dir: unitd_data_path,
-#             rename: project_name + '.conf.sample')
+install_data(project_name + '.conf', install_dir: unitd_conf_path)
+install_data(project_name + '.conf', install_dir: unitd_data_path,
+             rename: project_name + '.conf.sample')
 
 # Install extra data
 install_subdir('src/extra/functions', install_dir: unitd_data_path)
 install_subdir('src/extra/scripts', install_dir: unitd_data_path)
-#install_subdir('src/extra/init.state', install_dir: unitd_data_path)
-#install_subdir('src/extra/final.state', install_dir: unitd_data_path)
+install_subdir('src/extra/init.state', install_dir: unitd_data_path)
+install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 
 # Install documentation
 install_data('LICENSE', install_dir: doc_path)
 install_data('README.md', install_dir: doc_path)
 
 # Install bash completion
-install_data('src/extra/completion/bash/unitctl', install_dir: bash_comp_path)
+install_data('completion/bash/unitctl', install_dir: bash_comp_path)
 
 # Install zzz script
 install_data('src/extra/scripts/zzz', install_dir: sbin_path)
 
 # Install man pages
-install_subdir('src/extra/man/man8', install_dir: mandir)
+install_subdir('man/man8', install_dir: mandir)
 
 # Install mime-type
-install_data('src/extra/mime-type/unit.xml', install_dir: prefix/datadir/'mime'/'packages')
+install_data('mime-type/unit.xml', install_dir: prefix/datadir/'mime'/'packages')
 
 # Install icon
-install_data('src/extra/artwork/unit.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable'/'apps')
+install_data('artwork/unit.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable'/'apps')
 
 # Install unitd logo
-install_data('src/extra/artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
+install_data('artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
 
 # Execute 'unitd-check' initialization unit to create the folders tree
 env = environment()

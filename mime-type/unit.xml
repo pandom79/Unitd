@@ -2,7 +2,7 @@
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
     <mime-type type="application/x-unit">
         <sub-class-of type="text/plain"/>
-        <comment>Unitd unit</comment>
+        <comment>Unitd unit file</comment>
         <glob pattern="*.unit"/>
         <icon name="unit.svg"/>
     </mime-type>
