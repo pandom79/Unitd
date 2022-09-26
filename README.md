@@ -1,4 +1,4 @@
-# <img src="src/extra/artwork/unitd-logo.svg" alt="Unitd init system" height="60"/>
+# <img src="artwork/unitd-logo.svg" alt="Unitd init system" height="60"/>
 
 Unit daemon is a simple, fast and modern init system which is mainly focused on an accurate processes supervision.<br/>
 The main features are the following:
@@ -7,6 +7,8 @@ The main features are the following:
 - dependencies and conflicts management
 - Restart of the processes providing the history
 
+Run ```unitd --help or -h``` to know the usage.<br/>
+Run ```man unitd``` to consult the manual page.<br/>
 
 ### Dependencies
 
@@ -98,7 +100,7 @@ According the default options, you should see the following folders:<br>
 
 As you can see, the first boot will load the **multi-user-net** state.<br/>
 Every state requires at least one unit which is normally a terminal.<br/>
-For this reason, I suggest you to copy this [unit](https://github.com/pandom79/Unitd/blob/master/src/extra/units/agetty-1.unit) in **/usr/lib64/unitd/units**.<br>
+For this reason, I suggest you to copy this [unit](https://github.com/pandom79/Unitd/blob/master/units/agetty-1.unit) in **/usr/lib64/unitd/units**.<br>
 After that, check the **Run** property of the **Command** section works and enable this unit via the following command:<br>
 ```
 ln -s /usr/lib64/unitd/units/agetty-1.unit /etc/unitd/units/multi-user-net.state/.
@@ -141,16 +143,16 @@ WantedBy = user                     (required and not repeatable for user instan
 ```
 **Dependencies vs Conflicts**<br>
 The dependencies are **uni-directionals**.<br>
-That mean if the **Unit B** depends on **Unit A** then
+That means if the **Unit B** depends on **Unit A** then
 we can assert the **Unit A** cannot depends on **Unit B**.<br>
 If not, we'll have a block when the system starts because **Unit B** wait for **Unit A** to terminate and the inverse.<br>
-Another axample could be **Unit A** depends on **Unit B**, Unit B depends on **Unit C** and **Unit C** depends on **Unit A**.<br>
+Another axample could be **Unit A** depends on **Unit B**, **Unit B** depends on **Unit C** and **Unit C** depends on **Unit A**.<br>
 Also this case will fail.<br>
 The dependencies have a unique sense and must not come back.<br>
 Unlike the dependencies, the conflicts are **bi-directionals** instead.<br>
-That mean if the **Unit A** has a conflict with **Unit B** then
+That means if the **Unit A** has a conflict with **Unit B** then
 we can assert the **Unit B** has a conflict with the **Unit A**.<br>
-In the conflict case, I'd recommend to set the Conflict property in both the units.<br>
+In the conflict case, I'd recommend to set the **Conflict** property in both the units.<br>
 
 **Restart** and **RestartMax**<br>
 Please note, if both are defined then Restart property will be ignored.<br><br>
@@ -164,11 +166,11 @@ Example:<br>
 The units handling is possible via **unitctl** command.<br/>
 Run ```unitctl --help or -h``` to know the usage for the system instance.<br/>
 Run ```unitctl --user --help or -uh``` to know the usage for the user instance.<br/>
-
+Run ```man unitctl``` to consult the manual page.
 
 ### Note
 
-The initialization and finalization units are based on [Void Linux Runit](https://github.com/void-linux/void-runit)<br/>
+The initialization and finalization units are based on [Void Linux Runit](https://github.com/void-linux/void-runit).<br/>
 Thanks to Void linux Team for providing them.<br/>
 Another thanks to Leah Neukirchen which provides "zzz" script for the hibernate/suspend management.<br/>
 
