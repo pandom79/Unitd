@@ -15,8 +15,8 @@ unitdOpenLog(const char *mode)
         const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
         UNITD_BOOT_LOG_FILE = fopen(unitdLogPath, mode);
         if (!UNITD_BOOT_LOG_FILE) {
-            logError(CONSOLE, "src/core/logger/logger.c", "unitdOpenLog", errno, strerror(errno),
-                          "Unable to open the log %s in mode '%s'", unitdLogPath, mode);
+            logError(CONSOLE, "src/core/file/file.c", "unitdOpenLog", errno, strerror(errno),
+                          "Unable to open the file '%s' in mode '%s'", unitdLogPath, mode);
             return -1;
         }
     }
@@ -32,8 +32,8 @@ unitdCloseLog()
     if (UNITD_BOOT_LOG_FILE) {
         const char *unitdLogPath = !USER_INSTANCE ? UNITD_LOG_PATH : UNITD_USER_LOG_PATH;
         if ((rv = fclose(UNITD_BOOT_LOG_FILE)) != 0) {
-            logError(ALL, "src/core/logger/logger.c", "unitdCloseLog", errno, strerror(errno),
-                                         "Unable to close the log '%s'", unitdLogPath);
+            logError(CONSOLE, "src/core/file/file.c", "unitdCloseLog", errno, strerror(errno),
+                                         "Unable to close the file '%s'", unitdLogPath);
         }
         UNITD_BOOT_LOG_FILE = NULL;
     }
@@ -42,42 +42,101 @@ unitdCloseLog()
 }
 
 int
-unitlogdOpenLog(const char *mode)
-{
-    return 0;
-}
-
-int
 unitlogdOpenBootLog(const char *mode)
 {
-//FIXME
-    return 0;
-}
+    if (!UNITLOGD_BOOT_LOG_FILE) {
+        const char *logPath = UNITLOGD_BOOT_LOG_PATH;
+        UNITLOGD_BOOT_LOG_FILE = fopen(logPath, mode);
+        if (!UNITLOGD_BOOT_LOG_FILE) {
+            logError(CONSOLE, "src/core/file/file.c", "unitlogdOpenBootLog", errno, strerror(errno),
+                          "Unable to open the file '%s' in mode '%s'", logPath, mode);
+            return -1;
+        }
+    }
 
-int
-unitlogdOpenIndex(const char *mode)
-{
-//FIXME
-    return 0;
-}
-
-int
-unitlogdCloseLog()
-{
-//FIXME
     return 0;
 }
 
 int
 unitlogdCloseBootLog()
 {
-//FIXME
+    int rv = 0;
+
+    if (UNITLOGD_BOOT_LOG_FILE) {
+        const char *logPath = UNITLOGD_BOOT_LOG_PATH;
+        if ((rv = fclose(UNITLOGD_BOOT_LOG_FILE)) != 0) {
+            logError(CONSOLE, "src/core/file/file.c", "unitlogdCloseBootLog", errno, strerror(errno),
+                     "Unable to close the file '%s'", logPath);
+        }
+        UNITLOGD_BOOT_LOG_FILE = NULL;
+    }
+
+    return rv;
+}
+
+int
+unitlogdOpenLog(const char *mode)
+{
+    if (!UNITLOGD_LOG_FILE) {
+        const char *logPath = UNITLOGD_LOG_PATH;
+        UNITLOGD_LOG_FILE = fopen(logPath, mode);
+        if (!UNITLOGD_LOG_FILE) {
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/core/file/file.c", "unitlogdOpenLog", errno, strerror(errno),
+                          "Unable to open the file '%s' in mode '%s'", logPath, mode);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int
+unitlogdCloseLog()
+{
+    int rv = 0;
+
+    if (UNITLOGD_LOG_FILE) {
+        const char *logPath = UNITLOGD_LOG_PATH;
+        if ((rv = fclose(UNITLOGD_LOG_FILE)) != 0) {
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/core/file/file.c", "unitlogdCloseLog", errno, strerror(errno),
+                                         "Unable to close the file '%s'", logPath);
+        }
+        UNITLOGD_LOG_FILE = NULL;
+    }
+
+    return rv;
+}
+
+
+int
+unitlogdOpenIndex(const char *mode)
+{
+    if (!UNITLOGD_INDEX_FILE) {
+        const char *logPath = UNITLOGD_INDEX_PATH;
+        UNITLOGD_INDEX_FILE = fopen(logPath, mode);
+        if (!UNITLOGD_INDEX_FILE) {
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/core/file/file.c", "unitlogdOpenIndex", errno, strerror(errno),
+                          "Unable to open the file '%s' in mode '%s'", logPath, mode);
+            return -1;
+        }
+    }
+
     return 0;
 }
 
 int
 unitlogdCloseIndex()
 {
-//FIXME
-    return 0;
+    int rv = 0;
+
+    if (UNITLOGD_INDEX_FILE) {
+        const char *logPath = UNITLOGD_INDEX_PATH;
+        if ((rv = fclose(UNITLOGD_INDEX_FILE)) != 0) {
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/core/file/file.c", "unitlogdCloseIndex", errno, strerror(errno),
+                     "Unable to close the file '%s'", logPath);
+        }
+        UNITLOGD_INDEX_FILE = NULL;
+    }
+
+    return rv;
 }
