@@ -19,7 +19,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 typedef enum {
     NO_UL_COMMAND = -1,
     SHOW_LOG = 0,
-    LIST_BOOTS = 1
+    LIST_BOOTS = 1,
+    SHOW_BOOT = 2
 } UlCommand;
 typedef struct {
     UlCommand ulCommand;
@@ -32,5 +33,6 @@ int showBootsList();
 int showLog(bool);
 int showLogLines();
 int sendToPager(int (*fn)());
+int showBoot(const char *);
 
 #endif // CLIENT_H

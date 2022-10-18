@@ -10,9 +10,10 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 UlCommandData UL_COMMAND_DATA[] = {
     { SHOW_LOG, "show-log" },
-    { LIST_BOOTS, "list-boots" }
+    { LIST_BOOTS, "list-boots" },
+    { SHOW_BOOT, "show-boot"}
 };
-int UL_COMMAND_DATA_LEN = 2;
+int UL_COMMAND_DATA_LEN = 3;
 
 UlCommand
 getUlCommand(const char *commandName)
@@ -31,6 +32,7 @@ getSkipCheckAdmin(UlCommand ulCommand)
     switch (ulCommand) {
         case SHOW_LOG:
         case LIST_BOOTS:
+        case SHOW_BOOT:
             return true;
         default:
             return false;
@@ -194,4 +196,48 @@ showLog(bool pager)
         rv = showLogLines();
 
     return rv;
+}
+
+int
+showBoot(const char *bootIdx)
+{
+    int rv = 0, idx = -1, idxMax = -1, indexSize = 0;
+    Array *index = NULL;
+    bool error = false;
+
+    assert(bootIdx);
+
+    /* Get the index */
+    if ((rv = getIndex(&index, true)) != 0)
+        goto out;
+
+    indexSize = index ? index->size : 0;
+    if (indexSize > 0) {
+        /* Find the max idx */
+        if ((indexSize % 2) == 0)
+            idxMax = indexSize / 2;
+        else
+            idxMax = (indexSize / 2) + 1;
+
+        if (isValidNumber(bootIdx, true)) {
+            idx = atol(bootIdx);
+            if (idx > idxMax)
+                error = true;
+        }
+        else
+            error = true;
+
+        if (error) {
+            logErrorStr(CONSOLE, "The '%s' argument is not valid!\n", bootIdx);
+            logInfo(CONSOLE, "Please, enter a value between 0..%d !\n", idxMax);
+        }
+
+//FIXME continue ....
+
+    }
+    else
+        logWarning(CONSOLE, "The '%s' index file is empty!\n", UNITLOGD_INDEX_PATH);
+
+    out:
+        return rv;
 }

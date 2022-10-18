@@ -14,11 +14,12 @@ static void
 showUsage()
 {
     fprintf(stdout,
-        "Usage: unitlogctl [COMMAND] [OPTIONS] \n\n"
+        "Usage: unitlogctl [COMMAND] [OPTIONS] ... \n\n"
 
         WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
         "show-log         Show the log\n"
         "list-boots       List the boots\n"
+        "show-boot        Show the boot\n"
 
         WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
         "-p, --pager      Enable the pager\n"
@@ -30,7 +31,7 @@ showUsage()
 int main(int argc, char **argv) {
 
     int c, rv, userId = -1;
-    const char *shortopts = "phd", *commandName = NULL;
+    const char *shortopts = "phd", *commandName = NULL, *arg = NULL;
     const struct option longopts[] = {
         { "pager", optional_argument, NULL, 'p' },
         { "help", no_argument, NULL, 'h' },
@@ -103,6 +104,15 @@ int main(int argc, char **argv) {
                 goto out;
             }
             rv = showBootsList();
+            break;
+        case SHOW_BOOT:
+            if (argc < 3 || argc > 5 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager)) {
+                showUsage();
+                rv = 1;
+                goto out;
+            }
+            arg = argv[argc - 1];
+            rv = showBoot(arg);
             break;
         default:
             break;
