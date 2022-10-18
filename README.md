@@ -148,7 +148,7 @@ we can assert the **Unit A** cannot depends on **Unit B**.<br>
 If not, we'll have a block when the system starts because **Unit B** wait for **Unit A** to terminate and the inverse.<br>
 Another axample could be **Unit A** depends on **Unit B**, **Unit B** depends on **Unit C** and **Unit C** depends on **Unit A**.<br>
 Also this case will fail.<br>
-The dependencies have a unique sense and must not come back.<br>
+The dependencies have an unique sense and must not come back.<br>
 Unlike the dependencies, the conflicts are **bi-directionals** instead.<br>
 That means if the **Unit A** has a conflict with **Unit B** then
 we can assert the **Unit B** has a conflict with the **Unit A**.<br>

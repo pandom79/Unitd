@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
         /* Change the current working directory to root */
         if ((rv = chdir("/")) == -1) {
             logError(ALL, "src/bin/unitd/main.c", "main", errno,
-                          strerror(errno), "Chdir (system instance) has returned -1 exit code");
+                          strerror(errno), "Chdir (system instance) returned -1 exit code");
             showEmergencyShell = hasError = true;
             goto out;
         }

@@ -31,6 +31,7 @@ unitd_log_path = localstatedir/'log'/project_name+'.log'
 
 # Setting unitlogd macro path
 unitlogd_path = localstatedir/'log'/unitlogd_name
+unitlogd_data_path = prefix/datadir/unitlogd_name
 unitlogd_log_path = unitlogd_path/unitlogd_name+'.log'
 unitlogd_index_path = unitlogd_path/'index.dat'
 unitlogd_boot_log_path = unitlogd_path/'boot.log'
@@ -68,13 +69,14 @@ conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
 conf_data.set('DAEMON_SIGNAL_TIME', get_option('DAEMON_SIGNAL_TIME'))
 # Unitlogd
 conf_data.set('UNITLOGD_PATH', unitlogd_path)
+conf_data.set('UNITLOGD_DATA_PATH', unitlogd_data_path)
 conf_data.set('UNITLOGD_LOG_PATH', unitlogd_log_path)
 conf_data.set('UNITLOGD_INDEX_PATH', unitlogd_index_path)
 conf_data.set('UNITLOGD_BOOT_LOG_PATH', unitlogd_boot_log_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Dependencies
-deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.0')]
+deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.1')]
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error.
 # We set 'check: false' because we don't interest about its exit code.
@@ -145,9 +147,9 @@ pkg.generate(libunitd,
             )
 
 # Install headers
-install_headers('src/include/unitd.h', subdir : project_name)
-install_headers('src/include/unitd_types.h', subdir : project_name)
-install_headers('build/unitd_config.h', subdir : project_name)
+install_headers('src/include/unitd.h', subdir: project_name)
+install_headers('src/include/unitd_types.h', subdir: project_name)
+install_headers('build/unitd_config.h', subdir: project_name)
 
 # Install executables
 executable(project_name, 'src/bin/unitd/main.c',
@@ -173,7 +175,7 @@ executable('seedrng', 'external/seedrng.c',
 subdir('src'/unitlogd_name)
 
 # Install configuration
-install_data(project_name + '.conf', install_dir: unitd_conf_path)
+#install_data(project_name + '.conf', install_dir: unitd_conf_path)
 install_data(project_name + '.conf', install_dir: unitd_data_path,
              rename: project_name + '.conf.sample')
 
@@ -181,7 +183,7 @@ install_data(project_name + '.conf', install_dir: unitd_data_path,
 install_subdir('src/extra/functions', install_dir: unitd_data_path)
 install_subdir('src/extra/scripts', install_dir: unitd_data_path)
 install_subdir('src/extra/init.state', install_dir: unitd_data_path)
-install_subdir('src/extra/final.state', install_dir: unitd_data_path)
+#install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 
 # Install documentation
 install_data('LICENSE', install_dir: doc_path)

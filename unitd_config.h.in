@@ -21,6 +21,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 /* Unitlog daemon */
 #define UNITLOGD_PATH "@UNITLOGD_PATH@"
+#define UNITLOGD_DATA_PATH "@UNITLOGD_DATA_PATH@"
 #define UNITLOGD_LOG_PATH "@UNITLOGD_LOG_PATH@"
 #define UNITLOGD_INDEX_PATH "@UNITLOGD_INDEX_PATH@"
 #define UNITLOGD_BOOT_LOG_PATH "@UNITLOGD_BOOT_LOG_PATH@"

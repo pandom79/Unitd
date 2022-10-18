@@ -1,5 +1,5 @@
 /*
-(C) 2021 by Domenico Panella <pandom79@gmail.com>
+(C) 2022 by Domenico Panella <pandom79@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 3.
@@ -20,7 +20,7 @@ exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
         logInfo(CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
 
     if ((rv = write(SELF_PIPE[1], &output, sizeof(int))) == -1) {
-        logError(CONSOLE, "src/bin/unitlogd/signals/signals.c", "exitSignal", errno,
+        logError(CONSOLE, "src/unitlogd/signals/signals.c", "exitSignal", errno,
                       strerror(errno), "Unable to write into self pipe. Rv = %d.", rv);
     }
 }
@@ -37,8 +37,8 @@ setUnitlogdSigAction()
         sigaction(SIGQUIT, &act, NULL)  == -1 ||
         sigaction(SIGINT, &act, NULL)  == -1) {
         rv = -1;
-        logError(CONSOLE, "src/bin/unitlogd/signals/signals.c", "setSigAction", errno, strerror(errno),
-                      "Sigaction has returned %d exit code", rv);
+        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/signals/signals.c", "setSigAction", errno, strerror(errno),
+                      "Sigaction returned %d exit code", rv);
     }
 
     return rv;

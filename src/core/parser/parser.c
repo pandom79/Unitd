@@ -257,7 +257,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
             }
             else {
                 /* Check if a property is a number */
-                if (currentPropertyData->numeric && !isValidNumber(value)) {
+                if (currentPropertyData->numeric && !isValidNumber(value, false)) {
                     error = getMsg(numLine, ERRORS_ITEMS[NUMERIC_ERR].desc,
                                      key);
                     return error;
@@ -299,7 +299,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
 }
 
 bool
-isValidNumber(const char *value)
+isValidNumber(const char *value, bool zeroIncluded)
 {
     if (value) {
         int len = strlen(value);
@@ -307,7 +307,7 @@ isValidNumber(const char *value)
             if (!isdigit(value[i]))
                 return false;
         }
-        if (atoi(value) <= 0)
+        if ((!zeroIncluded && atol(value) <= 0) || (zeroIncluded && atol(value) < 0))
             return false;
     }
     return true;

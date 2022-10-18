@@ -195,7 +195,7 @@ execProcess(const char *command, char **argv, Unit **unit)
     }
 
     if (UNITD_DEBUG) {
-        logInfo(UNITD_BOOT_LOG, "The %s unit with the %s command has returned the following values:\n"
+        logInfo(UNITD_BOOT_LOG, "The %s unit with the %s command returned the following values:\n"
                                      "type = %s\n"
                                      "pid = %d\n"
                                      "exitcode = %d\n"

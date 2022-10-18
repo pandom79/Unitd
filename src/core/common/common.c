@@ -401,7 +401,7 @@ setSigAction()
         sigaction(SIGCHLD, &act, NULL) == -1) {
         rv = -1;
         logError(CONSOLE | UNITD_BOOT_LOG, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
-                      "Sigaction has returned -1 exit code");
+                      "Sigaction returned -1 exit code");
     }
 
     return rv;
@@ -417,7 +417,7 @@ setUserData(int userId, struct passwd **userInfo)
     *userInfo = getpwuid(userId);
     if (!(*userInfo)) {
         logError(CONSOLE | SYSTEM, "src/core/common/common.c", "setUserData", errno,
-                      strerror(errno), "Getpwuid has returned a null pointer");
+                      strerror(errno), "Getpwuid returned a null pointer");
         rv = 1;
         goto out;
     }
@@ -427,7 +427,7 @@ setUserData(int userId, struct passwd **userInfo)
     char *userHome = (*userInfo)->pw_dir;
     if ((rv = chdir(userHome)) == -1) {
         logError(CONSOLE | SYSTEM, "src/core/common/common.c", "setUserData", errno,
-                      strerror(errno), "Chdir (user instance) for %d userId has returned -1 exit code", userId);
+                      strerror(errno), "Chdir (user instance) for %d userId returned -1 exit code", userId);
         rv = 1;
         goto out;
     }
@@ -545,7 +545,7 @@ setStopAndDuration(ProcessData **processData)
     (*processData)->timeStop = timeNew(NULL);
     // Date time stop
     objectRelease(&(*processData)->dateTimeStopStr);
-    (*processData)->dateTimeStopStr = stringGetTimeStamp((*processData)->timeStop, false);
+    (*processData)->dateTimeStopStr = stringGetTimeStamp((*processData)->timeStop, false, NULL);
     // Duration
     objectRelease(&(*processData)->duration);
     (*processData)->duration = stringGetDiffTime((*processData)->timeStop, (*processData)->timeStart);

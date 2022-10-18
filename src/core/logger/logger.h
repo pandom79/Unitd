@@ -28,9 +28,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define UNITD_BOOT_LOG      0x2
 #define SYSTEM              0x4
 #define UNITLOGD_BOOT_LOG   0x8
-#define UNITLOGD_LOG        0x10
-#define UNITLOGD_INDEX      0x20
-#define ALL                 0x3F
+#define ALL                 0x1F
 
 extern FILE *UNITD_BOOT_LOG_FILE;
 

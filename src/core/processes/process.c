@@ -47,7 +47,7 @@ startProcess(void *arg)
     pData->timeStart = timeNew(NULL);
     /* Timestamp start */
     objectRelease(&pData->dateTimeStartStr);
-    pData->dateTimeStartStr = stringGetTimeStamp(pData->timeStart, false);
+    pData->dateTimeStartStr = stringGetTimeStamp(pData->timeStart, false, NULL);
 
     /* Lock the mutex */
     if ((rv = pthread_mutex_lock(unitMutex)) != 0) {
@@ -206,7 +206,7 @@ startProcess(void *arg)
         if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
             arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
             logError(CONSOLE, "src/core/processes/process.c", "startProcess", statusThread,
-                          strerror(statusThread), "The '%s' command for the '%s' unit has returned %d exit code\n",
+                          strerror(statusThread), "The '%s' command for the '%s' unit returned %d exit code\n",
                           command, unitName, statusThread);
         }
     }

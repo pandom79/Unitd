@@ -1,10 +1,14 @@
 /*
-(C) 2021 by Domenico Panella <pandom79@gmail.com>
+(C) 2022 by Domenico Panella <pandom79@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
+
+#ifndef INIT_H
+#define INIT_H
+
 
 typedef enum {
     NO_TYPE = -1,
@@ -19,5 +23,12 @@ typedef struct {
     SocketType sockType;
 } SocketThread;
 
+char *getBootIdStr();
+int appendDmsg();
 void assertMacros();
 int unitlogdInit();
+int unitlogdShutdown();
+
+extern const char *DMESG_LOG_PATH;
+
+#endif // INIT_H

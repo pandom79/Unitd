@@ -140,7 +140,7 @@ unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
     /* These errors should never occurred */
     errorsSize = (errors  ? errors->size : 0);
     if (errorsSize > 0) {
-        syslog(LOG_DAEMON | LOG_ERR, "The parserEnd func in unmarshallRequest func has returned "
+        syslog(LOG_DAEMON | LOG_ERR, "The parserEnd func in unmarshallRequest func returned "
                                      "the following errors:\n");
         for (int i = 0; i < errorsSize; i++) {
             syslog(LOG_DAEMON | LOG_ERR, "Error %d = %s", i, (char *)arrayGet(errors, i));

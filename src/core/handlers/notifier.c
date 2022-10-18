@@ -129,14 +129,14 @@ runNotifiersThread(void *arg)
     /* Creating the inotify instance */
     if ((*fd = inotify_init()) == -1) {
         logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
-                      errno, strerror(errno), "Inotify_init has returned -1");
+                      errno, strerror(errno), "Inotify_init returned -1");
         goto out;
     }
 
     /* Adding the "watchDir" directory into watch list. */
     if ((*wd = inotify_add_watch(*fd, watchDir, IN_MODIFY)) == -1) {
         logError(ALL, "src/core/handlers/notifier.c", "runNotifierThread",
-                      errno, strerror(errno), "Inotify_add_watch has returned -1");
+                      errno, strerror(errno), "Inotify_add_watch returned -1");
         goto out;
     }
 
@@ -199,13 +199,13 @@ runNotifiersThread(void *arg)
                 /* Removing the "watchDir" directory from watch list. */
                 if ((rv = inotify_rm_watch(*fd, *wd)) == -1) {
                     logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
-                                  errno, strerror(errno), "Inotify_rm_watch has returned -1 (%s)", watchDir);
+                                  errno, strerror(errno), "Inotify_rm_watch returned -1 (%s)", watchDir);
                 }
             }
             /* Close the inotify instance */
             if ((rv = close(*fd)) == -1) {
                 logError(ALL, "src/core/handlers/notifier.c", "runNotifiersThread",
-                              errno, strerror(errno), "Close has returned -1 (%s)", watchDir);
+                              errno, strerror(errno), "Close returned -1 (%s)", watchDir);
             }
         }
 

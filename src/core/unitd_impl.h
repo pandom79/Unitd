@@ -26,7 +26,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "units/units.h"
 #include "file/file.h"
 #include "logger/logger.h"
-#include "../unitlogd/unitlogd_impl.h"
 
 #define PROJECT_NAME                "Unitd init system"
 #define PROJECT_USER_NAME           "Unitd user instance"

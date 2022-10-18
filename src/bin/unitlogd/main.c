@@ -1,22 +1,23 @@
 /*
-(C) 2021 by Domenico Panella <pandom79@gmail.com>
+(C) 2022 by Domenico Panella <pandom79@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#include "../../core/unitd_impl.h"
+#include "../unitlogd/unitlogd_impl.h"
 
-static const char *DEV_LOG_NAME = "/dev/log";
-static const char *DEV_KMSG_NAME = "/dev/kmsg";
-static const char *DEV_CONSOLE_NAME = "/dev/console";
+const char *DEV_LOG_NAME = "/dev/log";
+const char *DEV_KMSG_NAME = "/proc/kmsg";
+const char *DMESG_LOG_PATH = "/var/log/dmesg.log";
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
 bool UNITLOGD_DEBUG = false;
 FILE *UNITLOGD_INDEX_FILE = NULL;
 FILE *UNITLOGD_LOG_FILE = NULL;
 FILE *UNITLOGD_BOOT_LOG_FILE = NULL;
+char *BOOT_ID_STR = NULL;
 
 static void __attribute__((noreturn))
 usage(bool fail)
@@ -26,7 +27,6 @@ usage(bool fail)
 
             WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
             "-l, --log          Log the system messages\n"
-            "-c, --console      Enable the console messages forward\n"
             "-k, --kernel       Enable the kernel messages forward\n"
             "-d, --debug        Enable the debug\n"
             "-h, --help         Show usage\n\n"
@@ -48,30 +48,63 @@ addSocketThread(Array **socketThreads, const char *devName)
     arrayAdd(*socketThreads, socketThread);
 }
 
+static int
+createResources()
+{
+    int rv = 0;
+
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "UNITLOGD_PATH", UNITLOGD_PATH);
+    addEnvVar(&envVars, "UNITLOGD_LOG_PATH", UNITLOGD_LOG_PATH);
+    addEnvVar(&envVars, "UNITLOGD_INDEX_PATH", UNITLOGD_INDEX_PATH);
+    addEnvVar(&envVars, "UNITLOGD_BOOT_LOG_PATH", UNITLOGD_BOOT_LOG_PATH);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Building command */
+    char *cmd = stringNew(UNITLOGD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/unitlogd.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, stringNew("create")); //1
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL);
+
+    /* Execute the script */
+    rv = execScript(UNITLOGD_DATA_PATH, "/scripts/unitlogd.sh", scriptParams->arr, envVars->arr);
+    if (rv != 0)
+        logError(CONSOLE, "src/unitlogd/init/init.c", "createResources", rv, strerror(rv), "ExecScript error");
+
+    arrayRelease(&envVars);
+    arrayRelease(&scriptParams);
+    return rv;
+
+}
+
 int main(int argc, char **argv) {
 
     int c, rv, input;
-    const char *shortopts = "lckhd";
-    bool log, console, kernel;
+    const char *shortopts = "lkhd";
+    bool log, kernel;
     Array *socketThreads = arrayNew(socketThreadRelease);
     const struct option longopts[] = {
         { "log", no_argument, NULL, 'l' },
-        { "console", no_argument, NULL, 'c' },
         { "kernel", no_argument, NULL, 'k' },
         { "debug", optional_argument, NULL, 'd' },
         { "help", no_argument, NULL, 'h' },
         { 0, 0, 0, 0 }
     };
     c = rv = input = 0;
-    log = console = kernel = false;
+    log = kernel = false;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
             case 'l':
                 log = true;
-                break;
-            case 'c':
-                console = true;
                 break;
             case 'k':
                 kernel = true;
@@ -94,11 +127,11 @@ int main(int argc, char **argv) {
         logErrorStr(CONSOLE, "Please, run this program as administrator.\n");
         goto out;
     }
-    else if (!log && !console && !kernel) {
+    else if (!log && !kernel) {
         rv = 1;
         logErrorStr(CONSOLE, "Nothing to do!\n");
         logInfo(CONSOLE, "Please, provide at least one of the following options: "
-                                        "\nlog\nconsole\nkernel\n");
+                         "\nlog\nkernel\n");
         goto out;
     }
 
@@ -108,49 +141,66 @@ int main(int argc, char **argv) {
     /* Set pid */
     UNITLOGD_PID = getpid();
 
-    if (UNITLOGD_DEBUG) {
-        logInfo(CONSOLE, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
-        logInfo(CONSOLE, "Unitlogd path = %s\n", UNITLOGD_PATH);
-        logInfo(CONSOLE, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
-        logInfo(CONSOLE, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
-        logInfo(CONSOLE, "Unitlogd boot log path = %s\n", UNITLOGD_BOOT_LOG_PATH);
-        logInfo(CONSOLE, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
+    if (log) {
+        /* Create dir and files */
+        if ((rv = createResources()) != 0)
+            goto out;
+
+        /* Open the boot log */
+        if (unitlogdOpenBootLog("w")) {
+            rv = 1;
+            goto out;
+        }
+        assert(UNITLOGD_BOOT_LOG_FILE);
+
+        if (UNITLOGD_DEBUG) {
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd path = %s\n", UNITLOGD_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd data path = %s\n", UNITLOGD_DATA_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd boot log path = %s\n", UNITLOGD_BOOT_LOG_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
+        }
     }
-
-    /* We run "init" script only if we have to log the messages.
-     * No need that for the forwarders.
-    */
-    if (log && (rv = unitlogdInit()) != 0)
-        goto out;
-
     /* Set sigaction */
     if ((rv = setUnitlogdSigAction()) != 0)
         goto out;
 
     /* Self pipe */
     if ((rv = pipe(SELF_PIPE)) != 0) {
-        logError(CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
-                      strerror(errno), "Pipe func has returned %d", rv);
+        logError(CONSOLE | SYSTEM, "src/bin/unitlogd/main.c", "main", errno, strerror(errno),
+                 "Pipe func returned %d", rv);
         goto out;
     }
 
-    /* Calculate the number of threads */
+    /* Set the number of threads */
     if (log)
         addSocketThread(&socketThreads, DEV_LOG_NAME);
-    if (console)
-        addSocketThread(&socketThreads, DEV_CONSOLE_NAME);
     if (kernel)
         addSocketThread(&socketThreads, DEV_KMSG_NAME);
+
+    /* The index management is useful only if we have to log the messages (log option).
+     * No need that for the forwarders.
+    */
+    if (log && (rv = unitlogdInit()) != 0)
+        goto out;
 
     /* Start sockets */
     if ((rv = startSockets(socketThreads)) != 0)
         goto out;
 
+    /* Close boot log */
+    if (log) {
+        unitlogdCloseBootLog();
+        assert(!UNITLOGD_BOOT_LOG_FILE);
+    }
+
     while (true) {
         /* Unitlogd is blocked here waiting for a signal */
         if ((rv = read(SELF_PIPE[0], &input, sizeof(int))) == -1) {
-            logError(CONSOLE, "src/bin/unitlogd/main.c", "main", errno,
-                          strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/bin/unitlogd/main.c", "main", errno,
+                     strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
             goto out;
         }
         else
@@ -160,17 +210,34 @@ int main(int argc, char **argv) {
             break;
     }
 
+    /*************** SHUTDOWN ********************/
+
+    /* Open the boot log */
+    if (log) {
+        if (unitlogdOpenBootLog("a")) {
+            rv = 1;
+            goto out;
+        }
+        assert(UNITLOGD_BOOT_LOG_FILE);
+    }
+
     /* Stop sockets */
     rv = stopSockets(socketThreads);
+
+    if (log && (rv = unitlogdShutdown()) != 0)
+        goto out;
 
     out:
         /* Release resources */
         close(SELF_PIPE[0]);
         close(SELF_PIPE[1]);
+        objectRelease(&BOOT_ID_STR);
         arrayRelease(&socketThreads);
-
         if (UNITLOGD_DEBUG)
-            logInfo(CONSOLE, "Unitlogd exited with rv = %d.\n", rv);
-
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd exited with rv = %d.\n", rv);
+        if (log) {
+            unitlogdCloseBootLog();
+            assert(!UNITLOGD_BOOT_LOG_FILE);
+        }
         return rv;
 }

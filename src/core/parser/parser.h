@@ -77,6 +77,6 @@ extern PropertyData UNITS_PROPERTIES_ITEMS[];
 void parserInit(ParserFuncType funcType);
 int parseLine(char *, int, Array **keyVal, PropertyData **);
 char* checkKeyVal(char *key, char *value, int numLine, PropertyData **);
-bool isValidNumber(const char *);
+bool isValidNumber(const char *, bool);
 char* getMsg(int numLine, const char *message, ...);
 void parserEnd(Array **, bool);

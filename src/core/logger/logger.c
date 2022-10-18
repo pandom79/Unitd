@@ -92,16 +92,6 @@ logInfo(int options, const char *format, ...)
         writeFile(&UNITLOGD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
         va_end(args);
     }
-    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_INDEX_FILE, LIGHT_WHITE_COLOR, format, &args);
-        va_end(args);
-    }
     if (options & SYSTEM) {
         va_start(args, format);
         logSystem(LOG_DAEMON | LOG_INFO, NULL, format, &args);
@@ -132,19 +122,9 @@ logWarning(int options, const char *format, ...)
         writeFile(&UNITLOGD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
         va_end(args);
     }
-    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_INDEX_FILE, YELLOW_COLOR, format, &args);
-        va_end(args);
-    }
     if (options & SYSTEM) {
         va_start(args, format);
-        logSystem(LOG_DAEMON | LOG_INFO, YELLOW_COLOR, format, &args);
+        logSystem(LOG_DAEMON | LOG_WARNING, YELLOW_COLOR, format, &args);
         va_end(args);
     }
 }
@@ -170,16 +150,6 @@ logErrorStr(int options, const char *format, ...)
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
         writeFile(&UNITLOGD_BOOT_LOG_FILE, RED_COLOR, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, RED_COLOR, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_INDEX_FILE, RED_COLOR, format, &args);
         va_end(args);
     }
     if (options & SYSTEM) {
@@ -210,16 +180,6 @@ logSuccess(int options, const char *format, ...)
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
         writeFile(&UNITLOGD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_INDEX_FILE, GREEN_COLOR, format, &args);
         va_end(args);
     }
     if (options & SYSTEM) {
@@ -266,18 +226,6 @@ logError(int options, const char *transUnit, const char *funcName,
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
         writeErrorFile(&UNITLOGD_BOOT_LOG_FILE, transUnit, funcName, returnValue,
-                       returnValueStr, errDesc, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_LOG_FILE && (options & UNITLOGD_LOG)) {
-        va_start(args, format);
-        writeErrorFile(&UNITLOGD_LOG_FILE, transUnit, funcName, returnValue,
-                       returnValueStr, errDesc, format, &args);
-        va_end(args);
-    }
-    if (UNITLOGD_INDEX_FILE && (options & UNITLOGD_INDEX)) {
-        va_start(args, format);
-        writeErrorFile(&UNITLOGD_INDEX_FILE, transUnit, funcName, returnValue,
                        returnValueStr, errDesc, format, &args);
         va_end(args);
     }
