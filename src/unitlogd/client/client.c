@@ -9,9 +9,10 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitlogd_impl.h"
 
 UlCommandData UL_COMMAND_DATA[] = {
+    { SHOW_LOG, "show-log" },
     { LIST_BOOTS, "list-boots" }
 };
-int UL_COMMAND_DATA_LEN = 1;
+int UL_COMMAND_DATA_LEN = 2;
 
 UlCommand
 getUlCommand(const char *commandName)
@@ -28,6 +29,7 @@ bool
 getSkipCheckAdmin(UlCommand ulCommand)
 {
     switch (ulCommand) {
+        case SHOW_LOG:
         case LIST_BOOTS:
             return true;
         default:
@@ -111,4 +113,85 @@ showBootsList()
         unitlogdCloseIndex();
         assert(!UNITLOGD_INDEX_FILE);
         return rv;
+}
+
+int
+showLogLines()
+{
+    int rv = 0;
+    char *line = NULL;
+    size_t len = 0;
+
+    line = NULL;
+
+    unitlogdOpenLog("r");
+    assert(UNITLOGD_LOG_FILE);
+    while (getline(&line, &len, UNITLOGD_LOG_FILE) != -1) {
+        /* Discard index entries */
+        if (!stringStartsWithStr(line, ENTRY_STARTED) && !stringStartsWithStr(line, ENTRY_FINISHED))
+            printf("%s", line);
+    }
+
+    objectRelease(&line);
+    unitlogdCloseLog();
+    assert(!UNITLOGD_LOG_FILE);
+
+    return rv;
+}
+
+int
+sendToPager(int (*fn)())
+{
+    int rv = 0;
+    int pfds[2];
+    pid_t pid;
+
+    /* Pipe */
+    if ((rv = pipe(pfds)) < 0) {
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno, strerror(errno),
+                 "Pipe function returned a bad exit code");
+        goto out;
+    }
+    /* Fork */
+    pid = fork();
+    if (pid < 0) {
+        rv = errno;
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno, strerror(errno),
+                 "Fork function returned a bad exit code");
+        goto out;
+    }
+    else if (pid == 0) { /* child */
+        close(pfds[0]);
+        dup2(pfds[1], STDOUT_FILENO);
+        close(pfds[1]);
+        fn();
+    }
+    else { /* parent */
+        char *args[] = { "less", NULL };
+        close(pfds[1]);
+        dup2(pfds[0], STDIN_FILENO);
+        close(pfds[0]);
+        execvp(args[0], args);
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno, strerror(errno),
+                 "Execvp error");
+        rv = 1;
+        goto out;
+    }
+
+    out:
+        return rv;
+
+}
+
+int
+showLog(bool pager)
+{
+    int rv = 0;
+
+    if (pager)
+        rv = sendToPager(showLogLines);
+    else
+        rv = showLogLines();
+
+    return rv;
 }

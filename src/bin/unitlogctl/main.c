@@ -17,28 +17,35 @@ showUsage()
         "Usage: unitlogctl [COMMAND] [OPTIONS] \n\n"
 
         WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
-        "list-boots         List the boots\n"
+        "show-log         Show the log\n"
+        "list-boots       List the boots\n"
 
         WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
-        "-d, --debug        Enable the debug\n"
-        "-h, --help         Show usage\n\n"
+        "-p, --pager      Enable the pager\n"
+        "-d, --debug      Enable the debug\n"
+        "-h, --help       Show usage\n\n"
     );
 }
 
 int main(int argc, char **argv) {
 
     int c, rv, userId = -1;
-    const char *shortopts = "hd", *commandName = NULL;
+    const char *shortopts = "phd", *commandName = NULL;
     const struct option longopts[] = {
+        { "pager", optional_argument, NULL, 'p' },
         { "help", no_argument, NULL, 'h' },
         { "debug", optional_argument, NULL, 'd' },
         { 0, 0, 0, 0 }
     };
     UlCommand ulCommand = NO_UL_COMMAND;
+    bool pager = false;
     c = rv = 0;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
+            case 'p':
+                pager = true;
+                break;
             case 'd':
                 UNITLOGCTL_DEBUG = true;
                 break;
@@ -66,6 +73,10 @@ int main(int argc, char **argv) {
         }
     }
 
+    /* Show-log is the default command */
+    if (ulCommand == NO_UL_COMMAND)
+        ulCommand = SHOW_LOG;
+
     /* Check administrator */
     userId = getuid();
     if (userId != 0) {
@@ -77,7 +88,20 @@ int main(int argc, char **argv) {
 
     /* Command handling */
     switch (ulCommand) {
+        case SHOW_LOG:
+            if (argc > 4 || (argc >= 2 && !UNITLOGCTL_DEBUG && !pager)) {
+                showUsage();
+                rv = 1;
+                goto out;
+            }
+            rv = showLog(pager);
+            break;
         case LIST_BOOTS:
+            if (argc > 3 || (argc > 2 && !UNITLOGCTL_DEBUG)) {
+                showUsage();
+                rv = 1;
+                goto out;
+            }
             rv = showBootsList();
             break;
         default:
