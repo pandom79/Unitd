@@ -213,11 +213,47 @@ sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
 }
 
 int
-showLog(bool pager)
+followLog()
 {
     int rv = 0;
 
-    if (pager)
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "UNITLOGD_LOG_PATH", UNITLOGD_LOG_PATH);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Building command */
+    char *cmd = stringNew(UNITLOGD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/unitlogd.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, stringNew("follow")); //1
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL);
+
+    /* Execute the script */
+    rv = execScript(UNITLOGD_DATA_PATH, "/scripts/unitlogd.sh", scriptParams->arr, envVars->arr);
+    if (rv != 0)
+        logError(CONSOLE, "src/unitlogd/client/client.c", "followLog", rv, strerror(rv), "ExecScript error");
+
+    arrayRelease(&envVars);
+    arrayRelease(&scriptParams);
+
+    return rv;
+}
+
+int
+showLog(bool pager, bool follow)
+{
+    int rv = 0;
+
+    if (follow)
+        rv = followLog();
+    else if (pager)
         rv = sendToPager(showLogLines, 0, -1);
     else
         rv = showLogLines(0, -1);

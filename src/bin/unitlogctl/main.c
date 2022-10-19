@@ -22,6 +22,7 @@ showUsage()
         "show-boot        Show the boot\n"
 
         WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
+        "-f, --follow     Follow the log\n"
         "-p, --pager      Enable the pager\n"
         "-d, --debug      Enable the debug\n"
         "-h, --help       Show usage\n\n"
@@ -31,19 +32,24 @@ showUsage()
 int main(int argc, char **argv) {
 
     int c, rv, userId = -1;
-    const char *shortopts = "phd", *commandName = NULL, *arg = NULL;
+    const char *shortopts = "fphd", *commandName = NULL, *arg = NULL;
     const struct option longopts[] = {
+        { "follow", optional_argument, NULL, 'f' },
         { "pager", optional_argument, NULL, 'p' },
         { "help", no_argument, NULL, 'h' },
         { "debug", optional_argument, NULL, 'd' },
         { 0, 0, 0, 0 }
     };
     UlCommand ulCommand = NO_UL_COMMAND;
-    bool pager = false;
+    bool pager, follow;
     c = rv = 0;
+    pager = follow = false;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
+            case 'f':
+                follow = true;
+                break;
             case 'p':
                 pager = true;
                 break;
@@ -90,12 +96,12 @@ int main(int argc, char **argv) {
     /* Command handling */
     switch (ulCommand) {
         case SHOW_LOG:
-            if (argc > 4 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager)) {
+            if (argc > 5 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager && !follow)) {
                 showUsage();
                 rv = 1;
                 goto out;
             }
-            rv = showLog(pager);
+            rv = showLog(pager, follow);
             break;
         case LIST_BOOTS:
             if (argc > 3 || (argc > 2 && !UNITLOGCTL_DEBUG)) {

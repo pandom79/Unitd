@@ -167,7 +167,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
      * unit which makes this job has been already called.
      */
     if (getDefaultStateStr(&destDefStateSyml) != 0) {
-        /* If we are here then the symlink is not valid or missing */
+        /* If we are here then the symlink is not valid or missed */
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -257,9 +257,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
             rv = writeWtmp(false);
 
         //********************* FINAL STATE ************************************
-        /* Parsing and starting the finalization units
+        /* Parsing and starting the finalization units.
          * For the finalization state, we always aggregate the errors to allow
-         * to fix all the errors in a one shot
+         * to fix them in a one shot.
         */
 #ifndef UNITD_TEST
         finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);

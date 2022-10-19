@@ -22,4 +22,7 @@ case $OPERATION in
         chmod -R 0650 "$UNITLOGD_PATH"
         chown -R :users "$UNITLOGD_PATH"
     ;;
+    "follow")
+        tail -f "$UNITLOGD_LOG_PATH"
+    ;;
 esac;
