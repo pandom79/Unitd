@@ -8,6 +8,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitlogd_impl.h"
 
+bool UNITLOGCTL_DEBUG;
+
 UlCommandData UL_COMMAND_DATA[] = {
     { SHOW_LOG, "show-log" },
     { LIST_BOOTS, "list-boots" },
@@ -118,31 +120,55 @@ showBootsList()
 }
 
 int
-showLogLines()
+showLogLines(off_t startOffset, off_t stopOffset)
 {
     int rv = 0;
     char *line = NULL;
     size_t len = 0;
+    off_t currentOffset = -1;
 
-    line = NULL;
+    assert(startOffset >= 0);
 
+    /* Open log */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
+
+    /* Set start offset */
+    if (fseeko(UNITLOGD_LOG_FILE, startOffset, SEEK_SET) == -1) {
+        logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "showLogLines", errno, strerror(errno),
+                 "Fseeko func returned -1");
+        rv = errno;
+        goto out;
+    }
     while (getline(&line, &len, UNITLOGD_LOG_FILE) != -1) {
+
+        /* Check if we achieved the stop offset */
+        if (stopOffset != -1) {
+            if ((currentOffset = ftello(UNITLOGD_LOG_FILE)) == -1) {
+                logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "showLogLines", errno,
+                         strerror(errno), "Ftello func returned -1");
+                rv = errno;
+                goto out;
+            }
+            currentOffset -= strlen(line);
+            if (currentOffset > stopOffset)
+                break;
+        }
         /* Discard index entries */
         if (!stringStartsWithStr(line, ENTRY_STARTED) && !stringStartsWithStr(line, ENTRY_FINISHED))
             printf("%s", line);
     }
 
-    objectRelease(&line);
-    unitlogdCloseLog();
-    assert(!UNITLOGD_LOG_FILE);
+    out:
+        objectRelease(&line);
+        unitlogdCloseLog();
+        assert(!UNITLOGD_LOG_FILE);
 
-    return rv;
+        return rv;
 }
 
 int
-sendToPager(int (*fn)())
+sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
 {
     int rv = 0;
     int pfds[2];
@@ -166,10 +192,11 @@ sendToPager(int (*fn)())
         close(pfds[0]);
         dup2(pfds[1], STDOUT_FILENO);
         close(pfds[1]);
-        fn();
+        fn(startOffset, stopOffset);
     }
     else { /* parent */
-        char *args[] = { "less", NULL };
+        /* For the debug, we show the line number */
+        char *args[] = { "less", UNITLOGCTL_DEBUG ? "-N" : NULL, NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -191,19 +218,20 @@ showLog(bool pager)
     int rv = 0;
 
     if (pager)
-        rv = sendToPager(showLogLines);
+        rv = sendToPager(showLogLines, 0, -1);
     else
-        rv = showLogLines();
+        rv = showLogLines(0, -1);
 
     return rv;
 }
 
 int
-showBoot(const char *bootIdx)
+showBoot(bool pager, const char *bootIdx)
 {
     int rv = 0, idx = -1, idxMax = -1, indexSize = 0;
     Array *index = NULL;
     bool error = false;
+    off_t startOffset = 0, stopOffset = -1;
 
     assert(bootIdx);
 
@@ -215,29 +243,56 @@ showBoot(const char *bootIdx)
     if (indexSize > 0) {
         /* Find the max idx */
         if ((indexSize % 2) == 0)
-            idxMax = indexSize / 2;
+            idxMax = (indexSize - 2) / 2;
         else
-            idxMax = (indexSize / 2) + 1;
+            idxMax = (indexSize - 1) / 2;
 
         if (isValidNumber(bootIdx, true)) {
             idx = atol(bootIdx);
             if (idx > idxMax)
                 error = true;
+            else {
+                /* Get start and stop offset */
+                IndexEntry *startIndexEntry = NULL;
+                IndexEntry *stopIndexEntry = NULL;
+                if (idx == 0) {
+                    startIndexEntry = arrayGet(index, idx);
+                    stopIndexEntry = arrayGet(index, idx + 1);
+                }
+                else {
+                    startIndexEntry = arrayGet(index, idx * 2);
+                    stopIndexEntry = arrayGet(index, idx * 2 + 1);
+                }
+                startOffset = atol(startIndexEntry->startOffset);
+                if (stopIndexEntry)
+                    stopOffset = atol(stopIndexEntry->stopOffset);
+            }
         }
         else
             error = true;
 
         if (error) {
-            logErrorStr(CONSOLE, "The '%s' argument is not valid!\n", bootIdx);
-            logInfo(CONSOLE, "Please, enter a value between 0..%d !\n", idxMax);
+            logErrorStr(CONSOLE, "The argument '%s' is not valid!\n", bootIdx);
+            if (idxMax == 0)
+                logInfo(CONSOLE, "Please, enter a value between (0..).\n");
+            else
+                logInfo(CONSOLE, "Please, enter a value between (0..%d).\n", idxMax);
+            rv = 1;
+            goto out;
         }
 
-//FIXME continue ....
-
+        if (pager)
+            rv = sendToPager(showLogLines, startOffset, stopOffset);
+        else
+            rv = showLogLines(startOffset, stopOffset);
     }
     else
         logWarning(CONSOLE, "The '%s' index file is empty!\n", UNITLOGD_INDEX_PATH);
 
     out:
+        arrayRelease(&index);
+        unitlogdCloseIndex();
+        assert(!UNITLOGD_INDEX_FILE);
+
         return rv;
 }

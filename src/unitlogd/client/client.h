@@ -31,8 +31,8 @@ UlCommand getUlCommand(const char *);
 bool getSkipCheckAdmin(UlCommand);
 int showBootsList();
 int showLog(bool);
-int showLogLines();
-int sendToPager(int (*fn)());
-int showBoot(const char *);
+int showLogLines(off_t, off_t);
+int sendToPager(int (*fn)(off_t, off_t), off_t, off_t);
+int showBoot(bool, const char *);
 
 #endif // CLIENT_H

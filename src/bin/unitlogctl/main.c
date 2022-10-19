@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     /* Command handling */
     switch (ulCommand) {
         case SHOW_LOG:
-            if (argc > 4 || (argc >= 2 && !UNITLOGCTL_DEBUG && !pager)) {
+            if (argc > 4 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager)) {
                 showUsage();
                 rv = 1;
                 goto out;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
             arg = argv[argc - 1];
-            rv = showBoot(arg);
+            rv = showBoot(pager, arg);
             break;
         default:
             break;

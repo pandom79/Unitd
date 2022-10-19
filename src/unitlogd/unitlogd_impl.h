@@ -27,6 +27,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define NEW_LINE            "\n"
 
 extern bool UNITLOGD_DEBUG;
+extern bool UNITLOGCTL_DEBUG;
 extern int SELF_PIPE[2];
 extern int UNITLOGD_PID;
 extern FILE *UNITLOGD_INDEX_FILE;

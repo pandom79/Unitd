@@ -59,14 +59,12 @@ getIndex(Array **index, bool isIndex)
 
     /* Open file */
     if (isIndex) {
-        if (!UNITLOGD_INDEX_FILE)
-            unitlogdOpenIndex("r");
+        unitlogdOpenIndex("r");
         assert(UNITLOGD_INDEX_FILE);
         fp = UNITLOGD_INDEX_FILE;
     }
     else {
-        if (!UNITLOGD_LOG_FILE)
-            unitlogdOpenLog("r");
+        unitlogdOpenLog("r");
         assert(UNITLOGD_LOG_FILE);
         fp = UNITLOGD_LOG_FILE;
     }
@@ -204,6 +202,14 @@ getIndex(Array **index, bool isIndex)
         arrayRelease(&values);
         objectRelease(&bootId);
         objectRelease(&line);
+        if (isIndex) {
+            unitlogdCloseIndex();
+            assert(!UNITLOGD_INDEX_FILE);
+        }
+        else {
+            unitlogdCloseLog();
+            assert(!UNITLOGD_LOG_FILE);
+        }
 
         return rv;
 }
@@ -277,17 +283,13 @@ indexIntegrityCheck()
 
     rv = len = 0;
 
-    /* Open log and index */
-    assert(!UNITLOGD_INDEX_FILE);
-    unitlogdOpenIndex("r");
-    assert(UNITLOGD_INDEX_FILE);
-    assert(!UNITLOGD_LOG_FILE);
-    unitlogdOpenLog("r");
-    assert(UNITLOGD_LOG_FILE);
-
     /* Get array from index */
     if ((rv = getIndex(&index, true)) != 0)
         goto out;
+
+    /* Open log */
+    unitlogdOpenLog("r");
+    assert(UNITLOGD_LOG_FILE);
 
     /* For each index entry must be there a log entry according the offset value */
     len = index ? index->size : 0;
@@ -302,9 +304,7 @@ indexIntegrityCheck()
         }
     }
 
-    /* Close log and index */
-    unitlogdCloseIndex();
-    assert(!UNITLOGD_INDEX_FILE);
+    /* Close log */
     unitlogdCloseLog();
     assert(!UNITLOGD_LOG_FILE);
 
