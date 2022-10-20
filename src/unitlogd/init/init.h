@@ -9,7 +9,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #ifndef INIT_H
 #define INIT_H
 
-
 typedef enum {
     NO_TYPE = -1,
     UNIX = 0,

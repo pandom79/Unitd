@@ -18,5 +18,6 @@ int unitlogdCloseIndex();
 void logEntry(FILE **, const char *);
 char* getLogOffset();
 bool matchLogLine(bool, IndexEntry *);
+int execUlScript(Array **, const char *);
 
 #endif // FILE_H

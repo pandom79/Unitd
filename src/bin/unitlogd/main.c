@@ -52,7 +52,6 @@ static int
 createResources()
 {
     int rv = 0;
-
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
@@ -62,27 +61,10 @@ createResources()
     addEnvVar(&envVars, "UNITLOGD_BOOT_LOG_PATH", UNITLOGD_BOOT_LOG_PATH);
     /* Must be null terminated */
     arrayAdd(envVars, NULL);
-
-    /* Building command */
-    char *cmd = stringNew(UNITLOGD_DATA_PATH);
-    stringAppendStr(&cmd, "/scripts/unitlogd.sh");
-
-    /* Creating script params */
-    Array *scriptParams = arrayNew(objectRelease);
-    arrayAdd(scriptParams, cmd); //0
-    arrayAdd(scriptParams, stringNew("create")); //1
-    /* Must be null terminated */
-    arrayAdd(scriptParams, NULL);
-
-    /* Execute the script */
-    rv = execScript(UNITLOGD_DATA_PATH, "/scripts/unitlogd.sh", scriptParams->arr, envVars->arr);
-    if (rv != 0)
-        logError(CONSOLE, "src/unitlogd/init/init.c", "createResources", rv, strerror(rv), "ExecScript error");
-
+    /* Exec script */
+    rv = execUlScript(&envVars, "create");
     arrayRelease(&envVars);
-    arrayRelease(&scriptParams);
     return rv;
-
 }
 
 int main(int argc, char **argv) {

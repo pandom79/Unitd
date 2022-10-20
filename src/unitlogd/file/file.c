@@ -196,3 +196,32 @@ matchLogLine(bool isStart, IndexEntry *indexEntry)
 
         return match;
 }
+
+int
+execUlScript(Array **envVars, const char *operation)
+{
+    int rv = 0;
+
+    assert(*envVars);
+
+    /* Building command */
+    char *cmd = stringNew(UNITLOGD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/unitlogd.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, stringNew(operation)); //1
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL);
+
+    /* Execute the script */
+    rv = execScript(UNITLOGD_DATA_PATH, "/scripts/unitlogd.sh", scriptParams->arr, (*envVars)->arr);
+    if (rv != 0)
+        logError(CONSOLE, "src/unitlogd/file/file.c", "execUlScript", rv, strerror(rv),
+                 "ExecScript error for the '%s' operation", operation);
+
+    arrayRelease(&scriptParams);
+
+    return rv;
+}
