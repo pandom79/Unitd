@@ -78,7 +78,7 @@ unitlogdInit()
 
     /* Index integrity check. If it fails then exit.
      * At this point, unitlogctl should be able to regenerate it reading from unitlogd.log
-     * since it contains the same entries, obviously, if the latters is not corrupt too.
+     * since it contains the same entries, obviously, if the latter is not corrupt too.
      * In this case, clear all and restart.
     */
     if ((rv = indexIntegrityCheck()) != 0) {

@@ -25,4 +25,10 @@ case $OPERATION in
     "follow")
         tail -f "$UNITLOGD_LOG_PATH"
     ;;
+    "create-index")
+        rm -rf "$UNITLOGD_INDEX_PATH" || true
+        touch "$UNITLOGD_INDEX_PATH"
+        chmod 0650 "$UNITLOGD_INDEX_PATH"
+        chown :users "$UNITLOGD_INDEX_PATH"
+    ;;
 esac;

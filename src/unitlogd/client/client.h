@@ -20,7 +20,8 @@ typedef enum {
     NO_UL_COMMAND = -1,
     SHOW_LOG = 0,
     LIST_BOOTS = 1,
-    SHOW_BOOT = 2
+    SHOW_BOOT = 2,
+    INDEX_REPAIR = 3
 } UlCommand;
 typedef struct {
     UlCommand ulCommand;
@@ -35,5 +36,6 @@ int showLogLines(off_t, off_t);
 int sendToPager(int (*fn)(off_t, off_t), off_t, off_t);
 int showBoot(bool, bool, const char *);
 int followLog();
+int createIndexFile();
 
 #endif // CLIENT_H

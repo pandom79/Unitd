@@ -18,11 +18,18 @@ typedef struct {
 } IndexEntry;
 
 /* Return the list of the boots.
- * Each element is an IndexEntry struct.
- * The array must be freed via arrayRelease function.
+ * Each element is an 'IndexEntry' struct.
+ * The array must be freed via 'arrayRelease' function.
  * Return value:
- * On success returns 0 otherwise an error has occurred.
+ * On success returns '0' otherwise an error has occurred.
 */
 int getBootsList(Array **bootsList);
+
+/* Repair the index reading the entries from log.
+ * This function is useful in the corruption case of the index file.
+ * Return value:
+ * On success returns '0' otherwise an error has occurred.
+*/
+int indexRepair();
 
 #endif // UNITLOGD_H

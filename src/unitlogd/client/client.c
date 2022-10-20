@@ -13,9 +13,10 @@ bool UNITLOGCTL_DEBUG;
 UlCommandData UL_COMMAND_DATA[] = {
     { SHOW_LOG, "show-log" },
     { LIST_BOOTS, "list-boots" },
-    { SHOW_BOOT, "show-boot"}
+    { SHOW_BOOT, "show-boot" },
+    { INDEX_REPAIR, "index-repair" }
 };
-int UL_COMMAND_DATA_LEN = 3;
+int UL_COMMAND_DATA_LEN = 4;
 
 UlCommand
 getUlCommand(const char *commandName)
@@ -333,5 +334,79 @@ showBoot(bool pager, bool follow, const char *bootIdx)
         unitlogdCloseIndex();
         assert(!UNITLOGD_INDEX_FILE);
 
+        return rv;
+}
+
+int
+createIndexFile()
+{
+    int rv = 0;
+
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "UNITLOGD_INDEX_PATH", UNITLOGD_INDEX_PATH);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Building command */
+    char *cmd = stringNew(UNITLOGD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/unitlogd.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, stringNew("create-index")); //1
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL);
+
+    /* Execute the script */
+    rv = execScript(UNITLOGD_DATA_PATH, "/scripts/unitlogd.sh", scriptParams->arr, envVars->arr);
+    if (rv != 0)
+        logError(CONSOLE, "src/unitlogd/client/client.c", "createIndexFile", rv, strerror(rv), "ExecScript error");
+
+    arrayRelease(&envVars);
+    arrayRelease(&scriptParams);
+
+    return rv;
+}
+
+int
+indexRepair()
+{
+    int rv = 0, indexSize = 0;
+    Array *index = NULL;
+    IndexEntry *indexEntry = NULL;
+
+    /* Get the index from log */
+    if ((rv = getIndex(&index, false)) != 0)
+        goto out;
+
+    /* Write the index entries */
+    indexSize = index ? index->size : 0;
+    if (indexSize > 0) {
+        /* Create index file and set the owner and permissions */
+        if ((rv = createIndexFile()) != 0)
+            goto out;
+        /* Open the index file in append mode */
+        if (unitlogdOpenIndex("a") != 0) {
+            rv = 1;
+            goto out;
+        }
+        assert(UNITLOGD_INDEX_FILE);
+        /* Writing a new index file content */
+        for (int i = 0; i < indexSize; i++) {
+            indexEntry = arrayGet(index, i);
+            if (i % 2 == 0)
+                rv = writeEntry(true, indexEntry, true);
+            else
+                rv = writeEntry(false, indexEntry, true);
+        }
+    }
+
+    out:
+        arrayRelease(&index);
+        unitlogdCloseIndex();
+        assert(!UNITLOGD_INDEX_FILE);
         return rv;
 }

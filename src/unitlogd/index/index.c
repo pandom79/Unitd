@@ -287,11 +287,9 @@ indexIntegrityCheck()
     if ((rv = getIndex(&index, true)) != 0)
         goto out;
 
-    /* Open log */
+    /* For each index entry must be there a log entry according the offset value */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
-
-    /* For each index entry must be there a log entry according the offset value */
     len = index ? index->size : 0;
     for (int i = 0; i < len; i++) {
         isStart = false;
@@ -303,8 +301,6 @@ indexIntegrityCheck()
             goto out;
         }
     }
-
-    /* Close log */
     unitlogdCloseLog();
     assert(!UNITLOGD_LOG_FILE);
 
@@ -334,10 +330,6 @@ indexIntegrityCheck()
         }
         /* Release */
         indexEntryRelease(&indexEntry);
-        unitlogdCloseLog();
-        assert(!UNITLOGD_LOG_FILE);
-        unitlogdCloseIndex();
-        assert(!UNITLOGD_INDEX_FILE);
     }
 
     out:

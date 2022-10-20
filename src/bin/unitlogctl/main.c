@@ -17,15 +17,16 @@ showUsage()
         "Usage: unitlogctl [COMMAND] [OPTIONS] ... \n\n"
 
         WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
-        "show-log         Show the log\n"
-        "list-boots       List the boots\n"
-        "show-boot        Show the boot\n"
+        "show-log           Show the log\n"
+        "list-boots         List the boots\n"
+        "show-boot          Show the boot\n"
+        "index-repair       Repair the index\n"
 
         WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
-        "-f, --follow     Follow the log\n"
-        "-p, --pager      Enable the pager\n"
-        "-d, --debug      Enable the debug\n"
-        "-h, --help       Show usage\n\n"
+        "-f, --follow       Follow the log\n"
+        "-p, --pager        Enable the pager\n"
+        "-d, --debug        Enable the debug\n"
+        "-h, --help         Show usage\n\n"
     );
 }
 
@@ -119,6 +120,14 @@ int main(int argc, char **argv) {
             }
             arg = argv[argc - 1];
             rv = showBoot(pager, follow, arg);
+            break;
+        case INDEX_REPAIR:
+            if (argc < 2 || argc > 3 || (argc > 2 && !UNITLOGCTL_DEBUG)) {
+                showUsage();
+                rv = 1;
+                goto out;
+            }
+            rv = indexRepair();
             break;
         default:
             break;
