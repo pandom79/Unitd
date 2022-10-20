@@ -262,7 +262,7 @@ showLog(bool pager, bool follow)
 }
 
 int
-showBoot(bool pager, const char *bootIdx)
+showBoot(bool pager, bool follow, const char *bootIdx)
 {
     int rv = 0, idx = -1, idxMax = -1, indexSize = 0;
     Array *index = NULL;
@@ -321,6 +321,9 @@ showBoot(bool pager, const char *bootIdx)
             rv = sendToPager(showLogLines, startOffset, stopOffset);
         else
             rv = showLogLines(startOffset, stopOffset);
+
+        if (follow)
+            rv = followLog();
     }
     else
         logWarning(CONSOLE, "The '%s' index file is empty!\n", UNITLOGD_INDEX_PATH);

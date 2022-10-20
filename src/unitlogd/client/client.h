@@ -33,7 +33,7 @@ int showBootsList();
 int showLog(bool, bool);
 int showLogLines(off_t, off_t);
 int sendToPager(int (*fn)(off_t, off_t), off_t, off_t);
-int showBoot(bool, const char *);
+int showBoot(bool, bool, const char *);
 int followLog();
 
 #endif // CLIENT_H

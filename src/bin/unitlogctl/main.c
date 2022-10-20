@@ -112,13 +112,13 @@ int main(int argc, char **argv) {
             rv = showBootsList();
             break;
         case SHOW_BOOT:
-            if (argc < 3 || argc > 5 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager)) {
+            if (argc < 3 || argc > 6 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager && !follow)) {
                 showUsage();
                 rv = 1;
                 goto out;
             }
             arg = argv[argc - 1];
-            rv = showBoot(pager, arg);
+            rv = showBoot(pager, follow, arg);
             break;
         default:
             break;
