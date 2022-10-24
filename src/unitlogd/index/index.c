@@ -184,7 +184,7 @@ getIndex(Array **index, bool isIndex)
                 else {
                     char offsetStr[50] = {0};
                     sprintf(offsetStr, "%lu", offset);
-                    assert(offsetStr);
+                    assert(strlen(offsetStr) > 0);
                     if (isStartEntry)
                         stringSet(&indexEntry->startOffset, offsetStr);
                     else
@@ -240,7 +240,7 @@ writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
     if (isStarting) {
         /* START TIME */
         sprintf(timeStr, "%lu", *indexEntry->start->sec);
-        assert(timeStr);
+        assert(strlen(timeStr) > 0);
         stringConcat(&buffer, timeStr);
 
         /* START OFFSET */
@@ -252,7 +252,7 @@ writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
     else {
         /* STOP TIME */
         sprintf(timeStr, "%lu", *indexEntry->stop->sec);
-        assert(timeStr);
+        assert(strlen(timeStr) > 0);
         stringConcat(&buffer, timeStr);
 
         /* STOP OFFSET */

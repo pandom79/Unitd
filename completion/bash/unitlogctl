@@ -1,0 +1,97 @@
+# unitlogctl(1) completion                                 -*- shell-script -*-
+#
+# This file is part of unitd.
+#
+# Copyright © 2022 Domenico Panella <pandom79@gmail.com>
+
+COMMAND=
+
+__unitlogctl() {
+    local mode=$1; shift 1
+    case $COMMAND in
+        "enable")
+           unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "disable")
+           unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "re-enable"|"restart"|"status"|"list-requires"|"list-conflicts"|"list-states"|"cat"|"edit")
+           unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "start")
+           unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+        "stop")
+           unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
+           unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
+        ;;
+    esac;
+}
+
+__contains_word () {
+    local w word=$1; shift
+    for w in "$@"; do
+        [[ $w = "$word" ]] && return
+    done
+}
+
+__get_units() { { __unitlogctl $1; } | { while read -r a; do echo "$a"; done; }; }
+
+_unitlogctl () {
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local line=${COMP_WORDS[*]}
+    local -A COMMANDS=(
+        [SYSTEM]='show-log list-boots show-boot index-repair vacuum'
+    )
+    local -A OPTS=(
+        [SYSTEM]=' --follow --pager --debug --help'
+    )
+    local comps cur_orig
+    local -a entries new_entries
+
+    cur_orig=$cur
+    if [[ $cur =~ '\\' ]]; then
+        cur="$(echo $cur | xargs echo)"
+    else
+        cur_orig="$(printf '%q' $cur)"
+    fi
+
+    entries=${COMMANDS[SYSTEM]}
+    entries+=${OPTS[SYSTEM]}
+
+    # Command handling
+    if __contains_word "show-log" ${line}; then
+         COMMAND="show-log"
+    elif __contains_word "list-boots" ${line}; then
+        COMMAND="list-boots"
+    elif __contains_word "show-boot" ${line}; then
+        COMMAND="show-boot"
+    elif __contains_word "index-repair" ${line}; then
+        COMMAND="index-repair"
+    elif __contains_word "vacuum" ${line}; then
+        COMMAND="vacuum"
+    fi
+
+printf "COMMAND = $COMMAND\n"
+
+    if [ ! -z $COMMAND ]; then
+        entries=$( __get_units $mode )
+    fi
+
+    # Remove duplicate entries
+    for entry in ${entries};
+    do
+        if ! __contains_word "$entry" ${line}; then
+            new_entries+="$entry "
+        fi
+    done
+    comps=${new_entries}
+
+    # Show data
+    COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
+    unset COMMAND
+    return 0
+}
+
+complete -F _unitlogctl unitlogctl
+

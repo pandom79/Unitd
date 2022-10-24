@@ -85,7 +85,7 @@ showBootsList()
 
         /* Idx */
         sprintf(idxStr, "%d", idx);
-        assert(idxStr);
+        assert(strlen(idxStr) > 0);
         printf("%s%*s", idxStr, (WIDTH_IDX - (int)strlen(idxStr)) + PADDING, "");
 
         /* Boot id */

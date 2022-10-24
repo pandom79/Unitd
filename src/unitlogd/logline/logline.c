@@ -107,7 +107,7 @@ setHostName(LogLine **logLine)
     assert(*logLine);
 
     gethostname(hostName, 1000);
-    assert(hostName);
+    assert(strlen(hostName) > 0);
     (*logLine)->hostName = stringNew(hostName);
 }
 

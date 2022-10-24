@@ -24,7 +24,7 @@ sources = files(
                 'client/client.h',
                 )
 
-deps = [dependency('unitd'), dependency('wrapper')]
+deps = [dependency('threads'), dependency('unitd'), dependency('wrapper')]
 
 libunitlogd = library(unitlogd_name, sources, dependencies: deps, version: ver,
                       soversion: so_ver,
@@ -49,3 +49,6 @@ install_headers('include/unitlogd.h', subdir: 'unitlogd')
 
 # Install scripts
 install_subdir('extra/scripts', install_dir: unitlogd_data_path)
+
+# Install bash completion
+install_data('../../completion/bash/unitlogctl', install_dir: bash_comp_path)

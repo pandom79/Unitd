@@ -46,7 +46,7 @@ appendDmsg()
         char *buffer = stringNew("<");
         char kernelInfoStr[10] = {0};
         sprintf(kernelInfoStr, "%d", kernelInfo);
-        assert(kernelInfoStr);
+        assert(strlen(kernelInfoStr) > 0);
         stringConcat(&buffer, kernelInfoStr);
         stringConcat(&buffer, ">");
         stringConcat(&buffer, line);
