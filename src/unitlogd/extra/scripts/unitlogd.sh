@@ -19,6 +19,9 @@ case $OPERATION in
         if [ ! -f "$UNITLOGD_INDEX_PATH" ]; then
             touch "$UNITLOGD_INDEX_PATH"
         fi
+        if [ ! -f "$UNITLOGD_LOCK_PATH" ]; then
+            touch "$UNITLOGD_LOCK_PATH"
+        fi
         chmod -R 0650 "$UNITLOGD_PATH"
         chown -R :users "$UNITLOGD_PATH"
     ;;
@@ -30,5 +33,17 @@ case $OPERATION in
         touch "$UNITLOGD_INDEX_PATH"
         chmod 0650 "$UNITLOGD_INDEX_PATH"
         chown :users "$UNITLOGD_INDEX_PATH"
+    ;;
+    "create-tmp-log")
+        tmp_log="$UNITLOGD_LOG_PATH"$TMP_SUFFIX
+        touch "$tmp_log"
+        chmod 0650 "$tmp_log"
+        chown :users "$tmp_log"
+    ;;
+    "ren-tmp-log")
+        log="$UNITLOGD_LOG_PATH"
+        tmp_log="$log"$TMP_SUFFIX
+        rm -rf "$log"
+        mv "$tmp_log" "$log"
     ;;
 esac;

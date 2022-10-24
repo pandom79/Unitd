@@ -21,5 +21,6 @@ void indexEntryRelease(IndexEntry **);
 int writeEntry(bool, IndexEntry *, bool);
 int indexIntegrityCheck();
 int getIndex(Array **, bool);
+int getMaxIdx(Array **);
 
 #endif // INDEX_H

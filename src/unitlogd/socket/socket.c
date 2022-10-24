@@ -233,6 +233,7 @@ startUnixThread(void *arg)
             if ((length = read(pipeFd, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",
                          errno, strerror(errno), "Unable to read from pipe for the dev (%s)!", devName);
+                kill(UNITLOGD_PID, SIGTERM);
                 goto out;
             }
             if (input == THREAD_EXIT)
@@ -246,10 +247,28 @@ startUnixThread(void *arg)
             if ((rv = recv(socketFd, buffer, bufferSize, 0)) == -1) {
                 logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",
                          errno, strerror(errno), "Unable to read from socket for the dev (%s)!", devName);
+                kill(UNITLOGD_PID, SIGTERM);
                 goto out;
             }
+
+            /* Lock
+             * We cannot write into log if the unitlogctl is cutting it!
+             * See vacuum func.
+            */
+            if ((rv = handleLockFile(true)) != 0) {
+                kill(UNITLOGD_PID, SIGTERM);
+                goto out;
+            }
+
+            /* Process buffer and release */
             processLine(buffer);
             objectRelease(&buffer);
+
+            /* UnLock */
+            if ((rv = handleLockFile(false)) != 0) {
+                kill(UNITLOGD_PID, SIGTERM);
+                goto out;
+            }
         }
     }
 

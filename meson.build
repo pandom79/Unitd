@@ -35,6 +35,7 @@ unitlogd_data_path = prefix/datadir/unitlogd_name
 unitlogd_log_path = unitlogd_path/unitlogd_name+'.log'
 unitlogd_index_path = unitlogd_path/'index.dat'
 unitlogd_boot_log_path = unitlogd_path/'boot.log'
+unitlogd_lock_path = unitlogd_path/'.lock'
 
 # Setting build options macro paths
 doc_path = get_option('DOC_PATH')
@@ -73,10 +74,11 @@ conf_data.set('UNITLOGD_DATA_PATH', unitlogd_data_path)
 conf_data.set('UNITLOGD_LOG_PATH', unitlogd_log_path)
 conf_data.set('UNITLOGD_INDEX_PATH', unitlogd_index_path)
 conf_data.set('UNITLOGD_BOOT_LOG_PATH', unitlogd_boot_log_path)
+conf_data.set('UNITLOGD_LOCK_PATH', unitlogd_lock_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Dependencies
-deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.1')]
+deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.3')]
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error.
 # We set 'check: false' because we don't interest about its exit code.

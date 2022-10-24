@@ -15,13 +15,16 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define WIDTH_STARTED       7
 #define WIDTH_FINISHED      8
 #define WIDTH_DATE          19
+#define RANGE_TOKEN         ".."
+#define TMP_SUFFIX          ".tmp"
 
 typedef enum {
     NO_UL_COMMAND = -1,
     SHOW_LOG = 0,
     LIST_BOOTS = 1,
     SHOW_BOOT = 2,
-    INDEX_REPAIR = 3
+    INDEX_REPAIR = 3,
+    VACUUM = 4
 } UlCommand;
 typedef struct {
     UlCommand ulCommand;
@@ -37,5 +40,7 @@ int sendToPager(int (*fn)(off_t, off_t), off_t, off_t);
 int showBoot(bool, bool, const char *);
 int followLog();
 int createIndexFile();
+int vacuum(const char *);
+int runTmpLogOperation(const char *);
 
 #endif // CLIENT_H

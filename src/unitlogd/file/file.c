@@ -8,6 +8,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitlogd_impl.h"
 
+static struct flock *FLOCK = NULL;
+static int FD_LOCK = -1;
+
 int
 unitlogdOpenBootLog(const char *mode)
 {
@@ -224,4 +227,96 @@ execUlScript(Array **envVars, const char *operation)
     arrayRelease(&scriptParams);
 
     return rv;
+}
+
+int
+getLockFileFd()
+{
+    int fd = -1;
+    if ((fd = open(UNITLOGD_LOCK_PATH, O_WRONLY)) == -1) {
+        logError(CONSOLE | SYSTEM, "src/unitlogd/file/file.c", "getLockFileFd", errno, strerror(errno),
+                 "Unable to open '%s' file", UNITLOGD_LOCK_PATH);
+    }
+    return fd;
+}
+
+int
+handleLockFile(bool lock)
+{
+    int rv = 0;
+
+    if (lock) {
+
+        assert(!FLOCK);
+
+        FLOCK = calloc(1, sizeof(struct flock));
+        assert(FLOCK);
+
+        FLOCK->l_type = F_WRLCK;
+        FLOCK->l_whence = SEEK_SET;
+        FLOCK->l_start = 0;
+        FLOCK->l_len = 0;
+        FLOCK->l_pid = getpid();
+
+        if ((FD_LOCK = getLockFileFd()) == -1) {
+            rv = 1;
+            goto out;
+        }
+
+        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+            logInfo(CONSOLE, "Try to get lock ...\n");
+
+        if (fcntl(FD_LOCK, F_SETLKW, FLOCK) == -1) {
+            rv = errno;
+            logError(CONSOLE | SYSTEM, "src/unitlogd/file/file.c", "handleLockFile", errno, strerror(errno),
+                     "Fcntl func returned -1 exit code (lock)");
+            goto out;
+        }
+
+        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+            logInfo(CONSOLE, "Got lock!\n");
+
+    }
+    else {
+        assert(FLOCK);
+        assert(FD_LOCK > 0);
+        FLOCK->l_type = F_UNLCK;  /* set to unlock same region */
+
+        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+            logInfo(CONSOLE, "Try to unlock ...\n");
+
+        if (fcntl(FD_LOCK, F_SETLK, FLOCK) == -1) {
+            rv = errno;
+            logError(CONSOLE | SYSTEM, "src/unitlogd/file/file.c", "handleLockFile", errno, strerror(errno),
+                     "Fcntl func returned -1 exit code (unlock)");
+            goto out;
+        }
+
+        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+            logInfo(CONSOLE, "Unlocked!\n");
+    }
+
+    out:
+        if (!lock || rv != 0) {
+            close(FD_LOCK);
+            objectRelease(&FLOCK);
+        }
+
+        return rv;
+}
+
+off_t
+getFileSize(const char *path)
+{
+    off_t ret = -1;
+    struct stat st;
+    assert(path);
+    if (stat(path, &st) == -1) {
+        logError(CONSOLE | SYSTEM, "src/unitlogd/file/file.c", "getFileSize", errno, strerror(errno),
+                 "Stat func returned -1 exit code for '%s' file path", path);
+    }
+    else
+        ret = st.st_size;
+
+    return ret;
 }

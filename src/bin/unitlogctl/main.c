@@ -21,6 +21,8 @@ showUsage()
         "list-boots         List the boots\n"
         "show-boot          Show the boot\n"
         "index-repair       Repair the index\n"
+        "vacuum             Remove the log lines of the specified \n"
+        "                   boot index or boot index range\n"
 
         WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
         "-f, --follow       Follow the log\n"
@@ -128,6 +130,17 @@ int main(int argc, char **argv) {
                 goto out;
             }
             rv = indexRepair();
+            if (rv == 0)
+                logSuccess(CONSOLE, "Index file repaired successfully.\n");
+            break;
+        case VACUUM:
+            if (argc < 3 || argc > 4 || (argc > 3 && !UNITLOGCTL_DEBUG)) {
+                showUsage();
+                rv = 1;
+                goto out;
+            }
+            arg = argv[argc - 1];
+            rv = vacuum(arg);
             break;
         default:
             break;

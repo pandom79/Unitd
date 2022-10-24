@@ -341,3 +341,17 @@ indexIntegrityCheck()
 
         return rv;
 }
+
+int
+getMaxIdx(Array **index)
+{
+    int max = -1;
+    int len = (*index) ? (*index)->size : 0;
+    if (len > 0) {
+        if ((len % 2) == 0)
+            max = (len - 2) / 2;
+        else
+            max = (len - 1) / 2;
+    }
+    return max;
+}

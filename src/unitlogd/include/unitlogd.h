@@ -32,4 +32,11 @@ int getBootsList(Array **bootsList);
 */
 int indexRepair();
 
+/* Reduces log disk space by removing the lines between
+ * the values of the 'startOffset' and 'stopOffset' arguments.
+ * Return value:
+ * On success returns '0' otherwise an error has occurred.
+*/
+int cutLog(off_t startOffset, off_t stopOffset);
+
 #endif // UNITLOGD_H
