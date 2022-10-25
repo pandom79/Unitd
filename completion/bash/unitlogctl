@@ -5,25 +5,16 @@
 # Copyright © 2022 Domenico Panella <pandom79@gmail.com>
 
 COMMAND=
+RANGES=
 
 __unitlogctl() {
-    local mode=$1; shift 1
     case $COMMAND in
-        "enable")
-           unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
+        "show-boot")
+            unitlogctl list-boots | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-        "disable")
-           unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-        "re-enable"|"restart"|"status"|"list-requires"|"list-conflicts"|"list-states"|"cat"|"edit")
-           unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-        "start")
-           unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-        "stop")
-           unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
-           unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
+        "vacuum")
+            # The last boot idx (terminated or not) is always excluded.
+            unitlogctl list-boots | head -n -3 | tail -n +2 | awk '{print $1}'
         ;;
     esac;
 }
@@ -35,7 +26,20 @@ __contains_word () {
     done
 }
 
-__get_units() { { __unitlogctl $1; } | { while read -r a; do echo "$a"; done; }; }
+__get_boot_idx() { { __unitlogctl; } | { while read -r a; do echo "$a"; done; }; }
+
+__set_ranges() {
+    local idx_list=$1; shift
+    local new_idx_list;
+    for idx in ${idx_list[*]}; do
+        for curr_idx in ${idx_list[*]}; do
+            if [ $curr_idx -gt $idx ]; then
+                new_idx_list+="$idx..$curr_idx "
+            fi
+        done
+    done
+    RANGES=("$new_idx_list")
+}
 
 _unitlogctl () {
     local cur=${COMP_WORDS[COMP_CWORD]}
@@ -72,11 +76,17 @@ _unitlogctl () {
         COMMAND="vacuum"
     fi
 
-printf "COMMAND = $COMMAND\n"
-
-    if [ ! -z $COMMAND ]; then
-        entries=$( __get_units $mode )
-    fi
+     if [ ! -z $COMMAND ]; then
+        entries=()
+        if [ $COMMAND == 'show-boot' -o $COMMAND == 'vacuum' ]; then
+            entries=$( __get_boot_idx )
+            if [ $COMMAND == 'vacuum' ]; then
+                __set_ranges "$entries"
+                entries+=" $RANGES"
+            fi
+        fi
+        entries+=${OPTS[SYSTEM]}
+     fi
 
     # Remove duplicate entries
     for entry in ${entries};
@@ -90,6 +100,7 @@ printf "COMMAND = $COMMAND\n"
     # Show data
     COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
     unset COMMAND
+    unset RANGES
     return 0
 }
 
