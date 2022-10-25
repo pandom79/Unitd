@@ -24,7 +24,7 @@ sources = files(
                 'client/client.h',
                 )
 
-deps = [libunitd_dep, dependency('wrapper')]
+deps = [libunitd_dep, dependency('threads'), dependency('wrapper')]
 
 libunitlogd = library(unitlogd_name, sources, dependencies: deps, version: ver,
                       soversion: so_ver,
