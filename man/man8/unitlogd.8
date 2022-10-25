@@ -1,0 +1,35 @@
+.Dd October 25, 2022
+.Dt unitlogd 8
+.Sh NAME
+.Nm unitlogd
+.Nd system log
+.Sh SYNOPSIS
+.Nm unitlogd
+.Op Fl lkdh
+.Sh DESCRIPTION
+.Nm
+(Unitlog daemon) is an unique and indexed system log.
+.It
+The log handling is possible via
+.Pa unitlogctl
+command.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl l
+Log the system messages
+.It Fl k
+Enable the kernel messages forward
+.It Fl d
+Enable the debug
+.It Fl h
+Show usage
+.Sh SEE ALSO
+.Xr unitlogctl 8
+.Sh AUTHOR
+.An Domenico Panella <pandom79@gmail.com>
+.Sh BUGS
+Open an issue on
+.Mt https://github.com/pandom79/Unitd/issues
+.Sh LICENSE
+.Nm
+is distributed under GNU General Public License v3.0 conditions.
