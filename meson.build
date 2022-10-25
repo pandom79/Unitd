@@ -77,6 +77,10 @@ conf_data.set('UNITLOGD_BOOT_LOG_PATH', unitlogd_boot_log_path)
 conf_data.set('UNITLOGD_LOCK_PATH', unitlogd_lock_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
+# Copy the configuration header
+run_command('/bin/rm', 'src/include/unitd_config.h', check: false)
+run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
+
 # Dependencies
 deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.3')]
 # Checking commands/packages dependencies
@@ -96,8 +100,9 @@ message('Pgrep command found!')
 
 # Unitd sources
 sources = files(
-                'src/include/unitd.h',
+                'src/include/unitd_config.h',
                 'src/include/unitd_types.h',
+                'src/include/unitd.h',
                 'src/core/unitd_impl.h',
                 'src/core/init/init.c',
                 'src/core/init/init.h',
@@ -141,6 +146,9 @@ libunitd = library(project_name,
                    soversion: so_ver, install: true
                   )
 
+# Unitd lib dependency
+libunitd_dep = declare_dependency(link_with: libunitd)
+
 # Generate pc file
 pkg = import('pkgconfig')
 pkg.generate(libunitd,
@@ -151,7 +159,7 @@ pkg.generate(libunitd,
 # Install headers
 install_headers('src/include/unitd.h', subdir: project_name)
 install_headers('src/include/unitd_types.h', subdir: project_name)
-install_headers('build/unitd_config.h', subdir: project_name)
+install_headers('src/include/unitd_config.h', subdir: project_name)
 
 # Install executables
 executable(project_name, 'src/bin/unitd/main.c',
