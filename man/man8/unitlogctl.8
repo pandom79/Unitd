@@ -1,0 +1,70 @@
+.Dd October 25, 2022
+.Dt unitlogctl 8
+.Sh NAME
+.Nm unitlogctl
+.Nd unitlogd client
+.Sh SYNOPSIS
+.Nm unitlogctl [sub-command]
+.Op Fl fpdh
+.Sh DESCRIPTION
+.Nm
+is the unitlogd client which takes care to make the requests for system log handling.
+.Ss Sub-commands
+.Bd -tag -width indent
+show-log
+.Ed
+.Bd -ragged -offset indent
+Show the log
+.Ed
+.Bd -tag -width indent
+list-boots
+.Ed
+.Bd -ragged -offset indent
+List the boots
+.Ed
+.Bd -tag -width indent
+show-boot
+.Ed
+.Bd -ragged -offset indent
+Show the boot
+.Ed
+.Bd -tag -width indent
+index-repair
+.Ed
+.Bd -ragged -offset indent
+Repair the index
+.Ed
+.Bd -tag -width indent
+vacuum
+.Ed
+.Bd -ragged -offset indent
+Remove the log lines of the specified boot index or boot index range
+.Ed
+.It
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl f
+Follow the log
+.Bd -tag -width indent
+It works with the following sub-commands: show-boot and show-log
+.Ed
+.It Fl p
+Enable the pager
+.Bd -tag -width indent
+It works with the following sub-commands: show-boot and show-log
+.Ed
+.It Fl d
+Enable the debug
+.It Fl h
+Show the usage
+
+.Sh SEE ALSO
+.Xr unitlogd 8
+.Sh AUTHOR
+.An Domenico Panella <pandom79@gmail.com>
+.Sh BUGS
+Open an issue on
+.Mt https://github.com/pandom79/Unitd/issues
+.Sh LICENSE
+.Nm
+is distributed under GNU General Public License v3.0 conditions.
