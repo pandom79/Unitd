@@ -185,7 +185,7 @@ executable('seedrng', 'external/seedrng.c',
 subdir('src'/unitlogd_name)
 
 # Install configuration
-#install_data(project_name + '.conf', install_dir: unitd_conf_path)
+install_data(project_name + '.conf', install_dir: unitd_conf_path)
 install_data(project_name + '.conf', install_dir: unitd_data_path,
              rename: project_name + '.conf.sample')
 
@@ -193,7 +193,7 @@ install_data(project_name + '.conf', install_dir: unitd_data_path,
 install_subdir('src/extra/functions', install_dir: unitd_data_path)
 install_subdir('src/extra/scripts', install_dir: unitd_data_path)
 install_subdir('src/extra/init.state', install_dir: unitd_data_path)
-#install_subdir('src/extra/final.state', install_dir: unitd_data_path)
+install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 
 # Install documentation
 install_data('LICENSE', install_dir: doc_path)
