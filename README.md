@@ -10,13 +10,22 @@ The main features are the following:
 Run ```unitd --help or -h``` to know the usage.<br/>
 Run ```man unitd``` to consult the manual page.<br/>
 
+### Overview
+- <a href="#dependencies">Dependencies</a>
+- <a href="#states">States</a>
+- <a href="#build-instructions">Build instructions</a>
+- <a href="#unit-configuration-file">Unit configuration file</a>
+- <a href="#unitctl">Unitctl</a>
+- <a href="#unitlogd-and-unitlogctl">Unitlogd and Unitlogctl</a>
+- <a href="#note">Note</a>
+
 ### Dependencies
 
 - [Wrapper](https://github.com/pandom79/wrapper) library
+- A POSIX thread library
 - A POSIX shell
 - A POSIX awk
 - procps-ng (needs pkill -s0,1)
-
 
 ### States
 
@@ -167,6 +176,16 @@ The units handling is possible via **unitctl** command.<br/>
 Run ```unitctl --help or -h``` to know the usage for the system instance.<br/>
 Run ```unitctl --user --help or -uh``` to know the usage for the user instance.<br/>
 Run ```man unitctl``` to consult the manual page.
+
+### Unitlogd and Unitlogctl
+
+Unitlog daemon is an unique and indexed system log.<br/>
+Run ```unitlogd --help or -h``` to know the usage.<br/>
+Run ```man unitlogd``` to consult the manual page.<br/>
+
+The log handling is possible via **unitlogctl** command.<br/>
+Run ```unitlogctl --help or -h``` to know the usage.<br/>
+Run ```man unitlogctl``` to consult the manual page.
 
 ### Note
 
