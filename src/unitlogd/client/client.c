@@ -622,15 +622,16 @@ vacuum(const char *bootIdx)
                     char *oldLogSizeStr = stringGetFileSize(oldLogSize);
                     char *newLogSizeStr = stringGetFileSize(newLogSize);
                     char *diffLogSizeStr = stringGetFileSize(diffLogSize);
-                    logSuccess(CONSOLE, "Vacuuming done successfully!\n\n");
+                    logSuccess(CONSOLE, "\nVacuuming done successfully!\n\n");
 
-                    logInfo(CONSOLE, "Previous size : ");
+                    printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LOG SIZE INFO\n", DEFAULT_COLOR);
+                    logInfo(CONSOLE, "Previous : ");
                     logSuccess(CONSOLE, "%s\n", oldLogSizeStr);
 
-                    logInfo(CONSOLE, "Current size  : ");
+                    logInfo(CONSOLE, " Current : ");
                     logSuccess(CONSOLE, "%s\n", newLogSizeStr);
 
-                    logInfo(CONSOLE, "Freed size    : ");
+                    logInfo(CONSOLE, "   Freed : ");
                     logSuccess(CONSOLE, "%s\n\n", diffLogSizeStr);
 
                     objectRelease(&oldLogSizeStr);
