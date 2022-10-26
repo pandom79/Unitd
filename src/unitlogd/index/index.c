@@ -102,7 +102,7 @@ getIndex(Array **index, bool isIndex)
         }
 
         if (rv == 1) {
-            logError(UNITLOGD_BOOT_LOG, "src/unitlogd/index/index.c", "getIndex", rv, strerror(rv),
+            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv, strerror(rv),
                      "An error has occurred at %d line (%s).", numline, isIndex ? "index" : "log");
             goto out;
         }
@@ -111,7 +111,7 @@ getIndex(Array **index, bool isIndex)
         if (!isIndex) {
             if ((offset = ftello(fp)) == -1) {
                 rv = 1;
-                logError(UNITLOGD_BOOT_LOG, "src/unitlogd/index/index.c", "getIndex", errno,
+                logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", errno,
                          strerror(errno), "Ftello func returned -1");
                 goto out;
             }
@@ -142,7 +142,7 @@ getIndex(Array **index, bool isIndex)
                  * 'bootId' value of the just previous start entry */
                 if (!isStartEntry && strcmp(value, bootId) != 0) {
                     rv = 1;
-                    logError(UNITLOGD_BOOT_LOG, "src/unitlogd/index/index.c", "getIndex", rv,
+                    logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
                              strerror(rv), "The '%s' bootId at line %d doesn't match the previous '%s' bootId at line %d",
                              value, numline, bootId, numline - 1);
                     goto out;
@@ -161,7 +161,7 @@ getIndex(Array **index, bool isIndex)
                 }
                 else {
                     rv = 1;
-                    logError(UNITLOGD_BOOT_LOG, "src/unitlogd/index/index.c", "getIndex", rv,
+                    logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
                              strerror(rv), "The timestamp '%s' at line '%d' is not valid", value, numline);
                     goto out;
                 }
@@ -176,7 +176,7 @@ getIndex(Array **index, bool isIndex)
                     }
                     else {
                         rv = 1;
-                        logError(UNITLOGD_BOOT_LOG, "src/unitlogd/index/index.c", "getIndex", rv,
+                        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
                                  strerror(rv), "The offset '%s' at line '%d' is not valid", value, numline);
                         goto out;
                     }
@@ -315,7 +315,7 @@ indexIntegrityCheck()
         indexEntry->stopOffset = getLogOffset();
         if (!indexEntry->stopOffset) {
             rv = 1;
-            goto out;
+            goto err;
         }
         /* Open log and index */
         unitlogdOpenLog("a");
@@ -326,11 +326,15 @@ indexIntegrityCheck()
         if (writeEntry(false, indexEntry, true) != 0 ||
             writeEntry(false, indexEntry, false) != 0) {
             rv = 1;
-            goto out;
+            goto err;
         }
-        /* Release */
         indexEntryRelease(&indexEntry);
     }
+
+    goto out;
+
+    err:
+        indexEntryRelease(&indexEntry);
 
     out:
         arrayRelease(&index);
@@ -354,4 +358,20 @@ getMaxIdx(Array **index)
             max = (len - 1) / 2;
     }
     return max;
+}
+
+void
+setIndexErr(bool isIndex)
+{
+    if (isIndex) {
+        logErrorStr(CONSOLE | SYSTEM, "The index file '%s' is corrupt!\n", UNITLOGD_INDEX_PATH);
+        logInfo(CONSOLE | SYSTEM, "Please, run 'unitlogctl index-repair' to repair it.\n");
+    }
+    else {
+        logErrorStr(CONSOLE | SYSTEM, "The log file '%s' is corrupt!\n", UNITLOGD_LOG_PATH);
+        logInfo(CONSOLE | SYSTEM, "Please, run the following steps:\n"
+                                  "[1] Stop unitlog daemon.\n"
+                                  "[2] Run 'rm -rf %s'.\n"
+                                  "[3] Start unitlog daemon.\n", UNITLOGD_PATH);
+    }
 }

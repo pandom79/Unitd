@@ -82,7 +82,7 @@ unitlogdInit()
      * In this case, clear all and restart.
     */
     if ((rv = indexIntegrityCheck()) != 0) {
-        logErrorStr(CONSOLE, "The file '%s' is corrupt!\n", UNITLOGD_INDEX_PATH);
+        setIndexErr(true);
         goto out;
     }
 

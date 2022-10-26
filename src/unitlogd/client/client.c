@@ -46,7 +46,13 @@ getSkipCheckAdmin(UlCommand ulCommand)
 int
 getBootsList(Array **bootsList)
 {
-    return getIndex(bootsList, true);
+    int rv = 0;
+
+    rv = getIndex(bootsList, true);
+    if (rv != 0)
+        setIndexErr(true);
+
+    return rv;
 }
 
 int
@@ -240,15 +246,19 @@ showLog(bool pager, bool follow)
 {
     int rv = 0;
 
+    if (follow) {
+        rv = followLog();
+        goto out;
+    }
+
     if (pager)
         rv = sendToPager(showLogLines, 0, -1);
     else
         rv = showLogLines(0, -1);
 
-    if (follow)
-        rv = followLog();
+    out:
 
-    return rv;
+        return rv;
 }
 
 int
@@ -261,9 +271,16 @@ showBoot(bool pager, bool follow, const char *bootIdx)
 
     assert(bootIdx);
 
-    /* Get the index */
-    if ((rv = getIndex(&index, true)) != 0)
+    if (follow) {
+        rv = followLog();
         goto out;
+    }
+
+    /* Get the index */
+    if ((rv = getIndex(&index, true)) != 0) {
+        setIndexErr(true);
+        goto out;
+    }
 
     indexSize = index ? index->size : 0;
     if (indexSize > 0) {
@@ -313,8 +330,6 @@ showBoot(bool pager, bool follow, const char *bootIdx)
         else
             rv = showLogLines(startOffset, stopOffset);
 
-        if (follow)
-            rv = followLog();
     }
     else
         logWarning(CONSOLE, "The '%s' index file is empty!\n", UNITLOGD_INDEX_PATH);
@@ -353,8 +368,10 @@ indexRepair()
     IndexEntry *indexEntry = NULL;
 
     /* Get the index from log */
-    if ((rv = getIndex(&index, false)) != 0)
+    if ((rv = getIndex(&index, false)) != 0) {
+        setIndexErr(false);
         goto out;
+    }
 
     /* Write the index entries */
     indexSize = index ? index->size : 0;
@@ -531,8 +548,10 @@ vacuum(const char *bootIdx)
     }
 
     /* Get index */
-    if ((rv = getIndex(&index, true)) != 0)
+    if ((rv = getIndex(&index, true)) != 0) {
+        setIndexErr(true);
         goto out;
+    }
 
     /* Get and check max idx */
     maxIdx = getMaxIdx(&index);
