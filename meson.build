@@ -78,7 +78,6 @@ conf_data.set('UNITLOGD_LOCK_PATH', unitlogd_lock_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Copy the configuration header
-run_command('/bin/rm', 'src/include/unitd_config.h', check: false)
 run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 
 # Dependencies
