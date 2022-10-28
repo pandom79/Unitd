@@ -10,7 +10,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define UNITLOGD_IMPL_H
 
 #include "../core/unitd_impl.h"
-#include "include/unitlogd.h"
 #include "init/init.h"
 #include "signals/signals.h"
 #include "socket/socket.h"

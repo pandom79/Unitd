@@ -6,7 +6,7 @@
 #
 
 sources = files(
-                'include/unitlogd.h',
+                '../include/unitlogd/unitlogd.h',
                 'unitlogd_impl.h',
                 'init/init.c',
                 'init/init.h',
@@ -45,7 +45,7 @@ executable('unitlogctl', '../bin/unitlogctl/main.c',
           )
 
 # Install headers
-install_headers('include/unitlogd.h', subdir: 'unitlogd')
+install_headers('../include/unitlogd/unitlogd.h', subdir: 'unitlogd')
 
 # Install scripts
 install_subdir('extra/scripts', install_dir: unitlogd_data_path)

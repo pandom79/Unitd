@@ -11,6 +11,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "unitd_config.h"
 #include "unitd_types.h"
+#include "unitlogd/unitlogd.h"
 
 /* Free a SockMessageOut struct */
 void
