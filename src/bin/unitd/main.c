@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     assert(userId >= 0);
 #ifdef UNITD_TEST
     if (userId != 0) {
-        unitdLogErrorStr(LOG_UNITD_CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
+        logErrorStr(CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
         showEmergencyShell = hasError = true;
         goto out;
     }
