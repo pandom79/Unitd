@@ -144,7 +144,12 @@ int main(int argc, char **argv) {
         logInfo(CONSOLE, "Welcome to %s!\n", OS_NAME);
 
         /* Detecting virtualization environment */
-        rv = execScript(UNITD_DATA_PATH, "/scripts/virtualization.sh", NULL, NULL);
+        Array *envVars = arrayNew(objectRelease);
+        addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+        /* Must be null terminated */
+        arrayAdd(envVars, NULL);
+        rv = execUScript(&envVars, "virtualization");
+        arrayRelease(&envVars);
         if (rv == 0 || rv == 1) {
             if (rv == 1)
                 addEnvVar(&UNITD_ENV_VARS, "VIRTUALIZATION", "1");

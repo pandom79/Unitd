@@ -441,3 +441,35 @@ cmdlineRelease(char **cmdline)
         cmdline = NULL;
     }
 }
+
+int
+execUScript(Array **envVars, const char *operation)
+{
+    int rv = 0;
+
+    assert(*envVars);
+
+    /* Building command */
+    char *cmd = stringNew(UNITD_DATA_PATH);
+    stringAppendStr(&cmd, "/scripts/unitd.sh");
+
+    /* Creating script params */
+    Array *scriptParams = arrayNew(objectRelease);
+    arrayAdd(scriptParams, cmd); //0
+    arrayAdd(scriptParams, stringNew(operation)); //1
+    /* Must be null terminated */
+    arrayAdd(scriptParams, NULL);
+
+    /* Execute the script */
+    rv = execScript(UNITD_DATA_PATH, "/scripts/unitd.sh", scriptParams->arr, (*envVars)->arr);
+
+    /* We exclude the following test for "virtualization" operation */
+    if (strcmp(operation, "virtualization") != 0 && rv != 0)
+        logError(CONSOLE | SYSTEM, "src/core/commands/commands.c", "execUScript", rv, strerror(rv),
+                 "ExecScript error for the '%s' operation", operation);
+
+    arrayRelease(&scriptParams);
+
+    return rv;
+}
+

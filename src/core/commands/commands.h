@@ -19,3 +19,5 @@ char** cmdlineSplit(const char *);
 void cmdlineRelease(char **);
 int stopDaemon(const char *, char **, Unit **);
 void reapPendingChild();
+int execUScript(Array **, const char *);
+

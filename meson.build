@@ -4,10 +4,10 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '4.0.0', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '4.0.1', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '4.0.0'
+ver = '4.0.1'
 so_ver = '4'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
@@ -81,7 +81,7 @@ configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configurati
 run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 
 # Dependencies
-deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.3')]
+deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.4')]
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error.
 # We set 'check: false' because we don't interest about its exit code.

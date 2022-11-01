@@ -1167,32 +1167,19 @@ catEditUnit(Command command, const char *arg)
         Array *envVars = arrayNew(objectRelease);
         addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
         addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+        addEnvVar(&envVars, "UNIT_PATH", unitPath);
         /* Must be null terminated */
         arrayAdd(envVars, NULL);
-
-        /* Building command */
-        Array *scriptParams = arrayNew(objectRelease);
-        char *cmd = stringNew(UNITD_DATA_PATH);
-        stringAppendStr(&cmd, "/scripts/cat-edit.sh");
-        arrayAdd(scriptParams, cmd); //0
-        arrayAdd(scriptParams, stringNew(COMMANDS_DATA[command].name)); //1
-        arrayAdd(scriptParams, stringNew(unitPath)); //2
-        /* Must be null terminated */
-        arrayAdd(scriptParams, NULL); //4
         /* Execute the script */
-        rv = execScript(UNITD_DATA_PATH, "/scripts/cat-edit.sh", scriptParams->arr, envVars->arr);
-        if (rv != 0) {
-            logError(CONSOLE, "src/core/socket/socket_client.c", "catEditUnit",
-                          rv, strerror(rv), NULL);
-        }
+        rv = execUScript(&envVars, command == CAT_COMMAND ? "cat-unit" : "edit-unit");
         /* Release resources */
-        arrayRelease(&scriptParams);
         arrayRelease(&envVars);
         objectRelease(&unitPath);
     }
 
     return rv;
 }
+
 
 int
 createUnit(const char *arg)
@@ -1460,3 +1447,4 @@ checkAdministrator(char **argv)
 
     return rv;
 }
+

@@ -141,10 +141,12 @@ int
 setNewDefaultStateSyml(State newDefaultState, Array **messages, Array **errors)
 {
     int rv = 0;
-    Array *scriptParams = arrayNew(objectRelease);
-    char *command, *from, *to;
+    char *from, *to;
 
-    command = to = from = NULL;
+    to = from = NULL;
+
+    assert(*messages);
+    assert(*errors);
 
     /* Building from */
     from = stringNew(UNITS_ENAB_PATH);
@@ -155,28 +157,28 @@ setNewDefaultStateSyml(State newDefaultState, Array **messages, Array **errors)
     to = stringNew(UNITS_ENAB_PATH);
     stringAppendChr(&to, '/');
     stringAppendStr(&to, DEF_STATE_SYML_NAME);
-    /* Building command */
-    command = stringNew(UNITD_DATA_PATH);
-    stringAppendStr(&command, "/scripts/symlink-handle.sh");
-    arrayAdd(scriptParams, command); //0
-    arrayAdd(scriptParams, stringNew(SYML_ADD_OP)); //1
-    arrayAdd(scriptParams, from); //2
-    arrayAdd(scriptParams, to); //3
+
+    /* Creating env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "FROM", from);
+    addEnvVar(&envVars, "TO", to);
     /* Must be null terminated */
-    arrayAdd(scriptParams, NULL); //4
+    arrayAdd(envVars, NULL);
+
     /* Execute the script */
-    rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
+    rv = execUScript(&envVars, "add-syml");
     if (rv != 0) {
         arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
         arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
-        /* Write the details into system log */
-        logError(SYSTEM, "src/core/socket/socket_server.c", "setNewDefaultStateSyml",
-                      rv, strerror(rv), "ExecScript error!");
     }
     else
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc,
                                    to, from));
-    arrayRelease(&scriptParams);
+
+    objectRelease(&from);
+    objectRelease(&to);
+    arrayRelease(&envVars);
     return rv;
 }
 

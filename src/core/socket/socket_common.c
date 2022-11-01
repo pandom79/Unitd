@@ -209,27 +209,13 @@ sendWallMsg(Command command)
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "MSG", msg);
     /* Must be null terminated */
     arrayAdd(envVars, NULL);
-
-    /* Building command */
-    cmd = stringNew(UNITD_DATA_PATH);
-    stringAppendStr(&cmd, "/scripts/send-wallmsg.sh");
-
-    /* Creating script params */
-    Array *scriptParams = arrayNew(objectRelease);
-    arrayAdd(scriptParams, cmd); //0
-    arrayAdd(scriptParams, msg); //1
-    arrayAdd(scriptParams, NULL); //2
-
     /* Execute the script */
-    rv = execScript(UNITD_DATA_PATH, "/scripts/send-wallmsg.sh", scriptParams->arr, envVars->arr);
-    if (rv != 0)
-        logError(CONSOLE, "src/core/socket/socket_common.c",
-                      "sendWallMsg", rv, strerror(rv), NULL);
-
+    rv = execUScript(&envVars, "send-wallmsg");
     arrayRelease(&envVars);
-    arrayRelease(&scriptParams);
+    objectRelease(&msg);
     return rv;
 }
 
