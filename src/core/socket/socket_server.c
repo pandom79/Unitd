@@ -480,8 +480,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
                 assert(unit == NULL);
                 if (sendResponse) {
                     rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
-                    if (rv != 0)
-                        goto out;
+                    goto out;
                 }
             }
             else
@@ -770,7 +769,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     Array **unitsDisplay, **errors, **messages, *scriptParams, *statesData;
     Unit *unit, *unitDisplay;
     char *unitName, *buffer, *stateStr, *from, *to;
-    bool run = false;
+    bool run, reEnable;
     int rv, len;
     StateData *stateData = NULL;
     State state = NO_STATE;
@@ -779,6 +778,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     unit = unitDisplay = NULL;
     scriptParams = statesData = NULL;
     rv = len = 0;
+    run = reEnable = false;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
@@ -804,6 +804,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         }
     }
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
+    reEnable = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RE_ENABLE_OPT].name);
 
     /* Create the array */
     if (!(*unitsDisplay))
@@ -812,7 +813,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
     if (unit) {
-        if (!unit->enabled) {
+        if (!unit->enabled && !reEnable) {
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "disabled"));
             goto out;
         }
