@@ -204,7 +204,7 @@ sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
     }
     else { /* parent */
         /* For the debug, we show the line number */
-        char *args[] = { "less", UNITLOGCTL_DEBUG ? "-N" : NULL, NULL };
+        char *args[] = { "less", UNITLOGCTL_DEBUG ? "-RS#3NM~g" : "-RS#3M~g", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
