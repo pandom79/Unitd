@@ -1124,7 +1124,7 @@ stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
 
 int
 startUnit(SockMessageOut **sockMessageOut, const char *unitName,
-          bool force, bool restart)
+          bool force, bool restart, bool reset)
 {
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection, bufferSize;
@@ -1145,6 +1145,11 @@ startUnit(SockMessageOut **sockMessageOut, const char *unitName,
         if (!options)
             options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[RESTART_OPT].name));
+    }
+    if (reset) {
+        if (!options)
+            options = arrayNew(objectRelease);
+        arrayAdd(options, stringNew(OPTIONS_DATA[RESET_OPT].name));
     }
 
     /* Get SockMessageIn struct */
@@ -1516,7 +1521,7 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
 
 int
 showData(Command command, SockMessageOut **sockMessageOut, const char *arg,
-         bool force, bool restart, bool run, bool reEnable)
+         bool force, bool restart, bool run, bool reEnable, bool reset)
 {
     int rv, len, lenErrors;
     char *message, *unitPath;
@@ -1531,7 +1536,7 @@ showData(Command command, SockMessageOut **sockMessageOut, const char *arg,
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
-            rv = startUnit(sockMessageOut, arg, force, restart);
+            rv = startUnit(sockMessageOut, arg, force, restart, reset);
             break;
         case DISABLE_COMMAND:
             rv = disableUnit(sockMessageOut, arg, run);

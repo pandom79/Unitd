@@ -97,6 +97,7 @@ showUsage()
     /* Options */
     fprintf(stdout,
             WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
+            "-e, --reset        Reset the timer\n"
             "-r, --run          Run the operation\n"
             "-f, --force        Force the operation\n"
             "-d, --debug        Enable the debug\n"
@@ -115,8 +116,8 @@ showUsage()
 
 int main(int argc, char **argv) {
     int c, rv, userId;
-    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin, usage;
-    const char *shortopts = "hrfdnowu";
+    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin, usage, reset;
+    const char *shortopts = "hrfdnowue";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
     SockMessageOut *sockMessageOut = NULL;
@@ -129,12 +130,13 @@ int main(int argc, char **argv) {
         { "force", optional_argument, NULL, 'f' },
         { "debug", optional_argument, NULL, 'd' },
         { "user", optional_argument, NULL, 'u' },
+        { "reset", optional_argument, NULL, 'e' },
         { 0, 0, 0, 0 }
     };
 
     c = rv = userId = 0;
     commandName = arg = NULL;
-    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = usage = false;
+    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = usage = reset = false;
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -162,6 +164,9 @@ int main(int argc, char **argv) {
                 break;
             case 'u':
                 USER_INSTANCE = true;
+                break;
+            case 'e':
+                reset = true;
                 break;
             default:
                 usage = true;
@@ -286,7 +291,7 @@ int main(int argc, char **argv) {
             }
             switch (command) {
                 case GET_DEFAULT_STATE_COMMAND:
-                    rv = showData(command, &sockMessageOut, NULL, false, false, false, false);
+                    rv = showData(command, &sockMessageOut, NULL, false, false, false, false, false);
                     break;
                 case ANALYZE_COMMAND:
                     rv = showBootAnalyze(&sockMessageOut);
@@ -316,12 +321,12 @@ int main(int argc, char **argv) {
             if (command == STATUS_COMMAND)
                 rv = showUnitStatus(&sockMessageOut, arg);
             else
-                rv = showData(command, &sockMessageOut, arg, false, false, false, false);
+                rv = showData(command, &sockMessageOut, arg, false, false, false, false, false);
             break;
         case START_COMMAND:
         case RESTART_COMMAND:
-            if (argc < 3 || argc > 6 ||
-               (argc > 3 && !force && !UNITCTL_DEBUG && !USER_INSTANCE)) {
+            if (argc < 3 || argc > 7 ||
+               (argc > 3 && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
                 showUsage();
                 rv = 1;
                 goto out;
@@ -329,7 +334,7 @@ int main(int argc, char **argv) {
             arg = argv[argc - 1];
             rv = showData(command, &sockMessageOut, arg, force,
                           command == START_COMMAND ? false : true,
-                          false, false);
+                          false, false, reset);
             break;
         case DISABLE_COMMAND:
             if (argc < 3 || argc > 6 ||
@@ -339,7 +344,7 @@ int main(int argc, char **argv) {
                 goto out;
             }
             arg = argv[argc - 1];
-            rv = showData(command, &sockMessageOut, arg, false, false, run, false);
+            rv = showData(command, &sockMessageOut, arg, false, false, run, false, false);
             break;
         case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
@@ -351,7 +356,7 @@ int main(int argc, char **argv) {
             }
             arg = argv[argc - 1];
             rv = showData(command, &sockMessageOut, arg, force, false, run,
-                          command == ENABLE_COMMAND ? false : true);
+                          command == ENABLE_COMMAND ? false : true, false);
             break;
         case CAT_COMMAND:
         case EDIT_COMMAND:

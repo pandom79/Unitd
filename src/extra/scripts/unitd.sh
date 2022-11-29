@@ -33,4 +33,7 @@ case $OPERATION in
         rm -rf $PATTERN || true
         touch $FILE_PATH
     ;;
+    "remove")
+        rm -rf $PATTERN || true
+    ;;
 esac;

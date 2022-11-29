@@ -9,7 +9,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 int showUnitList(SockMessageOut **, ListFilter);
 int showTimersList(SockMessageOut **, ListFilter);
 int showUnitStatus(SockMessageOut **, const char *);
-int showData(Command, SockMessageOut **, const char *, bool, bool, bool, bool);
+int showData(Command, SockMessageOut **, const char *, bool, bool, bool, bool, bool);
 int catEditUnit(Command, const char *);
 int createUnit(const char *);
 int showBootAnalyze(SockMessageOut **);

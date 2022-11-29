@@ -23,3 +23,4 @@ void* startTimerThread(void *);
 int stopTimer(Unit *);
 void setLeftTimeAndDuration(Unit **);
 void setNextTimeDate(Unit **);
+int resetNextTime(const char *);

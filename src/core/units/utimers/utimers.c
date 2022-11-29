@@ -1014,3 +1014,33 @@ stopTimer(Unit *unit)
 
     return rv;
 }
+
+int
+resetNextTime(const char *timerName)
+{
+    int rv = 0;
+    char *pattern = NULL;
+    Array *envVars = NULL;
+
+    /* Building pattern ...*/
+    if (!USER_INSTANCE)
+        pattern = stringNew(UNITD_TIMER_DATA_PATH);
+    else
+        pattern = stringNew(UNITD_USER_TIMER_DATA_PATH);
+    stringAppendChr(&pattern, '/');
+    stringAppendStr(&pattern, timerName);
+    stringAppendStr(&pattern, "|next|*");
+
+    /* Preparing environment variables */
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "PATTERN", pattern);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+
+    /* Execute the script */
+    rv = execUScript(&envVars, "remove");
+
+    arrayRelease(&envVars);
+    objectRelease(&pattern);
+    return rv;
+}

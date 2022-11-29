@@ -10,17 +10,18 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 /* Options */
 OptionData OPTIONS_DATA[] = {
-    { FORCE_OPT, "force"},
-    { RESTART_OPT, "restart"},
-    { RUN_OPT, "run"},
-    { REQUIRES_OPT, "requires"},
-    { CONFLICTS_OPT, "conflicts"},
-    { STATES_OPT, "states"},
-    { NO_WTMP_OPT, "no-wtmp"},
-    { ANALYZE_OPT, "analyze"},
-    { RE_ENABLE_OPT, "re-enable"}
+    { FORCE_OPT, "force" },
+    { RESTART_OPT, "restart" },
+    { RUN_OPT, "run" },
+    { REQUIRES_OPT, "requires" },
+    { CONFLICTS_OPT, "conflicts" },
+    { STATES_OPT, "states" },
+    { NO_WTMP_OPT, "no-wtmp" },
+    { ANALYZE_OPT, "analyze" },
+    { RE_ENABLE_OPT, "re-enable" },
+    { RESET_OPT, "reset" }
 };
-int OPTIONS_LEN = 9;
+int OPTIONS_LEN = 10;
 
 /* Commands */
 CommandData COMMANDS_DATA[] = {

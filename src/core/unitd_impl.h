@@ -102,7 +102,8 @@ typedef enum {
     STATES_OPT = 5,
     NO_WTMP_OPT = 6,
     ANALYZE_OPT = 7,
-    RE_ENABLE_OPT = 8
+    RE_ENABLE_OPT = 8,
+    RESET_OPT = 9
 } Option;
 
 typedef struct OptionData {

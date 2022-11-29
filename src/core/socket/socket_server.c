@@ -609,13 +609,13 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
           **messages, *requires;
     char *buffer, *unitName, *unitPath;
     Unit *unit, *unitDisplay, *unitConflict, *unitDep;
-    bool force, restart, hasError;
+    bool force, restart, hasError, reset;
     const char *dep, *conflict;
     PState *pState, *pStateConflict;
     ProcessData *pData, *pDataConflict;
 
     unit = unitConflict = unitDep = NULL;
-    force = restart = hasError = false;
+    force = restart = hasError = reset = false;
     rv = len = 0;
     buffer = unitName = unitPath = NULL;
     dep = conflict = NULL;
@@ -635,6 +635,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     restart = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESTART_OPT].name);
+    reset = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESET_OPT].name);
 
     /* Create the array */
     if (!(*unitsDisplay))
@@ -803,11 +804,15 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     /* Creating eventual pipe */
     if (unit->type == TIMER || hasPipe(unit)) {
         unit->pipe = pipeNew();
+
         if (unit->type != TIMER) {
             /* Create process data history array accordingly */
             unit->processDataHistory = arrayNew(processDataRelease);
             openPipes(NULL, unit);
         }
+        else if (unit->type == TIMER && reset)
+            resetNextTime(unitName);
+
     }
     startProcesses(units, unit);
 

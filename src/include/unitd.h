@@ -46,10 +46,11 @@ stopUnit(SockMessageOut **sockMessageOut, const char *unitName);
 /* Start/Restart the unit.
  * The "unit name" argument can also contain the ".unit" suffix.
  * To resolve the eventual conflicts, invoke it with "force" = true.
+ * The reset option is used by timer units to reset the count starting by now.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
-startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool restart);
+startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool restart, bool reset);
 
 /* Disable the unit.
  * The "unit name" argument can also contain the ".unit" suffix.
