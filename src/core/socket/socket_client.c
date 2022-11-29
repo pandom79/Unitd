@@ -16,9 +16,278 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define WIDTH_STATUS         6
 #define WIDTH_DESCRIPTION   11
 #define WIDTH_DURATION       8
+#define WIDTH_LAST_TIME      9
+#define WIDTH_DATE          19
 #define MAX_LEN_KEY         13
 
 bool UNITCTL_DEBUG;
+
+static int
+writeUnitContent(State defaultState, const char *unitPath, const char *unitName)
+{
+    int rv = 0;
+    FILE *fp = NULL;
+    const char *propertyName = NULL;
+
+    /* Open unit file in write mode */
+    if ((fp = fopen(unitPath, "w")) == NULL) {
+        logError(CONSOLE, "src/core/socket/socket_client.c",
+                          "writeUnitContent", errno, strerror(errno),
+                          "Unable to open (write mode) %s unit", unitPath);
+        rv = 1;
+        goto out;
+    }
+
+    /* UNIT SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[0].sectionName.desc);
+    /* Description property */
+    fprintf(fp, "%s = set the description for %s unit ...\n\n", UNITS_PROPERTIES_ITEMS[0].propertyName.desc,
+            unitName);
+    /* Requires property */
+    propertyName = UNITS_PROPERTIES_ITEMS[1].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+    /* Type property */
+    propertyName = UNITS_PROPERTIES_ITEMS[2].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Available values : oneshot, daemon (default).\n");
+    fprintf(fp, "# %s = set the type ...\n\n", propertyName);
+    /* Restart property */
+    propertyName = UNITS_PROPERTIES_ITEMS[3].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Available values : true, false (default).\n");
+    fprintf(fp, "# %s = set the value ...\n\n", propertyName);
+    /* RestartMax property */
+    propertyName = UNITS_PROPERTIES_ITEMS[4].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "# If it is set then Restart property will be ignored.\n");
+    fprintf(fp, "# %s = set the number ...\n\n", propertyName);
+    /* Conflicts property */
+    propertyName = UNITS_PROPERTIES_ITEMS[5].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+
+    /* COMMAND SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[1].sectionName.desc);
+    /* Run property */
+    fprintf(fp, "%s = set the command to run ...\n\n", UNITS_PROPERTIES_ITEMS[6].propertyName.desc);
+    /* Stop property */
+    propertyName = UNITS_PROPERTIES_ITEMS[7].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# %s = set the command to stop ...\n\n", propertyName);
+
+    /* STATE SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
+    /* WantedBy property */
+    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    if (!USER_INSTANCE) {
+        fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
+        /* In this case, we don't consider the cmdline state which is an exception
+         * but we set the default state instead.
+         * Anyway, the user can change in whatever way wants.
+        */
+        for (State state = POWEROFF; state <= REBOOT; state++) {
+            if (state == defaultState)
+                fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+            else
+                fprintf(fp, "# %s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+        }
+    }
+    else
+        fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[USER].desc);
+    fprintf(fp, "\n");
+
+    out:
+        /* Close file */
+        fclose(fp);
+        fp = NULL;
+        return rv;
+}
+
+static int
+writeTimerContent(State defaultState, const char *unitPath, const char *unitName)
+{
+    int rv = 0;
+    FILE *fp = NULL;
+    const char *propertyName = NULL;
+
+    /* Open unit file in write mode */
+    if ((fp = fopen(unitPath, "w")) == NULL) {
+        logError(CONSOLE, "src/core/socket/socket_client.c",
+                          "writeTimerContent", errno, strerror(errno),
+                          "Unable to open (write mode) %s unit", unitPath);
+        rv = 1;
+        goto out;
+    }
+
+    /* UNIT SECTION */
+    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[0].sectionName.desc);
+    /* Description property */
+    fprintf(fp, "%s = set the description for %s unit ...\n\n", UTIMERS_PROPERTIES_ITEMS[0].propertyName.desc,
+            unitName);
+    /* Requires property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[1].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+    /* Conflicts property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[2].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+
+    /* INTERVAL SECTION */
+    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[1].sectionName.desc);
+    /* Seconds property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[3].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "%s = set the seconds number ...\n\n", propertyName);
+    /* Minutes property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[4].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "%s = set the minutes number ...\n\n", propertyName);
+    /* Hours property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[5].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "%s = set the hours number ...\n\n", propertyName);
+    /* Days property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[6].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "%s = set the days number ...\n\n", propertyName);
+    /* Weeks property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[7].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "%s = set the weeks number ...\n\n", propertyName);
+    /* Months property */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[8].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Accept a numeric value greater than zero.\n");
+    fprintf(fp, "%s = set the months number ...\n\n", propertyName);
+
+    /* STATE SECTION */
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
+    /* WantedBy property */
+    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    if (!USER_INSTANCE) {
+        fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
+        /* In this case, we don't consider the cmdline state which is an exception
+         * but we set the default state instead.
+         * Anyway, the user can change in whatever way wants.
+        */
+        for (State state = POWEROFF; state <= REBOOT; state++) {
+            if (state == defaultState)
+                fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+            else
+                fprintf(fp, "# %s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+        }
+    }
+    else
+        fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[USER].desc);
+    fprintf(fp, "\n");
+
+    out:
+        /* Close file */
+        fclose(fp);
+        fp = NULL;
+        return rv;
+}
+
+static char*
+getLastTime(Unit *unit)
+{
+    char *pattern, *lastTimeStr;
+    int rv = 0, finalStatus = -1;
+    const char *timeStr, *finalStatusStr;
+    glob_t results;
+    Time *lastTime = timeNew(NULL);
+    Array *entries = NULL;
+
+    pattern = lastTimeStr = NULL;
+    timeStr = finalStatusStr = NULL;
+
+    assert(unit);
+
+    /* Building the pattern */
+    if (!USER_INSTANCE)
+        pattern = stringNew(UNITD_TIMER_DATA_PATH);
+    else
+        pattern = stringNew(UNITD_USER_TIMER_DATA_PATH);
+    stringAppendChr(&pattern, '/');
+    stringAppendStr(&pattern, unit->name);
+    stringAppendStr(&pattern, "|last|*");
+
+    /* Executing the glob func */
+    if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
+        size_t lenResults = results.gl_pathc;
+        if (lenResults > 0) {
+            /* Should be there only one file with this pattern. */
+            if (lenResults > 1) {
+                rv = 1;
+                logError(UNITD_BOOT_LOG | SYSTEM, "src/core/socket/socket_client.c", "getLastTime",
+                         rv, strerror(rv),
+                         "Have been found '%d' files with '%s' pattern!\n",
+                         lenResults, pattern);
+                goto out;
+            }
+            const char *fileName = results.gl_pathv[0];
+            assert(fileName);
+
+            /* Split the data */
+            entries = stringSplit((char *)fileName, "|", false);
+            assert(entries);
+            int lenEntries = entries->size;
+            assert(lenEntries == 4);
+            /* The third and fourth represents the last time and final status.*/
+            timeStr = arrayGet(entries, 2);
+            finalStatusStr = arrayGet(entries, 3);
+
+            /* Check values */
+            if (!isValidNumber(timeStr, false)) {
+                rv = 1;
+                logError(UNITD_BOOT_LOG | SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv,
+                         strerror(rv), "The time from '%s' file is not valid!\n", fileName);
+                goto out;
+            }
+            if (!isValidNumber(finalStatusStr, true)) {
+                rv = 1;
+                logError(UNITD_BOOT_LOG | SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv,
+                         strerror(rv), "The final status from '%s' file is not valid!\n", fileName);
+                goto out;
+            }
+
+            /* Set final status as int */
+            finalStatus = atoi(finalStatusStr);
+
+            /* Set the seconds. */
+            *lastTime->sec = atol(timeStr);
+
+            /* Set last Time */
+            lastTimeStr = stringGetTimeStamp(lastTime, false, "%d-%m-%Y %H:%M:%S");
+            assert(lastTimeStr);
+            stringPrependStr(&lastTimeStr, finalStatus == 0 ? GREEN_COLOR : RED_COLOR);
+            stringAppendStr(&lastTimeStr, DEFAULT_COLOR);
+        }
+    }
+
+    out:
+        globfree(&results);
+        timeRelease(&lastTime);
+        objectRelease(&pattern);
+        arrayRelease(&entries);
+        return lastTimeStr;
+}
 
 static char*
 getUnitPathByName(const char *arg, bool showErr)
@@ -118,11 +387,11 @@ static int
 getMaxLen(Array *unitsDisplay, const char *param)
 {
     int rv , lenUnits, len;
-    rv = lenUnits = len = 0;
     Unit *unit = NULL;
-    char *duration, *desc;
+    char *duration, *desc, *leftTime;
 
-    duration = desc = NULL;
+    duration = desc = leftTime = NULL;
+    rv = lenUnits = len = 0;
 
     lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
     for (int i = 0; i < lenUnits; i++) {
@@ -139,6 +408,11 @@ getMaxLen(Array *unitsDisplay, const char *param)
         else if (strcmp(param, "desc") == 0) {
             desc = unit->desc;
             if (desc && (len = strlen(desc)) > rv)
+                rv = len;
+        }
+        else if (strcmp(param, "leftTime") == 0) {
+            leftTime = unit->leftTimeDuration;
+            if (leftTime && (len = strlen(leftTime)) > rv)
                 rv = len;
         }
     }
@@ -413,6 +687,128 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
 }
 
 int
+showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
+{
+    int rv, lenUnits, maxLenName, maxLeftTime, len, *finalStatus;
+    Array *unitsDisplay = NULL;
+    Unit *unitDisplay = NULL;
+    const char *unitName, *leftTime, *nextTime, *status;
+    char *lasTime = NULL;
+
+    unitName = leftTime = nextTime = status = NULL;
+    rv = lenUnits = maxLenName = len = -1;
+
+    /* Filling sockMessageOut */
+    if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
+        unitsDisplay = (*sockMessageOut)->unitsDisplay;
+        lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
+
+        /* Get max len */
+        maxLenName = getMaxLen(unitsDisplay, "name");
+        maxLeftTime = getMaxLen(unitsDisplay, "leftTime");
+
+        if (maxLenName < WIDTH_UNIT_NAME)
+            maxLenName = WIDTH_UNIT_NAME;
+        if (maxLeftTime < WIDTH_LAST_TIME)
+            maxLeftTime = WIDTH_LAST_TIME;
+
+        /* HEADER */
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
+
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LAST TIME", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_LAST_TIME + PADDING, "", DEFAULT_COLOR);
+
+        /* "next time" width is the same of "last time" */
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "NEXT TIME", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_LAST_TIME + PADDING, "", DEFAULT_COLOR);
+
+        /* "left time" width is the same of "last time" */
+        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LEFT TIME", DEFAULT_COLOR);
+        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLeftTime - WIDTH_LAST_TIME, "", DEFAULT_COLOR);
+
+        printf("\n");
+
+        /* CELLS */
+        for (int i = 0; i < lenUnits; i++) {
+            unitDisplay = arrayGet(unitsDisplay, i);
+            ProcessData *pData = unitDisplay->processData;
+            PStateData *pStateData = pData->pStateData;
+            PState pState = pStateData->pState;
+
+            /* Unit name
+             * Warning: don't color unit name because the bash completion fails
+            */
+            unitName = unitDisplay->name;
+            printf("%s", unitName);
+            len = strlen(unitName);
+            if (maxLenName < len)
+                maxLenName = len;
+            printf("%*s", maxLenName - len + PADDING, "");
+
+            /* STATUS */
+            finalStatus = pData->finalStatus;
+            status = pStateData->desc;
+            printStatus(pState, status, *finalStatus, false);
+            if (*finalStatus == FINAL_STATUS_FAILURE)
+                printf("%*s", 10 - 6 + PADDING, ""); //Failed str
+            else
+                printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
+
+            /* Last time */
+            lasTime = getLastTime(unitDisplay);
+            if (lasTime) {
+                printf("%s", lasTime);
+                printf("%*s", PADDING, "");
+            }
+            else {
+                lasTime = stringNew("-");
+                printf("%s", lasTime);
+                printf("%*s", WIDTH_DATE - 1 + PADDING, "");
+            }
+            objectRelease(&lasTime);
+
+            /* Next time */
+            nextTime = unitDisplay->nextTimeDate;
+            if (nextTime) {
+                printf("%s", nextTime);
+                len = strlen(nextTime);
+                printf("%*s", WIDTH_DATE - len + PADDING, "");
+            }
+            else {
+                printf("-");
+                printf("%*s", WIDTH_DATE - 1 + PADDING, "");
+            }
+
+            /* Left time */
+            leftTime = unitDisplay->leftTimeDuration;
+            if (leftTime) {
+                printf("%s", leftTime);
+                len = strlen(leftTime);
+                if (maxLeftTime < len)
+                    maxLeftTime = len;
+                printf("%*s", maxLeftTime - len, "");
+            }
+            else {
+                printf("-");
+                printf("%*s", maxLeftTime - 1, "");
+            }
+
+            printf("\n");
+
+        }
+        printf("\n%d units found\n", lenUnits);
+    }
+
+    sockMessageOutRelease(sockMessageOut);
+    return rv;
+}
+
+
+int
 getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 {
     SockMessageIn *sockMessageIn = NULL;
@@ -475,12 +871,15 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
     Unit *unit = NULL;
     ProcessData *pData, *pDataHistory;
     PStateData *pStateData, *pStateDataHistory;
-    const char *status, *desc, *dateTimeStart, *dateTimeStop, *duration, *message;
+    const char *status, *desc, *dateTimeStart, *dateTimeStop, *duration, *message, *interval,
+               *nextTimeDate, *leftTimeDuration;
     PState pState;
+    char *lastTime = NULL;
 
     rv = len = restartNum = lenPDataHistory = lenUnitErrors = 0;
     sockErrors = units = unitErrors = pDatasHistory = messages = NULL;
-    status = desc = dateTimeStart = dateTimeStop = message = NULL;
+    status = desc = dateTimeStart = dateTimeStop = message = interval = nextTimeDate =
+    leftTimeDuration = NULL;
     pData = pDataHistory = NULL;
     pStateData = pStateDataHistory = NULL;
 
@@ -536,6 +935,50 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             if (unit->restartMax != -1)
                 printf(" (Max %d)", unit->restartMax);
             printf("\n");
+
+            /* Evetual timer data for the unit */
+            char *timerName = unit->timerName ? stringNew(unit->timerName) : NULL;
+            if (timerName) {
+                PState *timerPState = unit->timerPState;
+                switch (*timerPState) {
+                    case DEAD:
+                        stringPrependStr(&timerName, GREY_COLOR);
+                        break;
+                    case RESTARTING:
+                        stringPrependStr(&timerName, YELLOW_COLOR);
+                        break;
+                    case RUNNING:
+                        stringPrependStr(&timerName, GREEN_COLOR);
+                        break;
+                    default:
+                        break;
+                }
+                stringAppendStr(&timerName, DEFAULT_COLOR);
+                printf("%*s %s", MAX_LEN_KEY, "Timer :", timerName);
+                printf("\n");
+            }
+            objectRelease(&timerName);
+
+            /* Timer Unit Data */
+            interval = unit->intervalStr;
+            if (interval && strlen(interval) > 0) {
+                printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "TIMER DATA", DEFAULT_COLOR);
+                printf("%*s %s\n", MAX_LEN_KEY, "Interval :", interval);
+                /* Last Time */
+                lastTime = getLastTime(unit);
+                if (lastTime) {
+                    printf("%*s %s \n", MAX_LEN_KEY, "Last Time :", lastTime);
+                    objectRelease(&lastTime);
+                }
+                /* Next time */
+                nextTimeDate = unit->nextTimeDate;
+                if (nextTimeDate && strlen(nextTimeDate) > 0)
+                    printf("%*s %s\n", MAX_LEN_KEY, "Next Time :", unit->nextTimeDate);
+                /* Left time */
+                leftTimeDuration = unit->leftTimeDuration;
+                if (leftTimeDuration && strlen(leftTimeDuration) > 0)
+                    printf("%*s %s\n", MAX_LEN_KEY, "Left Time :", unit->leftTimeDuration);
+            }
 
             printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "PROCESS DATA", DEFAULT_COLOR);
             /* Process Type */
@@ -1186,8 +1629,6 @@ createUnit(const char *arg)
 {
     int rv = 0;
     char *unitPath, *unitName, *err, *destDefStateSyml = NULL;
-    FILE *fp = NULL;
-    const char *propertyName = NULL;
     State defaultState = NO_STATE;
 
     unitPath = unitName = err = destDefStateSyml = NULL;
@@ -1203,11 +1644,15 @@ createUnit(const char *arg)
         goto out;
     }
 
+    /* Get the type */
+    PType pType = getPTypeByUnitName(arg);
+    assert(pType != NO_PROCESS_TYPE);
+
     /* Building unit path */
     unitPath = stringNew(!USER_INSTANCE ? UNITS_PATH : UNITS_USER_LOCAL_PATH);
     stringAppendChr(&unitPath, '/');
     stringAppendStr(&unitPath, arg);
-    if (!stringEndsWithStr(arg, ".unit"))
+    if (pType == DAEMON && !stringEndsWithStr(arg, ".unit"))
         stringAppendStr(&unitPath, ".unit");
     assert(unitPath);
 
@@ -1225,87 +1670,23 @@ createUnit(const char *arg)
         if (defaultState == NO_STATE) {
             /* If we are here then the symlink points to a bad destination */
             logErrorStr(CONSOLE, "The default state symlink points to a bad destination (%s)\n",
-                             destDefStateSyml);
+                                 destDefStateSyml);
             rv = 1;
             goto out;
         }
     }
 
-    /* Open unit file in write mode */
-    if ((fp = fopen(unitPath, "w")) == NULL) {
-        logError(CONSOLE, "src/core/socket/socket_client.c",
-                      "createUnit", errno, strerror(errno), "Unable to open (write mode) %s unit", unitPath);
-        rv = 1;
-        goto out;
+    switch (pType) {
+        case TIMER:
+            writeTimerContent(defaultState, unitPath, unitName);
+            break;
+        case DAEMON:
+        case ONESHOT:
+            writeUnitContent(defaultState, unitPath, unitName);
+            break;
+        default:
+            break;
     }
-
-    /* UNIT SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[0].sectionName.desc);
-    /* Description property */
-    fprintf(fp, "%s = set the description for %s unit ...\n\n", UNITS_PROPERTIES_ITEMS[0].propertyName.desc,
-            unitName);
-    /* Requires property */
-    propertyName = UNITS_PROPERTIES_ITEMS[1].propertyName.desc;
-    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
-    fprintf(fp, "# %s = unit name 1\n", propertyName);
-    fprintf(fp, "# %s = ...\n", propertyName);
-    fprintf(fp, "# %s = unit name n\n\n", propertyName);
-    /* Type property */
-    propertyName = UNITS_PROPERTIES_ITEMS[2].propertyName.desc;
-    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
-    fprintf(fp, "# Available values : oneshot, daemon (default).\n");
-    fprintf(fp, "# %s = set the type ...\n\n", propertyName);
-    /* Restart property */
-    propertyName = UNITS_PROPERTIES_ITEMS[3].propertyName.desc;
-    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
-    fprintf(fp, "# Available values : true, false (default).\n");
-    fprintf(fp, "# %s = set the value ...\n\n", propertyName);
-    /* RestartMax property */
-    propertyName = UNITS_PROPERTIES_ITEMS[4].propertyName.desc;
-    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
-    fprintf(fp, "# Accept a numeric value greater than zero.\n");
-    fprintf(fp, "# If it is set then Restart property will be ignored.\n");
-    fprintf(fp, "# %s = set the number ...\n\n", propertyName);
-    /* Conflicts property */
-    propertyName = UNITS_PROPERTIES_ITEMS[5].propertyName.desc;
-    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
-    fprintf(fp, "# %s = unit name 1\n", propertyName);
-    fprintf(fp, "# %s = ...\n", propertyName);
-    fprintf(fp, "# %s = unit name n\n\n", propertyName);
-
-    /* COMAND SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[1].sectionName.desc);
-    /* Run property */
-    fprintf(fp, "%s = set the command to run ...\n\n", UNITS_PROPERTIES_ITEMS[6].propertyName.desc);
-    /* Stop property */
-    propertyName = UNITS_PROPERTIES_ITEMS[7].propertyName.desc;
-    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
-    fprintf(fp, "# %s = set the command to stop ...\n\n", propertyName);
-
-    /* STATE SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
-    /* WantedBy property */
-    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
-    if (!USER_INSTANCE) {
-        fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
-        /* In this case, we don't consider the cmdline state which is an exception
-         * but we set the default state instead.
-         * Anyway, the user can change in whatever way wants.
-        */
-        for (State state = POWEROFF; state <= REBOOT; state++) {
-            if (state == defaultState)
-                fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
-            else
-                fprintf(fp, "# %s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
-        }
-    }
-    else
-        fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[USER].desc);
-    fprintf(fp, "\n");
-
-    /* Close file */
-    fclose(fp);
-    fp = NULL;
 
     out:
         /* Release resources */
@@ -1313,11 +1694,6 @@ createUnit(const char *arg)
         objectRelease(&unitName);
         objectRelease(&err);
         objectRelease(&destDefStateSyml);
-        if (fp) {
-            fclose(fp);
-            fp = NULL;
-        }
-
         return rv;
 }
 

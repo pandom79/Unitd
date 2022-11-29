@@ -146,11 +146,10 @@ execProcess(const char *command, char **argv, Unit **unit)
                     *pData->exitCode != -1) {
 
                     /* If the values has not been set by signal handler then we set them here */
-                    if (*pData->exitCode == -1) {
-                        setStopAndDuration(&pData);
-                        *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
+                    if (*pData->exitCode == -1)
                         *pData->exitCode = WEXITSTATUS(status);
-                    }
+                    setStopAndDuration(&pData);
+                    *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
 
                     /* we communicate the failure result if the unit has a pipe */
                     if (unitPipe && *pData->exitCode != EXIT_SUCCESS) {

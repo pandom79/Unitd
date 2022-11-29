@@ -32,7 +32,8 @@ typedef enum {
     UNIT_CHANGED_ERR = 19,
     UNIT_ENABLE_STATE_ERR = 20,
     UNITS_LIST_EMPTY_ERR = 21,
-    UNIT_EXIST_ERR = 22
+    UNIT_EXIST_ERR = 22,
+    UTIMER_INTERVAL_ERR = 23
 } UnitsErrorsEnum;
 typedef struct {
     UnitsErrorsEnum errorEnum;
@@ -88,3 +89,4 @@ Unit* getUnitByPid(Array *, pid_t pid);
 PType getPTypeByPTypeStr(const char *);
 Pipe* pipeNew();
 void pipeRelease(Pipe **);
+PType getPTypeByUnitName(const char *);

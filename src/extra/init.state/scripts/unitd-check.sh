@@ -32,6 +32,12 @@ if [ ! -d "$UNITS_ENAB_PATH" ]; then
     chmod 0755 -R "$UNITS_ENAB_PATH"
 fi
 
+# Check UNITD_TIMER_DATA_PATH
+if [ ! -d "$UNITD_TIMER_DATA_PATH" ]; then
+    mkdir -p "$UNITD_TIMER_DATA_PATH"
+    chmod 0755 -R "$UNITD_TIMER_DATA_PATH"
+fi
+
 # Check the states folders
 for STATE in ${STATES[@]}
 do

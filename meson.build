@@ -4,11 +4,11 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '4.0.3', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '5.0.0', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '4.0.3'
-so_ver = '4'
+ver = '5.0.0'
+so_ver = '5'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 
@@ -27,6 +27,7 @@ units_path = prefix/libdir/project_name/'units'
 units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = prefix/datadir/project_name
+unitd_timer_data_path = unitd_data_path/'timer'
 unitd_log_path = localstatedir/'log'/project_name+'.log'
 
 # Setting unitlogd macro path
@@ -64,6 +65,7 @@ conf_data.set('UNITS_PATH', units_path)
 conf_data.set('UNITS_USER_PATH', units_user_path)
 conf_data.set('UNITS_ENAB_PATH', units_enab_path)
 conf_data.set('UNITD_DATA_PATH', unitd_data_path)
+conf_data.set('UNITD_TIMER_DATA_PATH', unitd_timer_data_path)
 conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
 conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
@@ -81,7 +83,8 @@ configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configurati
 run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 
 # Dependencies
-deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.4')]
+rt_dep = meson.get_compiler('c').find_library('rt', required : true)
+deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.5'), rt_dep]
 # Checking commands/packages dependencies
 # If it is not exists then meson will show us the error.
 # We set 'check: false' because we don't interest about its exit code.
@@ -113,6 +116,8 @@ sources = files(
                 'src/core/parser/parser.h',
                 'src/core/units/units.c',
                 'src/core/units/units.h',
+                'src/core/units/utimers/utimers.c',
+                'src/core/units/utimers/utimers.h',
                 'src/core/commands/commands.c',
                 'src/core/commands/commands.h',
                 'src/core/processes/process.c',
@@ -221,6 +226,7 @@ env = environment()
 env.set('UNITS_PATH', units_path)
 env.set('UNITS_USER_PATH', units_user_path)
 env.set('UNITS_ENAB_PATH', units_enab_path)
+env.set('UNITD_TIMER_DATA_PATH', unitd_timer_data_path)
 r = run_command('src/extra/init.state/scripts/unitd-check.sh', env: env, check: false)
 if r.returncode() != 0
     message(r.stderr().strip())

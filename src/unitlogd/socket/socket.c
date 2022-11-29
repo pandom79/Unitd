@@ -89,13 +89,6 @@ startForwarderThread(void *arg)
     rv = length = 0;
     fileFd = maxFd = pipeFd = -1;
 
-    /* Open pipe */
-    if ((rv = pipe(socketPipe->fds)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/unitlogd/socket.c", "startForwarderThread", errno,
-                      strerror(errno), "Unable to run pipe for the dev (%s)", devName);
-        kill(UNITLOGD_PID, SIGTERM);
-        goto out;
-    }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutexPipe)) != 0) {
         logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startForwarderThread",
@@ -183,13 +176,6 @@ startUnixThread(void *arg)
     rv = length = 0;
     socketFd = maxFd = pipeFd = -1;
 
-    /* Open pipe */
-    if ((rv = pipe(socketPipe->fds)) != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket.c", "startUnixThread", errno,
-                      strerror(errno), "Unable to run pipe for the dev (%s)", devName);
-        kill(UNITLOGD_PID, SIGTERM);
-        goto out;
-    }
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutexPipe)) != 0) {
         logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",

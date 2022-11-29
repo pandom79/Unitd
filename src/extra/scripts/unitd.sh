@@ -29,4 +29,8 @@ case $OPERATION in
     "send-wallmsg")
         wall $MSG
     ;;
+    "save-time")
+        rm -rf $PATTERN || true
+        touch $FILE_PATH
+    ;;
 esac;

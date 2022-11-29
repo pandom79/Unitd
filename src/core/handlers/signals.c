@@ -58,11 +58,8 @@ signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
                 waitpid(infoPid, &status, 0);
 
             if (unit->type == ONESHOT) {
-                if (infoCode == CLD_EXITED) {
-                    setStopAndDuration(&pData);
+                if (infoCode == CLD_EXITED)
                     *pData->exitCode = info->si_status;
-                    *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
-                }
             }
             else { //DAEMON
                 switch (infoCode) {

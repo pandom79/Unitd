@@ -90,7 +90,7 @@ unitdSockConn(int *socketConnection, struct sockaddr_un *name)
     int rv = 0;
     if ((rv = connect(*socketConnection, (const struct sockaddr *)name,
                       sizeof(struct sockaddr_un))) == -1) {
-        logErrorStr(CONSOLE,
+        logErrorStr(SYSTEM,
                          !USER_INSTANCE ?
                          "Unitd system instance could be not running!\n" :
                          "Unitd user instance could be not running!\n");
@@ -164,7 +164,6 @@ getScriptParams(const char *unitName, const char *stateStr,
     stringAppendStr(&to, stateStr);
     stringAppendChr(&to, '/');
     stringAppendStr(&to, unitName);
-    stringAppendStr(&to, ".unit");
     /* Create the script parameters array */
     scriptParams = arrayNew(objectRelease);
     /* Building the command which must be the first element */
@@ -288,6 +287,9 @@ getListFilterByCommand(Command command)
             case LIST_RESTARTED_COMMAND:
                 listFilter = RESTARTED_FILTER;
                 break;
+            case LIST_TIMERS_COMMAND:
+                listFilter = TIMERS_FILTER;
+                break;
             default:
                 break;
         }
@@ -302,7 +304,7 @@ getListFilterByOpt(Array *options)
     int len = options ? options->size : 0;
     for (int i = 0; i < len; i++) {
         listFilterOpt = arrayGet(options, i);
-        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= RESTARTED_FILTER; listFilter++) {
+        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= TIMERS_FILTER; listFilter++) {
             if (strcmp(listFilterOpt, LIST_FILTER_DATA[listFilter].desc) == 0) {
                 return listFilter;
             }
@@ -356,6 +358,10 @@ applyListFilter(Array **unitsDisplay, ListFilter listFilter)
                 break;
             case RESTARTED_FILTER:
                 if (unitDisplay->restartNum <= 0)
+                    remove = true;
+                break;
+            case TIMERS_FILTER:
+                if (unitDisplay->type != TIMER)
                     remove = true;
                 break;
             default:

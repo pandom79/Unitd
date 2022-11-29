@@ -18,15 +18,14 @@ typedef struct {
 
 int startProcesses(Array **, Unit *);
 void* startProcess(void *);
-Array* getDaemonUnits(Array **);
+Array* getRunningUnits(Array **);
 int stopProcesses(Array **, Unit *);
 void* stopProcess(void *);
-void listenPipe(Unit *);
+void* listenPipe(void *);
 void* listenPipeThread(void *);
 bool hasPipe(Unit *);
 Array* getRestartableUnits(Array **);
 int openPipes(Array **, Unit *);
 void* openPipe(void *);
-Array* getUnitsPipes(Array **);
 int closePipes(Array **, Unit *);
 void* closePipe(void *);

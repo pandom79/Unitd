@@ -23,7 +23,7 @@ startProcess(void *arg)
     const char *command, *unitName, *unitNameDep, *unitNameconflict, *desc;
     PState *pStateConflict = NULL;
 
-    lenDeps = lenConflicts = rv = 0;
+    lenDeps = lenConflicts = rv = statusThread = 0;
     rvThread = NULL;
     unit = unitDep = unitConflict = NULL;
     pData = pDataDep = pDataConflict = NULL;
@@ -47,12 +47,12 @@ startProcess(void *arg)
     pData->timeStart = timeNew(NULL);
     /* Timestamp start */
     objectRelease(&pData->dateTimeStartStr);
-    pData->dateTimeStartStr = stringGetTimeStamp(pData->timeStart, false, NULL);
+    pData->dateTimeStartStr = stringGetTimeStamp(pData->timeStart, false, "%d-%m-%Y %H:%M:%S");
 
     /* Lock the mutex */
     if ((rv = pthread_mutex_lock(unitMutex)) != 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
-        logError(CONSOLE, "src/core/processes/process.c", "startProcess",
+        logError(ALL, "src/core/processes/process.c", "startProcess",
                       rv, strerror(rv), "Unable to acquire the lock of the mutex for the %s unit",
                       unitName);
         goto out;
@@ -133,7 +133,7 @@ startProcess(void *arg)
                 unitDepMutex = unitDep->mutex;
                 if ((rv = pthread_mutex_lock(unitDepMutex)) != 0) {
                     *finalStatusDep = FINAL_STATUS_FAILURE;
-                    logError(CONSOLE, "src/core/processes/process.c", "startProcess",
+                    logError(ALL, "src/core/processes/process.c", "startProcess",
                                   rv, strerror(rv), "Unable to lock the mutex for the %s dependency",
                                   unitNameDep);
                 }
@@ -146,7 +146,7 @@ startProcess(void *arg)
                         /* Waiting for the broadcast signal ... */
                         if ((rv = pthread_cond_wait(unitDep->cv, unitDepMutex)) != 0) {
                             *finalStatusDep = FINAL_STATUS_FAILURE;
-                            logError(CONSOLE, "src/core/processes/process.c", "startProcess",
+                            logError(ALL, "src/core/processes/process.c", "startProcess",
                                           rv, strerror(rv), "Unable to wait for condition variable for the %s dependency",
                                           unitNameDep);
                             break;
@@ -159,7 +159,7 @@ startProcess(void *arg)
                     /* Unlock the dependency mutex */
                     if ((rv = pthread_mutex_unlock(unitDepMutex)) != 0) {
                         *finalStatusDep = FINAL_STATUS_FAILURE;
-                        logError(CONSOLE, "src/core/processes/process.c", "startProcess",
+                        logError(ALL, "src/core/processes/process.c", "startProcess",
                                       rv, strerror(rv), "Unable to unlock the mutex for the %s dependency",
                                       unitNameDep);
                     }
@@ -188,30 +188,41 @@ startProcess(void *arg)
 
     }// for dependencies
 
-    /* If there are no configuration and dependency errors, we execute the command */
-    /* Cmdline split */
-    command = unit->runCmd;
-    cmdline = cmdlineSplit(command);
-    assert(cmdline);
-    if (UNITD_DEBUG)
-        logInfo(UNITD_BOOT_LOG, "Executing the '%s' command for the '%s' unit ...!\n",
-                     command, unitName);
+    switch (unit->type) {
+        case DAEMON:
+        case ONESHOT:
+            /* If there are no configuration and dependency errors, we execute the command */
+            /* Cmdline split */
+            command = unit->runCmd;
+            cmdline = cmdlineSplit(command);
+            assert(cmdline);
+            if (UNITD_DEBUG)
+                logInfo(UNITD_BOOT_LOG, "Executing the '%s' command for the '%s' unit ...!\n",
+                        command, unitName);
 
-    /* Execute the command */
-    statusThread = execProcess(cmdline[0], cmdline, &unit);
-    if (statusThread != EXIT_SUCCESS && statusThread != -1) {
-        /* For the initialization and finalization units,
-         * we show the error and the emergency shell in the console */
-        wantedBy = unit->wantedBy;
-        if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
-            arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
-            logError(CONSOLE, "src/core/processes/process.c", "startProcess", statusThread,
-                          strerror(statusThread), "The '%s' command for the '%s' unit returned %d exit code\n",
-                          command, unitName, statusThread);
-        }
+            /* Execute the command */
+            statusThread = execProcess(cmdline[0], cmdline, &unit);
+            if (statusThread != EXIT_SUCCESS && statusThread != -1) {
+                /* For the initialization and finalization units,
+                 * we show the error and the emergency shell in the console
+                 */
+                wantedBy = unit->wantedBy;
+                if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
+                    arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
+                    logError(ALL, "src/core/processes/process.c", "startProcess", statusThread,
+                                  strerror(statusThread), "The '%s' command for the '%s' unit returned %d exit code\n",
+                                  command, unitName, statusThread);
+                }
+            }
+            /* Release cmdline */
+            cmdlineRelease(cmdline);
+            break;
+        case TIMER:
+            statusThread = startUnitTimer(unit);
+            break;
+        default:
+            break;
     }
-    /* Release cmdline */
-    cmdlineRelease(cmdline);
 
     out:
     /* Set the final status of the unit */
@@ -230,6 +241,13 @@ startProcess(void *arg)
             else
                 *finalStatus = FINAL_STATUS_FAILURE;
             break;
+        case TIMER:
+            if (statusThread == 0 && pData->pStateData->pState == RUNNING)
+                *finalStatus = FINAL_STATUS_SUCCESS;
+            else {
+                pipeRelease(&unit->pipe);
+                *finalStatus = FINAL_STATUS_FAILURE;
+            }
         default:
             break;
     }
@@ -237,7 +255,7 @@ startProcess(void *arg)
     /* Broadcast signal and unlock */
     if ((rv = pthread_cond_broadcast(unit->cv)) != 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
-        logError(CONSOLE, "src/core/processes/process.c", "startProcess",
+        logError(ALL, "src/core/processes/process.c", "startProcess",
                       rv, strerror(rv), "Unable to send the broadcast signal for the %s unit", unitName);
     }
     if (UNITD_DEBUG)
@@ -245,7 +263,7 @@ startProcess(void *arg)
 
     if ((rv = pthread_mutex_unlock(unitMutex)) != 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
-        logError(CONSOLE, "src/core/processes/process.c", "startProcess",
+        logError(ALL, "src/core/processes/process.c", "startProcess",
                       rv, strerror(rv), "Unable to unlock the mutex for the %s unit", unitName);
     }
     /* show the result */
@@ -302,6 +320,7 @@ startProcesses(Array **units, Unit *singleUnit)
             /* Set the unit thread data */
             unitThreadData->units = *units;
             unitThreadData->unit = unit;
+
             if ((rv = pthread_create(&unitThreadData->thread, NULL, startProcess, unitThreadData)) != 0) {
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "startProcesses", errno,
                               strerror(errno), "Unable to create the thread for the '%s' unit",
@@ -339,22 +358,32 @@ startProcesses(Array **units, Unit *singleUnit)
 }
 
 Array*
-getDaemonUnits(Array **units)
+getRunningUnits(Array **units)
 {
-    Array *daemonUnits = arrayNew(NULL);
+    Array *runningUnits = arrayNew(NULL);
     int lenUnits = 0;
     Unit *unit = NULL;
     ProcessData *pData = NULL;
+    PType unitType = NO_PROCESS_TYPE;
 
     lenUnits = (*units ? (*units)->size : 0);
     for (int i = 0; i < lenUnits; i++) {
         unit = arrayGet(*units, i);
         pData = unit->processData;
-        if (unit->type == DAEMON && pData->pStateData->pState == RUNNING)
-            arrayAdd(daemonUnits, unit);
+        unitType = unit->type;
+        /* For the daemon and oneshot units we don't consider the restarting state because
+         * closePipes() called before assure us the processes will have a state different by Restarting.
+         * That's not true for the timers because closePipes() don't cosider them.
+         * The timer which have a pipe will be stopped by stopProcess func which calls
+         * closepipes() in single mode, therefore, its state can be Restarting as well.
+        */
+        if ((unitType == DAEMON && pData->pStateData->pState == RUNNING) ||
+            (unitType == TIMER && (pData->pStateData->pState == RUNNING ||
+                                   pData->pStateData->pState == RESTARTING)))
+            arrayAdd(runningUnits, unit);
     }
 
-    return daemonUnits;
+    return runningUnits;
 }
 
 void*
@@ -376,7 +405,6 @@ stopProcess(void *arg)
     /* Get the unit data */
     unit = unitThreadData->unit;
     assert(unit);
-    assert(unit->type == DAEMON);
     unitMutex = unit->mutex;
     pData = unit->processData;
     finalStatus = pData->finalStatus;
@@ -391,30 +419,71 @@ stopProcess(void *arg)
         goto out;
     }
 
-    command = unit->stopCmd;
-    if (command) {
-        /* Replace PID_CMD_VAR */
-        if (stringContainsStr(command, PID_CMD_VAR)) {
-            char pidStr[30] = {0};
-            sprintf(pidStr, "%d", *pData->pid);
-            stringReplaceStr(&command, PID_CMD_VAR, pidStr);
-        }
-        /* Split cmdline */
-        cmdline = cmdlineSplit(command);
-        assert(cmdline);
-        /* Execute the command */
-        statusThread = stopDaemon(cmdline[0], cmdline, &unit);
-        cmdlineRelease(cmdline);
+    switch (unit->type) {
+        case DAEMON:
+            command = unit->stopCmd;
+            if (command) {
+                /* Replace PID_CMD_VAR */
+                if (stringContainsStr(command, PID_CMD_VAR)) {
+                    char pidStr[30] = {0};
+                    sprintf(pidStr, "%d", *pData->pid);
+                    assert(strlen(pidStr) > 0);
+                    stringReplaceStr(&command, PID_CMD_VAR, pidStr);
+                }
+                /* Split cmdline */
+                cmdline = cmdlineSplit(command);
+                assert(cmdline);
+                /* Execute the command */
+                statusThread = stopDaemon(cmdline[0], cmdline, &unit);
+                cmdlineRelease(cmdline);
+            }
+            else
+                statusThread = stopDaemon(NULL, NULL, &unit);
+            break;
+        case TIMER:
+            /* When we stop the timer, we have to unlock the mutex because
+             * the timer could require its lock in restart case.
+            */
+            if ((rv = pthread_mutex_unlock(unitMutex)) != 0) {
+                *finalStatus = FINAL_STATUS_FAILURE;
+                logError(CONSOLE, "src/core/processes/process.c", "stopProcess",
+                              rv, strerror(rv), "Unable to unlock of the mutex for the %s unit (timer case)", unitName);
+                goto out;
+            }
+
+            statusThread = closePipes(NULL, unit);
+
+            if ((rv = pthread_mutex_lock(unitMutex)) != 0) {
+                *finalStatus = FINAL_STATUS_FAILURE;
+                logError(CONSOLE, "src/core/processes/process.c", "stopProcess",
+                              rv, strerror(rv), "Unable to acquire the lock of the mutex for the %s unit (timer case)",
+                              unitName);
+                goto out;
+            }
+            *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
+            setStopAndDuration(&pData);
+            break;
+        default:
+            break;
     }
-    else
-        statusThread = stopDaemon(NULL, NULL, &unit);
 
     /* Evaluating the final status */
-    if (statusThread == -1 && *pData->exitCode == -1 && *pData->pid != -1 &&
-        pData->pStateData->pState == DEAD)
-        *finalStatus = FINAL_STATUS_SUCCESS;
-    else
-        *finalStatus = FINAL_STATUS_FAILURE;
+    switch (unit->type) {
+        case DAEMON:
+            if (statusThread == -1 && *pData->exitCode == -1 && *pData->pid != -1 &&
+                pData->pStateData->pState == DEAD)
+                *finalStatus = FINAL_STATUS_SUCCESS;
+            else
+                *finalStatus = FINAL_STATUS_FAILURE;
+            break;
+        case TIMER:
+            if (statusThread == 0 && pData->pStateData->pState == DEAD && !unit->pipe)
+                *finalStatus = FINAL_STATUS_SUCCESS;
+            else
+                *finalStatus = FINAL_STATUS_FAILURE;
+        default:
+            break;
+    }
 
     if ((rv = pthread_mutex_unlock(unitMutex)) != 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
@@ -448,18 +517,18 @@ stopProcesses(Array **units, Unit *unitArg)
     int rv, numThreads, *rvThread;
     Unit *unit = NULL;
     const char *unitName = NULL;
-    Array *daemonUnits = NULL;
+    Array *runningUnits = NULL;
 
     rv = numThreads = 0;
 
-    /* We only get the daemon units */
+    /* We only get the running units */
     if (!unitArg)
-        daemonUnits = getDaemonUnits(units);
+        runningUnits = getRunningUnits(units);
     else {
-        daemonUnits = arrayNew(NULL);
-        arrayAdd(daemonUnits, unitArg);
+        runningUnits = arrayNew(NULL);
+        arrayAdd(runningUnits, unitArg);
     }
-    numThreads = (daemonUnits ? daemonUnits->size : 0);
+    numThreads = (runningUnits ? runningUnits->size : 0);
     if (numThreads > 0) {
         UnitThreadData unitsThreadsData[numThreads];
         if (UNITD_DEBUG)
@@ -467,7 +536,7 @@ stopProcesses(Array **units, Unit *unitArg)
         for (int i = 0; i < numThreads; i++) {
             UnitThreadData *unitThreadData = &unitsThreadsData[i];
             /* Get the unit */
-            unit = arrayGet(daemonUnits, i);
+            unit = arrayGet(runningUnits, i);
             assert(unit);
             if (unitArg)
                 unit->showResult = false;
@@ -510,10 +579,10 @@ stopProcesses(Array **units, Unit *unitArg)
         }
     }
 
-    /* We only release daemonUnits array and daemonUnits->arr member because the inside elements (units)
+    /* We only release runningUnits array and runningUnits->arr member because the inside elements (units)
      * will be released by unitdEnd function
     */
-    arrayRelease(&daemonUnits);
+    arrayRelease(&runningUnits);
     return rv;
 }
 
@@ -612,7 +681,7 @@ listenPipeThread(void *arg)
     }
 
     out:
-        /* Unlock mutex pipe */
+        /* Unlock pipe mutex */
         if ((rv = pthread_mutex_unlock(unitPipe->mutex)) != 0) {
             logError(CONSOLE, "src/core/processes/process.c", "listenPipeThread",
                           rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
@@ -622,13 +691,17 @@ listenPipeThread(void *arg)
         pthread_exit(0);
 }
 
-void
-listenPipe(Unit *unit)
+void*
+listenPipe(void *arg)
 {
     int rv = 0;
     UnitThreadData *unitThreadData = NULL;
     pthread_attr_t attr;
     const char *unitName = NULL;
+    int *rvThread = NULL;
+
+    assert(arg);
+    Unit *unit = (Unit *)arg;
 
     unitThreadData = calloc(1, sizeof(UnitThreadData));
     assert(unitThreadData);
@@ -645,6 +718,11 @@ listenPipe(Unit *unit)
         if (UNITD_DEBUG)
             logInfo(UNITD_BOOT_LOG, "Pipe Thread created succesfully for the %s unit\n", unitName);
     }
+
+    rvThread = calloc(1, sizeof(int));
+    assert(rvThread);
+    *rvThread = rv;
+    return rvThread;
 }
 
 bool
@@ -674,39 +752,10 @@ getRestartableUnits(Array **units)
     lenUnits = (*units ? (*units)->size : 0);
     for (int i = 0; i < lenUnits; i++) {
         unit = arrayGet(*units, i);
-        if (unit->pipe)
+        if (unit->pipe && (unit->type != TIMER))
             arrayAdd(restartableUnits, unit);
     }
     return restartableUnits;
-}
-
-void*
-openPipe(void *arg)
-{
-    UnitThreadData *unitThreadData = NULL;
-    Unit *unit = NULL;
-    int rv, *rvThread;
-
-    rv = 0;
-
-    assert(arg);
-    unitThreadData = (UnitThreadData *)arg;
-    unit = unitThreadData->unit;
-
-    if ((rv = pipe(unit->pipe->fds)) != 0) {
-        logError(CONSOLE, "src/core/processes/process.c", "openPipe", errno,
-                      strerror(errno), "Unable to run pipe for the '%s' unit\n",
-                      unit->name);
-        goto out;
-    }
-
-    listenPipe(unit);
-
-    out:
-        rvThread = calloc(1, sizeof(int));
-        assert(rvThread);
-        *rvThread = rv;
-        return rvThread;
 }
 
 int
@@ -742,7 +791,7 @@ openPipes(Array **units, Unit *unitArg)
 
             /* Set the unit */
             unitThreadData->unit = unit;
-            if ((rv = pthread_create(&unitThreadData->thread, NULL, openPipe, unitThreadData)) != 0) {
+            if ((rv = pthread_create(&unitThreadData->thread, NULL, listenPipe, unit)) != 0) {
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "openPipes", errno,
                               strerror(errno), "Unable to create the thread for the '%s' unit (open pipe)",
                               unitName);
@@ -781,22 +830,6 @@ openPipes(Array **units, Unit *unitArg)
     return rv;
 }
 
-Array*
-getUnitsPipes(Array **units)
-{
-    Array *unitsPipes = arrayNew(NULL);
-    int lenUnits = 0;
-    Unit *unit = NULL;
-
-    lenUnits = (*units ? (*units)->size : 0);
-    for (int i = 0; i < lenUnits; i++) {
-        unit = arrayGet(*units, i);
-        if (unit->pipe)
-            arrayAdd(unitsPipes, unit);
-    }
-    return unitsPipes;
-}
-
 void*
 closePipe(void *arg)
 {
@@ -820,13 +853,11 @@ closePipe(void *arg)
         if ((rv = write(unitPipe->fds[1], &output, sizeof(int))) == -1) {
             logError(CONSOLE, "src/core/processes/process.c", "closePipe",
                           errno, strerror(errno), "Unable to write into pipe for the %s unit", unitName);
-            goto out;
         }
         if ((rv = pthread_mutex_lock(mutex)) != 0) {
             logError(CONSOLE, "src/core/processes/process.c", "closePipe",
                           rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
                           unitName);
-            goto out;
         }
         if ((rv = pthread_mutex_unlock(mutex)) != 0) {
             logError(CONSOLE, "src/core/processes/process.c", "closePipe",
@@ -836,11 +867,10 @@ closePipe(void *arg)
         pipeRelease(&unit->pipe);
     }
 
-    out:
-        rvThread = calloc(1, sizeof(int));
-        assert(rvThread);
-        *rvThread = rv;
-        return rvThread;
+    rvThread = calloc(1, sizeof(int));
+    assert(rvThread);
+    *rvThread = rv;
+    return rvThread;
 }
 
 int
@@ -849,18 +879,18 @@ closePipes(Array **units, Unit *unitArg)
     int rv, numThreads, *rvThread;
     Unit *unit = NULL;
     const char *unitName = NULL;
-    Array *unitsPipes = NULL;
+    Array *restartableUnits = NULL;
 
     rv = numThreads = 0;
 
     if (!unitArg)
-        unitsPipes = getUnitsPipes(units);
+        restartableUnits = getRestartableUnits(units);
     else {
-        unitsPipes = arrayNew(NULL);
-        arrayAdd(unitsPipes, unitArg);
+        restartableUnits = arrayNew(NULL);
+        arrayAdd(restartableUnits, unitArg);
     }
 
-    numThreads = (unitsPipes ? unitsPipes->size : 0);
+    numThreads = (restartableUnits ? restartableUnits->size : 0);
     if (numThreads > 0) {
         UnitThreadData unitsThreadsData[numThreads];
         if (UNITD_DEBUG)
@@ -868,7 +898,7 @@ closePipes(Array **units, Unit *unitArg)
         for (int i = 0; i < numThreads; i++) {
             UnitThreadData *unitThreadData = &unitsThreadsData[i];
             /* Get the unit */
-            unit = arrayGet(unitsPipes, i);
+            unit = arrayGet(restartableUnits, i);
             assert(unit);
             unitName = unit->name;
             if (UNITD_DEBUG)
@@ -908,9 +938,9 @@ closePipes(Array **units, Unit *unitArg)
             objectRelease(&rvThread);
         }
     }
-    /* We only release unitsPipes array and unitsPipes->arr member because the inside elements (units)
+    /* We only release restartableUnits array and restartableUnits->arr member because the inside elements (units)
      * will be released by unitdEnd function
     */
-    arrayRelease(&unitsPipes);
+    arrayRelease(&restartableUnits);
     return rv;
 }

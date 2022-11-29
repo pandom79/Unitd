@@ -11,7 +11,7 @@ int socketDispatchRequest(char *, int *);
 int getUnitListServer(int *, SockMessageIn *, SockMessageOut **);
 int getUnitStatusServer(int *, SockMessageIn *, SockMessageOut **);
 int stopUnitServer(int *, SockMessageIn *, SockMessageOut **, bool);
-int startUnitServer(int *, SockMessageIn *, SockMessageOut **, bool);
+int startUnitServer(int *, SockMessageIn *, SockMessageOut **, bool, bool);
 int disableUnitServer(int *, SockMessageIn *, SockMessageOut **, const char *, bool);
 int enableUnitServer(int *, SockMessageIn *, SockMessageOut **);
 int getUnitDataServer(int *, SockMessageIn *, SockMessageOut **);

@@ -29,6 +29,9 @@ Desc=value              (optional and repeatable)
 Duration=value          (optional and repeatable)
 RestartNum=value        (optional and repeatable)
 Restartable=value       (optional and repeatable)
+Type=value              (optional and repeatable)
+NextTimeDate=value      (optional and repeatable)
+LeftTimeDuration=value  (optional and repeatable)
 */
 
 /* PARSE_SOCK_RESPONSE functionality
@@ -53,9 +56,13 @@ Desc=value              (optional and repeatable)
 Duration=value          (optional and repeatable)
 RestartNum=value        (optional and repeatable)
 Restartable=value       (optional and repeatable)
+Type=value              (optional and repeatable)
+NextTimeDate=value      (optional and repeatable)
+LeftTimeDuration=value  (optional and repeatable)
+TimerName=value         (optional and repeatable)
+TimerPState=value       (optional and repeatable)
 Path=value              (optional and repeatable)
 RestartMax=value        (optional and repeatable)
-Type=value              (optional and repeatable)
 UnitError=value1        (optional and repeatable)
 UnitError=value2        (optional and repeatable)
 ....
@@ -64,6 +71,7 @@ ExitCode=value          (optional and repeatable)
 SignalNum=value         (optional and repeatable)
 DateTimeStart=value     (optional and repeatable)
 DateTimeStop=value      (optional and repeatable)
+Interval=value          (optional and repeatable)
 [PDataHistory]          (optional and repeatable)
 PidH=value              (optional and repeatable)
 ExitCodeH=value         (optional and repeatable)
@@ -96,22 +104,27 @@ enum PropertyNameEnum  {
     DURATION = 8,
     RESTARTNUM = 9,
     RESTARTABLE = 10,
-    PATH = 11,
-    RESTARTMAX = 12,
-    TYPE = 13,
-    UNITERROR = 14,
-    EXITCODE = 15,
-    SIGNALNUM = 16,
-    DATETIMESTART = 17,
-    DATETIMESTOP = 18,
-    PIDH = 19,
-    EXITCODEH = 20,
-    PSTATEH = 21,
-    SIGNALNUMH = 22,
-    FINALSTATUSH = 23,
-    DATETIMESTARTH = 24,
-    DATETIMESTOPH = 25,
-    DURATIONH = 26
+    TYPE = 11,
+    NEXTTIMEDATE = 12,
+    LEFTTIMEDURATION = 13,
+    TIMERNAME = 14,
+    TIMERPSTATE = 15,
+    PATH = 16,
+    RESTARTMAX = 17,
+    UNITERROR = 18,
+    EXITCODE = 19,
+    SIGNALNUM = 20,
+    DATETIMESTART = 21,
+    DATETIMESTOP = 22,
+    INTERVAL = 23,
+    PIDH = 24,
+    EXITCODEH = 25,
+    PSTATEH = 26,
+    SIGNALNUMH = 27,
+    FINALSTATUSH = 28,
+    DATETIMESTARTH = 29,
+    DATETIMESTOPH = 30,
+    DURATIONH = 31
 };
 
 /* Sections */
@@ -122,7 +135,7 @@ SectionData SOCKRES_SECTIONS_ITEMS[] = {
 };
 
 /* Properties */
-int SOCKRES_PROPERTIES_ITEMS_LEN = 27;
+int SOCKRES_PROPERTIES_ITEMS_LEN = 32;
 PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { NO_SECTION, { MESSAGE, "Message" }, true, false, false, 0, NULL, NULL },
     { NO_SECTION, { ERROR, "Error" }, true, false, false, 0, NULL, NULL },
@@ -135,14 +148,19 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { DURATION, "Duration" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTNUM, "RestartNum" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTABLE, "Restartable" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { TYPE, "Type" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { NEXTTIMEDATE, "NextTimeDate" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { LEFTTIMEDURATION, "LeftTimeDuration" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { TIMERNAME, "TimerName" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { TIMERPSTATE, "TimerPState" }, true, false, false, 0, NULL, NULL },
     { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTMAX, "RestartMax" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { TYPE, "Type" }, true, false, false, 0, NULL, NULL },
     { UNIT, { UNITERROR, "UnitError" }, true, false, false, 0, NULL, NULL },
     { UNIT, { EXITCODE, "ExitCode" }, true, false, false, 0, NULL, NULL },
     { UNIT, { SIGNALNUM, "SignalNum" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DATETIMESTART, "DateTimeStart" }, true, false, false, 0, NULL, NULL },
     { UNIT, { DATETIMESTOP, "DateTimeStop" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { INTERVAL, "Interval" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { PIDH, "PidH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { EXITCODEH, "ExitCodeH" }, true, false, false, 0, NULL, NULL },
     { PDATAHISTORY, { PSTATEH, "PStateH" }, true, false, false, 0, NULL, NULL },
@@ -291,8 +309,46 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringConcat(&buffer, ASSIGNER);
         stringConcat(&buffer, ((unit->restart || unit->restartMax > 0) ? "1" : "0"));
         stringConcat(&buffer, TOKEN);
+        /* Type */
+        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TYPE].propertyName.desc);
+        stringConcat(&buffer, ASSIGNER);
+        setValueForBuffer(&buffer, unit->type);
+        stringConcat(&buffer, TOKEN);
+        /* Next time (date) */
+        char *nextTimeDate = unit->nextTimeDate;
+        if (nextTimeDate && strlen(nextTimeDate) > 0) {
+            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[NEXTTIMEDATE].propertyName.desc);
+            stringConcat(&buffer, ASSIGNER);
+            stringConcat(&buffer, nextTimeDate);
+            stringConcat(&buffer, TOKEN);
+        }
+        /* Left time (duration) */
+        char *leftTimeDuration = unit->leftTimeDuration;
+        if (leftTimeDuration && strlen(leftTimeDuration) > 0) {
+            setLeftTimeAndDuration(&unit);
+            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[LEFTTIMEDURATION].propertyName.desc);
+            stringConcat(&buffer, ASSIGNER);
+            stringConcat(&buffer, leftTimeDuration);
+            stringConcat(&buffer, TOKEN);
+        }
 
         if (funcType == PARSE_SOCK_RESPONSE) {
+            /* Timer name */
+            char *timerName = unit->timerName;
+            if (timerName) {
+                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERNAME].propertyName.desc);
+                stringConcat(&buffer, ASSIGNER);
+                stringConcat(&buffer, timerName);
+                stringConcat(&buffer, TOKEN);
+            }
+            /* Timer process state */
+            PState *timerPState = unit->timerPState;
+            if (timerPState) {
+                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERPSTATE].propertyName.desc);
+                stringConcat(&buffer, ASSIGNER);
+                setValueForBuffer(&buffer, *timerPState);
+                stringConcat(&buffer, TOKEN);
+            }
             /* Path */
             unitPath = unit->path;
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATH].propertyName.desc);
@@ -303,11 +359,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTMAX].propertyName.desc);
             stringConcat(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, unit->restartMax);
-            stringConcat(&buffer, TOKEN);
-            /* Type */
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TYPE].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
-            setValueForBuffer(&buffer, unit->type);
             stringConcat(&buffer, TOKEN);
             /* Unit errors */
             unitErrors = unit->errors;
@@ -348,6 +399,13 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             else
                 stringConcat(&buffer, NONE);
             stringConcat(&buffer, TOKEN);
+            /* Interval */
+            char *intervalStr = unit->intervalStr;
+            if (intervalStr && strlen(intervalStr) > 0) {
+                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[INTERVAL].propertyName.desc);
+                stringConcat(&buffer, ASSIGNER);
+                stringConcat(&buffer, intervalStr);
+            }
             /* Process Data history */
             pDataHistory = unit->processDataHistory;
             lenPdataHistory = (pDataHistory ? pDataHistory->size : 0);
@@ -514,6 +572,20 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                     case RESTARTABLE:
                         unitDisplay->restart = atoi(value);
                         break;
+                    case NEXTTIMEDATE:
+                        unitDisplay->nextTimeDate = stringNew(value);
+                        break;
+                    case LEFTTIMEDURATION:
+                        unitDisplay->leftTimeDuration = stringNew(value);
+                        break;
+                    case TIMERNAME:
+                        unitDisplay->timerName = stringNew(value);
+                        break;
+                    case TIMERPSTATE:
+                        unitDisplay->timerPState = calloc(1, sizeof (PState));
+                        assert(unitDisplay->timerPState);
+                        *unitDisplay->timerPState = atoi(value);
+                        break;
                     case RESTARTNUM:
                         unitDisplay->restartNum = atoi(value);
                         break;
@@ -575,6 +647,9 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                             pData->duration = NULL;
                         else
                             pData->duration = stringNew(value);
+                        break;
+                    case INTERVAL:
+                        unitDisplay->intervalStr = stringNew(value);
                         break;
                     case PIDH:
                         if (strcmp(value, NONE) == 0)

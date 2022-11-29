@@ -9,8 +9,9 @@ USER_STATE="user.state"
 # $4 = USER NAME
 UNITS_USER_LOCAL_PATH="$1"
 UNITS_USER_ENAB_PATH="$2"
-USER_UID="$3"
-USER_NAME="$4"
+UNITD_USER_TIMER_PATH="$3"
+USER_UID="$4"
+USER_NAME="$5"
 
 # Check UNITS_USER_LOCAL_PATH
 if [ ! -d "$UNITS_USER_LOCAL_PATH" ]; then
@@ -23,6 +24,12 @@ UNITS_USER_ENAB_PATH="$UNITS_USER_ENAB_PATH/$USER_STATE"
 if [ ! -d "$UNITS_USER_ENAB_PATH" ]; then
     mkdir -p "$UNITS_USER_ENAB_PATH"
     chmod 0755 -R "$UNITS_USER_ENAB_PATH"
+fi
+
+# Check UNITD_USER_TIMER_PATH
+if [ ! -d "$UNITD_USER_TIMER_PATH" ]; then
+    mkdir -p "$UNITD_USER_TIMER_PATH"
+    chmod 0755 -R "$UNITD_USER_TIMER_PATH"
 fi
 
 # Check the instance is not already running for the user.

@@ -233,7 +233,7 @@ socketDispatchRequest(char *buffer, int *socketFd)
                 break;
             case START_COMMAND:
             case RESTART_COMMAND:
-                startUnitServer(socketFd, sockMessageIn, &sockMessageOut, true);
+                startUnitServer(socketFd, sockMessageIn, &sockMessageOut, true, false);
                 break;
             case DISABLE_COMMAND:
                 disableUnitServer(socketFd, sockMessageIn, &sockMessageOut, NULL, true);
@@ -347,12 +347,54 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         return rv;
 }
 
+static void
+setTimerDataForUnit(Unit **unit)
+{
+    int rv = 1;
+    char *timerName = NULL;
+    Unit *timerUnit = NULL;
+    Array *tmpUnits, *errors;
+
+    tmpUnits = errors = NULL;
+
+    assert(*unit);
+
+    /* Get eventual timer data for the unit */
+    timerName = getTimerNameByUnit((*unit)->name);
+    timerUnit = getUnitByName(UNITD_DATA->units, timerName);
+    if (!timerUnit) {
+        /* The timer is not in memory then let's to find on the disk. */
+        tmpUnits = arrayNew(unitRelease);
+        errors = arrayNew(objectRelease);
+        rv = loadAndCheckUnit(&tmpUnits, false, timerName, false, &errors);
+        if (rv == 0) {
+            assert(tmpUnits->size == 1);
+            timerUnit = arrayGet(tmpUnits, 0);
+            assert(timerUnit);
+        }
+    }
+    if (timerUnit) {
+        /* Timer name */
+        stringSet(&(*unit)->timerName, timerUnit->name);
+        /* Timer PState */
+        objectRelease(&(*unit)->timerPState);
+        (*unit)->timerPState = calloc(1, sizeof(PState));
+        assert((*unit)->timerPState);
+        *(*unit)->timerPState = timerUnit->processData->pStateData->pState;
+    }
+
+    arrayRelease(&tmpUnits);
+    arrayRelease(&errors);
+    objectRelease(&timerName);
+}
+
 int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     int rv, rvMutex;
-    Array **unitsDisplay, **errors, **messages;
+    Array **unitsDisplay, **errors, **messages, *units;
     char *buffer, *unitName;
+
     Unit *unit = NULL;
 
     rv = rvMutex = 0;
@@ -360,22 +402,19 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
     messages = &(*sockMessageOut)->messages;
+    units = UNITD_DATA->units;
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
-    /* Unit name could contain ".unit" suffix */
+
+    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
-    if (!unitName)
-        unitName = sockMessageIn->arg;
-    else {
-        objectRelease(&sockMessageIn->arg);
-        sockMessageIn->arg = unitName;
-    }
+
     /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);    
 
     /* Try to get the unit from memory */
-    unit = getUnitByName(UNITD_DATA->units, unitName);
+    unit = getUnitByName(units, unitName);
     if (unit) {
         if (unit->isChanged) {
             if (!(*errors))
@@ -394,6 +433,11 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         if ((rvMutex = handleMutex(unit->mutex, true)) != 0)
             logErrorStr(SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
 
+        /* Set an eventual timer for the unit */
+        if (unit->type != TIMER)
+            setTimerDataForUnit(&unit);
+
+        /* Create copy for client */
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
 
         /* Unlock only if it's locked */
@@ -404,7 +448,14 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         /* Check and parse unitName. We don't consider the units into memory
         * because we show only syntax errors, not logic errors.
         */
-        loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
+        rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
+        if (rv == 0) {
+            assert((*unitsDisplay)->size == 1);
+            unit = arrayGet((*unitsDisplay), 0);
+            /* Set an eventual timer for the unit */
+            if (unit->type != TIMER)
+                setTimerDataForUnit(&unit);
+        }
     }
 
     out:
@@ -419,6 +470,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
                           errno, strerror(errno), "Send func returned -1 exit code!");
         }
 
+        objectRelease(&unitName);
         objectRelease(&buffer);
         return rv;
 }
@@ -443,14 +495,10 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
-    /* Unit name could contain ".unit" suffix */
+
+    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
-    if (!unitName)
-        unitName = sockMessageIn->arg;
-    else {
-        objectRelease(&sockMessageIn->arg);
-        sockMessageIn->arg = unitName;
-    }
+
     /* Create the array */
     if (!(*unitsDisplay))
         *unitsDisplay = arrayNew(unitRelease);
@@ -458,8 +506,8 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     /* Try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        /* Close eventual pipe */
-        if (unit->pipe)
+        /* Close eventual pipe except for timer unit which will be closed by stopProcess func. */
+        if (unit->pipe && unit->type != TIMER)
             closePipes(NULL, unit);
 
         /* Get unit data */
@@ -490,7 +538,8 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
 
     if (unit && !isDead) {
         /* Stop the process */
-        if (*pType == DAEMON && *pState == RUNNING) {
+        if ((*pType == DAEMON && *pState == RUNNING) ||
+            (*pType == TIMER && (*pState == RUNNING  || *pState == RESTARTING))) {
             /* We don't show the result on the console and don't catch it by signal handler */
             unit->showResult = false;
             unit->isStopping = true;
@@ -500,7 +549,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         while (NOTIFIER_WORKING)
             msleep(200);
 
-        if (unit->isChanged || *pType == ONESHOT ||
+        if (unit->isChanged || *pType == ONESHOT || (unit->isChanged && *pType == TIMER) ||
            (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
@@ -547,13 +596,13 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             }
             objectRelease(&buffer);
         }
-
+        objectRelease(&unitName);
         return rv;
 }
 
 int
 startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut,
-                bool sendResponse)
+                bool sendResponse, bool isTimer)
 {
     int rv, len;
     Array **unitsDisplay, **errors, **units, *conflicts, *stopConflictsArr,
@@ -580,14 +629,10 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     assert(sockMessageIn);
     assert(*socketFd != -1);
-    /* Unit name could contain ".unit" suffix */
+
+    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
-    if (!unitName)
-        unitName = sockMessageIn->arg;
-    else {
-        objectRelease(&sockMessageIn->arg);
-        sockMessageIn->arg = unitName;
-    }
+
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     restart = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESTART_OPT].name);
 
@@ -616,7 +661,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             goto out;
         }
         else {
-            if (*pState != DEAD)
+            if (*pState != DEAD || (*pState == DEAD && unit->errors && unit->errors->size > 0))
                 stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false);
             /* stopUnitServer function could not removed it but it must be always removed */
             unit = getUnitByName(*units, unitName);
@@ -645,8 +690,23 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     unit->name = stringNew(unitName);
     unit->path = stringNew(unitDisplay->path);
     unit->enabled = unitDisplay->enabled;
+
     /* Aggregate all the errors */
-    parseUnit(unitsDisplay, &unit, true, NO_STATE);
+    unit->type = getPTypeByUnitName(unitName);
+    assert(unit->type != NO_PROCESS_TYPE);
+    switch (unit->type) {
+        case DAEMON:
+        case ONESHOT:
+            parseUnit(unitsDisplay, &unit, true, NO_STATE);
+            break;
+        case TIMER:
+            parseTimerUnit(unitsDisplay, &unit, true);
+            checkInterval(&unit);
+            break;
+        default:
+            break;
+    }
+
     /* Check wanted by */
     if (!USER_INSTANCE)
         checkWantedBy(&unit, STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT, true);
@@ -729,24 +789,30 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
             /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
+               (unitConflict->errors && unitConflict->errors->size > 0) ||
+               (unitConflict->isChanged && unitConflict->type == TIMER) ||
                (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
                 arrayRemove(*units, unitConflict);
         }
         arrayRelease(&stopConflictsArr);
     }
+
     /* Adding the unit into memory */
     arrayAdd(*units, unit);
+
     /* Creating eventual pipe */
-    if (hasPipe(unit)) {
+    if (unit->type == TIMER || hasPipe(unit)) {
         unit->pipe = pipeNew();
-        /* Create process data history array accordingly */
-        unit->processDataHistory = arrayNew(processDataRelease);
-        openPipes(NULL, unit);
+        if (unit->type != TIMER) {
+            /* Create process data history array accordingly */
+            unit->processDataHistory = arrayNew(processDataRelease);
+            openPipes(NULL, unit);
+        }
     }
     startProcesses(units, unit);
 
     out:
-        if (sendResponse) {
+        if (sendResponse && !isTimer) {
             /* Marshall response */
             buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
             if (UNITD_DEBUG)
@@ -759,6 +825,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             }
             objectRelease(&buffer);
         }
+        objectRelease(&unitName);
         return rv;
 }
 
@@ -793,16 +860,10 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     /* UnitNameArg is comes from enableUnitServer */
     if (unitNameArg)
         unitName = stringNew(unitNameArg);
-    else {
-        /* Unit name could contain ".unit" suffix */
+    else
+        /* Get unit name */
         unitName = getUnitName(sockMessageIn->arg);
-        if (!unitName)
-            unitName = sockMessageIn->arg;
-        else {
-            objectRelease(&sockMessageIn->arg);
-            sockMessageIn->arg = unitName;
-        }
-    }
+
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
     reEnable = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RE_ENABLE_OPT].name);
 
@@ -922,10 +983,11 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             }
             objectRelease(&buffer);
         }
-        if (unitNameArg) {
+
+        /* Release resources */
+        if (unitNameArg)
             arrayRemove(*unitsDisplay, unitDisplay);
-            objectRelease(&unitName);
-        }
+        objectRelease(&unitName);
         arrayRelease(&statesData);
         objectRelease(&stateStr);
         arrayRelease(&scriptParams);
@@ -962,14 +1024,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     if (!(*messages))
         *messages = arrayNew(objectRelease);
 
-    /* Unit name could contain ".unit" suffix */
+    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
-    if (!unitName)
-        unitName = sockMessageIn->arg;
-    else {
-        objectRelease(&sockMessageIn->arg);
-        sockMessageIn->arg = unitName;
-    }
+
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
     reEnable = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RE_ENABLE_OPT].name);
@@ -1052,8 +1109,8 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     if (!USER_INSTANCE) {
         if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[REBOOT].desc) &&
             !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[POWEROFF].desc) &&
-            !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_CMDLINE].desc) &&
-            !arrayContainsStr(wantedBy, STATE_DATA_ITEMS[STATE_DEFAULT].desc))
+            !arrayContainsStr(wantedBy,
+                              STATE_DATA_ITEMS[STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT].desc))
             hasError = true;
     }
     else {
@@ -1066,10 +1123,10 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         char *msg = NULL;
         if (!USER_INSTANCE) {
             msg = getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_ENABLE_STATE_MSG].desc,
-                            STATE_DATA_ITEMS[STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT].desc);
-            stringAppendStr(&msg, "/n");
+                             STATE_DATA_ITEMS[STATE_CMDLINE != NO_STATE ? STATE_CMDLINE : STATE_DEFAULT].desc);
+            stringAppendStr(&msg, " - ");
             stringAppendStr(&msg, STATE_DATA_ITEMS[REBOOT].desc);
-            stringAppendStr(&msg, "/n");
+            stringAppendStr(&msg, " - ");
             stringAppendStr(&msg, STATE_DATA_ITEMS[POWEROFF].desc);
         }
         else
@@ -1165,7 +1222,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
 
             /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
-                (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
+               (unitConflict->errors && unitConflict->errors->size > 0) ||
+               (unitConflict->isChanged && unitConflict->type == TIMER) ||
+               (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
                 arrayRemove(*units, unitConflict);
         }
         arrayRelease(&unitsConflicts);
@@ -1212,7 +1271,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     }
     /* If 'run' = true then start it */
     if (run)
-        startUnitServer(socketFd, sockMessageIn, sockMessageOut, false);
+        startUnitServer(socketFd, sockMessageIn, sockMessageOut, false, false);
 
     out:
         /* Marshall response */
@@ -1226,6 +1285,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                           errno, strerror(errno), "Send func returned -1 exit code!");
         }
 
+        objectRelease(&unitName);
         arrayRelease(&scriptParams);
         objectRelease(&stateStr);
         objectRelease(&buffer);

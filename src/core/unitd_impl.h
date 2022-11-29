@@ -24,6 +24,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "processes/process.h"
 #include "commands/commands.h"
 #include "units/units.h"
+#include "units/utimers/utimers.h"
 #include "file/file.h"
 #include "logger/logger.h"
 
@@ -62,6 +63,7 @@ extern Time *SHUTDOWN_STOP;
 extern char *UNITS_USER_LOCAL_PATH;
 extern char *UNITS_USER_ENAB_PATH;
 extern char *UNITD_USER_CONF_PATH;
+extern char *UNITD_USER_TIMER_DATA_PATH;
 extern char *UNITD_USER_LOG_PATH;
 extern bool USER_INSTANCE;
 extern State STATE_USER;

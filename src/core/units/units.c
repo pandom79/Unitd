@@ -10,9 +10,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 //INIT PARSER CONFIGURATION
 enum SectionNameEnum  {
-  UNIT = 0,
-  COMMAND = 1,
-  STATE = 2
+    UNIT = 0,
+    COMMAND = 1,
+    STATE = 2
 };
 
 /* Properties */
@@ -90,8 +90,9 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" },
     { UNIT_CHANGED_ERR, "The unit content is changed!" },
     { UNIT_ENABLE_STATE_ERR, "Unable to perform the enabling!" },
-    { UNITS_LIST_EMPTY_ERR, "There are no units!" } ,
-    { UNIT_EXIST_ERR, "The '%s' unit already exists!"}
+    { UNITS_LIST_EMPTY_ERR, "There are no units!" },
+    { UNIT_EXIST_ERR, "The '%s' unit already exists!" },
+    { UTIMER_INTERVAL_ERR, "At least one criterion must be defined for the interval!" },
 };
 
 const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
@@ -108,25 +109,25 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
     { UNIT_RE_ENABLE_MSG, "Please, run 'unitctl re-enable %s%s' to re-enable it." }
 };
 
-/* Return the unit name by unit path or unit name with ".unit" suffix */
+/* Return the unit name by unit path */
 char*
 getUnitName(const char *unitPath)
 {
     char *unitName = NULL;
-    int startIdx, endIdx;
-    startIdx = endIdx = -1;
+    int startIdx = -1;
 
     startIdx = stringLastIndexOfChr(unitPath, '/');
-    if (startIdx != -1) {
-        startIdx += 1;
-        endIdx = stringIndexOfStr(unitPath, ".unit");
+    if (startIdx != -1)
+        unitName = stringSub(unitPath, startIdx + 1, strlen(unitPath) - 1);
+    else {
+        PType unitType = getPTypeByUnitName(unitPath);
+        if (unitType == DAEMON && !stringEndsWithStr(unitPath, ".unit")) {
+            unitName = stringNew(unitPath);
+            stringAppendStr(&unitName, ".unit");
+        }
+        else
+            unitName = stringNew(unitPath);
     }
-    else if (startIdx == -1 && stringEndsWithStr(unitPath, ".unit")) {
-        startIdx = 0;
-        endIdx = stringIndexOfStr(unitPath, ".unit");
-    }
-    if (startIdx != -1 && endIdx != -1)
-        unitName = stringSub(unitPath, startIdx, endIdx - 1);
 
     return unitName;
 }
@@ -138,7 +139,19 @@ getPTypeByPTypeStr(const char *typeStr)
         if (strcmp(typeStr, PTYPE_DATA_ITEMS[i].desc) == 0)
             return i;
     }
-    return -1;
+    return NO_PROCESS_TYPE;
+}
+
+PType
+getPTypeByUnitName(const char *unitFile)
+{
+    if (unitFile) {
+        if (stringEndsWithStr(unitFile, ".utimer"))
+            return TIMER;
+        else
+            return DAEMON;
+    }
+    return NO_PROCESS_TYPE;
 }
 
 Unit*
@@ -184,9 +197,90 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
     unit->restartNum = (unitFrom ? unitFrom->restartNum : 0);
     unit->restart = (unitFrom ? unitFrom->restart : false);
     unit->restartMax = (unitFrom ? unitFrom->restartMax : -1);
+    unit->type = (unitFrom ? unitFrom->type : DAEMON);
+
+    //TIMER DATA
+
+    /* The following data are only initialized here but they are allocated by parseUnitTimer() func
+     * to avoid to allocate them uselessly when the unit type is different by TIMER except
+     * when we make copies for the communication between client and server.
+    */
+
+    /* Seconds */
+    int *seconds = NULL;
+    if (unitFrom && unitFrom->intSeconds) {
+        seconds = calloc(1, sizeof(int));
+        assert(seconds);
+        *seconds = *unitFrom->intSeconds;
+    }
+    unit->intSeconds = seconds;
+
+    /* Minutes */
+    int *minutes = NULL;
+    if (unitFrom && unitFrom->intMinutes) {
+        minutes = calloc(1, sizeof(int));
+        assert(minutes);
+        *minutes = *unitFrom->intMinutes;
+    }
+    unit->intMinutes = minutes;
+
+    /* Hours */
+    int *hours = NULL;
+    if (unitFrom && unitFrom->intHours) {
+        hours = calloc(1, sizeof(int));
+        assert(hours);
+        *hours = *unitFrom->intHours;
+    }
+    unit->intHours = hours;
+
+    /* Days */
+    int *days = NULL;
+    if (unitFrom && unitFrom->intDays) {
+        days = calloc(1, sizeof(int));
+        assert(days);
+        *days = *unitFrom->intDays;
+    }
+    unit->intDays = days;
+
+    /* Weeks */
+    int *weeks = NULL;
+    if (unitFrom && unitFrom->intWeeks) {
+        weeks = calloc(1, sizeof(int));
+        assert(weeks);
+        *weeks = *unitFrom->intWeeks;
+    }
+    unit->intWeeks = weeks;
+
+    /* Months */
+    int *months = NULL;
+    if (unitFrom && unitFrom->intMonths) {
+        months = calloc(1, sizeof(int));
+        assert(months);
+        *months = *unitFrom->intMonths;
+    }
+    unit->intMonths = months;
+
+    /* Left time */
+    long *leftTime = NULL;
+    if (unitFrom && unitFrom->leftTime) {
+        leftTime = calloc(1, sizeof(long));
+        assert(leftTime);
+        *leftTime = *unitFrom->leftTime;
+    }
+    unit->leftTime = leftTime;
+
+    /* Left time (date) */
+    unit->leftTimeDuration = (unitFrom && unitFrom->leftTimeDuration ? stringNew(unitFrom->leftTimeDuration) : NULL);
+
+    /* Next time */
+    unit->nextTime = (unitFrom && unitFrom->nextTime ? timeNew(unitFrom->nextTime) : NULL);
+
+    /* Next time (date) */
+    unit->nextTimeDate = (unitFrom && unitFrom->nextTimeDate ? stringNew(unitFrom->nextTimeDate) : NULL);
+
+    //END TIMER DATA
 
     if (funcType == PARSE_SOCK_RESPONSE || funcType == PARSE_UNIT) {
-        unit->type = (unitFrom ? unitFrom->type : DAEMON);
         /* Requires */
         unit->requires = (unitFrom ? arrayStrCopy(unitFrom->requires) : NULL);
         /* Conflicts */
@@ -205,6 +299,24 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
                 arrayAdd(pDataHistory, processDataNew(arrayGet(pDataHistoryFrom, i), funcType));
         }
         unit->processDataHistory = pDataHistory;
+
+        /* Eventual timer name for the unit */
+        unit->timerName = (unitFrom && unitFrom->timerName ? stringNew(unitFrom->timerName) : NULL);
+
+        /* Eventual timer process data for the unit */
+        PState *timerPState = NULL;
+        if (unitFrom && unitFrom->timerPState) {
+            timerPState = calloc(1, sizeof(PState));
+            assert(timerPState);
+            *timerPState = *unitFrom->timerPState;
+        }
+        unit->timerPState = timerPState;
+
+        // TIMER DATA
+
+        unit->intervalStr = (unitFrom && unitFrom->intervalStr ? stringNew(unitFrom->intervalStr) : NULL);
+
+        // END TIMER DATA
     }
 
     if (funcType == PARSE_UNIT) {
@@ -220,7 +332,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(mutex);
         unit->mutex = mutex;
         if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-            logError(UNITD_BOOT_LOG, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
+            logError(ALL, "src/core/units/units.c", "unitNew", rv, strerror(rv),
                           "Unable to run pthread_mutex_init");
         }
         assert(rv == 0);
@@ -231,7 +343,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(cv);
         unit->cv = cv;
         if ((rv = pthread_cond_init(cv, NULL)) != 0) {
-            logError(UNITD_BOOT_LOG, "src/core/units/units.c", "unitCreate", rv, strerror(rv),
+            logError(ALL, "src/core/units/units.c", "unitNew", rv, strerror(rv),
                           "Unable to run pthread_cond_init");
         }
         assert(rv == 0);
@@ -280,7 +392,6 @@ isEnabledUnit(const char *unitName, State currentState)
         stringAppendStr(&pattern, stateData->desc);
         stringAppendStr(&pattern, ".state/");
         stringAppendStr(&pattern, unitName);
-        stringAppendStr(&pattern, ".unit");
         if ((rv = glob(pattern, 0, NULL, &results)) == 0 && results.gl_pathc > 0)
             found = true;
         objectRelease(&pattern);
@@ -502,60 +613,72 @@ loadUnits(Array **units, const char *path, const char *dirName,
           ParserFuncType funcType, bool parse)
 {
     glob_t results;
-    char *pattern, *unitName, *unitPath;
+    char *pattern, *patternTimer, *unitName, *unitPath;
     int rv, startIdx, endIdx;
     Unit *unit = NULL;
     size_t lenResults = 0;
 
-    pattern = unitName = unitPath = NULL;
+    pattern = patternTimer = unitName = unitPath = NULL;
     rv = startIdx = endIdx = 0;
 
     assert(path);
 
     /* Building the pattern */
     pattern = stringNew(path);
+    patternTimer = stringNew(path);
 
     if (currentState != NO_STATE) {
         stringAppendChr(&pattern, '/');
         stringAppendStr(&pattern, dirName);
         stringAppendStr(&pattern, "/*.unit");
+        stringAppendChr(&patternTimer, '/');
+        stringAppendStr(&patternTimer, dirName);
+        stringAppendStr(&patternTimer, "/*.utimer");
     }
     else {
-        if (!unitNameArg)
+        if (!unitNameArg) {
             stringAppendStr(&pattern, "/*.unit");
+            stringAppendStr(&patternTimer, "/*.utimer");
+        }
         else {
-            if (stringEndsWithStr(unitNameArg, ".unit")) {
-                stringAppendChr(&pattern, '/');
-                stringAppendStr(&pattern, unitNameArg);
-            }
-            else {
-                stringAppendChr(&pattern, '/');
-                stringAppendStr(&pattern, unitNameArg);
-                stringAppendStr(&pattern, ".unit");
-            }
+            stringAppendChr(&pattern, '/');
+            stringAppendStr(&pattern, unitNameArg);
         }
     }
 
     /* Executing the glob function */
     if (UNITD_DEBUG && currentState != NO_STATE)
         logWarning(UNITD_BOOT_LOG, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
+
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
+
+        /* Aggregate the timers pattern if unitname is null */
+        if (!unitNameArg && (rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0) {
+            logWarning(UNITD_BOOT_LOG, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
+                     "GLOB_NOMATCH", "No timers found for %s state",
+                     STATE_DATA_ITEMS[currentState].desc);
+        }
+
         lenResults = results.gl_pathc;
         assert(lenResults > 0);
         if (!(*units))
             *units = arrayNew(unitRelease);
+
         if (UNITD_DEBUG && currentState != NO_STATE)
             logInfo(UNITD_BOOT_LOG, "Found %d units in %s/%s!\n", lenResults, path, dirName);
+
         for (size_t i = 0; i < lenResults; i++) {
             /* Get the unit path */
             unitPath = results.gl_pathv[i];
             /* Set unit name */
             unitName = getUnitName(unitPath);
             /* If the unit is already in memory then skip it. (to avoid duplicates in unit list function) */
-            if (getUnitByName(*units, unitName) == NULL) {
+            if (currentState != NO_STATE || getUnitByName(*units, unitName) == NULL) {
                 /* Create the unit */
                 unit = unitNew(NULL, funcType);
                 unit->name = unitName;
+                unit->type = getPTypeByUnitName(unitName);
+                assert(unit->type != NO_PROCESS_TYPE);
                 unit->path = stringNew(unitPath);
                 /* Check unit path */
                 if (currentState != NO_STATE) {
@@ -564,21 +687,55 @@ loadUnits(Array **units, const char *path, const char *dirName,
                     */
                     checkAndSetUnitPath(&unit, currentState);
                 }
+
+                /* Set enabled/disabled */
                 unit->enabled = (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
+
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName, unitPath);
                 /* Parse the Unit file */
                 if (parse) {
-                    rv = parseUnit(units, &unit, isAggregate, currentState);
+                    switch (unit->type) {
+                        case DAEMON:
+                        case ONESHOT:
+                            rv = parseUnit(units, &unit, isAggregate, currentState);
+                            break;
+                        case TIMER:
+                            rv = parseTimerUnit(units, &unit, isAggregate);
+                            if (rv == 0 || isAggregate)
+                                checkInterval(&unit);
+                            break;
+                        default:
+                            break;
+                    }
                     if ((rv == 0 || isAggregate) && currentState != NO_STATE)
                         checkWantedBy(&unit, currentState, isAggregate);
                 }
                 /* Create the pipe */
-                if (currentState != INIT && currentState != FINAL && currentState != REBOOT && currentState != POWEROFF)
-                if (funcType == PARSE_UNIT && unit->errors && unit->errors->size == 0 && hasPipe(unit)) {
-                    unit->pipe = pipeNew();
-                    /* Create process data history array accordingly */
-                    unit->processDataHistory = arrayNew(processDataRelease);
+                if (currentState != INIT &&
+                    currentState != FINAL &&
+                    currentState != REBOOT &&
+                    currentState != POWEROFF &&
+                    funcType == PARSE_UNIT &&
+                    unit->errors &&
+                    unit->errors->size == 0) {
+
+                        switch (unit->type) {
+                            case DAEMON:
+                            case ONESHOT:
+                                if (hasPipe(unit)) {
+                                    unit->pipe = pipeNew();
+                                    /* Create process data history array accordingly */
+                                    unit->processDataHistory = arrayNew(processDataRelease);
+                                }
+                                break;
+                            case TIMER:
+                                /* We always need of the pipe. No need of a processDataHistory instead. */
+                                unit->pipe = pipeNew();
+                                break;
+                            default:
+                                break;
+                        }
                 }
 
                 /* Adding the unit to the array */
@@ -625,6 +782,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
     }
 
     objectRelease(&pattern);
+    objectRelease(&patternTimer);
     globfree(&results);
     return rv;
 }
@@ -635,12 +793,12 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
     FILE *fp = NULL;
     int rv, numLine, sizeErrs;
     size_t len = 0;
-    char *line, *error, *value, *unitPath;
+    char *line, *error, *value, *unitPath, *dep, *conflict;
     Array *lineData, **errors, *requires, *conflicts, *wantedBy;
     PropertyData *propertyData = NULL;
 
     numLine = rv = sizeErrs = 0;
-    line = error = value = unitPath = NULL;
+    line = error = value = unitPath = dep = conflict = NULL;
     lineData = requires = conflicts = wantedBy = NULL;
 
     assert(*unit);
@@ -702,7 +860,8 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                         (*unit)->desc = stringNew(value);
                         break;
                     case REQUIRES:
-                        arrayAdd(requires, stringNew(value));
+                        dep = getUnitName(value);
+                        arrayAdd(requires, dep);
                         if ((*errors)->size == 0 || isAggregate)
                              checkRequires(units, unit, isAggregate);
                         break;
@@ -721,7 +880,8 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                         (*unit)->restartMax = atoi(value);
                         break;
                     case CONFLICTS:
-                        arrayAdd(conflicts, stringNew(value));
+                        conflict = getUnitName(value);
+                        arrayAdd(conflicts, conflict);
                         if ((*errors)->size == 0 || isAggregate)
                             checkConflicts(unit, value, isAggregate);
                         break;
@@ -771,13 +931,13 @@ unitRelease(Unit **unit)
 {
     Unit *unitTemp = *unit;
     char *name, *desc, *runCmd, *stopCmd, *type, *path;
-    Array *conflicts, *errors, *requires, *wantedBy;
+    Array *conflicts, *errors, *requires, *wantedBy, *triggers;
     pthread_cond_t *cv = NULL;
     pthread_mutex_t *mutex = NULL;
     int rv = 0;
 
     name = desc = runCmd = stopCmd = type = path = NULL;
-    conflicts = errors = requires = wantedBy = NULL;
+    conflicts = errors = requires = wantedBy = triggers = NULL;
 
     if (unitTemp) {
         if ((name = unitTemp->name))
@@ -813,7 +973,6 @@ unitRelease(Unit **unit)
                 logError(CONSOLE, "src/core/units/units.c", "unitRelease", rv,
                               strerror(rv), "Unable to run pthread_cond_destroy");
             }
-            assert(rv == 0);
             objectRelease(&cv);
         }
 
@@ -824,7 +983,6 @@ unitRelease(Unit **unit)
                 logError(CONSOLE, "src/core/units/units.c", "unitRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
-            assert(rv == 0);
             objectRelease(&mutex);
         }
 
@@ -833,6 +991,23 @@ unitRelease(Unit **unit)
 
         /* Process Data */
         processDataRelease(&(unitTemp->processData));
+
+        /* Eventual timer data for the unit */
+        objectRelease(&unitTemp->timerName);
+        objectRelease(&unitTemp->timerPState);
+
+        /* Unit timer data */
+        objectRelease(&unitTemp->intSeconds);
+        objectRelease(&unitTemp->intMinutes);
+        objectRelease(&unitTemp->intHours);
+        objectRelease(&unitTemp->intDays);
+        objectRelease(&unitTemp->intWeeks);
+        objectRelease(&unitTemp->intMonths);
+        objectRelease(&unitTemp->leftTimeDuration);
+        objectRelease(&unitTemp->nextTimeDate);
+        objectRelease(&unitTemp->leftTime);
+        timeRelease(&unitTemp->nextTime);
+        objectRelease(&unitTemp->intervalStr);
 
         /* Unit */
         objectRelease(unit);
@@ -974,24 +1149,30 @@ Pipe*
 pipeNew()
 {
     int rv = 0;
-    Pipe *pipe = NULL;
+    Pipe *pipeObj = NULL;
     pthread_mutex_t *mutex = NULL;
 
     /* Pipe */
-    pipe = calloc(1, sizeof(Pipe));
-    assert(pipe);
+    pipeObj = calloc(1, sizeof(Pipe));
+    assert(pipeObj);
 
     /* Mutex */
     mutex = calloc(1, sizeof(pthread_mutex_t));
     assert(mutex);
-    pipe->mutex = mutex;
+    pipeObj->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(UNITD_BOOT_LOG, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
+        logError(ALL, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
 
-    return pipe;
+    if ((rv = pipe(pipeObj->fds)) != 0) {
+        logError(ALL, "src/core/units/units.c", "pipeNew", errno, strerror(errno),
+                      "Unable to run pipe");
+    }
+    assert(rv == 0);
+
+    return pipeObj;
 }
 
 void
@@ -1008,7 +1189,6 @@ pipeRelease(Pipe **pipe)
                 logError(CONSOLE, "src/core/units/units.c", "pipeRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
-            assert(rv == 0);
             objectRelease(&mutex);
         }
         /* Close fds */
@@ -1018,3 +1198,4 @@ pipeRelease(Pipe **pipe)
         objectRelease(pipe);
     }
 }
+

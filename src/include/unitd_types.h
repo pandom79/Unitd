@@ -57,7 +57,8 @@ static const struct PStateData PSTATE_DATA_ITEMS[] = {
 typedef enum {
     NO_PROCESS_TYPE = -1,
     DAEMON = 0,
-    ONESHOT = 1
+    ONESHOT = 1,
+    TIMER = 2,
 } PType;
 
 typedef struct PTypeData {
@@ -68,6 +69,7 @@ typedef struct PTypeData {
 static const struct PTypeData PTYPE_DATA_ITEMS[] = {
     { DAEMON, "daemon" },
     { ONESHOT, "oneshot" },
+    { TIMER, "timer" },
 };
 
 typedef enum {
@@ -153,6 +155,21 @@ typedef struct {
     bool showResult;
     bool isStopping;
     bool isChanged;
+    char *timerName;
+    PState *timerPState;
+    // Timer
+    int *intSeconds;
+    int *intMinutes;
+    int *intHours;
+    int *intDays;
+    int *intWeeks;
+    int *intMonths;
+    char *intervalStr;
+    long *leftTime;
+    char *leftTimeDuration;
+    Time *nextTime;
+    char *nextTimeDate;
+    Pipe *timerPipe;
 } Unit;
 
 typedef struct {
@@ -194,6 +211,7 @@ typedef enum {
     LIST_FAILED_COMMAND = 25,
     LIST_RESTARTABLE_COMMAND = 26,
     LIST_RESTARTED_COMMAND = 27,
+    LIST_TIMERS_COMMAND = 28
 } Command;
 
 /* Socket */
@@ -212,7 +230,8 @@ typedef enum {
     DEAD_FILTER = 3,
     FAILED_FILTER = 4,
     RESTARTABLE_FILTER = 5,
-    RESTARTED_FILTER = 6
+    RESTARTED_FILTER = 6,
+    TIMERS_FILTER = 7
 } ListFilter ;
 
 #endif //UNITD_TYPES_H

@@ -14,20 +14,20 @@ char *UNITS_USER_ENAB_PATH;
 int
 msleep(long msec)
 {
-   struct timespec ts;
-   int res;
+    struct timespec ts;
+    int res;
 
-   if (msec < 0) {
+    if (msec < 0) {
        errno = EINVAL;
        return -1;
-   }
-   ts.tv_sec = msec / 1000;
-   ts.tv_nsec = (msec % 1000) * 1000000;
-   do {
+    }
+    ts.tv_sec = msec / 1000;
+    ts.tv_nsec = (msec % 1000) * 1000000;
+    do {
        res = nanosleep(&ts, &ts);
-   } while (res && errno == EINTR);
+    } while (res && errno == EINTR);
 
-   return res;
+    return res;
 }
 
 /*
@@ -308,23 +308,23 @@ unitdUserCheck(const char *userIdStr, const char *userName)
     arrayAdd(scriptParams, cmd); //0
     arrayAdd(scriptParams, stringNew(UNITS_USER_LOCAL_PATH)); //1
     arrayAdd(scriptParams, stringNew(UNITS_USER_ENAB_PATH)); //2
-    arrayAdd(scriptParams, stringNew(userIdStr)); //3
-    arrayAdd(scriptParams, stringNew(userName)); //4
+    arrayAdd(scriptParams, stringNew(UNITD_USER_TIMER_DATA_PATH)); //3
+    arrayAdd(scriptParams, stringNew(userIdStr)); //4
+    arrayAdd(scriptParams, stringNew(userName)); //5
     /* Must be null terminated */
-    arrayAdd(scriptParams, NULL); //5
+    arrayAdd(scriptParams, NULL); //6
 
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd-user-check.sh", scriptParams->arr, envVars->arr);
     if (rv != 0) {
         /* If rv == 114 then the instance is already running */
         if (rv == 114) {
-            logErrorStr(CONSOLE | SYSTEM,
-                             "Unitd instance is already running for %s user!", userName);
+            logErrorStr(CONSOLE | SYSTEM, "Unitd instance is already running for %s user!", userName);
             printf("\n");
         }
         else {
             logError(CONSOLE | SYSTEM, "src/core/common/common.c",
-                          "unitdUserCheck", rv, strerror(rv), "ExecScript error");
+                     "unitdUserCheck", rv, strerror(rv), "ExecScript error");
         }
     }
 
@@ -439,6 +439,8 @@ setUserData(int userId, struct passwd **userInfo)
     stringAppendStr(&UNITS_USER_LOCAL_PATH, "/.config/unitd/units");
     UNITD_USER_CONF_PATH = stringNew(userHome);
     stringAppendStr(&UNITD_USER_CONF_PATH, "/.local/share/unitd");
+    UNITD_USER_TIMER_DATA_PATH = stringNew(UNITD_USER_CONF_PATH);
+    stringAppendStr(&UNITD_USER_TIMER_DATA_PATH, "/timer");
     UNITD_USER_LOG_PATH = stringNew(UNITD_USER_CONF_PATH);
     stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
     UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
@@ -478,6 +480,7 @@ userDataRelease()
 {
     objectRelease(&UNITS_USER_LOCAL_PATH);
     objectRelease(&UNITD_USER_CONF_PATH);
+    objectRelease(&UNITD_USER_TIMER_DATA_PATH);
     objectRelease(&UNITD_USER_LOG_PATH);
     objectRelease(&UNITS_USER_ENAB_PATH);
     objectRelease(&SOCKET_USER_PATH);
@@ -547,7 +550,7 @@ setStopAndDuration(ProcessData **processData)
     (*processData)->timeStop = timeNew(NULL);
     // Date time stop
     objectRelease(&(*processData)->dateTimeStopStr);
-    (*processData)->dateTimeStopStr = stringGetTimeStamp((*processData)->timeStop, false, NULL);
+    (*processData)->dateTimeStopStr = stringGetTimeStamp((*processData)->timeStop, false, "%d-%m-%Y %H:%M:%S");
     // Duration
     objectRelease(&(*processData)->duration);
     (*processData)->duration = stringGetDiffTime((*processData)->timeStop, (*processData)->timeStart);
@@ -561,4 +564,50 @@ getMaxFileDesc(int *fdA, int *fdB)
         max = *fdB + 1;
 
     return max;
+}
+
+char*
+getUnitNameByOther(const char *fromUnitName, PType unitType)
+{
+    char *unitName = NULL;
+    int endIndex = -1;
+
+    assert(fromUnitName);
+    assert(unitType != DAEMON && unitType != ONESHOT);
+
+    switch (unitType) {
+        case TIMER:
+            endIndex = stringIndexOfStr(fromUnitName, ".utimer");
+            break;
+        default:
+            break;
+    }
+
+    assert(endIndex != -1);
+    unitName = stringSub(fromUnitName, 0, endIndex - 1);
+    assert(unitName);
+    stringAppendStr(&unitName, ".unit");
+
+    return unitName;
+}
+
+char*
+getTimerNameByUnit(const char *unitName)
+{
+    char *timerName = NULL;
+    int endIndex = -1;
+
+    assert(unitName);
+
+    endIndex = stringIndexOfStr(unitName, ".unit");
+
+    if (endIndex != -1)
+        timerName = stringSub(unitName, 0, endIndex - 1);
+    else {
+        timerName = stringNew(unitName);
+    }
+    assert(timerName);
+    stringAppendStr(&timerName, ".utimer");
+
+    return timerName;
 }

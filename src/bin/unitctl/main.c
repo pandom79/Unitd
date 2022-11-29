@@ -13,6 +13,7 @@ bool USER_INSTANCE;
 char *UNITS_USER_LOCAL_PATH;
 char *UNITS_USER_ENAB_PATH;
 char *UNITD_USER_CONF_PATH;
+char *UNITD_USER_TIMER_DATA_PATH;
 char *UNITD_USER_LOG_PATH;
 char *SOCKET_USER_PATH;
 
@@ -33,6 +34,7 @@ getSkipCheckAdmin(Command command)
         case LIST_FAILED_COMMAND:
         case LIST_RESTARTABLE_COMMAND:
         case LIST_RESTARTED_COMMAND:
+        case LIST_TIMERS_COMMAND:
         case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             return true;
@@ -72,6 +74,7 @@ showUsage()
             "list-failed        List the failed units\n"
             "list-restartable   List the restartable units\n"
             "list-restarted     List the restarted units\n"
+            "list-timers        List the timers\n"
     );
     fprintf(stdout,
             "analyze            Analyze the %s boot process\n",
@@ -271,6 +274,7 @@ int main(int argc, char **argv) {
         case LIST_FAILED_COMMAND:
         case LIST_RESTARTABLE_COMMAND:
         case LIST_RESTARTED_COMMAND:
+        case LIST_TIMERS_COMMAND:
         case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             if (argc > 4 ||
@@ -286,6 +290,9 @@ int main(int argc, char **argv) {
                     break;
                 case ANALYZE_COMMAND:
                     rv = showBootAnalyze(&sockMessageOut);
+                    break;
+                case LIST_TIMERS_COMMAND:
+                    rv = showTimersList(&sockMessageOut, TIMERS_FILTER);
                     break;
                 default:
                     rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
