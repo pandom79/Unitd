@@ -5,7 +5,7 @@
 .Nd unitd client
 .Sh SYNOPSIS
 .Nm unitctl [sub-command]
-.Op Fl rfdhnowu
+.Op Fl erfdvhnowu
 .Sh DESCRIPTION
 .Nm
 is the unitd client which takes care to make the requests for units handling.
@@ -131,6 +131,12 @@ list-restarted
 List the restarted units
 .Ed
 .Bd -tag -width indent
+list-timers
+.Ed
+.Bd -ragged -offset indent
+List the timers
+.Ed
+.Bd -tag -width indent
 analyze
 .Ed
 .Bd -ragged -offset indent
@@ -175,6 +181,11 @@ Set the default state
 .It
 .Sh OPTIONS
 .Bl -tag -width indent
+.It Fl e
+The reset option is used by timer units to reset the count starting by current time.
+.Bd -tag -width indent
+It works with the following sub-commands: start and restart
+.Ed
 .It Fl r
 Run the operation
 .Bd -tag -width indent
@@ -187,6 +198,8 @@ It works with the following sub-commands: enable, disable, re-enable, reboot, ha
 .Ed
 .It Fl d
 Enable the debug
+.It Fl v
+Show the version
 .It Fl h
 Show the usage
 .It Fl n
