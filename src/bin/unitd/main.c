@@ -171,6 +171,7 @@ int main(int argc, char **argv) {
             addEnvVar(&UNITD_ENV_VARS, "UNITS_ENAB_PATH", UNITS_ENAB_PATH);
             addEnvVar(&UNITD_ENV_VARS, "UNITD_DATA_PATH", UNITD_DATA_PATH);
             addEnvVar(&UNITD_ENV_VARS, "UNITD_CONF_PATH", UNITD_CONF_PATH);
+            addEnvVar(&UNITD_ENV_VARS, "UNITD_TIMER_DATA_PATH", UNITD_TIMER_DATA_PATH);
             addEnvVar(&UNITD_ENV_VARS, "OUR_UTMP_FILE", OUR_UTMP_FILE);
             addEnvVar(&UNITD_ENV_VARS, "OUR_WTMP_FILE", OUR_WTMP_FILE);
             /* UNITD_ENV_VARS Array must be null terminated */
