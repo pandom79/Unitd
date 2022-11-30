@@ -80,19 +80,6 @@ int main(int argc, char **argv) {
     assert(UNITD_DATA_PATH);
     assert(UNITD_CONF_PATH);
 
-    /* Check user id.
-     * If UNITD_TEST macro is defined then we want the root user.
-    */
-    userId = getuid();
-    assert(userId >= 0);
-#ifdef UNITD_TEST
-    if (userId != 0) {
-        logErrorStr(CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
-        showEmergencyShell = hasError = true;
-        goto out;
-    }
-#endif
-
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
@@ -114,6 +101,19 @@ int main(int argc, char **argv) {
         showVersion();
         exit(EXIT_SUCCESS);
     }
+
+    /* Check user id.
+     * If UNITD_TEST macro is defined then we want the root user.
+    */
+    userId = getuid();
+    assert(userId >= 0);
+#ifdef UNITD_TEST
+    if (userId != 0) {
+        logErrorStr(CONSOLE, "Please, run this program as administrator (UNITD_TEST=true).\n");
+        showEmergencyShell = hasError = true;
+        goto out;
+    }
+#endif
 
     /* Boot start */
     BOOT_START = timeNew(NULL);

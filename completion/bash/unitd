@@ -1,0 +1,48 @@
+# unitd(1) completion                                 -*- shell-script -*-
+#
+# This file is part of unitd.
+#
+# Copyright © 2022 Domenico Panella <pandom79@gmail.com>
+
+__contains_word () {
+    local w word=$1; shift
+    for w in "$@"; do
+        [[ $w = "$word" ]] && return
+    done
+}
+
+_unitd () {
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local line=${COMP_WORDS[*]}
+    local -A OPTS=(
+        [SYSTEM]=' --debug --version '
+    )
+
+    local mode comps cur_orig
+    local -a entries new_entries
+
+    cur_orig=$cur
+    if [[ $cur =~ '\\' ]]; then
+        cur="$(echo $cur | xargs echo)"
+    else
+        cur_orig="$(printf '%q' $cur)"
+    fi
+
+    entries=${OPTS[SYSTEM]}
+
+    # Remove duplicate entries
+    for entry in ${entries};
+    do
+        if ! __contains_word "$entry" ${line}; then
+            new_entries+="$entry "
+        fi
+    done
+    comps=${new_entries}
+
+    # Show data
+    COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
+    return 0
+}
+
+complete -F _unitd unitd
+

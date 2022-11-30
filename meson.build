@@ -207,6 +207,7 @@ install_data('README.md', install_dir: doc_path)
 
 # Install bash completion
 install_data('completion/bash/unitctl', install_dir: bash_comp_path)
+install_data('completion/bash/unitd', install_dir: bash_comp_path)
 
 # Install zzz script
 install_data('src/extra/scripts/zzz', install_dir: sbin_path)
