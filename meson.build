@@ -9,6 +9,7 @@ add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
 ver = '5.0.0'
 so_ver = '5'
+wrapper_ver = '2.0.5'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 
@@ -58,6 +59,8 @@ endif
 
 # Configuration
 conf_data = configuration_data()
+conf_data.set('UNITD_VER', ver)
+conf_data.set('WRAPPER_VER', wrapper_ver)
 conf_data.set('OS_NAME', get_option('OS_NAME'))
 conf_data.set('OUR_UTMP_FILE', our_utmp_file)
 conf_data.set('OUR_WTMP_FILE', our_wtmp_file)
@@ -84,9 +87,8 @@ run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 
 # Dependencies
 rt_dep = meson.get_compiler('c').find_library('rt', required : true)
-deps = [dependency('threads'), dependency('wrapper', version: '>=2.0.5'), rt_dep]
+deps = [dependency('threads'), dependency('wrapper', version: wrapper_ver), rt_dep]
 # Checking commands/packages dependencies
-# If it is not exists then meson will show us the error.
 # We set 'check: false' because we don't interest about its exit code.
 # Awk
 message('Checking awk command ...')

@@ -611,3 +611,15 @@ getTimerNameByUnit(const char *unitName)
 
     return timerName;
 }
+
+void
+showVersion()
+{
+    printf("%s%s%s\n", WHITE_UNDERLINE_COLOR, "LINK INFO", DEFAULT_COLOR);
+    printf("  libunitd : ");
+    logSuccess(CONSOLE, UNITD_VER);
+    printf("\n");
+    printf("libwrapper : ");
+    logSuccess(CONSOLE, WRAPPER_VER);
+    printf("\n");
+}

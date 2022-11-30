@@ -49,6 +49,7 @@ usage(bool fail)
         "Usage: unitd [OPTION] \n\n"
 
         WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
+        "-v, --version      Show the version\n"
         "-d, --debug        Enable the debug\n"
         "-h, --help         Show usage\n\n"
     );
@@ -59,16 +60,17 @@ int main(int argc, char **argv) {
 
     int c, rv, userId;
     UnitdData *unitdData = NULL;
-    bool showEmergencyShell, hasError;
-    const char *shortopts = "hd";
+    bool showEmergencyShell, hasError, version;
+    const char *shortopts = "hdv";
     const struct option longopts[] = {
         { "help", no_argument, NULL, 'h' },
         { "debug", optional_argument, NULL, 'd' },
+        { "version", optional_argument, NULL, 'v' },
         { 0, 0, 0, 0 }
     };
 
     c = rv = userId = 0;
-    showEmergencyShell = hasError = false;
+    showEmergencyShell = hasError = version = false;
 
     assert(OS_NAME);
     assert(UNITS_PATH);
@@ -100,9 +102,17 @@ int main(int argc, char **argv) {
             case 'd':
                 UNITD_DEBUG = true;
                 break;
+            case 'v':
+                version = true;
+                break;
             default:
                 usage(true);
         }
+    }
+
+    if (version) {
+        showVersion();
+        exit(EXIT_SUCCESS);
     }
 
     /* Boot start */

@@ -31,3 +31,4 @@ void setStopAndDuration(ProcessData **);
 int getMaxFileDesc(int *, int *);
 char* getUnitNameByOther(const char *, PType);
 char* getTimerNameByUnit(const char *);
+void showVersion();

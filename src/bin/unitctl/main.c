@@ -101,6 +101,7 @@ showUsage()
             "-r, --run          Run the operation\n"
             "-f, --force        Force the operation\n"
             "-d, --debug        Enable the debug\n"
+            "-v, --version      Show the version\n"
             "-h, --help         Show usage\n"
     );
     if (!USER_INSTANCE) {
@@ -116,8 +117,8 @@ showUsage()
 
 int main(int argc, char **argv) {
     int c, rv, userId;
-    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin, usage, reset;
-    const char *shortopts = "hrfdnowue";
+    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin, usage, reset, version;
+    const char *shortopts = "hrfdnowuev";
     Command command = NO_COMMAND;
     const char *commandName, *arg;
     SockMessageOut *sockMessageOut = NULL;
@@ -131,12 +132,13 @@ int main(int argc, char **argv) {
         { "debug", optional_argument, NULL, 'd' },
         { "user", optional_argument, NULL, 'u' },
         { "reset", optional_argument, NULL, 'e' },
+        { "version", optional_argument, NULL, 'v' },
         { 0, 0, 0, 0 }
     };
 
     c = rv = userId = 0;
     commandName = arg = NULL;
-    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = usage = reset = false;
+    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = usage = reset = version = false;
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -168,6 +170,9 @@ int main(int argc, char **argv) {
             case 'e':
                 reset = true;
                 break;
+            case 'v':
+                version = true;
+                break;
             default:
                 usage = true;
                 rv = 1;
@@ -177,6 +182,11 @@ int main(int argc, char **argv) {
 
     if (usage) {
         showUsage();
+        goto out;
+    }
+
+    if (version) {
+        showVersion();
         goto out;
     }
 

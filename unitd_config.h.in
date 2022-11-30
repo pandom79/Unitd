@@ -7,6 +7,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
 /* Unit daemon */
+#define UNITD_VER "@UNITD_VER@"
+#define WRAPPER_VER "@WRAPPER_VER@"
 #define OS_NAME "@OS_NAME@"
 #define OUR_UTMP_FILE "@OUR_UTMP_FILE@"
 #define OUR_WTMP_FILE "@OUR_WTMP_FILE@"
