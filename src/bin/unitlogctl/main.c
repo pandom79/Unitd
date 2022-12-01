@@ -29,6 +29,7 @@ showUsage()
         "-f, --follow       Follow the log\n"
         "-p, --pager        Enable the pager\n"
         "-d, --debug        Enable the debug\n"
+        "-v, --version      Show the version\n"
         "-h, --help         Show usage\n\n"
     );
 }
@@ -36,18 +37,19 @@ showUsage()
 int main(int argc, char **argv) {
 
     int c, rv, userId = -1;
-    const char *shortopts = "fphd", *commandName = NULL, *arg = NULL;
+    const char *shortopts = "fphdv", *commandName = NULL, *arg = NULL;
     const struct option longopts[] = {
         { "follow", optional_argument, NULL, 'f' },
         { "pager", optional_argument, NULL, 'p' },
         { "help", no_argument, NULL, 'h' },
         { "debug", optional_argument, NULL, 'd' },
+        { "version", optional_argument, NULL, 'v' },
         { 0, 0, 0, 0 }
     };
     UlCommand ulCommand = NO_UL_COMMAND;
-    bool pager, follow;
+    bool pager, follow, version;
     c = rv = 0;
-    pager = follow = false;
+    pager = follow = version = false;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
@@ -62,6 +64,10 @@ int main(int argc, char **argv) {
                 break;
             case 'h':
                 showUsage();
+                rv = 0;
+                goto out;
+            case 'v':
+                showVersion();
                 rv = 0;
                 goto out;
             default:
