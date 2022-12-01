@@ -15,9 +15,10 @@ UlCommandData UL_COMMAND_DATA[] = {
     { LIST_BOOTS, "list-boots" },
     { SHOW_BOOT, "show-boot" },
     { INDEX_REPAIR, "index-repair" },
-    { VACUUM, "vacuum" }
+    { VACUUM, "vacuum" },
+    { SHOW_SIZE, "show-size" }
 };
-int UL_COMMAND_DATA_LEN = 5;
+int UL_COMMAND_DATA_LEN = 6;
 
 UlCommand
 getUlCommand(const char *commandName)
@@ -37,6 +38,7 @@ getSkipCheckAdmin(UlCommand ulCommand)
         case SHOW_LOG:
         case LIST_BOOTS:
         case SHOW_BOOT:
+        case SHOW_SIZE:
             return true;
         default:
             return false;
@@ -498,17 +500,52 @@ cutLog(off_t startOffset, off_t stopOffset)
         return rv;
 }
 
+void
+printLogSizeInfo(off_t prevLogSize, off_t freedLogSize, off_t currentLogSize)
+{
+    char *prevLogSizeStr, *freedLogSizeStr, *currentLogSizeStr;
+    prevLogSizeStr = freedLogSizeStr = currentLogSizeStr = NULL;
+
+    if (prevLogSize != -1)
+        prevLogSizeStr = stringGetFileSize(prevLogSize);
+    if (currentLogSize != -1)
+        currentLogSizeStr = stringGetFileSize(currentLogSize);
+    if (freedLogSize != -1)
+        freedLogSizeStr = stringGetFileSize(freedLogSize);
+
+    printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LOG SIZE INFO\n", DEFAULT_COLOR);
+    if (prevLogSizeStr) {
+        logInfo(CONSOLE, "Previous : ");
+        logSuccess(CONSOLE, "%s\n", prevLogSizeStr);
+    }
+    if (freedLogSizeStr) {
+        logInfo(CONSOLE, "   Freed : ");
+        logSuccess(CONSOLE, "%s\n", freedLogSizeStr);
+    }
+    if (currentLogSizeStr) {
+        if (prevLogSize == -1 && freedLogSize == -1)
+            logInfo(CONSOLE, "Current : ");
+        else
+            logInfo(CONSOLE, " Current : ");
+        logSuccess(CONSOLE, "%s\n", currentLogSizeStr);
+    }
+
+    objectRelease(&prevLogSizeStr);
+    objectRelease(&currentLogSizeStr);
+    objectRelease(&freedLogSizeStr);
+}
+
 int
 vacuum(const char *bootIdx)
 {
     Array *index, *idxArr;
     int rv = 0, startIdx, stopIdx, maxIdx;
-    off_t startOffset, stopOffset, oldLogSize, newLogSize, diffLogSize;
+    off_t startOffset, stopOffset, prevLogSize, currentLogSize, freedLogSize;
     bool rangeErr = false;
     IndexEntry *indexEntry = NULL;
 
     startIdx = stopIdx = maxIdx = -1;
-    startOffset = stopOffset = oldLogSize = newLogSize = diffLogSize = -1;
+    startOffset = stopOffset = prevLogSize = currentLogSize = freedLogSize = -1;
     index = idxArr = NULL;
 
     assert(bootIdx);
@@ -605,38 +642,22 @@ vacuum(const char *bootIdx)
 
     /* From this point, whatever error occurred, we don't exit because we must always unlock. */
 
-    /* Get old log size */
-    if ((oldLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
+    /* Get previous log size */
+    if ((prevLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
         /* Cut the log */
         if ((rv = cutLog(startOffset, stopOffset)) == 0) {
             /* Repair the index from new log content */
             if ((rv = indexRepair()) == 0) {
-                /* Get new log size */
-                if ((newLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
-                    diffLogSize = oldLogSize - newLogSize;
+                /* Get current log size */
+                if ((currentLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
+                    freedLogSize = prevLogSize - currentLogSize;
                     if (UNITLOGCTL_DEBUG) {
-                        logInfo(CONSOLE, "Previous log size = %lu\n", oldLogSize);
-                        logInfo(CONSOLE, "New log size      = %lu\n", newLogSize);
-                        logInfo(CONSOLE, "Diff log size     = %lu\n", diffLogSize);
+                        logInfo(CONSOLE, "Previous log size = %lu\n", prevLogSize);
+                        logInfo(CONSOLE, "Current log size  = %lu\n", currentLogSize);
+                        logInfo(CONSOLE, "Freed log size    = %lu\n", freedLogSize);
                     }
-                    char *oldLogSizeStr = stringGetFileSize(oldLogSize);
-                    char *newLogSizeStr = stringGetFileSize(newLogSize);
-                    char *diffLogSizeStr = stringGetFileSize(diffLogSize);
                     logSuccess(CONSOLE, "Vacuuming done successfully!\n\n");
-
-                    printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LOG SIZE INFO\n", DEFAULT_COLOR);
-                    logInfo(CONSOLE, "Previous : ");
-                    logSuccess(CONSOLE, "%s\n", oldLogSizeStr);
-
-                    logInfo(CONSOLE, " Current : ");
-                    logSuccess(CONSOLE, "%s\n", newLogSizeStr);
-
-                    logInfo(CONSOLE, "   Freed : ");
-                    logSuccess(CONSOLE, "%s\n", diffLogSizeStr);
-
-                    objectRelease(&oldLogSizeStr);
-                    objectRelease(&newLogSizeStr);
-                    objectRelease(&diffLogSizeStr);
+                    printLogSizeInfo(prevLogSize, freedLogSize, currentLogSize);
                 }
             }
         }
