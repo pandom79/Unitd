@@ -45,10 +45,10 @@ _unitlogctl () {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local line=${COMP_WORDS[*]}
     local -A COMMANDS=(
-        [SYSTEM]='show-log list-boots show-boot index-repair vacuum'
+        [SYSTEM]='show-log list-boots show-boot index-repair vacuum show-size'
     )
     local -A OPTS=(
-        [SYSTEM]=' --follow --pager --debug --help'
+        [SYSTEM]=' --follow --pager --debug --help --version'
     )
     local comps cur_orig
     local -a entries new_entries
