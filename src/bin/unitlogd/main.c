@@ -30,6 +30,7 @@ usage(bool fail)
             "-l, --log          Log the system messages\n"
             "-k, --kernel       Enable the kernel messages forward\n"
             "-d, --debug        Enable the debug\n"
+            "-v, --version      Show the version\n"
             "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -72,13 +73,14 @@ createResources()
 int main(int argc, char **argv) {
 
     int c, rv, input;
-    const char *shortopts = "lkhd";
+    const char *shortopts = "lkhdv";
     bool log, kernel;
     Array *socketThreads = arrayNew(socketThreadRelease);
     const struct option longopts[] = {
         { "log", no_argument, NULL, 'l' },
         { "kernel", no_argument, NULL, 'k' },
         { "debug", optional_argument, NULL, 'd' },
+        { "version", no_argument, NULL, 'v' },
         { "help", no_argument, NULL, 'h' },
         { 0, 0, 0, 0 }
     };
@@ -95,6 +97,10 @@ int main(int argc, char **argv) {
                 break;
             case 'd':
                 UNITLOGD_DEBUG = true;
+                break;
+            case 'v':
+                showVersion();
+                exit(EXIT_SUCCESS);
                 break;
             case 'h':
                 usage(false);
