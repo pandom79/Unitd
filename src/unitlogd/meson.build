@@ -52,3 +52,4 @@ install_subdir('extra/scripts', install_dir: unitlogd_data_path)
 
 # Install bash completion
 install_data('../../completion/bash/unitlogctl', install_dir: bash_comp_path)
+install_data('../../completion/bash/unitlogd', install_dir: bash_comp_path)
