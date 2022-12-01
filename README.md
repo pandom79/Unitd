@@ -15,6 +15,8 @@ Run ```man unitd``` to consult the manual page.<br/>
 - <a href="#states">States</a>
 - <a href="#build-instructions">Build instructions</a>
 - <a href="#unit-configuration-file">Unit configuration file</a>
+- <a href="#timers">Timers</a>
+- <a href="#timer-unit-configuration-file">Timer unit configuration file</a>
 - <a href="#unitctl">Unitctl</a>
 - <a href="#unitlogd-and-unitlogctl">Unitlogd and Unitlogctl</a>
 - <a href="#note">Note</a>
@@ -169,6 +171,49 @@ Please note, if both are defined then Restart property will be ignored.<br><br>
 This property could use the variable **$PID** which can be passed as argument to a custom stop command.<br>
 Example:<br>
 ```Stop = /path/your/command $PID```
+
+### Timers
+
+The timers have **.utimer** as configuration file extension.<br>
+The purpose of a timer is to start an unit when a period of time has elapsed.<br>
+This period can be set in the timer unit configuration file.<br>
+There is an one to one relation between unit and timer.<br>
+That means that a timer named **test.utimer** will try to start an unit named **test.unit** when that period has elapsed.<br>
+These units cannot run forcing operation.<br>
+That means that if **test.unit** has some conflicts then the starting of this unit<br> 
+via the timer will always fail if those conflicts exist.<br>
+The forcing is a delicate operation and it cannot be delegate to a timer.<br>
+These units can be started or restarted with the **reset** option.<br>
+That will cause a recalculation of the remaining time starting from the current.
+
+### Timer unit configuration file
+
+```
+[Unit]                              (required and not repeatable)
+Description = NetworkManager	    (required and not repeatable)
+
+Requires = dbus                     (optional and repeatable)
+Requires = ...
+
+Conflict = dhcpcd                   (optional and repeatable)
+Conflict = ...
+
+[Interval]                          (required and not repeatable)
+Seconds = num                       (optional and not repeatable. A numeric value greater than zero)
+Minutes = num                       (optional and not repeatable. A numeric value greater than zero)
+Hours   = num                       (optional and not repeatable. A numeric value greater than zero)
+Days    = num                       (optional and not repeatable. A numeric value greater than zero)
+Weeks   = num                       (optional and not repeatable. A numeric value greater than zero)
+Months  = num                       (optional and not repeatable. A numeric value greater than zero)
+
+[State]                             (required and not repeatable)
+WantedBy = multi-user-net           (required and repeatable for system instance)
+WantedBy = ...
+WantedBy = user                     (required and not repeatable for user instance)
+```
+**Interval**<br>
+Even if the interval section properties are optionals, at least one criterion must be defined.
+
 
 ### Unitctl 
 
