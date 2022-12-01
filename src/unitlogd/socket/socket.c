@@ -46,7 +46,7 @@ forwardToLog(char *buffer)
         goto out;
     }
     /* Connect */
-    while ((rv = connect(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un))) == -1) {
+    while ((rv = connect(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un))) == -1 && !UNITLOGD_EXIT) {
         if (UNITLOGD_DEBUG)
             logWarning(CONSOLE | SYSTEM, "%s is down! Retry to connect .....\n", DEV_LOG_NAME);
 
@@ -56,12 +56,12 @@ forwardToLog(char *buffer)
         }
         else break;
     }
-    if (rv != 0) {
+    if (rv != 0 && !UNITLOGD_EXIT) {
         logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "forwardToLog", errno,
                  strerror(errno), "Connect error");
         goto out;
     }
-    if ((rv = send(socketFd, buffer, strlen(buffer), 0)) == -1) {
+    if ((rv = send(socketFd, buffer, strlen(buffer), 0)) == -1 && !UNITLOGD_EXIT) {
         logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "forwardToLog", errno,
                  strerror(errno), "send error");
         goto out;
@@ -143,7 +143,7 @@ startForwarderThread(void *arg)
             }
             arrayRelease(&lines);
             objectRelease(&buffer);
-            if (rv != 0) {
+            if (rv != 0 && !UNITLOGD_EXIT) {
                 kill(UNITLOGD_PID, SIGTERM);
                 goto out;
             }

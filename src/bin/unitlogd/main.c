@@ -18,6 +18,7 @@ FILE *UNITLOGD_INDEX_FILE = NULL;
 FILE *UNITLOGD_LOG_FILE = NULL;
 FILE *UNITLOGD_BOOT_LOG_FILE = NULL;
 char *BOOT_ID_STR = NULL;
+bool UNITLOGD_EXIT = false;
 
 static void __attribute__((noreturn))
 usage(bool fail)

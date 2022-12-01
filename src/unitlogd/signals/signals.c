@@ -10,6 +10,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 bool UNITLOGD_DEBUG;
 int SELF_PIPE[2];
+bool UNITLOGD_EXIT;
 
 void
 exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
@@ -19,6 +20,8 @@ exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
     if (UNITLOGD_DEBUG)
         logInfo(CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
 
+
+    UNITLOGD_EXIT = true;
     if ((rv = write(SELF_PIPE[1], &output, sizeof(int))) == -1) {
         logError(CONSOLE, "src/unitlogd/signals/signals.c", "exitSignal", errno,
                       strerror(errno), "Unable to write into self pipe. Rv = %d.", rv);
