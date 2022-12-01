@@ -20,7 +20,6 @@ exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
     if (UNITLOGD_DEBUG)
         logInfo(CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
 
-
     UNITLOGD_EXIT = true;
     if ((rv = write(SELF_PIPE[1], &output, sizeof(int))) == -1) {
         logError(CONSOLE, "src/unitlogd/signals/signals.c", "exitSignal", errno,

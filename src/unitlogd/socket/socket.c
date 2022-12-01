@@ -71,7 +71,6 @@ forwardToLog(char *buffer)
     out:
         close(socketFd);
         return rv;
-
 }
 
 void*
