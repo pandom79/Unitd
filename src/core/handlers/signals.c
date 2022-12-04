@@ -12,7 +12,7 @@ bool UNITD_DEBUG;
 UnitdData *UNITD_DATA;
 
 int
-signalsHandler(int signo UNUSED, siginfo_t *info, void *context UNUSED)
+signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
 {
     int rv, status, infoCode, *finalStatus, *exitCode, output;
     const char *unitName = NULL;

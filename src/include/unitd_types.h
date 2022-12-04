@@ -158,6 +158,7 @@ typedef struct {
     char *timerName;
     PState *timerPState;
     // Timer
+    bool *wakeSystem;
     int *intSeconds;
     int *intMinutes;
     int *intHours;

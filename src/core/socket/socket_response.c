@@ -59,6 +59,7 @@ Restartable=value       (optional and repeatable)
 Type=value              (optional and repeatable)
 NextTimeDate=value      (optional and repeatable)
 LeftTimeDuration=value  (optional and repeatable)
+WakeSystem=value        (optional and repeatable)
 TimerName=value         (optional and repeatable)
 TimerPState=value       (optional and repeatable)
 Path=value              (optional and repeatable)
@@ -107,24 +108,25 @@ enum PropertyNameEnum  {
     TYPE = 11,
     NEXTTIMEDATE = 12,
     LEFTTIMEDURATION = 13,
-    TIMERNAME = 14,
-    TIMERPSTATE = 15,
-    PATH = 16,
-    RESTARTMAX = 17,
-    UNITERROR = 18,
-    EXITCODE = 19,
-    SIGNALNUM = 20,
-    DATETIMESTART = 21,
-    DATETIMESTOP = 22,
-    INTERVAL = 23,
-    PIDH = 24,
-    EXITCODEH = 25,
-    PSTATEH = 26,
-    SIGNALNUMH = 27,
-    FINALSTATUSH = 28,
-    DATETIMESTARTH = 29,
-    DATETIMESTOPH = 30,
-    DURATIONH = 31
+    WAKESYSTEM = 14,
+    TIMERNAME = 15,
+    TIMERPSTATE = 16,
+    PATH = 17,
+    RESTARTMAX = 18,
+    UNITERROR = 19,
+    EXITCODE = 20,
+    SIGNALNUM = 21,
+    DATETIMESTART = 22,
+    DATETIMESTOP = 23,
+    INTERVAL = 24,
+    PIDH = 25,
+    EXITCODEH = 26,
+    PSTATEH = 27,
+    SIGNALNUMH = 28,
+    FINALSTATUSH = 29,
+    DATETIMESTARTH = 30,
+    DATETIMESTOPH = 31,
+    DURATIONH = 32
 };
 
 /* Sections */
@@ -135,7 +137,7 @@ SectionData SOCKRES_SECTIONS_ITEMS[] = {
 };
 
 /* Properties */
-int SOCKRES_PROPERTIES_ITEMS_LEN = 32;
+int SOCKRES_PROPERTIES_ITEMS_LEN = 33;
 PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { NO_SECTION, { MESSAGE, "Message" }, true, false, false, 0, NULL, NULL },
     { NO_SECTION, { ERROR, "Error" }, true, false, false, 0, NULL, NULL },
@@ -151,6 +153,7 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { TYPE, "Type" }, true, false, false, 0, NULL, NULL },
     { UNIT, { NEXTTIMEDATE, "NextTimeDate" }, true, false, false, 0, NULL, NULL },
     { UNIT, { LEFTTIMEDURATION, "LeftTimeDuration" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { WAKESYSTEM, "WakeSystem" }, true, false, false, 0, NULL, NULL },
     { UNIT, { TIMERNAME, "TimerName" }, true, false, false, 0, NULL, NULL },
     { UNIT, { TIMERPSTATE, "TimerPState" }, true, false, false, 0, NULL, NULL },
     { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
@@ -329,6 +332,14 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[LEFTTIMEDURATION].propertyName.desc);
             stringConcat(&buffer, ASSIGNER);
             stringConcat(&buffer, leftTimeDuration);
+            stringConcat(&buffer, TOKEN);
+        }
+        /* Wake system */
+        bool *wakeSystem = unit->wakeSystem;
+        if (wakeSystem && *wakeSystem) {
+            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[WAKESYSTEM].propertyName.desc);
+            stringConcat(&buffer, ASSIGNER);
+            stringConcat(&buffer, "1");
             stringConcat(&buffer, TOKEN);
         }
 
@@ -585,6 +596,11 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         unitDisplay->timerPState = calloc(1, sizeof (PState));
                         assert(unitDisplay->timerPState);
                         *unitDisplay->timerPState = atoi(value);
+                        break;
+                    case WAKESYSTEM:
+                        unitDisplay->wakeSystem = calloc(1, sizeof(bool));
+                        assert(unitDisplay->wakeSystem);
+                        *unitDisplay->wakeSystem = atoi(value);
                         break;
                     case RESTARTNUM:
                         unitDisplay->restartNum = atoi(value);

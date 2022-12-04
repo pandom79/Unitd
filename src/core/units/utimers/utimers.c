@@ -22,13 +22,14 @@ enum PropertyNameEnum  {
     DESCRIPTION = 0,
     REQUIRES = 1,
     CONFLICTS = 2,
-    SECONDS = 3,
-    MINUTES = 4,
-    HOURS = 5,
-    DAYS = 6,
-    WEEKS = 7,
-    MONTHS = 8,
-    WANTEDBY = 9
+    WAKESYSTEM = 3,
+    SECONDS = 4,
+    MINUTES = 5,
+    HOURS = 6,
+    DAYS = 7,
+    WEEKS = 8,
+    MONTHS = 9,
+    WANTEDBY = 10
 };
 
 /* Sections */
@@ -40,6 +41,7 @@ SectionData UTIMERS_SECTIONS_ITEMS[] = {
 };
 
 /* The accepted values for the properties */
+static const char *BOOL_VALUES[] = { "false", "true", NULL };
 static const char *WANTEDBY_VALUES[] = {
                                         STATE_DATA_ITEMS[SINGLE_USER].desc,
                                         STATE_DATA_ITEMS[MULTI_USER].desc,
@@ -50,11 +52,12 @@ static const char *WANTEDBY_VALUES[] = {
                                         NULL
                                        };
 
-int UTIMERS_PROPERTIES_ITEMS_LEN = 10;
+int UTIMERS_PROPERTIES_ITEMS_LEN = 11;
 PropertyData UTIMERS_PROPERTIES_ITEMS[] = {
     { UNIT,     { DESCRIPTION, "Description" }, false, true, false, 0, NULL, NULL },
     { UNIT,     { REQUIRES, "Requires" }, true, false, false, 0, NULL, NULL },
     { UNIT,     { CONFLICTS, "Conflict" }, true, false, false, 0, NULL, NULL },
+    { UNIT,     { WAKESYSTEM, "WakeSystem" }, false, false, false, 0, BOOL_VALUES, NULL },
     { INTERVAL, { SECONDS, "Seconds" }, false, false, true, 0, NULL, NULL },
     { INTERVAL, { MINUTES, "Minutes" }, false, false, true, 0, NULL, NULL },
     { INTERVAL, { HOURS, "Hours" }, false, false, true, 0, NULL, NULL },
@@ -425,6 +428,8 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
     /* Initialize the specific timer values */
     (*unit)->nextTime = timeNew(NULL);
 
+    (*unit)->wakeSystem = NULL;
+
     long *leftTime = calloc(1, sizeof(long));
     assert(leftTime);
     *leftTime = -1;
@@ -496,6 +501,13 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
                         arrayAdd(conflicts, conflict);
                         if ((*errors)->size == 0 || isAggregate)
                             checkConflicts(unit, value, isAggregate);
+                        break;
+                    case WAKESYSTEM:
+                        if (strcmp(value, BOOL_VALUES[true]) == 0) {
+                            (*unit)->wakeSystem = calloc(1, sizeof(bool));
+                            assert((*unit)->wakeSystem);
+                            *(*unit)->wakeSystem = true;
+                        }
                         break;
                     case SECONDS:
                         (*unit)->intSeconds = calloc(1, sizeof(int));
@@ -653,9 +665,6 @@ startUnitTimerThread(void *arg)
                 logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread", errno,
                          strerror(errno), "Unable to unlock the mutex (restart timer)",
                          unitName);
-
-            /* Slowing it */
-            msleep(1500);
 
             startTimer(unit);
 
@@ -836,6 +845,7 @@ startTimerThread(void *arg)
     Pipe *timerPipe = NULL;
     long *leftTime = NULL;
     timer_t timerId = 0;
+    bool wakeSystem = false;
 
     rv = input = rvMutex = 0;
 
@@ -844,6 +854,7 @@ startTimerThread(void *arg)
     unitName = unit->name;
     timerPipe = unit->timerPipe;
     leftTime = unit->leftTime;
+    wakeSystem = unit->wakeSystem;
 
     if ((rv = pthread_mutex_lock(timerPipe->mutex)) != 0) {
          logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread",
@@ -902,7 +913,7 @@ startTimerThread(void *arg)
     sev.sigev_notify_function = &expired;
     sev.sigev_value.sival_ptr = &eventData;
     /* Create timer */
-    rv = timer_create(CLOCK_REALTIME, &sev, &timerId);
+    rv = timer_create(wakeSystem ? CLOCK_REALTIME_ALARM : CLOCK_REALTIME, &sev, &timerId);
     if (rv == -1) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
                  strerror(errno), "Unable to create the timer for the '%s' unit",

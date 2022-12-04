@@ -963,7 +963,15 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
             interval = unit->intervalStr;
             if (interval && strlen(interval) > 0) {
                 printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "TIMER DATA", DEFAULT_COLOR);
+
+                /* Wake system */
+                bool *wakeSystem = unit->wakeSystem;
+                printf("%*s %s\n", MAX_LEN_KEY, "Wake system :",
+                       wakeSystem && *wakeSystem ? "true" : "false");
+
+                /* Interval as string */
                 printf("%*s %s\n", MAX_LEN_KEY, "Interval :", interval);
+
                 /* Last Time */
                 lastTime = getLastTime(unit);
                 if (lastTime) {

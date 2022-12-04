@@ -314,6 +314,16 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
 
         // TIMER DATA
 
+        /* Wake system */
+        bool *wakeSystem = NULL;
+        if (unitFrom && unitFrom->wakeSystem && *unitFrom->wakeSystem) {
+            wakeSystem = calloc(1, sizeof(bool));
+            assert(wakeSystem);
+            *wakeSystem = true;
+        }
+        unit->wakeSystem = wakeSystem;
+
+        /* Interval as string */
         unit->intervalStr = (unitFrom && unitFrom->intervalStr ? stringNew(unitFrom->intervalStr) : NULL);
 
         // END TIMER DATA
@@ -997,6 +1007,7 @@ unitRelease(Unit **unit)
         objectRelease(&unitTemp->timerPState);
 
         /* Unit timer data */
+        objectRelease(&unitTemp->wakeSystem);
         objectRelease(&unitTemp->intSeconds);
         objectRelease(&unitTemp->intMinutes);
         objectRelease(&unitTemp->intHours);
