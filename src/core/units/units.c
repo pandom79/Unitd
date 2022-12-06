@@ -314,15 +314,6 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
 
         // TIMER DATA
 
-        /* Wake system */
-        bool *wakeSystem = NULL;
-        if (unitFrom && unitFrom->wakeSystem && *unitFrom->wakeSystem) {
-            wakeSystem = calloc(1, sizeof(bool));
-            assert(wakeSystem);
-            *wakeSystem = true;
-        }
-        unit->wakeSystem = wakeSystem;
-
         /* Interval as string */
         unit->intervalStr = (unitFrom && unitFrom->intervalStr ? stringNew(unitFrom->intervalStr) : NULL);
 

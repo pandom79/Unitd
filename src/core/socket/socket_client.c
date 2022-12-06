@@ -142,36 +142,41 @@ writeTimerContent(State defaultState, const char *unitPath, const char *unitName
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
+    /* Wake system */
+    propertyName = UTIMERS_PROPERTIES_ITEMS[3].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# Available values : true, false (default).\n");
+    fprintf(fp, "# %s = set the value ...\n\n", propertyName);
 
     /* INTERVAL SECTION */
     fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[1].sectionName.desc);
     /* Seconds property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[3].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[4].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the seconds number ...\n\n", propertyName);
     /* Minutes property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[4].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[5].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the minutes number ...\n\n", propertyName);
     /* Hours property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[5].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[6].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the hours number ...\n\n", propertyName);
     /* Days property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[6].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[7].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the days number ...\n\n", propertyName);
     /* Weeks property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[7].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[8].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the weeks number ...\n\n", propertyName);
     /* Months property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[8].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[9].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the months number ...\n\n", propertyName);
@@ -595,95 +600,129 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
     const char *unitName, *status;
     bool enabled = false;
     pid_t *pid;
+    int pfds[2];
+    pid_t pidFork;
 
     unitName = status = NULL;
     rv = lenUnits = maxLenName = maxLenDesc = len = -1;
 
-    /* Filling sockMessageOut */
-    if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
-        unitsDisplay = (*sockMessageOut)->unitsDisplay;
-        maxLenName = getMaxLen(unitsDisplay, "name");
-        maxLenDesc = getMaxLen(unitsDisplay, "desc");
-        lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
-        if (maxLenName < WIDTH_UNIT_NAME)
-            maxLenName = WIDTH_UNIT_NAME;
-        if (maxLenDesc < WIDTH_DESCRIPTION)
-            maxLenDesc = WIDTH_DESCRIPTION;
-        /* HEADER */
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+    /* Pipe */
+    if ((rv = pipe(pfds)) < 0) {
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitList", errno, strerror(errno),
+                 "Pipe function returned a bad exit code");
+        goto out;
+    }
+    /* Fork */
+    pidFork = fork();
+    if (pidFork < 0) {
+        rv = errno;
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitList", errno, strerror(errno),
+                 "Fork function returned a bad exit code");
+        goto out;
+    }
+    else if (pidFork == 0) { /* child */
+        close(pfds[0]);
+        dup2(pfds[1], STDOUT_FILENO);
+        close(pfds[1]);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "ENABLED", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
+        /* Filling sockMessageOut */
+        if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
+            unitsDisplay = (*sockMessageOut)->unitsDisplay;
+            maxLenName = getMaxLen(unitsDisplay, "name");
+            maxLenDesc = getMaxLen(unitsDisplay, "desc");
+            lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
+            if (maxLenName < WIDTH_UNIT_NAME)
+                maxLenName = WIDTH_UNIT_NAME;
+            if (maxLenDesc < WIDTH_DESCRIPTION)
+                maxLenDesc = WIDTH_DESCRIPTION;
+            /* HEADER */
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "PID", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 8 - WIDTH_PID + PADDING, "", DEFAULT_COLOR);
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "ENABLED", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "PID", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 8 - WIDTH_PID + PADDING, "", DEFAULT_COLOR);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
-        printf("\n");
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
 
-        /* CELLS */
-        for (int i = 0; i < lenUnits; i++) {
-            unitDisplay = arrayGet(unitsDisplay, i);
-            ProcessData *pData = unitDisplay->processData;
-            PStateData *pStateData = pData->pStateData;
-            PState pState = pStateData->pState;
-
-            /* Unit name
-             * Warning: don't color unit name because the bash completion fails
-            */
-            unitName = unitDisplay->name;
-            printf("%s", unitName);
-            len = strlen(unitName);
-            if (maxLenName < len)
-                maxLenName = len;
-            printf("%*s", maxLenName - len + PADDING, "");
-
-            /* Enabled */
-            enabled = unitDisplay->enabled;
-            printf("%s", (enabled ? "true" : "false"));
-            if (enabled)
-                printf("%*s", WIDTH_ENABLED - 3 + PADDING, "");
-            else
-                printf("%*s", WIDTH_ENABLED - 4 + PADDING, "");
-
-            /* PID */
-            pid = pData->pid;
-            char pidStr[10];
-            if (*pid == -1) {
-                pidStr[0] = '-';
-                pidStr[1] = '\0';
-            }
-            else
-                sprintf(pidStr, "%d", *pid);
-            /* The restarted units require attention */
-            if (unitDisplay->restartNum > 0)
-                logWarning(CONSOLE, "%s", pidStr);
-            else
-                printf("%s", pidStr);
-            printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
-
-            /* STATUS */
-            finalStatus = pData->finalStatus;
-            status = pStateData->desc;
-            printStatus(pState, status, *finalStatus, false);
-            if (*finalStatus == FINAL_STATUS_FAILURE)
-                printf("%*s", 10 - 6 + PADDING, ""); //Failed str
-            else
-                printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
-            /* Description */
-            printf("%s", unitDisplay->desc);
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
             printf("\n");
+
+            /* CELLS */
+            for (int i = 0; i < lenUnits; i++) {
+                unitDisplay = arrayGet(unitsDisplay, i);
+                ProcessData *pData = unitDisplay->processData;
+                PStateData *pStateData = pData->pStateData;
+                PState pState = pStateData->pState;
+
+                /* Unit name
+                 * Warning: don't color unit name because the bash completion fails
+                */
+                unitName = unitDisplay->name;
+                printf("%s", unitName);
+                len = strlen(unitName);
+                if (maxLenName < len)
+                    maxLenName = len;
+                printf("%*s", maxLenName - len + PADDING, "");
+
+                /* Enabled */
+                enabled = unitDisplay->enabled;
+                printf("%s", (enabled ? "true" : "false"));
+                if (enabled)
+                    printf("%*s", WIDTH_ENABLED - 3 + PADDING, "");
+                else
+                    printf("%*s", WIDTH_ENABLED - 4 + PADDING, "");
+
+                /* PID */
+                pid = pData->pid;
+                char pidStr[10];
+                if (*pid == -1) {
+                    pidStr[0] = '-';
+                    pidStr[1] = '\0';
+                }
+                else
+                    sprintf(pidStr, "%d", *pid);
+                /* The restarted units require attention */
+                if (unitDisplay->restartNum > 0)
+                    logWarning(CONSOLE, "%s", pidStr);
+                else
+                    printf("%s", pidStr);
+                printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
+
+                /* STATUS */
+                finalStatus = pData->finalStatus;
+                status = pStateData->desc;
+                printStatus(pState, status, *finalStatus, false);
+                if (*finalStatus == FINAL_STATUS_FAILURE)
+                    printf("%*s", 10 - 6 + PADDING, ""); //Failed str
+                else
+                    printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
+                /* Description */
+                printf("%s", unitDisplay->desc);
+                printf("\n");
+            }
+            printf("\n%d units found\n", lenUnits);
         }
-        printf("\n%d units found\n", lenUnits);
+    }
+    else { /* parent */
+        char *args[] = { "less", "-FRGM", NULL };
+        close(pfds[1]);
+        dup2(pfds[0], STDIN_FILENO);
+        close(pfds[0]);
+        execvp(args[0], args);
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitList", errno, strerror(errno),
+                 "Execvp error");
+        rv = 1;
+        goto out;
     }
 
-    sockMessageOutRelease(sockMessageOut);
-    return rv;
+    out:
+        sockMessageOutRelease(sockMessageOut);
+        return rv;
 }
 
 int
@@ -875,6 +914,8 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                *nextTimeDate, *leftTimeDuration;
     PState pState;
     char *lastTime = NULL;
+    int pfds[2];
+    pid_t pidFork;
 
     rv = len = restartNum = lenPDataHistory = lenUnitErrors = 0;
     sockErrors = units = unitErrors = pDatasHistory = messages = NULL;
@@ -885,195 +926,220 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 
     assert(unitName);
 
-    if ((rv = getUnitStatus(sockMessageOut, unitName)) == 0) {
+    /* Pipe */
+    if ((rv = pipe(pfds)) < 0) {
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitStatus", errno, strerror(errno),
+                 "Pipe function returned a bad exit code");
+        goto out;
+    }
+    /* Fork */
+    pidFork = fork();
+    if (pidFork < 0) {
+        rv = errno;
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitStatus", errno, strerror(errno),
+                 "Fork function returned a bad exit code");
+        goto out;
+    }
+    else if (pidFork == 0) { /* child */
+        close(pfds[0]);
+        dup2(pfds[1], STDOUT_FILENO);
+        close(pfds[1]);
 
-        /* Display the errors */
-        sockErrors = (*sockMessageOut)->errors;
-        len = (sockErrors ? sockErrors->size : 0);
-        for (int i = 0; i < len; i++) {
-            logErrorStr(CONSOLE, arrayGet(sockErrors, i));
-            printf("\n");
-        }
+        if ((rv = getUnitStatus(sockMessageOut, unitName)) == 0) {
 
-        /* Display the messages */
-        messages = (*sockMessageOut)->messages;
-        len = (messages ? messages->size : 0);
-        for (int i = 0; i < len; i++) {
-            message = arrayGet(messages, i);
-            if (stringStartsWithStr(message, "Warning"))
-                logWarning(CONSOLE, message);
-            else
-                logInfo(CONSOLE, message);
-            printf("\n");
-        }
-
-        /* Display the unit detail */
-        units = (*sockMessageOut)->unitsDisplay;
-        len = (units ? units->size : 0);
-        for (int i = 0; i < len; i++) {
-            unit = arrayGet(units, i);
-            desc = unit->desc;
-            pData = unit->processData;
-            pStateData = pData->pStateData;
-            pState = pStateData->pState;
-            unitErrors = unit->errors;
-            dateTimeStart = pData->dateTimeStartStr;
-            dateTimeStop = pData->dateTimeStopStr;
-            duration = pData->duration;
-
-            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT DATA", DEFAULT_COLOR);
-            /* Name */
-            printf("\n%*s %s (%s)\n", MAX_LEN_KEY, "Name :", unit->name, unit->path);
-
-            /* Description */
-            if (desc)
-                printf("%*s %s\n", MAX_LEN_KEY, "Description :", desc);
-            /* Enabled */
-            printf("%*s %s\n", MAX_LEN_KEY, "Enabled :", (unit->enabled ? "true" : "false"));
-            /* Restartable */
-            printf("%*s %s", MAX_LEN_KEY, "Restartable :", (unit->restart ? "true" : "false"));
-            if (unit->restartMax != -1)
-                printf(" (Max %d)", unit->restartMax);
-            printf("\n");
-
-            /* Evetual timer data for the unit */
-            char *timerName = unit->timerName ? stringNew(unit->timerName) : NULL;
-            if (timerName) {
-                PState *timerPState = unit->timerPState;
-                switch (*timerPState) {
-                    case DEAD:
-                        stringPrependStr(&timerName, GREY_COLOR);
-                        break;
-                    case RESTARTING:
-                        stringPrependStr(&timerName, YELLOW_COLOR);
-                        break;
-                    case RUNNING:
-                        stringPrependStr(&timerName, GREEN_COLOR);
-                        break;
-                    default:
-                        break;
-                }
-                stringAppendStr(&timerName, DEFAULT_COLOR);
-                printf("%*s %s", MAX_LEN_KEY, "Timer :", timerName);
+            /* Display the errors */
+            sockErrors = (*sockMessageOut)->errors;
+            len = (sockErrors ? sockErrors->size : 0);
+            for (int i = 0; i < len; i++) {
+                logErrorStr(CONSOLE, arrayGet(sockErrors, i));
                 printf("\n");
             }
-            objectRelease(&timerName);
 
-            /* Timer Unit Data */
-            interval = unit->intervalStr;
-            if (interval && strlen(interval) > 0) {
-                printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "TIMER DATA", DEFAULT_COLOR);
-
-                /* Wake system */
-                bool *wakeSystem = unit->wakeSystem;
-                printf("%*s %s\n", MAX_LEN_KEY, "Wake system :",
-                       wakeSystem && *wakeSystem ? "true" : "false");
-
-                /* Interval as string */
-                printf("%*s %s\n", MAX_LEN_KEY, "Interval :", interval);
-
-                /* Last Time */
-                lastTime = getLastTime(unit);
-                if (lastTime) {
-                    printf("%*s %s \n", MAX_LEN_KEY, "Last Time :", lastTime);
-                    objectRelease(&lastTime);
-                }
-                /* Next time */
-                nextTimeDate = unit->nextTimeDate;
-                if (nextTimeDate && strlen(nextTimeDate) > 0)
-                    printf("%*s %s\n", MAX_LEN_KEY, "Next Time :", unit->nextTimeDate);
-                /* Left time */
-                leftTimeDuration = unit->leftTimeDuration;
-                if (leftTimeDuration && strlen(leftTimeDuration) > 0)
-                    printf("%*s %s\n", MAX_LEN_KEY, "Left Time :", unit->leftTimeDuration);
+            /* Display the messages */
+            messages = (*sockMessageOut)->messages;
+            len = (messages ? messages->size : 0);
+            for (int i = 0; i < len; i++) {
+                message = arrayGet(messages, i);
+                if (stringStartsWithStr(message, "Warning"))
+                    logWarning(CONSOLE, message);
+                else
+                    logInfo(CONSOLE, message);
+                printf("\n");
             }
 
-            printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "PROCESS DATA", DEFAULT_COLOR);
-            /* Process Type */
-            printf("%*s %s\n", MAX_LEN_KEY, "Type :", PTYPE_DATA_ITEMS[unit->type].desc);
-            /* Pid */
-            pid = pData->pid;
-            if (*pid != -1)
-                printf("%*s %d\n", MAX_LEN_KEY, "Pid :", *pid);
-            /* Status */
-            finalStatus = pData->finalStatus;
-            status = pStateData->desc;
-            printf("%*s ", MAX_LEN_KEY, "Status :");
-            printStatus(pState, status, *finalStatus, true);
-            /* Date time start */
-            if (dateTimeStart && strcmp(dateTimeStart, NONE) != 0)
-                printf("%*s %s\n", MAX_LEN_KEY, "Started at :", dateTimeStart);
-            /* Date time stop */
-            if (dateTimeStop)
-                printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", dateTimeStop);
-            if (pState != DEAD) {
-                /* Exit code */
-                exitCode = pData->exitCode;
-                printExitCode(*exitCode);
-                /* Signal num */
-                signalNum = pData->signalNum;
-                printSignalNum(*signalNum);
-            }
+            /* Display the unit detail */
+            units = (*sockMessageOut)->unitsDisplay;
+            len = (units ? units->size : 0);
+            for (int i = 0; i < len; i++) {
+                unit = arrayGet(units, i);
+                desc = unit->desc;
+                pData = unit->processData;
+                pStateData = pData->pStateData;
+                pState = pStateData->pState;
+                unitErrors = unit->errors;
+                dateTimeStart = pData->dateTimeStartStr;
+                dateTimeStop = pData->dateTimeStopStr;
+                duration = pData->duration;
 
-            lenUnitErrors = (unitErrors ? unitErrors->size : 0);
-            /* Duration */
-            if (lenUnitErrors == 0 && duration)
-                printf("%*s %s\n", MAX_LEN_KEY, "Duration :", duration);
-            /* Unit errors */
-            if (lenUnitErrors > 0) {
-                printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "UNIT ERRORS", DEFAULT_COLOR);
-                for (int j = 0; j < lenUnitErrors; j++) {
-                    logErrorStr(CONSOLE, "[%d] %s", j + 1, arrayGet(unitErrors, j));
+                printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT DATA", DEFAULT_COLOR);
+                /* Name */
+                printf("\n%*s %s (%s)\n", MAX_LEN_KEY, "Name :", unit->name, unit->path);
+
+                /* Description */
+                if (desc)
+                    printf("%*s %s\n", MAX_LEN_KEY, "Description :", desc);
+                /* Enabled */
+                printf("%*s %s\n", MAX_LEN_KEY, "Enabled :", (unit->enabled ? "true" : "false"));
+                /* Restartable */
+                printf("%*s %s", MAX_LEN_KEY, "Restartable :", (unit->restart ? "true" : "false"));
+                if (unit->restartMax != -1)
+                    printf(" (Max %d)", unit->restartMax);
+                printf("\n");
+
+                /* Evetual timer data for the unit */
+                char *timerName = unit->timerName ? stringNew(unit->timerName) : NULL;
+                if (timerName) {
+                    PState *timerPState = unit->timerPState;
+                    switch (*timerPState) {
+                        case DEAD:
+                            stringPrependStr(&timerName, GREY_COLOR);
+                            break;
+                        case RESTARTING:
+                            stringPrependStr(&timerName, YELLOW_COLOR);
+                            break;
+                        case RUNNING:
+                            stringPrependStr(&timerName, GREEN_COLOR);
+                            break;
+                        default:
+                            break;
+                    }
+                    stringAppendStr(&timerName, DEFAULT_COLOR);
+                    printf("%*s %s", MAX_LEN_KEY, "Timer :", timerName);
                     printf("\n");
                 }
-            }
+                objectRelease(&timerName);
 
-            /* Process data history */
-            restartNum = unit->restartNum;
-            if (restartNum > 0) {
-                printf("\n%s%s%s", WHITE_UNDERLINE_COLOR, "PROCESS DATA HISTORY", DEFAULT_COLOR);
-                if (restartNum == 1)
-                    logWarning(CONSOLE, "\nThe unit has been restarted %d time.\n", restartNum);
-                else
-                    logWarning(CONSOLE, "\nThe unit has been restarted %d times.\n", restartNum);
+                /* Timer Unit Data */
+                interval = unit->intervalStr;
+                if (interval && strlen(interval) > 0) {
+                    printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "TIMER DATA", DEFAULT_COLOR);
+                    /* Interval as string */
+                    printf("%*s %s\n", MAX_LEN_KEY, "Interval :", interval);
+                    /* Last Time */
+                    lastTime = getLastTime(unit);
+                    if (lastTime) {
+                        printf("%*s %s \n", MAX_LEN_KEY, "Last Time :", lastTime);
+                        objectRelease(&lastTime);
+                    }
+                    /* Next time */
+                    nextTimeDate = unit->nextTimeDate;
+                    if (nextTimeDate && strlen(nextTimeDate) > 0)
+                        printf("%*s %s\n", MAX_LEN_KEY, "Next Time :", unit->nextTimeDate);
+                    /* Left time */
+                    leftTimeDuration = unit->leftTimeDuration;
+                    if (leftTimeDuration && strlen(leftTimeDuration) > 0)
+                        printf("%*s %s\n", MAX_LEN_KEY, "Left Time :", unit->leftTimeDuration);
+                }
 
-                if (restartNum > SHOW_MAX_RESULTS)
-                    logWarning(CONSOLE, "Following are shown the last %d results.\n",
-                                                        SHOW_MAX_RESULTS);
-                pDatasHistory = unit->processDataHistory;
-                lenPDataHistory = (pDatasHistory ? pDatasHistory->size : 0 );
-                for (int j = 0; j < lenPDataHistory; j++) {
-                    pDataHistory = arrayGet(pDatasHistory, j);
-                    pStateDataHistory = pDataHistory->pStateData;
-                    /* Number */
-                    printf("[%d]\n", j + 1);
-                    /* Pid */
-                    pid = pDataHistory->pid;
-                    if (*pid != -1)
-                        printf("%*s %d\n", MAX_LEN_KEY, "Pid :", *pid);
-                    /* Status */
-                    finalStatus = pDataHistory->finalStatus;
-                    status = pStateDataHistory->desc;
-                    printf("%*s ", MAX_LEN_KEY, "Status :");
-                    printStatus(pState, status, *finalStatus, true);
-                    /* Date time start/stop */
-                    printf("%*s %s\n", MAX_LEN_KEY, "Started at :", pDataHistory->dateTimeStartStr);
-                    printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", pDataHistory->dateTimeStopStr);
-                    printf("%*s %s\n", MAX_LEN_KEY, "Duration :", pDataHistory->duration);
+                printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "PROCESS DATA", DEFAULT_COLOR);
+                /* Process Type */
+                printf("%*s %s\n", MAX_LEN_KEY, "Type :", PTYPE_DATA_ITEMS[unit->type].desc);
+                /* Pid */
+                pid = pData->pid;
+                if (*pid != -1)
+                    printf("%*s %d\n", MAX_LEN_KEY, "Pid :", *pid);
+                /* Status */
+                finalStatus = pData->finalStatus;
+                status = pStateData->desc;
+                printf("%*s ", MAX_LEN_KEY, "Status :");
+                printStatus(pState, status, *finalStatus, true);
+                /* Date time start */
+                if (dateTimeStart && strcmp(dateTimeStart, NONE) != 0)
+                    printf("%*s %s\n", MAX_LEN_KEY, "Started at :", dateTimeStart);
+                /* Date time stop */
+                if (dateTimeStop)
+                    printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", dateTimeStop);
+                if (pState != DEAD) {
                     /* Exit code */
-                    exitCode = pDataHistory->exitCode;
+                    exitCode = pData->exitCode;
                     printExitCode(*exitCode);
                     /* Signal num */
-                    signalNum = pDataHistory->signalNum;
+                    signalNum = pData->signalNum;
                     printSignalNum(*signalNum);
-                    printBar(40);
                 }
-            }
-       }
+
+                lenUnitErrors = (unitErrors ? unitErrors->size : 0);
+                /* Duration */
+                if (lenUnitErrors == 0 && duration)
+                    printf("%*s %s\n", MAX_LEN_KEY, "Duration :", duration);
+                /* Unit errors */
+                if (lenUnitErrors > 0) {
+                    printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "UNIT ERRORS", DEFAULT_COLOR);
+                    for (int j = 0; j < lenUnitErrors; j++) {
+                        logErrorStr(CONSOLE, "[%d] %s", j + 1, arrayGet(unitErrors, j));
+                        printf("\n");
+                    }
+                }
+
+                /* Process data history */
+                restartNum = unit->restartNum;
+                if (restartNum > 0) {
+                    printf("\n%s%s%s", WHITE_UNDERLINE_COLOR, "PROCESS DATA HISTORY", DEFAULT_COLOR);
+                    if (restartNum == 1)
+                        logWarning(CONSOLE, "\nThe unit has been restarted %d time.\n", restartNum);
+                    else
+                        logWarning(CONSOLE, "\nThe unit has been restarted %d times.\n", restartNum);
+
+                    if (restartNum > SHOW_MAX_RESULTS)
+                        logWarning(CONSOLE, "Following are shown the last %d results.\n",
+                                                            SHOW_MAX_RESULTS);
+                    pDatasHistory = unit->processDataHistory;
+                    lenPDataHistory = (pDatasHistory ? pDatasHistory->size : 0 );
+                    for (int j = 0; j < lenPDataHistory; j++) {
+                        pDataHistory = arrayGet(pDatasHistory, j);
+                        pStateDataHistory = pDataHistory->pStateData;
+                        /* Number */
+                        printf("[%d]\n", j + 1);
+                        /* Pid */
+                        pid = pDataHistory->pid;
+                        if (*pid != -1)
+                            printf("%*s %d\n", MAX_LEN_KEY, "Pid :", *pid);
+                        /* Status */
+                        finalStatus = pDataHistory->finalStatus;
+                        status = pStateDataHistory->desc;
+                        printf("%*s ", MAX_LEN_KEY, "Status :");
+                        printStatus(pState, status, *finalStatus, true);
+                        /* Date time start/stop */
+                        printf("%*s %s\n", MAX_LEN_KEY, "Started at :", pDataHistory->dateTimeStartStr);
+                        printf("%*s %s\n", MAX_LEN_KEY, "Finished at :", pDataHistory->dateTimeStopStr);
+                        printf("%*s %s\n", MAX_LEN_KEY, "Duration :", pDataHistory->duration);
+                        /* Exit code */
+                        exitCode = pDataHistory->exitCode;
+                        printExitCode(*exitCode);
+                        /* Signal num */
+                        signalNum = pDataHistory->signalNum;
+                        printSignalNum(*signalNum);
+                        printBar(40);
+                    }
+                }
+           }
+        }
+    }
+    else { /* parent */
+        char *args[] = { "less", "-FRGM", NULL };
+        close(pfds[1]);
+        dup2(pfds[0], STDIN_FILENO);
+        close(pfds[0]);
+        execvp(args[0], args);
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitStatus", errno, strerror(errno),
+                 "Execvp error");
+        rv = 1;
+        goto out;
     }
 
-    sockMessageOutRelease(sockMessageOut);
-    return 0;
+    out:
+        sockMessageOutRelease(sockMessageOut);
+        return rv;
 }
 
 int
@@ -1717,92 +1783,125 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
     Array *unitsDisplay, *messages;
     char *unitName, *duration, *desc;
     Unit *unitDisplay = NULL;
+    int pfds[2];
+    pid_t pid;
 
     rv = lenUnits = maxLenName = maxLenDesc = len = 0;
     unitName = duration = desc = NULL;
     unitsDisplay = messages = NULL;
 
-    /* Filling sockMessageOut */
-    if ((rv = getUnitList(sockMessageOut, true, NO_FILTER)) == 0) {
-        unitsDisplay = (*sockMessageOut)->unitsDisplay;
-        messages = (*sockMessageOut)->messages;
-        maxLenName = getMaxLen(unitsDisplay, "name");
-        maxLenDuration = getMaxLen(unitsDisplay, "duration");
-        maxLenDesc = getMaxLen(unitsDisplay, "desc");
-        lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
-        if (maxLenName < WIDTH_UNIT_NAME)
-            maxLenName = WIDTH_UNIT_NAME;
-        if (maxLenDuration < WIDTH_DURATION)
-            maxLenDuration = WIDTH_DURATION;
-        if (maxLenDesc < WIDTH_DESCRIPTION)
-            maxLenDesc = WIDTH_DESCRIPTION;
-        /* HEADER */
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+    /* Pipe */
+    if ((rv = pipe(pfds)) < 0) {
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showBootAnalyze", errno, strerror(errno),
+                 "Pipe function returned a bad exit code");
+        goto out;
+    }
+    /* Fork */
+    pid = fork();
+    if (pid < 0) {
+        rv = errno;
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showBootAnalyze", errno, strerror(errno),
+                 "Fork function returned a bad exit code");
+        goto out;
+    }
+    else if (pid == 0) { /* child */
+        close(pfds[0]);
+        dup2(pfds[1], STDOUT_FILENO);
+        close(pfds[1]);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DURATION", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDuration - WIDTH_DURATION + PADDING, "", DEFAULT_COLOR);
+        /* Filling sockMessageOut */
+        if ((rv = getUnitList(sockMessageOut, true, NO_FILTER)) == 0) {
+            unitsDisplay = (*sockMessageOut)->unitsDisplay;
+            messages = (*sockMessageOut)->messages;
+            maxLenName = getMaxLen(unitsDisplay, "name");
+            maxLenDuration = getMaxLen(unitsDisplay, "duration");
+            maxLenDesc = getMaxLen(unitsDisplay, "desc");
+            lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
+            if (maxLenName < WIDTH_UNIT_NAME)
+                maxLenName = WIDTH_UNIT_NAME;
+            if (maxLenDuration < WIDTH_DURATION)
+                maxLenDuration = WIDTH_DURATION;
+            if (maxLenDesc < WIDTH_DESCRIPTION)
+                maxLenDesc = WIDTH_DESCRIPTION;
+            /* HEADER */
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DURATION", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDuration - WIDTH_DURATION + PADDING, "", DEFAULT_COLOR);
 
-        printf("\n");
-
-        /* CELLS */
-        for (int i = 0; i < lenUnits; i++) {
-            unitDisplay = arrayGet(unitsDisplay, i);
-
-            //Unit name
-            unitName = unitDisplay->name;
-            printf("%s", unitName);
-            len = strlen(unitName);
-            if (maxLenName < len)
-                maxLenName = len;
-            printf("%*s", maxLenName - len + PADDING, "");
-
-            //Duration
-            duration = unitDisplay->processData->duration;
-            if (duration)
-                logSuccess(CONSOLE, "%s", duration);
-            else
-                printf("-");
-            len = (duration ? strlen(duration) : 1);
-            if (maxLenDuration < len)
-                maxLenDuration = len;
-            printf("%*s", maxLenDuration - len + PADDING, "");
-
-            /* Description */
-            desc = unitDisplay->desc;
-            if (desc)
-                printf("%s", desc);
-            else
-                printf("-");
-            len = (desc ? strlen(desc) : 1);
-            if (maxLenDesc < len)
-                maxLenDesc = len;
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
 
             printf("\n");
-        }
-        printf("\n%d units found\n\n", lenUnits);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR,
-               !USER_INSTANCE ? "SYSTEM INSTANCE INFO\n" : "USER INSTANCE INFO\n",
-               DEFAULT_COLOR);
-        /* Messages */
-        len = (messages ? messages->size : 0);
-        for (int i = 0; i < len; i++) {
-            char *message = arrayGet(messages, i);
-            if (stringStartsWithStr(message, "Boot"))
-                logInfo(CONSOLE, "     %s", message);
-            else
-                logInfo(CONSOLE, "%s", message);
-            printf("\n");
-        }
+            /* CELLS */
+            for (int i = 0; i < lenUnits; i++) {
+                unitDisplay = arrayGet(unitsDisplay, i);
 
+                //Unit name
+                unitName = unitDisplay->name;
+                printf("%s", unitName);
+                len = strlen(unitName);
+                if (maxLenName < len)
+                    maxLenName = len;
+                printf("%*s", maxLenName - len + PADDING, "");
+
+                //Duration
+                duration = unitDisplay->processData->duration;
+                if (duration)
+                    logSuccess(CONSOLE, "%s", duration);
+                else
+                    printf("-");
+                len = (duration ? strlen(duration) : 1);
+                if (maxLenDuration < len)
+                    maxLenDuration = len;
+                printf("%*s", maxLenDuration - len + PADDING, "");
+
+                /* Description */
+                desc = unitDisplay->desc;
+                if (desc)
+                    printf("%s", desc);
+                else
+                    printf("-");
+                len = (desc ? strlen(desc) : 1);
+                if (maxLenDesc < len)
+                    maxLenDesc = len;
+
+                printf("\n");
+            }
+            printf("\n%d units found\n\n", lenUnits);
+
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR,
+                   !USER_INSTANCE ? "SYSTEM INSTANCE INFO\n" : "USER INSTANCE INFO\n",
+                   DEFAULT_COLOR);
+            /* Messages */
+            len = (messages ? messages->size : 0);
+            for (int i = 0; i < len; i++) {
+                char *message = arrayGet(messages, i);
+                if (stringStartsWithStr(message, "Boot"))
+                    logInfo(CONSOLE, "     %s", message);
+                else
+                    logInfo(CONSOLE, "%s", message);
+                printf("\n");
+            }
+        }
+    }
+    else { /* parent */
+        char *args[] = { "less", "-FRGM", NULL };
+        close(pfds[1]);
+        dup2(pfds[0], STDIN_FILENO);
+        close(pfds[0]);
+        execvp(args[0], args);
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showBootAnalyze", errno, strerror(errno),
+                 "Execvp error");
+        rv = 1;
+        goto out;
     }
 
-    sockMessageOutRelease(sockMessageOut);
-    return rv;
+    out:
+        sockMessageOutRelease(sockMessageOut);
+        return rv;
 }
 
 int

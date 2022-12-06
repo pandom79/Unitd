@@ -738,7 +738,7 @@ checkResponse(SockMessageOut *sockMessageOut)
     sockErrors = sockMessageOut->errors;
     sockErrSize = sockErrors ? sockErrors->size : 0;
     if (sockErrSize > 0) {
-        logErrorStr(SYSTEM, "Failed with the following errors:\n");
+        logErrorStr(SYSTEM, "Failed with the following errors:");
         for (int i = 0; i < sockErrSize; i++)
             logErrorStr(SYSTEM, "%s", arrayGet(sockErrors, i));
         rv = 1;
@@ -750,7 +750,7 @@ checkResponse(SockMessageOut *sockMessageOut)
         unitErrors = unitDisplay->errors;
         unitErrSize = unitErrors ? unitErrors->size : 0;
         if (unitErrSize > 0) {
-            logErrorStr(SYSTEM, "Failed with the following errors:\n");
+            logErrorStr(SYSTEM, "Failed with the following errors:");
             for (int i = 0; i < unitErrSize; i++)
                 logErrorStr(SYSTEM, "%s", arrayGet(unitErrors, i));
             rv = 1;
@@ -874,9 +874,6 @@ startTimerThread(void *arg)
         if (UNITD_DEBUG)
             logInfo(UNITD_BOOT_LOG | SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
                                              unitName);
-        /* Executing the timer's unit */
-        logInfo(UNITD_BOOT_LOG | SYSTEM, "%s: Executing the timer's unit ...\n", unitName);
-
         /* Unit execution */
         if ((rv = executeUnit(unit)) == 114)
             goto listen;
@@ -947,8 +944,8 @@ startTimerThread(void *arg)
             goto out;
         }
 
-    if (input == THREAD_EXIT)
-        goto out;
+        if (input == THREAD_EXIT)
+            goto out;
 
     out:
         timer_delete(timerId);

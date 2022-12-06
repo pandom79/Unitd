@@ -400,6 +400,7 @@ setSigAction()
     act.sa_sigaction = signalsHandler;
     if (sigaction(SIGTERM, &act, NULL) == -1 ||
         sigaction(SIGINT, &act, NULL)  == -1 ||
+        sigaction(SIGALRM, &act, NULL)  == -1 ||
         sigaction(SIGCHLD, &act, NULL) == -1) {
         rv = -1;
         logError(CONSOLE | UNITD_BOOT_LOG, "src/core/common/common.c", "setSigAction", errno, strerror(errno),

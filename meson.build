@@ -209,8 +209,9 @@ install_data('README.md', install_dir: doc_path)
 install_data('completion/bash/unitctl', install_dir: bash_comp_path)
 install_data('completion/bash/unitd', install_dir: bash_comp_path)
 
-# Install zzz script
-install_data('src/extra/scripts/zzz', install_dir: sbin_path)
+# Install zzz script and hook
+install_data('external/zzz', install_dir: sbin_path)
+run_command('ln', '-s', prefix/sbin_path/'zzz', prefix/sbin_path/'ZZZ', check: false)
 
 # Install man pages
 install_subdir('man/man8', install_dir: mandir)
