@@ -21,6 +21,7 @@ showUsage()
         "show-size          Show the log size\n"
         "list-boots         List the boots\n"
         "show-boot          Show the boot\n"
+        "show-current       Show the current boot\n"
         "index-repair       Repair the index\n"
         "vacuum             Remove the log lines of the specified \n"
         "                   boot index or boot index range\n"
@@ -156,6 +157,14 @@ int main(int argc, char **argv) {
                 goto out;
             }
             printLogSizeInfo(-1, -1, getFileSize(UNITLOGD_LOG_PATH));
+            break;
+        case SHOW_CURRENT:
+            if (argc < 2 || argc > 5 || (argc > 2 && !UNITLOGCTL_DEBUG && !pager && !follow)) {
+                showUsage();
+                rv = 1;
+                goto out;
+            }
+            rv = showCurrentBoot(pager, follow);
             break;
         default:
             break;

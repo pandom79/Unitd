@@ -45,7 +45,7 @@ _unitlogctl () {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local line=${COMP_WORDS[*]}
     local -A COMMANDS=(
-        [SYSTEM]='show-log list-boots show-boot index-repair vacuum show-size'
+        [SYSTEM]='show-log list-boots show-boot index-repair vacuum show-size show-current'
     )
     local -A OPTS=(
         [SYSTEM]=' --follow --pager --debug --help --version'
@@ -74,6 +74,10 @@ _unitlogctl () {
         COMMAND="index-repair"
     elif __contains_word "vacuum" ${line}; then
         COMMAND="vacuum"
+    elif __contains_word "show-size" ${line}; then
+        COMMAND="show-size"
+    elif __contains_word "show-current" ${line}; then
+        COMMAND="show-current"
     fi
 
      if [ ! -z $COMMAND ]; then

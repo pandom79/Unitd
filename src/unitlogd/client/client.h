@@ -25,7 +25,8 @@ typedef enum {
     SHOW_BOOT = 2,
     INDEX_REPAIR = 3,
     VACUUM = 4,
-    SHOW_SIZE = 5
+    SHOW_SIZE = 5,
+    SHOW_CURRENT = 6
 } UlCommand;
 typedef struct {
     UlCommand ulCommand;
@@ -39,6 +40,7 @@ int showLog(bool, bool);
 int showLogLines(off_t, off_t);
 int sendToPager(int (*fn)(off_t, off_t), off_t, off_t);
 int showBoot(bool, bool, const char *);
+int showCurrentBoot(bool, bool);
 int followLog();
 int createIndexFile();
 int vacuum(const char *);

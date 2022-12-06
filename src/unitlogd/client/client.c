@@ -16,9 +16,10 @@ UlCommandData UL_COMMAND_DATA[] = {
     { SHOW_BOOT, "show-boot" },
     { INDEX_REPAIR, "index-repair" },
     { VACUUM, "vacuum" },
-    { SHOW_SIZE, "show-size" }
+    { SHOW_SIZE, "show-size" },
+    { SHOW_CURRENT, "show-current" }
 };
-int UL_COMMAND_DATA_LEN = 6;
+int UL_COMMAND_DATA_LEN = 7;
 
 UlCommand
 getUlCommand(const char *commandName)
@@ -39,6 +40,7 @@ getSkipCheckAdmin(UlCommand ulCommand)
         case LIST_BOOTS:
         case SHOW_BOOT:
         case SHOW_SIZE:
+        case SHOW_CURRENT:
             return true;
         default:
             return false;
@@ -260,6 +262,36 @@ showLog(bool pager, bool follow)
 
     out:
 
+        return rv;
+}
+
+int
+showCurrentBoot(bool pager, bool follow)
+{
+    int rv = 0, maxIdx = -1;
+    Array *index = NULL;
+    char maxIdxStr[10] = {0};
+
+    /* Get the index */
+    if ((rv = getIndex(&index, true)) != 0) {
+        setIndexErr(true);
+        goto out;
+    }
+
+    /* Get max idx which is the current. */
+    maxIdx = getMaxIdx(&index);
+    assert(maxIdx != -1);
+    /* Get max idx as string */
+    sprintf(maxIdxStr, "%d", maxIdx);
+    assert(strlen(maxIdxStr) > 0);
+
+    /* Show */
+    rv = showBoot(pager, follow, maxIdxStr);
+
+    out:
+        arrayRelease(&index);
+        unitlogdCloseIndex();
+        assert(!UNITLOGD_INDEX_FILE);
         return rv;
 }
 
