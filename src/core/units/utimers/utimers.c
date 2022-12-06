@@ -910,7 +910,7 @@ startTimerThread(void *arg)
     sev.sigev_notify_function = &expired;
     sev.sigev_value.sival_ptr = &eventData;
     /* Create timer */
-    rv = timer_create(wakeSystem ? CLOCK_REALTIME_ALARM : CLOCK_REALTIME, &sev, &timerId);
+    rv = timer_create(wakeSystem ? CLOCK_BOOTTIME_ALARM : CLOCK_BOOTTIME, &sev, &timerId);
     if (rv == -1) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
                  strerror(errno), "Unable to create the timer for the '%s' unit",
