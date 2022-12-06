@@ -733,117 +733,151 @@ showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
     Unit *unitDisplay = NULL;
     const char *unitName, *leftTime, *nextTime, *status;
     char *lasTime = NULL;
+    int pfds[2];
+    pid_t pidFork;
 
     unitName = leftTime = nextTime = status = NULL;
     rv = lenUnits = maxLenName = len = -1;
 
-    /* Filling sockMessageOut */
-    if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
-        unitsDisplay = (*sockMessageOut)->unitsDisplay;
-        lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
+    /* Pipe */
+    if ((rv = pipe(pfds)) < 0) {
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showTimersList", errno, strerror(errno),
+                 "Pipe function returned a bad exit code");
+        goto out;
+    }
+    /* Fork */
+    pidFork = fork();
+    if (pidFork < 0) {
+        rv = errno;
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showTimersList", errno, strerror(errno),
+                 "Fork function returned a bad exit code");
+        goto out;
+    }
+    else if (pidFork == 0) { /* child */
+        close(pfds[0]);
+        dup2(pfds[1], STDOUT_FILENO);
+        close(pfds[1]);
 
-        /* Get max len */
-        maxLenName = getMaxLen(unitsDisplay, "name");
-        maxLeftTime = getMaxLen(unitsDisplay, "leftTime");
+        /* Filling sockMessageOut */
+        if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
+            unitsDisplay = (*sockMessageOut)->unitsDisplay;
+            lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
 
-        if (maxLenName < WIDTH_UNIT_NAME)
-            maxLenName = WIDTH_UNIT_NAME;
-        if (maxLeftTime < WIDTH_LAST_TIME)
-            maxLeftTime = WIDTH_LAST_TIME;
+            /* Get max len */
+            maxLenName = getMaxLen(unitsDisplay, "name");
+            maxLeftTime = getMaxLen(unitsDisplay, "leftTime");
 
-        /* HEADER */
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+            if (maxLenName < WIDTH_UNIT_NAME)
+                maxLenName = WIDTH_UNIT_NAME;
+            if (maxLeftTime < WIDTH_LAST_TIME)
+                maxLeftTime = WIDTH_LAST_TIME;
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
+            /* HEADER */
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
 
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LAST TIME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_LAST_TIME + PADDING, "", DEFAULT_COLOR);
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
 
-        /* "next time" width is the same of "last time" */
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "NEXT TIME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_LAST_TIME + PADDING, "", DEFAULT_COLOR);
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LAST TIME", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_LAST_TIME + PADDING, "", DEFAULT_COLOR);
 
-        /* "left time" width is the same of "last time" */
-        printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LEFT TIME", DEFAULT_COLOR);
-        printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLeftTime - WIDTH_LAST_TIME, "", DEFAULT_COLOR);
+            /* "next time" width is the same of "last time" */
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "NEXT TIME", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_LAST_TIME + PADDING, "", DEFAULT_COLOR);
 
-        printf("\n");
-
-        /* CELLS */
-        for (int i = 0; i < lenUnits; i++) {
-            unitDisplay = arrayGet(unitsDisplay, i);
-            ProcessData *pData = unitDisplay->processData;
-            PStateData *pStateData = pData->pStateData;
-            PState pState = pStateData->pState;
-
-            /* Unit name
-             * Warning: don't color unit name because the bash completion fails
-            */
-            unitName = unitDisplay->name;
-            printf("%s", unitName);
-            len = strlen(unitName);
-            if (maxLenName < len)
-                maxLenName = len;
-            printf("%*s", maxLenName - len + PADDING, "");
-
-            /* STATUS */
-            finalStatus = pData->finalStatus;
-            status = pStateData->desc;
-            printStatus(pState, status, *finalStatus, false);
-            if (*finalStatus == FINAL_STATUS_FAILURE)
-                printf("%*s", 10 - 6 + PADDING, ""); //Failed str
-            else
-                printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
-
-            /* Last time */
-            lasTime = getLastTime(unitDisplay);
-            if (lasTime) {
-                printf("%s", lasTime);
-                printf("%*s", PADDING, "");
-            }
-            else {
-                lasTime = stringNew("-");
-                printf("%s", lasTime);
-                printf("%*s", WIDTH_DATE - 1 + PADDING, "");
-            }
-            objectRelease(&lasTime);
-
-            /* Next time */
-            nextTime = unitDisplay->nextTimeDate;
-            if (nextTime) {
-                printf("%s", nextTime);
-                len = strlen(nextTime);
-                printf("%*s", WIDTH_DATE - len + PADDING, "");
-            }
-            else {
-                printf("-");
-                printf("%*s", WIDTH_DATE - 1 + PADDING, "");
-            }
-
-            /* Left time */
-            leftTime = unitDisplay->leftTimeDuration;
-            if (leftTime) {
-                printf("%s", leftTime);
-                len = strlen(leftTime);
-                if (maxLeftTime < len)
-                    maxLeftTime = len;
-                printf("%*s", maxLeftTime - len, "");
-            }
-            else {
-                printf("-");
-                printf("%*s", maxLeftTime - 1, "");
-            }
+            /* "left time" width is the same of "last time" */
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LEFT TIME", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLeftTime - WIDTH_LAST_TIME, "", DEFAULT_COLOR);
 
             printf("\n");
 
+            /* CELLS */
+            for (int i = 0; i < lenUnits; i++) {
+                unitDisplay = arrayGet(unitsDisplay, i);
+                ProcessData *pData = unitDisplay->processData;
+                PStateData *pStateData = pData->pStateData;
+                PState pState = pStateData->pState;
+
+                /* Unit name
+                 * Warning: don't color unit name because the bash completion fails
+                */
+                unitName = unitDisplay->name;
+                printf("%s", unitName);
+                len = strlen(unitName);
+                if (maxLenName < len)
+                    maxLenName = len;
+                printf("%*s", maxLenName - len + PADDING, "");
+
+                /* STATUS */
+                finalStatus = pData->finalStatus;
+                status = pStateData->desc;
+                printStatus(pState, status, *finalStatus, false);
+                if (*finalStatus == FINAL_STATUS_FAILURE)
+                    printf("%*s", 10 - 6 + PADDING, ""); //Failed str
+                else
+                    printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
+
+                /* Last time */
+                lasTime = getLastTime(unitDisplay);
+                if (lasTime) {
+                    printf("%s", lasTime);
+                    printf("%*s", PADDING, "");
+                }
+                else {
+                    lasTime = stringNew("-");
+                    printf("%s", lasTime);
+                    printf("%*s", WIDTH_DATE - 1 + PADDING, "");
+                }
+                objectRelease(&lasTime);
+
+                /* Next time */
+                nextTime = unitDisplay->nextTimeDate;
+                if (nextTime) {
+                    printf("%s", nextTime);
+                    len = strlen(nextTime);
+                    printf("%*s", WIDTH_DATE - len + PADDING, "");
+                }
+                else {
+                    printf("-");
+                    printf("%*s", WIDTH_DATE - 1 + PADDING, "");
+                }
+
+                /* Left time */
+                leftTime = unitDisplay->leftTimeDuration;
+                if (leftTime) {
+                    printf("%s", leftTime);
+                    len = strlen(leftTime);
+                    if (maxLeftTime < len)
+                        maxLeftTime = len;
+                    printf("%*s", maxLeftTime - len, "");
+                }
+                else {
+                    printf("-");
+                    printf("%*s", maxLeftTime - 1, "");
+                }
+
+                printf("\n");
+
+            }
+            printf("\n%d units found\n", lenUnits);
         }
-        printf("\n%d units found\n", lenUnits);
+    }
+    else { /* parent */
+        char *args[] = { "less", "-FRGM", NULL };
+        close(pfds[1]);
+        dup2(pfds[0], STDIN_FILENO);
+        close(pfds[0]);
+        execvp(args[0], args);
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showTimersList", errno, strerror(errno),
+                 "Execvp error");
+        rv = 1;
+        goto out;
     }
 
-    sockMessageOutRelease(sockMessageOut);
-    return rv;
+    out:
+        sockMessageOutRelease(sockMessageOut);
+        return rv;
 }
 
 
