@@ -305,14 +305,10 @@ checkInterval(Unit **unit)
 {
     int rv = 0;
     char *interval, *intervalStr;
-    int *intSeconds = NULL;
-    int *intMinutes = NULL;
-    int *intHours = NULL;
-    int *intDays = NULL;
-    int *intWeeks = NULL;
-    int *intMonths = NULL;
+    int *intSeconds, *intMinutes, *intHours, *intDays, *intWeeks, *intMonths;
 
     interval = intervalStr = NULL;
+    intSeconds = intMinutes = intHours = intDays = intWeeks = intMonths = NULL;
 
     assert(*unit);
 

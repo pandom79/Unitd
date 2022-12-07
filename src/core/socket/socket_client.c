@@ -1024,11 +1024,16 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                     printf("%*s %s\n", MAX_LEN_KEY, "Description :", desc);
                 /* Enabled */
                 printf("%*s %s\n", MAX_LEN_KEY, "Enabled :", (unit->enabled ? "true" : "false"));
-                /* Restartable */
-                printf("%*s %s", MAX_LEN_KEY, "Restartable :", (unit->restart ? "true" : "false"));
-                if (unit->restartMax != -1)
-                    printf(" (Max %d)", unit->restartMax);
-                printf("\n");
+
+                /* Restartable.
+                 * We show this property only if the unit is not a timer.
+                */
+                if (unit->type != TIMER) {
+                    printf("%*s %s", MAX_LEN_KEY, "Restartable :", (unit->restart ? "true" : "false"));
+                    if (unit->restartMax != -1)
+                        printf(" (Max %d)", unit->restartMax);
+                    printf("\n");
+                }
 
                 /* Evetual timer data for the unit */
                 char *timerName = unit->timerName ? stringNew(unit->timerName) : NULL;
