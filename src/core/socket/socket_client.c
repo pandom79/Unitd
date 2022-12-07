@@ -709,7 +709,7 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGM", NULL };
+        char *args[] = { "less", "-FRGMX", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -864,7 +864,7 @@ showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGM", NULL };
+        char *args[] = { "less", "-FRGMX", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -1166,7 +1166,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGM", NULL };
+        char *args[] = { "less", "-FRGMX", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -1928,7 +1928,7 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGM", NULL };
+        char *args[] = { "less", "-FRGMX", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
