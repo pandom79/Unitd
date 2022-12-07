@@ -1123,11 +1123,12 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 /* Process data history */
                 restartNum = unit->restartNum;
                 if (restartNum > 0) {
-                    printf("\n%s%s%s", WHITE_UNDERLINE_COLOR, "PROCESS DATA HISTORY", DEFAULT_COLOR);
+                    printf("\n%s%s%s\n", WHITE_UNDERLINE_COLOR, "PROCESS DATA HISTORY", DEFAULT_COLOR);
+
                     if (restartNum == 1)
-                        logWarning(CONSOLE, "\nThe unit has been restarted %d time.\n", restartNum);
+                        logWarning(CONSOLE, "The unit has been restarted %d time.\n", restartNum);
                     else
-                        logWarning(CONSOLE, "\nThe unit has been restarted %d times.\n", restartNum);
+                        logWarning(CONSOLE, "The unit has been restarted %d times.\n", restartNum);
 
                     if (restartNum > SHOW_MAX_RESULTS)
                         logWarning(CONSOLE, "Following are shown the last %d results.\n",
