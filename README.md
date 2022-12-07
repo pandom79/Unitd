@@ -198,6 +198,8 @@ Requires = ...
 Conflict = dhcpcd                   (optional and repeatable)
 Conflict = ...
 
+WakeSystem = true|false             (optional and not repeatable. If omitted  is "false")
+
 [Interval]                          (required and not repeatable)
 Seconds = num                       (optional and not repeatable. A numeric value greater than zero)
 Minutes = num                       (optional and not repeatable. A numeric value greater than zero)
@@ -211,6 +213,8 @@ WantedBy = multi-user-net           (required and repeatable for system instance
 WantedBy = ...
 WantedBy = user                     (required and not repeatable for user instance)
 ```
+**WakeSystem**<br>
+The timers execution which have **WakeSystem = true** will activate the system in suspension case.<br>
 **Interval**<br>
 Even if the interval section properties are optionals, at least one criterion must be defined.
 
