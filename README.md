@@ -17,6 +17,7 @@ Run ```man unitd``` to consult the manual page.<br/>
 - <a href="#unit-configuration-file">Unit configuration file</a>
 - <a href="#timers">Timers</a>
 - <a href="#timer-unit-configuration-file">Timer unit configuration file</a>
+- <a href="#how-to-configure-the-units">How to configure the units?</a>
 - <a href="#unitctl">Unitctl</a>
 - <a href="#unitlogd-and-unitlogctl">Unitlogd and Unitlogctl</a>
 - <a href="#note">Note</a>
@@ -217,6 +218,78 @@ WantedBy = user                     (required and not repeatable for user instan
 The timers execution which have **WakeSystem = true** will activate the system in suspension case.<br>
 **Interval**<br>
 Even if the interval section properties are optionals, at least one criterion must be defined.
+
+
+### How to configure the units?
+
+One of the problems which you could have is the failure of a dependency when the system starts due to the speed for which the daemons signal the dependencies.<br>
+To fix this problem, you could use the following methods:
+1) Set the **Restart** or **RestartMax** property.
+2) Use a **check unit** (recommended).
+
+The first method (Restart) will cause a restarting until the unit will properly starts.<br>
+The second method (check unit) is a bit more complex instead.<br>
+If a dependency exists means that unit needs of "something" of the other unit.<br>
+The first step to make is figure out that.<br>
+Let's make an example!<br>
+Consider two units: *dbus* and *bluetooth*.<br>
+
+*dbus.unit*
+```
+   [Unit]
+   Description = Dbus
+
+   [Command]
+   Run = set dbus command
+
+   [State]
+   WantedBy = multi-user
+   WantedBy = multi-user-net
+   WantedBy = custom
+   WantedBy = graphical
+```
+
+*bluetooth.unit*
+```
+   [Unit]
+   Description = Bluetooth manager
+   Requires = dbus
+
+   [Command]
+   Run = set bluetooth command
+
+   [State]
+   WantedBy = multi-user-net
+   WantedBy = graphical
+```
+As we know, bluetooth requires dbus but, actually, what does it require?<br>
+Why does the first starting fail?<br>
+After a little investigation, I figure out that bluetooth wants **/var/run/dbus/system_bus_socket** which is just a socket.<br>
+At this point, a check unit can fix the problem.<br>
+I created an oneshot unit named *check-dbus* which content could be:
+
+*check-dbus.unit*
+```
+[Unit]
+Description = Check dbus
+Requires = dbus
+Type = oneshot
+
+[Command]
+Run = check-script.sh
+
+[State]
+WantedBy = multi-user
+WantedBy = multi-user-net
+WantedBy = custom
+WantedBy = graphical
+```
+The **check-script.sh** content must only check that the socket **/var/run/dbus/system_bus_socket** is there.<br>
+After that, we can change the **Requires** property of the *bluetooth.unit* from *dbus* to *check-dbus*.<br>
+At this point, *bluetooth.unit* will start only when that socket is there avoiding the failure<br>
+and an eventual restarting as well.<br>
+You should consider this method to configure all the units.<br>
+The **Restart** or **RestartMax** property should have to be used only when the unit accidentally crashes for some reason.<br>
 
 
 ### Unitctl 
