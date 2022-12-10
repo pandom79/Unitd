@@ -41,7 +41,7 @@ writeUnitContent(State defaultState, const char *unitPath, const char *unitName)
     /* UNIT SECTION */
     fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[0].sectionName.desc);
     /* Description property */
-    fprintf(fp, "%s = set the description for %s unit ...\n\n", UNITS_PROPERTIES_ITEMS[0].propertyName.desc,
+    fprintf(fp, "%s = set the description for %s ...\n\n", UNITS_PROPERTIES_ITEMS[0].propertyName.desc,
             unitName);
     /* Requires property */
     propertyName = UNITS_PROPERTIES_ITEMS[1].propertyName.desc;
@@ -128,7 +128,7 @@ writeTimerContent(State defaultState, const char *unitPath, const char *unitName
     /* UNIT SECTION */
     fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[0].sectionName.desc);
     /* Description property */
-    fprintf(fp, "%s = set the description for %s unit ...\n\n", UTIMERS_PROPERTIES_ITEMS[0].propertyName.desc,
+    fprintf(fp, "%s = set the description for %s ...\n\n", UTIMERS_PROPERTIES_ITEMS[0].propertyName.desc,
             unitName);
     /* Requires property */
     propertyName = UTIMERS_PROPERTIES_ITEMS[1].propertyName.desc;
@@ -709,7 +709,7 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGMX", NULL };
+        char *args[] = { "less", "-FGMXr", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -864,7 +864,7 @@ showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGMX", NULL };
+        char *args[] = { "less", "-FGMXr", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -1166,7 +1166,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGMX", NULL };
+        char *args[] = { "less", "-FGMXr", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -1928,7 +1928,7 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
         }
     }
     else { /* parent */
-        char *args[] = { "less", "-FRGMX", NULL };
+        char *args[] = { "less", "-FGMXr", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);

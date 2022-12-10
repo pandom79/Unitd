@@ -5,9 +5,6 @@
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 option('UNITD_TEST', type: 'boolean', value: false, description: 'Only for unitd development')
-option('DAEMON_SIGNAL_TIME', type: 'integer', value: 200,
-        description: '''It represents the time (milliseconds) between the execution of the daemon
-                      and the signal to the units that depend on it''')
 option('OS_NAME', type: 'string', value: 'Linux', description: 'The OS name')
 option('OUR_UTMP_FILE', type: 'string', description: 'The utmp login registry path')
 option('OUR_WTMP_FILE', type: 'string', description: 'The wtmp login registry path')

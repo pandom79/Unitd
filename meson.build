@@ -72,7 +72,6 @@ conf_data.set('UNITD_TIMER_DATA_PATH', unitd_timer_data_path)
 conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
 conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
-conf_data.set('DAEMON_SIGNAL_TIME', get_option('DAEMON_SIGNAL_TIME'))
 # Unitlogd
 conf_data.set('UNITLOGD_PATH', unitlogd_path)
 conf_data.set('UNITLOGD_DATA_PATH', unitlogd_data_path)

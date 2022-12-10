@@ -125,8 +125,6 @@ execProcess(const char *command, char **argv, Unit **unit)
             break;
         case DAEMON:
             while (waitpid(child, &status, WNOHANG) == 0) {
-                if (DAEMON_SIGNAL_TIME > 0)
-                    msleep(DAEMON_SIGNAL_TIME);
                 /* Meanwhile, it could be catched by signal handler and restarts eventually */
                 if ((pData->pStateData->pState == DEAD || pData->pStateData->pState == RESTARTING)
                     && *pData->exitCode == -1) {

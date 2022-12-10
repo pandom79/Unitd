@@ -931,42 +931,20 @@ void
 unitRelease(Unit **unit)
 {
     Unit *unitTemp = *unit;
-    char *name, *desc, *runCmd, *stopCmd, *type, *path;
-    Array *conflicts, *errors, *requires, *wantedBy, *triggers;
     pthread_cond_t *cv = NULL;
     pthread_mutex_t *mutex = NULL;
     int rv = 0;
 
-    name = desc = runCmd = stopCmd = type = path = NULL;
-    conflicts = errors = requires = wantedBy = triggers = NULL;
-
     if (unitTemp) {
-        if ((name = unitTemp->name))
-            objectRelease(&name);
-
-        if ((path = unitTemp->path))
-            objectRelease(&path);
-
-        if ((conflicts = unitTemp->conflicts))
-            arrayRelease(&conflicts);
-
-        if ((desc = unitTemp->desc))
-            objectRelease(&desc);
-
-        if ((errors = unitTemp->errors))
-            arrayRelease(&errors);
-
-        if ((requires = unitTemp->requires))
-            arrayRelease(&requires);
-
-        if ((runCmd = unitTemp->runCmd))
-            objectRelease(&runCmd);
-
-        if ((stopCmd = unitTemp->stopCmd))
-            objectRelease(&stopCmd);
-
-        if ((wantedBy = unitTemp->wantedBy))
-            arrayRelease(&wantedBy);
+        objectRelease(&unitTemp->name);
+        objectRelease(&unitTemp->path);
+        arrayRelease(&unitTemp->conflicts);
+        objectRelease(&unitTemp->desc);
+        arrayRelease(&unitTemp->errors);
+        arrayRelease(&unitTemp->requires);
+        objectRelease(&unitTemp->runCmd);
+        objectRelease(&unitTemp->stopCmd);
+        arrayRelease(&unitTemp->wantedBy);
 
         /* Destroy and free the condition variable */
         if ((cv = unitTemp->cv)) {
