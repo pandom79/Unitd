@@ -135,9 +135,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     */
 
     //*************************** INIT STATE *********************************
-    /* Parsing and starting the initialization units
+    /* Parsing and starting the initialization units.
      * For the initialization state, we always aggregate the errors to allow
-     * to fix all the errors in a one shot
+     * to fix them in an one shot
     */
 #ifndef UNITD_TEST
     initStateDir = stringNew(STATE_DATA_ITEMS[INIT].desc);
@@ -262,7 +262,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         //********************* FINAL STATE ************************************
         /* Parsing and starting the finalization units.
          * For the finalization state, we always aggregate the errors to allow
-         * to fix them in a one shot.
+         * to fix them in an one shot.
         */
 #ifndef UNITD_TEST
         finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);

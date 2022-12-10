@@ -605,7 +605,7 @@ startUnitTimerThread(void *arg)
 
     if ((rv = pthread_mutex_lock(unitPipe->mutex)) != 0) {
          logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread",
-                  rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the '%s' unit",
+                  rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for '%s'",
                   unitName);
          goto out;
     }
@@ -629,7 +629,7 @@ startUnitTimerThread(void *arg)
     while (true) {
         if ((rv = read(unitPipe->fds[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread", errno,
-                     strerror(errno), "Unable to read from pipe for the '%s' unit",
+                     strerror(errno), "Unable to read from pipe for '%s'",
                      unitName);
             goto out;
         }
@@ -709,11 +709,11 @@ startUnitTimer(Unit *unit)
 
     if ((rv = pthread_create(&thread, &attr, startUnitTimerThread, unit)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer",
-                 rv, strerror(rv), "Unable to create the unit timer thread for the '%s' unit", unitName);
+                 rv, strerror(rv), "Unable to create the unit timer thread for '%s'", unitName);
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "unit timer thread created successfully for the '%s' unit\n", unitName);
+            logInfo(UNITD_BOOT_LOG, "unit timer thread created successfully for '%s'\n", unitName);
     }
 
     return rv;
@@ -779,12 +779,12 @@ executeUnit(Unit *timerUnit)
     Unit *unit = getUnitByName(units, unitName);
     if (unit) {
         if (unit->type == DAEMON && unit->processData->pStateData->pState == RUNNING) {
-            logInfo(SYSTEM, "%s: the '%s' unit is already running. Skipped!", timerUnitName, unitName);
+            logInfo(SYSTEM, "%s: '%s' is already running. Skipped!", timerUnitName, unitName);
             goto out;
         }
     }
 
-    logInfo(SYSTEM, "%s: Starting the '%s' unit ...", timerUnitName, unitName);
+    logInfo(SYSTEM, "%s: Starting '%s' ...", timerUnitName, unitName);
 
     /* Add restart option. */
     arrayAdd(options, stringNew(OPTIONS_DATA[RESTART_OPT].name));
@@ -796,7 +796,7 @@ executeUnit(Unit *timerUnit)
 
     /* If we are shutting down the instance then exit with a custom exit code.(114) */
     if (SHUTDOWN_COMMAND != NO_COMMAND) {
-        logWarning(SYSTEM, "%s: Shutting down the unitd instance. Skipped '%s' unit execution.",
+        logWarning(SYSTEM, "%s: Shutting down the unitd instance. Skipped '%s' execution.",
                    timerUnitName, unitName);
         rv = 114;
         goto out;
@@ -809,10 +809,10 @@ executeUnit(Unit *timerUnit)
         if (unit) {
             int finalStatus = *unit->processData->finalStatus;
             if (UNITD_DEBUG)
-                logInfo(SYSTEM, "%s: Final status for the '%s' unit = %d ...", timerUnitName, unitName,
+                logInfo(SYSTEM, "%s: Final status for '%s' = %d ...", timerUnitName, unitName,
                         finalStatus);
             if (finalStatus == FINAL_STATUS_SUCCESS) {
-                logSuccess(SYSTEM, "%s: '%s' unit executed successfully.", timerUnitName, unitName);
+                logSuccess(SYSTEM, "%s: '%s' executed successfully.", timerUnitName, unitName);
                 rv = 0;
             }
             else if (finalStatus == FINAL_STATUS_FAILURE)
@@ -820,7 +820,7 @@ executeUnit(Unit *timerUnit)
         }
     }
     if (rv != 0)
-        logErrorStr(SYSTEM, "%s: Unable to start the '%s' unit!", timerUnitName, unitName);
+        logErrorStr(SYSTEM, "%s: Unable to start '%s'!", timerUnitName, unitName);
 
     out:
         /* Save the result on disk only if we are not shutting down the instance. */
@@ -854,7 +854,7 @@ startTimerThread(void *arg)
 
     if ((rv = pthread_mutex_lock(timerPipe->mutex)) != 0) {
          logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread",
-                  rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the '%s' unit",
+                  rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for '%s'",
                   unitName);
          goto out;
     }
@@ -909,7 +909,7 @@ startTimerThread(void *arg)
     rv = timer_create(wakeSystem ? CLOCK_BOOTTIME_ALARM : CLOCK_BOOTTIME, &sev, &timerId);
     if (rv == -1) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
-                 strerror(errno), "Unable to create the timer for the '%s' unit",
+                 strerror(errno), "Unable to create the timer for '%s'",
                  unitName);
         goto out;
     }
@@ -917,7 +917,7 @@ startTimerThread(void *arg)
     rv = timer_settime(timerId, 0, &its, NULL);
     if (rv == -1) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
-                 strerror(errno), "Unable to start the timer for the '%s' unit",
+                 strerror(errno), "Unable to start the timer for '%s'",
                  unitName);
         goto out;
     }
@@ -935,7 +935,7 @@ startTimerThread(void *arg)
         /* Listening the pipe */
         if ((rv = read(timerPipe->fds[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
-                     strerror(errno), "Unable to read from the timer pipe for the '%s' unit",
+                     strerror(errno), "Unable to read from the timer pipe for '%s'",
                      unitName);
             goto out;
         }
@@ -974,11 +974,11 @@ startTimer(Unit *unit)
 
     if ((rv = pthread_create(&thread, &attr, startTimerThread, unit)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer",
-                 rv, strerror(rv), "Unable to create the timer thread for the '%s' unit", unitName);
+                 rv, strerror(rv), "Unable to create the timer thread for '%s'", unitName);
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "Timer thread created successfully for the '%s' unit\n", unitName);
+            logInfo(UNITD_BOOT_LOG, "Timer thread created successfully for '%s'\n", unitName);
     }
 
     return rv;

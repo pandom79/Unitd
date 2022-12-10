@@ -125,11 +125,11 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                                             errno, strerror(errno), "Unable to send SIGCONT to %d pid!", infoPid);
                         }
                         else
-                            syslog(LOG_DAEMON | LOG_DEBUG, "The '%s' unit with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...\n",
+                            syslog(LOG_DAEMON | LOG_DEBUG, "'%s' with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...\n",
                                                             unitName, infoPid);
                         break;
                     case CLD_CONTINUED:
-                        syslog(LOG_DAEMON | LOG_DEBUG, "The '%s' unit with '%d' pid has received a SIGCONT signal!\n", unitName, infoPid);
+                        syslog(LOG_DAEMON | LOG_DEBUG, "'%s' with '%d' pid has received a SIGCONT signal!\n", unitName, infoPid);
                         *pData->signalNum = SIGCONT;
                         break;
                 }
