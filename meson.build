@@ -4,10 +4,10 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '5.0.2', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '5.0.3', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '5.0.2'
+ver = '5.0.3'
 so_ver = '5'
 wrapper_ver = '2.0.5'
 project_name = 'unitd'
@@ -208,7 +208,7 @@ install_data('README.md', install_dir: doc_path)
 install_data('completion/bash/unitctl', install_dir: bash_comp_path)
 install_data('completion/bash/unitd', install_dir: bash_comp_path)
 
-# Install zzz script and hook
+# Install zzz script
 install_data('external/zzz', install_dir: sbin_path)
 run_command('ln', '-s', prefix/sbin_path/'zzz', prefix/sbin_path/'ZZZ', check: false)
 
