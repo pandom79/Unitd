@@ -90,3 +90,4 @@ PType getPTypeByPTypeStr(const char *);
 Pipe* pipeNew();
 void pipeRelease(Pipe **);
 PType getPTypeByUnitName(const char *);
+int loadOtherUnits(Array **, const char *, const char *, bool, bool, PType);

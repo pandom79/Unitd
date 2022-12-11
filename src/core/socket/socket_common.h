@@ -33,7 +33,7 @@ int sortUnitsByName(const void *, const void *);
 void setValueForBuffer(char **, int);
 Array* getScriptParams(const char *, const char *, const char *, const char *);
 int sendWallMsg(Command);
-void fillUnitsDisplayList(Array **, Array **);
+void fillUnitsDisplayList(Array **, Array **, ListFilter);
 int loadAndCheckUnit(Array **, bool, const char *, bool, Array **);
 ListFilter getListFilterByCommand(Command);
 ListFilter getListFilterByOpt(Array *);

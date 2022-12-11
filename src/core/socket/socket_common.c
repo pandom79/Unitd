@@ -219,12 +219,18 @@ sendWallMsg(Command command)
 }
 
 void
-fillUnitsDisplayList(Array **units, Array **unitsDisplay)
+fillUnitsDisplayList(Array **units, Array **unitsDisplay, ListFilter listFilter)
 {
+    Unit *unit = NULL;
     int lenUnits = (*units ? (*units)->size : 0);
     assert(*unitsDisplay);
-    for (int i = 0; i < lenUnits; i++)
-        arrayAdd(*unitsDisplay, unitNew(arrayGet(*units, i), PARSE_SOCK_RESPONSE_UNITLIST));
+
+    for (int i = 0; i < lenUnits; i++) {
+        unit = arrayGet(*units, i);
+        if (listFilter != TIMERS_FILTER ||
+           (listFilter == TIMERS_FILTER && unit->type == TIMER))
+            arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE_UNITLIST));
+    }
 }
 
 int
@@ -358,10 +364,6 @@ applyListFilter(Array **unitsDisplay, ListFilter listFilter)
                 break;
             case RESTARTED_FILTER:
                 if (unitDisplay->restartNum <= 0)
-                    remove = true;
-                break;
-            case TIMERS_FILTER:
-                if (unitDisplay->type != TIMER)
                     remove = true;
                 break;
             default:

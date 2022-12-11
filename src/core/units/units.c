@@ -788,6 +788,81 @@ loadUnits(Array **units, const char *path, const char *dirName,
     return rv;
 }
 
+/* We load the units which have a suffix different by ".unit". */
+int
+loadOtherUnits(Array **units, const char *path, const char *dirName,
+               bool isAggregate, bool parse, PType pType)
+{
+    glob_t results;
+    char *pattern, *unitName, *unitPath;
+    int rv, startIdx, endIdx;
+    Unit *unit = NULL;
+    size_t lenResults = 0;
+
+    pattern = unitName = unitPath = NULL;
+    rv = startIdx = endIdx = 0;
+
+    assert(path);
+
+    /* Building the pattern */
+    pattern = stringNew(path);
+    stringAppendChr(&pattern, '/');
+    stringAppendStr(&pattern, dirName);
+
+    switch (pType) {
+        case TIMER:
+            stringAppendStr(&pattern, "/*.utimer");
+            break;
+        default:
+            break;
+    }
+
+    if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
+
+        lenResults = results.gl_pathc;
+        assert(lenResults > 0);
+        if (!(*units))
+            *units = arrayNew(unitRelease);
+
+        for (size_t i = 0; i < lenResults; i++) {
+            /* Get the unit path */
+            unitPath = results.gl_pathv[i];
+            /* Set unit name */
+            unitName = getUnitName(unitPath);
+            /* If the unit is already in memory then skip it. (to avoid duplicates in unit list function) */
+            if (getUnitByName(*units, unitName) == NULL) {
+                /* Create the unit */
+                unit = unitNew(NULL, PARSE_SOCK_RESPONSE_UNITLIST);
+                unit->name = unitName;
+                unit->type = pType;
+                assert(unit->type != NO_PROCESS_TYPE);
+                unit->path = stringNew(unitPath);
+
+                /* Set enabled/disabled */
+                unit->enabled = isEnabledUnit(unitName, NO_STATE);
+
+                /* Parse the Unit file */
+                if (parse) {
+                    switch (pType) {
+                        case TIMER:
+                            rv = parseTimerUnit(units, &unit, isAggregate);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                /* Adding the unit to the array */
+                arrayAdd(*units, unit);
+            }
+            else
+                objectRelease(&unitName);
+        }
+    }
+
+    objectRelease(&pattern);
+    globfree(&results);
+    return rv;
+}
 
 int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
 {

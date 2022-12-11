@@ -273,6 +273,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     Array *options = sockMessageIn->options;
     int rv, lenUnits;
     bool bootAnalyze = false;
+    ListFilter listFilter = getListFilterByOpt(options);
 
     rv = lenUnits = 0;
     (*sockMessageOut)->unitsDisplay = unitsDisplay;
@@ -282,27 +283,43 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     //Get bootAnalyze
     bootAnalyze = arrayContainsStr(options, OPTIONS_DATA[ANALYZE_OPT].name);
     if (!bootAnalyze) {
-        fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay);
-        if (!USER_INSTANCE) {
-            /* Loading all the units */
-            loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
-                      false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+        fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay, listFilter);
+
+        /* If the filter is TIMER then we can pull out the units from glob
+         * rather than load all and then to filter.
+        */
+        if (listFilter == TIMERS_FILTER) {
+            if (!USER_INSTANCE) {
+                /* Loading only timer units */
+                loadOtherUnits(&unitsDisplay, UNITS_PATH, NULL, false, true, TIMER);
+            }
+            else {
+                /* Loading only timer units */
+                loadOtherUnits(&unitsDisplay, UNITS_USER_PATH, NULL, false, true, TIMER);
+                loadOtherUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, false, true, TIMER);
+            }
         }
         else {
-            /* Loading all the units */
-            loadUnits(&unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
-                      false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
-            loadUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
-                      false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+            if (!USER_INSTANCE) {
+                /* Loading all the units */
+                loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE,
+                          false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+            }
+            else {
+                /* Loading all the units */
+                loadUnits(&unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE,
+                          false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+                loadUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE,
+                          false, NULL, PARSE_SOCK_RESPONSE_UNITLIST, true);
+            }
+            /* Try to apply an eventual filter */
+            if (listFilter != NO_FILTER)
+                applyListFilter(&unitsDisplay, listFilter);
         }
-        /* Try to apply an eventual filter */
-        ListFilter listFilter = getListFilterByOpt(options);
-        if (listFilter != NO_FILTER)
-            applyListFilter(&unitsDisplay, listFilter);
     }
     else {
-        fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay);
-        fillUnitsDisplayList(&UNITD_DATA->initUnits, &unitsDisplay);
+        fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay, NO_FILTER);
+        fillUnitsDisplayList(&UNITD_DATA->initUnits, &unitsDisplay, NO_FILTER);
         /* Adding "boot and system execution time like messages" */
         Time *current = timeNew(NULL);
         /* Computing the duration */

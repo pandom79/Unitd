@@ -775,6 +775,11 @@ executeUnit(Unit *timerUnit)
     /* Get unit name by timerUnitName */
     unitName = getUnitNameByOther(timerUnitName, TIMER);
 
+    /* Populate sockMessageIn */
+    sockMessageIn->arg = unitName;
+    sockMessageIn->command = START_COMMAND;
+    sockMessageIn->options = options;
+
     /* Try to get unit from memory */
     Unit *unit = getUnitByName(units, unitName);
     if (unit) {
@@ -788,11 +793,6 @@ executeUnit(Unit *timerUnit)
 
     /* Add restart option. */
     arrayAdd(options, stringNew(OPTIONS_DATA[RESTART_OPT].name));
-
-    /* Populate sockMessageIn */
-    sockMessageIn->arg = unitName;
-    sockMessageIn->command = START_COMMAND;
-    sockMessageIn->options = options;
 
     /* If we are shutting down the instance then exit with a custom exit code.(114) */
     if (SHUTDOWN_COMMAND != NO_COMMAND) {
