@@ -122,12 +122,12 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     bootUnits = &(*unitdData)->bootUnits;
 
     if (UNITD_DEBUG) {
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "Units path = %s\n", UNITS_PATH);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "Units enab path = %s\n", UNITS_ENAB_PATH);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "Unitd data path = %s\n", UNITD_DATA_PATH);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "Unitd Log path = %s\n", UNITD_LOG_PATH);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+        logInfo(CONSOLE, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
+        logInfo(CONSOLE, "Units path = %s\n", UNITS_PATH);
+        logInfo(CONSOLE, "Units enab path = %s\n", UNITS_ENAB_PATH);
+        logInfo(CONSOLE, "Unitd data path = %s\n", UNITD_DATA_PATH);
+        logInfo(CONSOLE, "Unitd Log path = %s\n", UNITD_LOG_PATH);
+        logInfo(CONSOLE, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
     }
 
     /* For each terminated state, we check if "SHUTDOWN_COMMAND" is set by signal handler.
