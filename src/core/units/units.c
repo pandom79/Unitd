@@ -803,6 +803,7 @@ loadOtherUnits(Array **units, const char *path, const char *dirName,
     rv = startIdx = endIdx = 0;
 
     assert(path);
+    assert(pType != DAEMON && pType != ONESHOT);
 
     /* Building the pattern */
     pattern = stringNew(path);
