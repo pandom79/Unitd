@@ -93,7 +93,8 @@ startCleanerThread(void *arg UNUSED)
         /* Reset the timeout */
         tv.tv_sec = CLEANER_TIMEOUT;
 
-        select(fd + 1, &fds, NULL, NULL, &tv);
+        if (select(fd + 1, &fds, NULL, NULL, &tv) == -1 && errno == EINTR)
+            continue;
         if (FD_ISSET(fd, &fds)) {
             if ((rv = read(fd, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleanerThread",

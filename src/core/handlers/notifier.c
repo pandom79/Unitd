@@ -141,7 +141,8 @@ startNotifiersThread(void *arg)
         FD_SET(*fd, &fds);
 
         /* Wait for data */
-        select(maxFd, &fds, NULL, NULL, NULL);
+        if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
+            continue;
         if (FD_ISSET(*fdPipe, &fds)) {
             if ((length = read(*fdPipe, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",

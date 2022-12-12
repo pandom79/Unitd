@@ -113,7 +113,8 @@ startForwarderThread(void *arg)
         FD_SET(fileFd, &fds);
 
         /* Wait for data */
-        select(maxFd, &fds, NULL, NULL, NULL);
+        if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
+            continue;
         if (FD_ISSET(pipeFd, &fds)) {
             if ((length = read(pipeFd, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startForwarderThread",
@@ -213,7 +214,8 @@ startUnixThread(void *arg)
         FD_SET(socketFd, &fds);
 
         /* Wait for data */
-        select(maxFd, &fds, NULL, NULL, NULL);
+        if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
+            continue;
         if (FD_ISSET(pipeFd, &fds)) {
             if ((length = read(pipeFd, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",

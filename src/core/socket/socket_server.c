@@ -145,7 +145,8 @@ listenSocketRequest()
         refreshFdSet(&readFds);
         LISTEN_SOCK_REQUEST = true;
         /* 'Select' is a blocking system call */
-        select(getMaxFd() + 1, &readFds, NULL, NULL, NULL);
+        if (select(getMaxFd() + 1, &readFds, NULL, NULL, NULL) == -1 && errno == EINTR)
+            continue;
         /* The data arrive on the master socket only when a new client connects to the server,
          * that is, when a client performs 'connect' system call.
         */
