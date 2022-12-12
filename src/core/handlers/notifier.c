@@ -51,6 +51,9 @@ notifierNew()
     }
     assert(rv == 0);
 
+    /* Pipe */
+    notifier->pipe = pipeNew();
+
     return notifier;
 }
 
@@ -59,11 +62,7 @@ notifierRelease(Notifier **notifier)
 {
     Notifier *notifierTemp = *notifier;
     pthread_mutex_t *mutex = NULL;
-    char *watchDir = NULL;
     int rv = 0;
-    int *fd, *wd;
-
-    fd = wd = NULL;
 
     if (notifierTemp) {
         /* Destroy and free the mutex */
@@ -72,18 +71,13 @@ notifierRelease(Notifier **notifier)
                 logError(CONSOLE, "src/core/handlers/notifier.c", "notifierRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
-            assert(rv == 0);
             objectRelease(&mutex);
         }
 
-        if ((fd = notifierTemp->fd))
-            objectRelease(&fd);
-
-        if ((wd = notifierTemp->wd))
-            objectRelease(&wd);
-
-        if ((watchDir = notifierTemp->watchDir))
-            objectRelease(&watchDir);
+        objectRelease(&notifierTemp->fd);
+        objectRelease(&notifierTemp->wd);
+        objectRelease(&notifierTemp->watchDir);
+        pipeRelease(&notifierTemp->pipe);
 
         /* Release notifier */
         objectRelease(notifier);
@@ -91,21 +85,22 @@ notifierRelease(Notifier **notifier)
 }
 
 void*
-runNotifiersThread(void *arg)
+startNotifiersThread(void *arg)
 {
     int rv, length, i, input, maxFd;
     int *fd, *wd, *fdPipe;
-    pthread_mutex_t *mutex = NULL;
     char buffer[EVENT_BUF_LEN] = {0};
     fd_set fds;
     bool *isWorking;
     Notifier *notifier = NULL;
     const char *watchDir = NULL;
+    Pipe *pipe = NULL;
 
     assert(arg);
     notifier = (Notifier *)arg;
+
     /* Get notifier data */
-    mutex = notifier->mutex;
+    pipe = notifier->pipe;
     fd = notifier->fd;
     wd = notifier->wd;
     watchDir = notifier->watchDir;
@@ -113,35 +108,33 @@ runNotifiersThread(void *arg)
     rv = i = length = 0;
     maxFd = -1;
 
-    /* Open pipe */
-    if ((rv = pipe(notifier->fds)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread", errno,
-                      strerror(errno), "Unable to run pipe for the notifier (%s)", watchDir);
-        goto out;
-    }
-    /* Lock mutex */
-    if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
-                      rv, strerror(rv), "Unable to acquire the notifier mutex lock (%s)", watchDir);
-        goto out;
+    /* Lock pipe mutex */
+    if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
+                      rv, strerror(rv), "Unable to acquire the pipe mutex lock (%s)", watchDir);
     }
 
     /* Creating the inotify instance */
     if ((*fd = inotify_init()) == -1) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
                       errno, strerror(errno), "Inotify_init returned -1");
-        goto out;
     }
 
     /* Adding the "watchDir" directory into watch list. */
     if ((*wd = inotify_add_watch(*fd, watchDir, IN_MODIFY)) == -1) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifierThread",
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
                       errno, strerror(errno), "Inotify_add_watch returned -1");
-        goto out;
     }
 
-    fdPipe = &notifier->fds[0];
+    fdPipe = &pipe->fds[0];
     maxFd = getMaxFileDesc(fd, fdPipe);
+
+    /* Unlock mutex just before main loop. */
+    if ((rv = pthread_mutex_unlock(notifier->mutex)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
+                      rv, strerror(rv), "Unable to unlock the mutex (%s)", watchDir);
+    }
+
     while (1) {
         FD_ZERO(&fds);
         FD_SET(*fdPipe, &fds);
@@ -151,18 +144,16 @@ runNotifiersThread(void *arg)
         select(maxFd, &fds, NULL, NULL, NULL);
         if (FD_ISSET(*fdPipe, &fds)) {
             if ((length = read(*fdPipe, &input, sizeof(int))) == -1) {
-                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
                               errno, strerror(errno), "Unable to read from pipe for the notifier (%s)!", watchDir);
-                goto out;
             }
             if (input == THREAD_EXIT)
                 goto out;
         }
         else if (FD_ISSET(*fd, &fds)) {
             if ((length = read(*fd, buffer, EVENT_BUF_LEN)) == -1) {
-                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
                               errno, strerror(errno), "Unable to read from inotify fd for the notifier (%s)!", watchDir);
-                goto out;
             }
 
             i = 0;
@@ -198,51 +189,23 @@ runNotifiersThread(void *arg)
             if (*wd != -1) {
                 /* Removing the "watchDir" directory from watch list. */
                 if ((rv = inotify_rm_watch(*fd, *wd)) == -1) {
-                    logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                    logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
                                   errno, strerror(errno), "Inotify_rm_watch returned -1 (%s)", watchDir);
                 }
             }
             /* Close the inotify instance */
             if ((rv = close(*fd)) == -1) {
-                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
                               errno, strerror(errno), "Close returned -1 (%s)", watchDir);
             }
         }
 
-        /* Unlock mutex */
-        if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "runNotifiersThread",
-                          rv, strerror(rv), "Unable to unlock the notifier mutex (%s)", watchDir);
+        /* Unlock pipe mutex */
+        if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiersThread",
+                          rv, strerror(rv), "Unable to unlock the pipe mutex (%s)", watchDir);
         }
         pthread_exit(0);
-}
-
-void*
-startNotifiersThread(void *arg)
-{
-    pthread_t thread;
-    pthread_attr_t attr;
-    int rv = 0;
-    Notifier *notifier = NULL;
-    const char *watchDir = NULL;
-
-    assert(arg);
-    /* Get notifier data */
-    notifier = (Notifier *)arg;
-    watchDir = notifier->watchDir;
-
-    /* Set pthread attributes and start */
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if ((rv = pthread_create(&thread, &attr, runNotifiersThread, notifier)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", errno,
-                      strerror(errno), "Unable to create the runNotifiersThread thread (detached) (%s)", watchDir);
-    }
-    else {
-        if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "Run notifiers thread (detached) created successfully (%s)\n", watchDir);
-    }
-    return NULL;
 }
 
 void
@@ -274,17 +237,27 @@ startNotifiers()
     int rv = 0, len;
     Notifier *notifier = NULL;
     const char *watchDir = NULL;
+    pthread_attr_t attr;
 
     setNotifiers();
     assert(NOTIFIERS);
     len = NOTIFIERS->size;
     pthread_t threads[len];
+
+    /* Set pthread attributes and start */
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
     for (int i = 0; i < len; i++) {
         notifier = arrayGet(NOTIFIERS, i);
         watchDir = notifier->watchDir;
-        if ((rv = pthread_create(&threads[i], NULL, startNotifiersThread, notifier)) != 0) {
+
+        /* It will be unlocked in startNotifiersThread func. */
+        handleMutex(notifier->mutex, true);
+
+        if ((rv = pthread_create(&threads[i], &attr, startNotifiersThread, notifier)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiers", errno,
-                          strerror(errno), "Unable to create the thread for the notifier (%s)",
+                          strerror(errno), "Unable to create deatched thread for the notifier (%s)",
                           watchDir);
         }
         else {
@@ -293,18 +266,12 @@ startNotifiers()
                              watchDir);
         }
     }
-    /* Waiting for the thread to terminate */
+
+    /* We assure that all the notifers pipes are listening. */
     for (int i = 0; i < len; i++) {
         notifier = arrayGet(NOTIFIERS, i);
-        watchDir = notifier->watchDir;
-        if ((rv = pthread_join(threads[i], NULL)) != EXIT_SUCCESS) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifiers", rv,
-                          strerror(rv), "Unable to join the thread for the notifier (%s)", watchDir);
-        }
-        else {
-            if (UNITD_DEBUG)
-                logInfo(UNITD_BOOT_LOG, "Thread joined successfully for the notifier (%s)\n", watchDir);
-        }
+        handleMutex(notifier->mutex, true);
+        handleMutex(notifier->mutex, false);
     }
 }
 
@@ -313,35 +280,31 @@ stopNotifiersThread(void *arg)
 {
     int rv = 0, output = THREAD_EXIT;
     Notifier *notifier = NULL;
-    pthread_mutex_t *mutex = NULL;
     const char *watchDir = NULL;
+    Pipe *pipe = NULL;
 
     assert(arg);
     notifier = (Notifier *)arg;
-    mutex = notifier->mutex;
     watchDir = notifier->watchDir;
+    pipe = notifier->pipe;
 
-    if ((rv = write(notifier->fds[1], &output, sizeof(int))) == -1) {
+    if ((rv = write(pipe->fds[1], &output, sizeof(int))) == -1) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifiersThread",
-                      errno, strerror(errno), "Unable to write into fd for the notifier (%s)", watchDir);
-        goto out;
+                      errno, strerror(errno), "Unable to write into pipe for the notifier (%s)", watchDir);
     }
 
-    /* Lock mutex */
-    if ((rv = pthread_mutex_lock(mutex)) != 0) {
+    /* Lock pipe mutex */
+    if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifiersThread",
-                      rv, strerror(rv), "Unable to acquire the notifier mutex lock (%s)", watchDir);
-        goto out;
+                      rv, strerror(rv), "Unable to acquire the pipe mutex lock (%s)", watchDir);
     }
 
-    /* Unlock mutex */
-    if ((rv = pthread_mutex_unlock(mutex)) != 0) {
+    /* Unlock pipe mutex */
+    if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifiersThread",
-                      rv, strerror(rv), "Unable to unlock the notifier mutex (%s)", watchDir);
+                      rv, strerror(rv), "Unable to unlock the pipe mutex (%s)", watchDir);
     }
-
-    out:
-        return NULL;
+    pthread_exit(0);
 }
 
 void
@@ -383,7 +346,6 @@ stopNotifiers()
                                  watchDir);
             }
         }
-
         /* Release notifiers */
         arrayRelease(&NOTIFIERS);
     }

@@ -7,7 +7,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
 typedef struct {
-    int fds[2];
+    Pipe *pipe;
     int *fd;
     int *wd;
     pthread_mutex_t *mutex;
@@ -22,6 +22,5 @@ void notifierRelease(Notifier **);
 void setNotifiers();
 void startNotifiers();
 void* startNotifiersThread(void *);
-void* runNotifiersThread(void *);
 void stopNotifiers();
 void* stopNotifiersThread(void *);
