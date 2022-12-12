@@ -517,7 +517,7 @@ handleMutexThread(void *arg)
 }
 
 int
-handleMutex(pthread_mutex_t *mutex, int lock)
+handleMutex(pthread_mutex_t *mutex, bool lock)
 {
     int rv = 0, *rvThread = NULL;
 

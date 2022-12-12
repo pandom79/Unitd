@@ -25,7 +25,7 @@ int parseProcCmdLine();
 int setSigAction();
 int setUserData(int, struct passwd **);
 void userDataRelease();
-int handleMutex(pthread_mutex_t *, int);
+int handleMutex(pthread_mutex_t *, bool);
 void* handleMutexThread(void *);
 void setStopAndDuration(ProcessData **);
 int getMaxFileDesc(int *, int *);

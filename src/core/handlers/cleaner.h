@@ -9,8 +9,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define CLEANER_TIMEOUT         10
 
 typedef struct {
-    int fds[2];
     pthread_mutex_t *mutex;
+    Pipe *pipe;
 } Cleaner;
 
 extern Cleaner *CLEANER;
