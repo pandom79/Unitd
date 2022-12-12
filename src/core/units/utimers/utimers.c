@@ -610,9 +610,6 @@ startUnitTimerThread(void *arg)
          goto out;
     }
 
-    while (!LISTEN_SOCK_REQUEST)
-        msleep(250);
-
     /* Start timer */
     startTimer(unit);
 
@@ -858,9 +855,6 @@ startTimerThread(void *arg)
                   unitName);
          goto out;
     }
-
-    while (!LISTEN_SOCK_REQUEST)
-        msleep(250);
 
     /* Try to get the persistent "nextTime" */
     rv = setNextTimeFromDisk(&unit);
