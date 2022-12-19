@@ -6,6 +6,9 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
+#define TIMER_RETARD    3
+#define EUIDOWN         120
+
 struct eventData {
     const char *timerUnitName;
 };

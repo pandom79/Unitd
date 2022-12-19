@@ -110,8 +110,8 @@ unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
             if (rv != 0) {
                 error = arrayGet(lineData, 2);
                 assert(error);
-                syslog(LOG_DAEMON | LOG_ERR, "An error has occurred in unmarshallRequest = %s\n",
-                                             error);
+                logErrorStr(SYSTEM, "An error has occurred in unmarshallRequest! Error = %s", error);
+                logErrorStr(SYSTEM, "Buffer =  %s", buffer);
                 goto out;
             }
             if ((value = arrayGet(lineData, 1))) {

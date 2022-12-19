@@ -6,6 +6,8 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
+#define EUIRUN   114
+
 typedef struct {
     pthread_mutex_t *mutex;
     bool lock;
@@ -32,3 +34,5 @@ int getMaxFileDesc(int *, int *);
 char* getUnitNameByOther(const char *, PType);
 char* getTimerNameByUnit(const char *);
 void showVersion();
+int uRead(int, void *, size_t);
+int uWrite(int, void *, size_t);

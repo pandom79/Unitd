@@ -247,7 +247,7 @@ writeWtmp(bool isBooting) {
     if (uname(&uname_buf) == 0)
         strncpy(utmp.ut_host, uname_buf.release, sizeof(utmp.ut_host));
 
-    if (write(fd, (char *)&utmp, sizeof(utmp)) == -1) {
+    if (uWrite(fd, (char *)&utmp, sizeof(utmp)) == -1) {
         rv = errno;
         logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                       rv, strerror(rv), "Unable to write into '%s' file!!", OUR_WTMP_FILE);
@@ -268,7 +268,7 @@ writeWtmp(bool isBooting) {
             return rv;
         }
 
-        if (write(fd, (char *)&utmp, sizeof utmp) == -1) {
+        if (uWrite(fd, (char *)&utmp, sizeof utmp) == -1) {
             rv = errno;
             logError(CONSOLE | SYSTEM, "src/core/common/common.c", "writeWtmp",
                           rv, strerror(rv), "Unable to write into '%s' file!", OUR_UTMP_FILE);
@@ -289,13 +289,18 @@ int
 unitdUserCheck(const char *userIdStr, const char *userName)
 {
     int rv = 0;
+    char euirun[5] = {0};
 
     assert(userIdStr);
     assert(userName);
+    assert(EUIRUN);
+    sprintf(euirun, "%d", EUIRUN);
+    assert(strlen(euirun) > 0);
 
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "EUIRUN", euirun);
     /* Must be null terminated */
     arrayAdd(envVars, NULL);
 
@@ -317,8 +322,8 @@ unitdUserCheck(const char *userIdStr, const char *userName)
     /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd-user-check.sh", scriptParams->arr, envVars->arr);
     if (rv != 0) {
-        /* If rv == 114 then the instance is already running */
-        if (rv == 114) {
+        /* If rv == EUIRUN then the instance is already running */
+        if (rv == EUIRUN) {
             logErrorStr(CONSOLE | SYSTEM, "Unitd instance is already running for %s user!", userName);
             printf("\n");
         }
@@ -527,14 +532,16 @@ handleMutex(pthread_mutex_t *mutex, bool lock)
     MutexThreadData mutextThreadData = { .mutex = mutex, .lock = lock };
 
     if ((rv = pthread_create(&thread, NULL, handleMutexThread, &mutextThreadData)) != 0) {
-        logError(SYSTEM, "src/core/common/common.c", "handleMutex", errno,
-                      strerror(errno), "Unable to create the thread for the mutex");
+        logError(SYSTEM, "src/core/common/common.c", "handleMutex", rv,
+                      strerror(rv), "Unable to create the thread for the mutex");
     }
-    if ((rv = pthread_join(thread, (void **)&rvThread)) != EXIT_SUCCESS) {
-        logError(SYSTEM, "src/core/common/common.c", "handleMutex", errno,
-                      strerror(errno), "Unable to join the thread for the mutex");
+    assert(rv == 0);
+    if ((rv = pthread_join(thread, (void **)&rvThread)) != 0) {
+        logError(SYSTEM, "src/core/common/common.c", "handleMutex", rv,
+                      strerror(rv), "Unable to join the thread for the mutex");
     }
-    if (rv == 0 && *rvThread != 0)
+    assert(rv == 0);
+    if (*rvThread != 0)
         rv = *rvThread;
 
     objectRelease(&rvThread);
@@ -623,4 +630,26 @@ showVersion()
     printf("libwrapper : ");
     logSuccess(CONSOLE, WRAPPER_VER);
     printf("\n");
+}
+
+int
+uRead(int fd, void *buf, size_t nbytes)
+{
+    int rv = 0;
+
+    while ((rv = read(fd, buf, nbytes)) == -1 && errno == EINTR)
+        continue;
+
+    return rv;
+}
+
+int
+uWrite(int fd, void *buf, size_t nbytes)
+{
+    int rv = 0;
+
+    while ((rv = write(fd, buf, nbytes)) == -1 && errno == EINTR)
+        continue;
+
+    return rv;
 }

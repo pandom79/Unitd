@@ -69,6 +69,7 @@ extern bool USER_INSTANCE;
 extern State STATE_USER;
 extern char *STATE_USER_DIR;
 extern char *SOCKET_USER_PATH;
+extern pthread_mutex_t START_MUTEX;
 
 /* Errors */
 typedef enum {

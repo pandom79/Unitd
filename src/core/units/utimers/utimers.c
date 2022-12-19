@@ -113,6 +113,8 @@ setLeftTimeAndDuration(Unit **unit)
     *nextTime->durationSec = *leftTime;
     *nextTime->durationMillisec = 0;
     char *leftTimeDuration = stringGetDiffTime(nextTime, current);
+    if (strcmp(leftTimeDuration, "0.0s") == 0)
+        stringSet(&leftTimeDuration, "expired");
     strcpy((*unit)->leftTimeDuration, leftTimeDuration);
     assert(strlen((*unit)->leftTimeDuration) > 0);
 
@@ -581,7 +583,7 @@ expired(union sigval timerData) {
 
     /* We communicate to the timer unit pipe to restart the timer. */
     if (SHUTDOWN_COMMAND == NO_COMMAND)
-    if ((rv = write(timerUnit->pipe->fds[1], &output, sizeof(int))) == -1) {
+    if ((rv = uWrite(timerUnit->pipe->fds[1], &output, sizeof(int))) == -1) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "expired",
                       errno, strerror(errno), "Unable to write into pipe for the %s unit", timerUnitName);
     }
@@ -624,7 +626,7 @@ startUnitTimerThread(void *arg)
 
     /* Listening the pipe */
     while (true) {
-        if ((rv = read(unitPipe->fds[0], &input, sizeof(int))) == -1) {
+        if ((rv = uRead(unitPipe->fds[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread", errno,
                      strerror(errno), "Unable to read from pipe for '%s'",
                      unitName);
@@ -644,9 +646,11 @@ startUnitTimerThread(void *arg)
                          strerror(errno), "Unable to lock the mutex (restart timer)",
                          unitName);
 
-
-            /* Reset data for restarting */
-            *unit->processData->finalStatus = FINAL_STATUS_READY;
+            /* Reset data for restarting.
+             * Unlike the units, the restarting of the timers is considerated like a success.
+             * For this reason, we don't set a final status different by SUCCESS.
+             * In this way, the requires check is satisfied as well.
+            */
             *unit->processData->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
             strcpy(unit->nextTimeDate, "-");
             assert(strlen(unit->nextTimeDate) == 1);
@@ -700,8 +704,19 @@ startUnitTimer(Unit *unit)
     assert(unit);
     unitName = unit->name;
 
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if ((rv = pthread_attr_init(&attr)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer", errno,
+                      strerror(errno), "pthread_attr_init returned bad exit code %d", rv);
+    }
+    assert(rv == 0);
+
+    if ((rv = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer", errno,
+                      strerror(errno), "pthread_attr_setdetachstate returned bad exit code %d",
+                 rv);
+    }
+    assert(rv == 0);
+
     *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
 
     if ((rv = pthread_create(&thread, &attr, startUnitTimerThread, unit)) != 0) {
@@ -710,9 +725,11 @@ startUnitTimer(Unit *unit)
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "unit timer thread created successfully for '%s'\n", unitName);
+            logInfo(SYSTEM, "unit timer thread created successfully for '%s'\n", unitName);
     }
+    assert(rv == 0);
 
+    pthread_attr_destroy(&attr);
     return rv;
 }
 
@@ -766,7 +783,6 @@ executeUnit(Unit *timerUnit)
     Array *options = arrayNew(objectRelease);
 
     assert(timerUnit);
-
     timerUnitName = timerUnit->name;
 
     /* Get unit name by timerUnitName */
@@ -776,6 +792,8 @@ executeUnit(Unit *timerUnit)
     sockMessageIn->arg = unitName;
     sockMessageIn->command = START_COMMAND;
     sockMessageIn->options = options;
+    /* Add restart option. */
+    arrayAdd(options, stringNew(OPTIONS_DATA[RESTART_OPT].name));
 
     /* Try to get unit from memory */
     Unit *unit = getUnitByName(units, unitName);
@@ -788,17 +806,13 @@ executeUnit(Unit *timerUnit)
 
     logInfo(SYSTEM, "%s: Starting '%s' ...", timerUnitName, unitName);
 
-    /* Add restart option. */
-    arrayAdd(options, stringNew(OPTIONS_DATA[RESTART_OPT].name));
-
-    /* If we are shutting down the instance then exit with a custom exit code.(114) */
+    /* If we are shutting down the instance then exit with a custom exit code.(EUIDOWN) */
     if (SHUTDOWN_COMMAND != NO_COMMAND) {
-        logWarning(SYSTEM, "%s: Shutting down the unitd instance. Skipped '%s' execution.",
-                   timerUnitName, unitName);
-        rv = 114;
+        rv = EUIDOWN;
         goto out;
     }
-    /* Start unit */
+
+    /* Restart unit */
     rv = startUnitServer(&socketConnection, sockMessageIn, &sockMessageOut, true, true);
     if (rv == 0 && (rv = checkResponse(sockMessageOut)) == 0) {
         /* Get unit from memory */
@@ -812,7 +826,7 @@ executeUnit(Unit *timerUnit)
                 logSuccess(SYSTEM, "%s: '%s' executed successfully.", timerUnitName, unitName);
                 rv = 0;
             }
-            else if (finalStatus == FINAL_STATUS_FAILURE)
+            else
                 rv = 1;
         }
     }
@@ -821,7 +835,7 @@ executeUnit(Unit *timerUnit)
 
     out:
         /* Save the result on disk only if we are not shutting down the instance. */
-        if (rv != 114)
+        if (rv != EUIDOWN)
             saveTime(NULL, timerUnitName, now, rv);
         timeRelease(&now);
         sockMessageOutRelease(&sockMessageOut);
@@ -839,6 +853,9 @@ startTimerThread(void *arg)
     long *leftTime = NULL;
     timer_t timerId = 0;
     bool wakeSystem = false;
+    struct eventData eventData;
+    struct sigevent sev = {0};
+    struct itimerspec its;
 
     rv = input = rvMutex = 0;
 
@@ -862,23 +879,33 @@ startTimerThread(void *arg)
     /* If it exists but the left time is expired then we execute the unit */
     if (rv == 0 && *leftTime <= 0) {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG | SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
+            logInfo(SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
                                              unitName);
-        /* Unit execution */
-        if ((rv = executeUnit(unit)) == 114)
+        /* Unit execution management.
+         * The timer will run the unit only when the system is listening via socket.
+         * If not so, we set a little retard until this condition is satisfied.
+        */
+        if (!LISTEN_SOCK_REQUEST) {
+            *leftTime = TIMER_RETARD;
+            goto armingTimer;
+        }
+        else if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit)) == EUIDOWN) {
+            logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
+                       unitName);
             goto listen;
+        }
 
         rv = 1;
     }
 
     /* If the persistent "nextTime" doesn't exist or it is not valid or the left time is expired then
      * we regenerate and save it.
-     * Skip this step if rv = 114 (Shutting down)
+     * Skip this step if rv = EUIDOWN (Shutting down)
      * See above and executeUnit() function.
     */
     if (rv != 0) {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG | SYSTEM, "%s: the persistent 'nextTime' doesn't exist or "
+            logInfo(SYSTEM, "%s: the persistent 'nextTime' doesn't exist or "
                                              "it is not valid "
                                              "or the left time is expired. "
                                              "Regenerating it by interval ...\n", unitName);
@@ -888,33 +915,31 @@ startTimerThread(void *arg)
             goto out;
     }
 
-    /* Arming the timer */
-    struct eventData eventData = { .timerUnitName = unitName };
-    struct sigevent sev = {0};
-    struct itimerspec its = { .it_value.tv_sec  = *leftTime,
-                              .it_value.tv_nsec = 0,
-                              .it_interval.tv_sec  = *leftTime,
-                              .it_interval.tv_nsec = 0
-                            };
-    sev.sigev_notify = SIGEV_THREAD;
-    sev.sigev_notify_function = &expired;
-    sev.sigev_value.sival_ptr = &eventData;
-    /* Create timer */
-    rv = timer_create(wakeSystem ? CLOCK_BOOTTIME_ALARM : CLOCK_BOOTTIME, &sev, &timerId);
-    if (rv == -1) {
-        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
-                 strerror(errno), "Unable to create the timer for '%s'",
-                 unitName);
-        goto out;
-    }
-    /* Start timer */
-    rv = timer_settime(timerId, 0, &its, NULL);
-    if (rv == -1) {
-        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
-                 strerror(errno), "Unable to start the timer for '%s'",
-                 unitName);
-        goto out;
-    }
+    armingTimer:
+        eventData.timerUnitName = unitName;
+        its.it_value.tv_sec  = *leftTime;
+        its.it_value.tv_nsec = 0;
+        its.it_interval.tv_sec  = *leftTime;
+        its.it_interval.tv_nsec = 0;
+        sev.sigev_notify = SIGEV_THREAD;
+        sev.sigev_notify_function = &expired;
+        sev.sigev_value.sival_ptr = &eventData;
+        /* Create timer */
+        rv = timer_create(wakeSystem ? CLOCK_BOOTTIME_ALARM : CLOCK_BOOTTIME, &sev, &timerId);
+        if (rv == -1) {
+            logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
+                     strerror(errno), "Unable to create the timer for '%s'",
+                     unitName);
+            goto out;
+        }
+        /* Start timer */
+        rv = timer_settime(timerId, 0, &its, NULL);
+        if (rv == -1) {
+            logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
+                     strerror(errno), "Unable to start the timer for '%s'",
+                     unitName);
+            goto out;
+        }
 
     listen:
         /* Set process data */
@@ -927,7 +952,7 @@ startTimerThread(void *arg)
                      strerror(errno), "Unable to unlock the mutex", unitName);
 
         /* Listening the pipe */
-        if ((rv = read(timerPipe->fds[0], &input, sizeof(int))) == -1) {
+        if ((rv = uRead(timerPipe->fds[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerThread", errno,
                      strerror(errno), "Unable to read from the timer pipe for '%s'",
                      unitName);
@@ -959,7 +984,7 @@ startTimer(Unit *unit)
     assert(unit);
     unitName = unit->name;
 
-    pthread_attr_init(&attr);
+    assert(pthread_attr_init(&attr) == 0);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     if (pthread_mutex_lock(unit->mutex) != 0)
@@ -972,9 +997,10 @@ startTimer(Unit *unit)
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "Timer thread created successfully for '%s'\n", unitName);
+            logInfo(SYSTEM, "Timer thread created successfully for '%s'\n", unitName);
     }
 
+    pthread_attr_destroy(&attr);
     return rv;
 }
 
@@ -993,7 +1019,7 @@ stopTimer(Unit *unit)
     if (unit->timerPipe) {
         timerPipe = unit->timerPipe;
         mutex = timerPipe->mutex;
-        if ((rv = write(timerPipe->fds[1], &output, sizeof(int))) == -1) {
+        if ((rv = uWrite(timerPipe->fds[1], &output, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "stopTimer",
                           errno, strerror(errno), "Unable to write into pipe for the %s unit", unitName);
         }

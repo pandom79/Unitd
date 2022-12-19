@@ -116,7 +116,7 @@ startForwarderThread(void *arg)
         if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
             continue;
         if (FD_ISSET(pipeFd, &fds)) {
-            if ((length = read(pipeFd, &input, sizeof(int))) == -1) {
+            if ((length = uRead(pipeFd, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startForwarderThread",
                          errno, strerror(errno), "Unable to read from pipe for the dev (%s)!", devName);
                 goto out;
@@ -129,7 +129,7 @@ startForwarderThread(void *arg)
             bufferSize = BUFFER_SIZE;
             buffer = calloc(bufferSize, sizeof(char));
             assert(buffer);
-            if ((rv = read(fileFd, buffer, bufferSize)) == -1) {
+            if ((rv = uRead(fileFd, buffer, bufferSize)) == -1) {
                 logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startForwarderThread",
                          errno, strerror(errno), "Unable to read from dev (%s)!", devName);
                 goto out;
@@ -217,7 +217,7 @@ startUnixThread(void *arg)
         if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
             continue;
         if (FD_ISSET(pipeFd, &fds)) {
-            if ((length = read(pipeFd, &input, sizeof(int))) == -1) {
+            if ((length = uRead(pipeFd, &input, sizeof(int))) == -1) {
                 logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",
                          errno, strerror(errno), "Unable to read from pipe for the dev (%s)!", devName);
                 kill(UNITLOGD_PID, SIGTERM);
@@ -285,19 +285,20 @@ startSocket(void *arg)
     devName = socketThread->devName;
 
     /* Set pthread attributes and start */
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    assert(pthread_attr_init(&attr) == 0);
+    assert(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
     rv = pthread_create(&thread, &attr,
                         socketThread->sockType == UNIX ? startUnixThread : startForwarderThread,
                         socketThread);
     if (rv != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c", "startSocket", errno,
-                      strerror(errno), "Unable to create the socket thread (detached) (%s)", devName);
+        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c", "startSocket", rv,
+                      strerror(rv), "Unable to create the socket thread (detached) (%s)", devName);
     }
     else {
         if (UNITLOGD_DEBUG)
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "Socket thread (detached) created successfully (%s)\n", devName);
     }
+    pthread_attr_destroy(&attr);
 
     /* It will be freed in startSockets func */
     rvThread = calloc(1, sizeof(int));
@@ -321,8 +322,8 @@ startSockets(Array *socketThreads)
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
         if ((rv = pthread_create(&socketThread->thread, NULL, startSocket, socketThread)) != 0) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c", "startSockets", errno,
-                          strerror(errno), "Unable to create the thread for the '%s' dev", devName);
+            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c", "startSockets", rv,
+                          strerror(rv), "Unable to create the thread for the '%s' dev", devName);
             break;
         }
         else {
@@ -334,8 +335,7 @@ startSockets(Array *socketThreads)
     for (int i = 0; i < len; i++) {
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
-        if (pthread_join(socketThread->thread, (void **)&rvThread) != EXIT_SUCCESS) {
-            rv = 1;
+        if ((rv = pthread_join(socketThread->thread, (void **)&rvThread)) != 0) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/core/processes/process.c", "startSockets", rv,
                           strerror(rv), "Unable to join the thread for the '%s' dev", devName);
         }
@@ -381,29 +381,25 @@ stopSocket(void *arg)
     const char *devName = socketThread->devName;
     int rv = 0, output = THREAD_EXIT, *rvThread;
 
-    if ((rv = write(pipe->fds[1], &output, sizeof(int))) == -1) {
+    if ((rv = uWrite(pipe->fds[1], &output, sizeof(int))) == -1) {
         logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSocket",
                       errno, strerror(errno), "Unable to write into pipe for the %s dev", devName);
-        goto out;
     }
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
         logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSocket",
                       rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s dev",
                       devName);
-        goto out;
     }
     if ((rv = pthread_mutex_unlock(mutex)) != 0) {
         logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSocket",
                       rv, strerror(rv), "Unable to unlock the pipe mutex for the %s dev", devName);
-        goto out;
     }
 
-    out:
-        /* It will be freed in stopSockets func */
-        rvThread = calloc(1, sizeof(int));
-        assert(rvThread);
-        *rvThread = rv;
-        return rvThread;
+    /* It will be freed in stopSockets func */
+    rvThread = calloc(1, sizeof(int));
+    assert(rvThread);
+    *rvThread = rv;
+    return rvThread;
 }
 
 int
@@ -420,8 +416,8 @@ stopSockets(Array *socketThreads)
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
         if ((rv = pthread_create(&socketThread->thread, NULL, stopSocket, socketThread)) != 0) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", errno,
-                          strerror(errno), "Unable to create the thread for the '%s' dev", devName);
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
+                          strerror(rv), "Unable to create the thread for the '%s' dev", devName);
             break;
         }
         else {
@@ -432,8 +428,7 @@ stopSockets(Array *socketThreads)
     for (int i = 0; i < len; i++) {
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
-        if (pthread_join(socketThread->thread, (void **)&rvThread) != EXIT_SUCCESS) {
-            rv = 1;
+        if ((rv = pthread_join(socketThread->thread, (void **)&rvThread)) != 0) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
                           strerror(rv), "Unable to join the thread for the '%s' dev", devName);
         }

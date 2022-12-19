@@ -20,4 +20,3 @@ void cleanerRelease(Cleaner **);
 void startCleaner();
 void* startCleanerThread(void *);
 void stopCleaner();
-void* stopCleanerThread(void *);

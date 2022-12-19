@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
 
     while (true) {
         /* Unitlogd is blocked here waiting for a signal */
-        if ((rv = read(SELF_PIPE[0], &input, sizeof(int))) == -1) {
+        if ((rv = uRead(SELF_PIPE[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/bin/unitlogd/main.c", "main", errno,
                      strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
             goto out;

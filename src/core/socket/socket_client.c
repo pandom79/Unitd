@@ -343,6 +343,11 @@ printStatus(PState pState, const char *status, int finalStatus, bool newline)
         case FINAL_STATUS_SUCCESS:
             if (pState == DEAD)
                 printf("%s%s%s", GREY_COLOR, status, DEFAULT_COLOR);
+            /* The timers can have a restarting state and a final status equal to success.
+             * Read the comment in startUnitTimerThread. (Restart case).
+            */
+            else if (pState == RESTARTING)
+                logWarning(CONSOLE, "%s", status);
             else
                 logSuccess(CONSOLE, "%s", status);
             break;
@@ -447,8 +452,7 @@ getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection, Command c
     }
 
     /* Connect */
-    if (unitdSockConn(socketConnection, &name) != 0)
-        rv = 1;
+    rv = unitdSockConn(socketConnection, &name);
 
     out:
         return rv;

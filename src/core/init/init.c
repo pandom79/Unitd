@@ -92,6 +92,7 @@ pid_t UNITD_PID;
 char *UNITD_USER_CONF_PATH;
 State STATE_USER;
 char *STATE_USER_DIR;
+pthread_mutex_t START_MUTEX;
 
 static void
 addBootUnits(Array **bootUnits, Array **units) {
@@ -210,8 +211,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
-    /* we open eventual pipes and start the processes */
-    openPipes(units, NULL);
+
+    /* We put the pipes to listen before to start processes to be ready for restart. */
+    listenPipes(units, NULL);
     startProcesses(units, NULL);
     ENABLE_RESTART = true;
     unitdCloseLog();
@@ -326,8 +328,9 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     stringAppendStr(&STATE_USER_DIR, ".state");
     rv = loadUnits(units, UNITS_USER_ENAB_PATH, STATE_USER_DIR,
                    STATE_USER, isAggregate, NULL, PARSE_UNIT, true);
-    /* we open eventual pipes and start the processes */
-    openPipes(units, NULL);
+
+    /* We put the pipes to listen before to start processes to be ready for restart. */
+    listenPipes(units, NULL);
     startProcesses(units, NULL);
     ENABLE_RESTART = true;
     unitdCloseLog();
@@ -363,11 +366,16 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
 void
 unitdEnd(UnitdData **unitdData)
 {
+    int rv = 0;
     arrayRelease(&UNITD_ENV_VARS);
     objectRelease(&STATE_CMDLINE_DIR);
     timeRelease(&BOOT_START);
     timeRelease(&BOOT_STOP);
     userDataRelease();
+    if ((rv = pthread_mutex_destroy(&START_MUTEX)) != 0)
+        logError(CONSOLE | SYSTEM, "src/core/init/init.c", "unitdEnd", rv, strerror(rv),
+                 "Unable to destroy the start mutex");
+
     if (*unitdData) {
         arrayRelease(&(*unitdData)->bootUnits);
         arrayRelease(&(*unitdData)->initUnits);

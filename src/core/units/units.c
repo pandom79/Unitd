@@ -1047,6 +1047,9 @@ unitRelease(Unit **unit)
         /* Process Data */
         processDataRelease(&(unitTemp->processData));
 
+        /* Pipe */
+        pipeRelease(&unitTemp->pipe);
+
         /* Eventual timer data for the unit */
         objectRelease(&unitTemp->timerName);
         objectRelease(&unitTemp->timerPState);
@@ -1254,4 +1257,3 @@ pipeRelease(Pipe **pipe)
         objectRelease(pipe);
     }
 }
-

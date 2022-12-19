@@ -450,6 +450,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         */
         if ((rvMutex = handleMutex(unit->mutex, true)) != 0)
             logErrorStr(SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
+        assert(rvMutex == 0);
 
         /* Set an eventual timer for the unit */
         if (unit->type != TIMER)
@@ -459,8 +460,9 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
 
         /* Unlock only if it's locked */
-        if (rvMutex == 0 && (rvMutex = handleMutex(unit->mutex, false)) != 0)
+        if ((rvMutex = handleMutex(unit->mutex, false)) != 0)
             logErrorStr(SYSTEM, "Unable to unlock the mutex in getUnitStatusServer func");
+        assert(rvMutex == 0);
     }
     else {
         /* Check and parse unitName. We don't consider the units into memory
@@ -622,7 +624,7 @@ int
 startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut,
                 bool sendResponse, bool isTimer)
 {
-    int rv, len;
+    int rv, len, rvMutex;
     Array **unitsDisplay, **errors, **units, *conflicts, *stopConflictsArr,
           **messages, *requires;
     char *buffer, *unitName, *unitPath;
@@ -634,7 +636,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     unit = unitConflict = unitDep = NULL;
     force = restart = hasError = reset = false;
-    rv = len = 0;
+    rvMutex = rv = len = 0;
     buffer = unitName = unitPath = NULL;
     dep = conflict = NULL;
     pData = pDataConflict = NULL;
@@ -650,6 +652,12 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
 
     /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
+
+    if ((rvMutex = pthread_mutex_lock(&START_MUTEX)) != 0) {
+        logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
+                      rv, strerror(rv), "Unable to lock the start mutex for %s!", unitName);
+    }
+    assert(rvMutex == 0);
 
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     restart = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESTART_OPT].name);
@@ -742,8 +750,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     for (int i = 0; i < len; i++) {
         dep = arrayGet(requires, i);
         if (!(unitDep = getUnitByName(*units, dep)) ||
+            unitDep->processData->pStateData->pState == DEAD ||
             *unitDep->processData->finalStatus != FINAL_STATUS_SUCCESS ||
-            (unitDep->errors->size > 0)) {
+            unitDep->errors->size > 0) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
             arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNSATISFIED_DEP_ERR].desc,
@@ -809,7 +818,6 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
                (unitConflict->errors && unitConflict->errors->size > 0) ||
-               (unitConflict->isChanged && unitConflict->type == TIMER) ||
                (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
                 arrayRemove(*units, unitConflict);
         }
@@ -826,7 +834,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         if (unit->type != TIMER) {
             /* Create process data history array accordingly */
             unit->processDataHistory = arrayNew(processDataRelease);
-            openPipes(NULL, unit);
+            /* Put to listen the pipe */
+            listenPipes(NULL, unit);
         }
         else if (unit->type == TIMER && reset)
             resetNextTime(unitName);
@@ -848,6 +857,11 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             }
             objectRelease(&buffer);
         }
+        if ((rvMutex = pthread_mutex_unlock(&START_MUTEX)) != 0) {
+            logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
+                          rv, strerror(rv), "Unable to unlock the start mutex for %s!", unitName);
+        }
+        assert(rvMutex == 0);
         objectRelease(&unitName);
         return rv;
 }

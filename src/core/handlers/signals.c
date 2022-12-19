@@ -79,7 +79,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         }
                         if (unitPipe) {
                             output = CLD_EXITED;
-                            if (write(unitPipe->fds[1], &output, sizeof(int)) == -1) {
+                            if (uWrite(unitPipe->fds[1], &output, sizeof(int)) == -1) {
                                 logError(CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
                                               errno, strerror(errno), "Unable to write into pipe for the %s unit (exit case)",
                                               unitName);
@@ -103,7 +103,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         }
                         if (unitPipe) {
                             output = CLD_KILLED;
-                            if (write(unitPipe->fds[1], &output, sizeof(int)) == -1) {
+                            if (uWrite(unitPipe->fds[1], &output, sizeof(int)) == -1) {
                                 logError(CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
                                               errno, strerror(errno), "Unable to write into pipe for the %s unit (kill case)",
                                               unitName);

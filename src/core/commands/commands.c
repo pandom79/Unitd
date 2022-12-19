@@ -151,7 +151,7 @@ execProcess(const char *command, char **argv, Unit **unit)
 
                     /* we communicate the failure result if the unit has a pipe */
                     if (unitPipe && *pData->exitCode != EXIT_SUCCESS) {
-                        if (write(unitPipe->fds[1], pData->exitCode, sizeof(int)) == -1) {
+                        if (uWrite(unitPipe->fds[1], pData->exitCode, sizeof(int)) == -1) {
                             logError(CONSOLE, "src/core/commands/commands.c", "execProcess",
                                           errno, strerror(errno), "Unable to write into pipe for the %s unit (oneshot case)",
                                           (*unit)->name);

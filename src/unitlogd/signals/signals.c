@@ -21,7 +21,7 @@ exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
         logInfo(CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
 
     UNITLOGD_EXIT = true;
-    if ((rv = write(SELF_PIPE[1], &output, sizeof(int))) == -1) {
+    if ((rv = uWrite(SELF_PIPE[1], &output, sizeof(int))) == -1) {
         logError(CONSOLE, "src/unitlogd/signals/signals.c", "exitSignal", errno,
                       strerror(errno), "Unable to write into self pipe. Rv = %d.", rv);
     }

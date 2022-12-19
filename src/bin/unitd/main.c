@@ -41,6 +41,7 @@ char *UNITD_USER_LOG_PATH = NULL;
 State STATE_USER = USER;
 char *STATE_USER_DIR = NULL;
 char *SOCKET_USER_PATH = NULL;
+pthread_mutex_t START_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 static void __attribute__((noreturn))
 usage(bool fail)

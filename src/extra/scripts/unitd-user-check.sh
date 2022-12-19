@@ -36,5 +36,5 @@ fi
 # Please note that if we run the instance under valgrind supervision then this check fails!!
 NUM_INSTANCES=$(pgrep -l -u "$USER_UID" -U "$USER_UID" -x unitd | wc -l)
 if [ $NUM_INSTANCES -gt 1 ]; then
-    exit 114
+    exit $EUIRUN
 fi
