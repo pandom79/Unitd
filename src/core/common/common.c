@@ -506,12 +506,14 @@ handleMutexThread(void *arg)
         if ((rv = pthread_mutex_lock(mutexThreadData->mutex)) != 0) {
             logError(SYSTEM, "src/core/common/common.c", "handleMutexThread",
                           rv, strerror(rv), "Unable to acquire the lock of the mutex");
+            kill(UNITD_PID, SIGTERM);
         }
     }
     else {
         if ((rv = pthread_mutex_unlock(mutexThreadData->mutex)) != 0) {
             logError(SYSTEM, "src/core/common/common.c", "handleMutexThread",
                           rv, strerror(rv), "Unable to unlock the mutex");
+            kill(UNITD_PID, SIGTERM);
         }
     }
 
@@ -532,15 +534,15 @@ handleMutex(pthread_mutex_t *mutex, bool lock)
     MutexThreadData mutextThreadData = { .mutex = mutex, .lock = lock };
 
     if ((rv = pthread_create(&thread, NULL, handleMutexThread, &mutextThreadData)) != 0) {
-        logError(SYSTEM, "src/core/common/common.c", "handleMutex", rv,
+        logError(SYSTEM | CONSOLE, "src/core/common/common.c", "handleMutex", rv,
                       strerror(rv), "Unable to create the thread for the mutex");
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rv == 0);
     if ((rv = pthread_join(thread, (void **)&rvThread)) != 0) {
-        logError(SYSTEM, "src/core/common/common.c", "handleMutex", rv,
+        logError(SYSTEM | CONSOLE, "src/core/common/common.c", "handleMutex", rv,
                       strerror(rv), "Unable to join the thread for the mutex");
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rv == 0);
     if (*rvThread != 0)
         rv = *rvThread;
 

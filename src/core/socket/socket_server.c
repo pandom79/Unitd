@@ -450,7 +450,6 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         */
         if ((rvMutex = handleMutex(unit->mutex, true)) != 0)
             logErrorStr(SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
-        assert(rvMutex == 0);
 
         /* Set an eventual timer for the unit */
         if (unit->type != TIMER)
@@ -462,7 +461,6 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         /* Unlock only if it's locked */
         if ((rvMutex = handleMutex(unit->mutex, false)) != 0)
             logErrorStr(SYSTEM, "Unable to unlock the mutex in getUnitStatusServer func");
-        assert(rvMutex == 0);
     }
     else {
         /* Check and parse unitName. We don't consider the units into memory
@@ -656,8 +654,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
     if ((rvMutex = pthread_mutex_lock(&START_MUTEX)) != 0) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
                       rv, strerror(rv), "Unable to lock the start mutex for %s!", unitName);
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rvMutex == 0);
 
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     restart = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESTART_OPT].name);
@@ -860,8 +858,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         if ((rvMutex = pthread_mutex_unlock(&START_MUTEX)) != 0) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
                           rv, strerror(rv), "Unable to unlock the start mutex for %s!", unitName);
+            kill(UNITD_PID, SIGTERM);
         }
-        assert(rvMutex == 0);
         objectRelease(&unitName);
         return rv;
 }

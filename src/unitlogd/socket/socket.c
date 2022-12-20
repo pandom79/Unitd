@@ -324,13 +324,12 @@ startSockets(Array *socketThreads)
         if ((rv = pthread_create(&socketThread->thread, NULL, startSocket, socketThread)) != 0) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c", "startSockets", rv,
                           strerror(rv), "Unable to create the thread for the '%s' dev", devName);
-            break;
+            kill(UNITLOGD_PID, SIGTERM);
         }
         else {
             if (UNITLOGD_DEBUG)
                 logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "Thread created (Start) succesfully for the '%s' dev\n", devName);
         }
-
     }
     for (int i = 0; i < len; i++) {
         socketThread = arrayGet(socketThreads, i);
@@ -338,6 +337,7 @@ startSockets(Array *socketThreads)
         if ((rv = pthread_join(socketThread->thread, (void **)&rvThread)) != 0) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/core/processes/process.c", "startSockets", rv,
                           strerror(rv), "Unable to join the thread for the '%s' dev", devName);
+            kill(UNITLOGD_PID, SIGTERM);
         }
         else {
             if (UNITLOGD_DEBUG)
@@ -418,7 +418,6 @@ stopSockets(Array *socketThreads)
         if ((rv = pthread_create(&socketThread->thread, NULL, stopSocket, socketThread)) != 0) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
                           strerror(rv), "Unable to create the thread for the '%s' dev", devName);
-            break;
         }
         else {
             if (UNITLOGD_DEBUG)

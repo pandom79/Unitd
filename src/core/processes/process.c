@@ -256,6 +256,7 @@ startProcess(void *arg)
         *finalStatus = FINAL_STATUS_FAILURE;
         logError(ALL, "src/core/processes/process.c", "startProcess",
                       rv, strerror(rv), "Unable to send the broadcast signal for the %s unit", unitName);
+        kill(UNITD_PID, SIGTERM);
     }
     if (UNITD_DEBUG)
         logInfo(UNITD_BOOT_LOG, "'%s' sent the broadcast signal!\n", unitName);
@@ -264,6 +265,7 @@ startProcess(void *arg)
         *finalStatus = FINAL_STATUS_FAILURE;
         logError(ALL, "src/core/processes/process.c", "startProcess",
                       rv, strerror(rv), "Unable to unlock the mutex for the %s unit", unitName);
+        kill(UNITD_PID, SIGTERM);
     }
     /* show the result */
     if (unit->showResult) {
@@ -323,13 +325,12 @@ startProcesses(Array **units, Unit *singleUnit)
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "startProcesses", rv,
                               strerror(rv), "Unable to create the thread for '%s'",
                               unitName);
-                break;
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Thread created succesfully for '%s'\n", unitName);
             }
-            assert(rv == 0);
         }
         /* Waiting for all threads to terminate */
         for (int i = 0; i < numThreads; i++) {
@@ -340,13 +341,13 @@ startProcesses(Array **units, Unit *singleUnit)
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "startProcesses", rv,
                               strerror(rv), "Unable to join the thread for '%s'",
                               unitName);
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Thread joined successfully for '%s'! Return code = %d\n",
                                  unitName, *rvThread);
             }
-            assert(rv == 0);
             if (*rvThread == 1)
                 rv = 1;
             objectRelease(&rvThread);
@@ -549,13 +550,12 @@ stopProcesses(Array **units, Unit *unitArg)
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "stopProcesses", rv,
                               strerror(rv), "Unable to create the thread for '%s'",
                               unitName);
-                break;
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Thread created succesfully for '%s'\n", unitName);
             }
-            assert(rv == 0);
         }
         /* Waiting for all threads to terminate */
         for (int i = 0; i < numThreads; i++) {
@@ -566,13 +566,13 @@ stopProcesses(Array **units, Unit *unitArg)
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "stopProcesses", rv,
                               strerror(rv), "Unable to join the thread for '%s'",
                               unitName);
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Thread joined successfully for '%s'! Return code = %d\n",
                                  unitName, *rvThread);
             }
-            assert(rv == 0);
             if (*rvThread == 1)
                 rv = 1;
             objectRelease(&rvThread);
@@ -616,22 +616,22 @@ listenPipe(void *arg)
         logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipe",
                       rv, strerror(rv), "Unable to lock the pipe mutex for the %s unit",
                       unitName);
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rv == 0);
 
     if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipe",
                       rv, strerror(rv), "Unable to lock the mutex for the %s unit",
                       unitName);
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rv == 0);
 
     while (1) {
         if ((rv = uRead(unitPipe->fds[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipe", errno,
                           strerror(errno), "Unable to read from pipe for '%s'",
                           unitName);
-            arrayAdd(unit->errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
+            kill(UNITD_PID, SIGTERM);
             goto out;
         }
         if (input == THREAD_EXIT)
@@ -651,8 +651,8 @@ listenPipe(void *arg)
                 logError(SYSTEM, "src/core/processes/process.c", "listenPipe",
                               rvMutex, strerror(rvMutex), "Unable to acquire the lock of the mutex for the %s unit",
                               unitName);
+                kill(UNITD_PID, SIGTERM);
             }
-            assert(rvMutex == 0);
             /* Before the restart the daemon, we add the current processData to
              * processDataHistory.
              * If restartNum achieved the 'SHOW_MAX_RESULTS' value, we increment it but we will always
@@ -672,8 +672,8 @@ listenPipe(void *arg)
                 logError(SYSTEM, "src/core/processes/process.c", "listenPipe",
                               rvMutex, strerror(rvMutex), "Unable to unlock the mutex for the %s unit",
                               unitName);
+                kill(UNITD_PID, SIGTERM);
             }
-            assert(rvMutex == 0);
             if (SHUTDOWN_COMMAND == NO_COMMAND) {
                 if (UNITD_DEBUG)
                     logInfo(SYSTEM, "%s unit is restarting ....", unitName);
@@ -693,7 +693,6 @@ listenPipe(void *arg)
                           rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
                           unitName);
         }
-        assert(rv == 0);
         pthread_exit(0);
 }
 
@@ -770,33 +769,33 @@ listenPipes(Array **units, Unit *unitArg)
                 logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipes", errno,
                               strerror(errno), "pthread_attr_init returned bad exit code %d for %s",
                               rv, unitName);
+                kill(UNITD_PID, SIGTERM);
             }
-            assert(rv == 0);
 
             if ((rv = pthread_attr_setdetachstate(&attr[i], PTHREAD_CREATE_DETACHED)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipes", errno,
                               strerror(errno), "pthread_attr_init returned bad exit code %d for %s",
                               rv, unitName);
+                kill(UNITD_PID, SIGTERM);
             }
-            assert(rv == 0);
 
             /* It will be unlocked by listenPipeThread. */
-            assert(handleMutex(unit->mutex, true) == 0);
+            handleMutex(unit->mutex, true);
 
             if ((rv = pthread_create(&threads[i], &attr[i], listenPipe, unit)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipes", rv,
                               strerror(rv), "Unable to create the detached thread for '%s' (listen pipe)",
                               unitName);
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Detached thread created succesfully for '%s' (listen pipe)\n", unitName);
             }
-            assert(rv == 0);
 
             /* We assure us that the pipes are listening. */
-            assert(handleMutex(unit->mutex, true) == 0);
-            assert(handleMutex(unit->mutex, false) == 0);
+            handleMutex(unit->mutex, true);
+            handleMutex(unit->mutex, false);
             pthread_attr_destroy(&attr[i]);
         }
     }
@@ -828,16 +827,19 @@ closePipe(void *arg)
         if ((rv = uWrite(unitPipe->fds[1], &output, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "closePipe",
                           errno, strerror(errno), "Unable to write into pipe for the %s unit", unitName);
+            kill(UNITD_PID, SIGTERM);
         }
         if ((rv = pthread_mutex_lock(mutex)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "closePipe",
                           rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s unit",
                           unitName);
+            kill(UNITD_PID, SIGTERM);
         }
         if ((rv = pthread_mutex_unlock(mutex)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "closePipe",
                           rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
                           unitName);
+            kill(UNITD_PID, SIGTERM);
         }
     }
 
@@ -881,13 +883,12 @@ closePipes(Array **units, Unit *unitArg)
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "closePipes", rv,
                               strerror(rv), "Unable to create the thread for '%s' (close pipe)",
                               unitName);
-                break;
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Thread created succesfully for '%s' (close pipe)\n", unitName);
             }
-            assert(rv == 0);
         }
         /* Waiting for all threads to terminate */
         for (int i = 0; i < numThreads; i++) {
@@ -899,13 +900,13 @@ closePipes(Array **units, Unit *unitArg)
                 logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "closePipes", rv,
                               strerror(rv), "Unable to join the thread for '%s' (close pipe)",
                               unitName);
+                kill(UNITD_PID, SIGTERM);
             }
             else {
                 if (UNITD_DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Thread joined successfully for '%s' (close pipe)! Return code = %d\n",
                                  unitName, *rvThread);
             }
-            assert(rv == 0);
             if (*rvThread == 1)
                 rv = 1;
             objectRelease(&rvThread);
