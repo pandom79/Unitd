@@ -1067,6 +1067,7 @@ unitRelease(Unit **unit)
         objectRelease(&unitTemp->leftTime);
         timeRelease(&unitTemp->nextTime);
         objectRelease(&unitTemp->intervalStr);
+        timerRelease(&unitTemp->timer);
 
         /* Unit */
         objectRelease(unit);

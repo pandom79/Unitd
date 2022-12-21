@@ -692,6 +692,7 @@ listenPipe(void *arg)
             logError(CONSOLE, "src/core/processes/process.c", "listenPipe",
                           rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
                           unitName);
+            kill(UNITD_PID, SIGTERM);
         }
         pthread_exit(0);
 }

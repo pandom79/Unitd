@@ -6,7 +6,6 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#define TIMER_RETARD    3
 #define EUIDOWN         120
 
 struct eventData {
@@ -21,9 +20,11 @@ int setNextTimeFromDisk(Unit **);
 int setNextTimeFromInterval(Unit **);
 int saveTime(Unit *, const char *, Time *, int);
 int executeUnit(Unit *);
-int startTimer(Unit *);
-void* startTimerThread(void *);
-int stopTimer(Unit *);
 void setLeftTimeAndDuration(Unit **);
 void setNextTimeDate(Unit **);
 int resetNextTime(const char *);
+void expired(union sigval timerData);
+Timer* timerNew();
+void timerRelease(Timer **);
+void armTimer(Unit *);
+void disarmTimer(Unit *unit);

@@ -133,6 +133,13 @@ typedef struct {
 } Pipe;
 
 typedef struct {
+    timer_t *timerId;
+    struct eventData *eventData;
+    struct sigevent *sev;
+    struct itimerspec *its;
+} Timer;
+
+typedef struct {
     char *desc;
     Array *requires;
     PType type;
@@ -158,6 +165,7 @@ typedef struct {
     char *timerName;
     PState *timerPState;
     // Timer
+    Timer *timer;
     bool *wakeSystem;
     int *intSeconds;
     int *intMinutes;
@@ -170,7 +178,6 @@ typedef struct {
     char *leftTimeDuration;
     Time *nextTime;
     char *nextTimeDate;
-    Pipe *timerPipe;
 } Unit;
 
 typedef struct {
