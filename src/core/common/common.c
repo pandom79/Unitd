@@ -167,7 +167,7 @@ setNewDefaultStateSyml(State newDefaultState, Array **messages, Array **errors)
     arrayAdd(envVars, NULL);
 
     /* Execute the script */
-    rv = execUScript(&envVars, "add-syml");
+    rv = execUScript(&envVars, "default-syml");
     if (rv != 0) {
         arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
         arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));

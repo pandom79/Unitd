@@ -36,4 +36,8 @@ case $OPERATION in
     "remove")
         rm -rf $PATTERN || true
     ;;
+    "default-syml")
+        rm -rf $TO || true
+        ln -s $FROM $TO
+    ;;
 esac;
