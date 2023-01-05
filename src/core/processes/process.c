@@ -8,8 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-bool ENABLE_RESTART;
-
 void*
 startProcess(void *arg)
 {
@@ -595,9 +593,11 @@ listenPipe(void *arg)
     ProcessData **pData = NULL;
     Array *pDataHistory = NULL;
     Pipe *unitPipe = NULL;
-    const char *unitName = NULL;
+    const char *unitName, *failureCmd;
+    char **cmdline = NULL;
 
     rv = input = rvMutex = 0;
+    unitName = failureCmd = NULL;
 
     /* Get the unit data*/
     unit = (Unit *)arg;
@@ -609,6 +609,7 @@ listenPipe(void *arg)
     restartNum = &unit->restartNum;
     pData = &unit->processData;
     pDataHistory = unit->processDataHistory;
+    failureCmd = unit->failureCmd;
     unitPipe = unit->pipe;
     assert(unitPipe);
 
@@ -637,9 +638,30 @@ listenPipe(void *arg)
         if (input == THREAD_EXIT)
             goto out;
 
-        /* The restart is blocked until all threads are terminated. See init.c */
-        while (!ENABLE_RESTART)
-            msleep(750);
+        /* Before to run whatever, we wait for system is up.
+         * We check if ctrl+alt+del is pressed as well.
+        */
+        while (!LISTEN_SOCK_REQUEST && SHUTDOWN_COMMAND == NO_COMMAND)
+            msleep(50);
+        if (SHUTDOWN_COMMAND != NO_COMMAND)
+            goto out;
+
+        /* Execute an eventual failure command */
+        if (failureCmd) {
+            cmdline = cmdlineSplit(failureCmd);
+            assert(cmdline);
+            logInfo(SYSTEM, "%s: executing '%s' failure command ...", unitName, failureCmd);
+            rv = execFailure(cmdline[0], cmdline, &unit);
+            cmdlineRelease(cmdline);
+            if (rv == 0)
+                logSuccess(SYSTEM, "%s: '%s' failure command executed successfully!",
+                           unitName, failureCmd);
+            else {
+                logErrorStr(SYSTEM, "%s: '%s' failure command returned %d exit code!",
+                            unitName, failureCmd, rv);
+                arrayAdd(unit->errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
+            }
+        }
 
         if ((restartMax > 0 && *restartNum < restartMax) ||
             (restartMax == -1 && restart)) {
@@ -700,15 +722,8 @@ listenPipe(void *arg)
 bool
 hasPipe(Unit *unit)
 {
-    bool restart;
-    int restartMax, restartNum;
-
     assert(unit);
-
-    restart = unit->restart;
-    restartMax = unit->restartMax;
-    restartNum = unit->restartNum;
-    if ((restart && restartMax == -1) || (restartMax > 0 && restartNum < restartMax))
+    if (unit->restart || unit->restartMax > 0 || unit->failureCmd)
         return true;
 
     return false;

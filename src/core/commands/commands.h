@@ -15,6 +15,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 int execScript(const char *, const char *, char **, char **);
 int execProcess(const char *, char **, Unit **);
+int execFailure(const char *, char **, Unit **);
 char** cmdlineSplit(const char *);
 void cmdlineRelease(char **);
 int stopDaemon(const char *, char **, Unit **);

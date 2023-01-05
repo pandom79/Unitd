@@ -80,11 +80,15 @@ writeUnitContent(State defaultState, const char *unitPath, const char *unitName)
     propertyName = UNITS_PROPERTIES_ITEMS[7].propertyName.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# %s = set the command to stop ...\n\n", propertyName);
+    /* Failure property */
+    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "# %s = set the command to run on failure ...\n\n", propertyName);
 
     /* STATE SECTION */
     fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
     /* WantedBy property */
-    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[9].propertyName.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception
@@ -184,7 +188,7 @@ writeTimerContent(State defaultState, const char *unitPath, const char *unitName
     /* STATE SECTION */
     fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
     /* WantedBy property */
-    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[9].propertyName.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception

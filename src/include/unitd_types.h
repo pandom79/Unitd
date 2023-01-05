@@ -148,6 +148,7 @@ typedef struct {
     Array *conflicts;
     char *runCmd;
     char *stopCmd;
+    char *failureCmd;
     Array *wantedBy;
     int restartNum;
     char *name;
@@ -164,6 +165,8 @@ typedef struct {
     bool isChanged;
     char *timerName;
     PState *timerPState;
+    pid_t *failurePid;
+    int *failureExitCode;
     // Timer
     Timer *timer;
     bool *wakeSystem;

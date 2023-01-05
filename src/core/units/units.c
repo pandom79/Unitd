@@ -25,7 +25,8 @@ enum PropertyNameEnum  {
     CONFLICTS = 5,
     RUN = 6,
     STOP = 7,
-    WANTEDBY = 8
+    FAILURE = 8,
+    WANTEDBY = 9
 };
 
 /* Sections */
@@ -53,7 +54,7 @@ static const char *WANTEDBY_VALUES[] = {
                                         NULL
                                        };
 
-int UNITS_PROPERTIES_ITEMS_LEN = 9;
+int UNITS_PROPERTIES_ITEMS_LEN = 10;
 PropertyData UNITS_PROPERTIES_ITEMS[] = {
     { UNIT, { DESCRIPTION, "Description" }, false, true, false, 0, NULL, NULL },
     { UNIT, { REQUIRES, "Requires" }, true, false, false, 0, NULL, NULL },
@@ -63,6 +64,7 @@ PropertyData UNITS_PROPERTIES_ITEMS[] = {
     { UNIT, { CONFLICTS, "Conflict" }, true, false, false, 0, NULL, NULL },
     { COMMAND, { RUN, "Run" }, false, true, false, 0, NULL, NULL },
     { COMMAND, { STOP, "Stop" }, false, false, false, 0, NULL, NULL },
+    { COMMAND, { FAILURE, "Failure" }, false, false, false, 0, NULL, NULL },
     { STATE, { WANTEDBY, "WantedBy" }, true, true, false, 0, WANTEDBY_VALUES, NULL }
 };
 
@@ -82,7 +84,7 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { UNIT_PATH_INIT_FINAL_ERR, "The '%s' and '%s' states can't contain symbolic links!" },
     { UNIT_PATH_ERR, "'%s' is not a valid symbolic link!" },
     { UNIT_NOT_EXIST_ERR, "'%s' doesn't exist!" },
-    { UNIT_TIMEOUT_ERR, "Timeout expired for the '%s'!" },
+    { UNIT_TIMEOUT_ERR, "Timeout expired for '%s'!" },
     { UNIT_ALREADY_ERR, "The unit is already %s!" },
     { DEFAULT_SYML_MISSING_ERR, "The default state symlink is missing!" },
     { DEFAULT_SYML_TYPE_ERR, "The default state doesn't look like a symlink!" },
@@ -175,6 +177,22 @@ getUnitByPid(Array *units, pid_t pid)
     for (int i = 0; i < len; i++) {
         unit = arrayGet(units, i);
         if (*unit->processData->pid == pid)
+            return unit;
+    }
+    return NULL;
+}
+
+Unit*
+getUnitByFailurePid(Array *units, pid_t pid)
+{
+    Unit *unit = NULL;
+    pid_t *failurePid = NULL;
+
+    int len = (units ? units->size : 0);
+    for (int i = 0; i < len; i++) {
+        unit = arrayGet(units, i);
+        failurePid = unit->failurePid;
+        if (failurePid && *failurePid == pid)
             return unit;
     }
     return NULL;
@@ -972,6 +990,19 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                         if (currentState == INIT || currentState == FINAL)
                             stringReplaceStr(&(*unit)->stopCmd, UNITD_DATA_PATH_CMD_VAR, UNITD_DATA_PATH);
                         break;
+                    case FAILURE:
+                        (*unit)->failureCmd = stringNew(value);
+                        /* Failure Pid */
+                        pid_t *failurePid = calloc(1, sizeof(pid_t));
+                        assert(failurePid);
+                        *failurePid = -1;
+                        (*unit)->failurePid = failurePid;
+                        /* Failure exit code */
+                        int *failureExitCode = calloc(1, sizeof(int));
+                        assert(failureExitCode);
+                        *failureExitCode = -1;
+                        (*unit)->failureExitCode = failureExitCode;
+                        break;
                     case WANTEDBY:
                         arrayAdd(wantedBy, stringNew(value));
                         break;
@@ -1020,6 +1051,9 @@ unitRelease(Unit **unit)
         arrayRelease(&unitTemp->requires);
         objectRelease(&unitTemp->runCmd);
         objectRelease(&unitTemp->stopCmd);
+        objectRelease(&unitTemp->failureCmd);
+        objectRelease(&unitTemp->failurePid);
+        objectRelease(&unitTemp->failureExitCode);
         arrayRelease(&unitTemp->wantedBy);
 
         /* Destroy and free the condition variable */

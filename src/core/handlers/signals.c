@@ -40,13 +40,14 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
             goto out;
         }
 
+        /* Get siginfo data */
+        infoCode = info->si_code;
+        infoPid = info->si_pid;
+
         /* Get the unit */
-        unit = getUnitByPid(UNITD_DATA->units, info->si_pid);
+        unit = getUnitByPid(UNITD_DATA->units, infoPid);
         if (unit && !unit->isStopping) {
             unitName = unit->name;
-            /* Get siginfo data */
-            infoCode = info->si_code;
-            infoPid = info->si_pid;
             /* Get process Data */
             pData = unit->processData;
             pStateData = pData->pStateData;
@@ -134,6 +135,11 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         break;
                 }
             }
+        }
+        else if (!unit && infoCode == CLD_EXITED) {
+            /* Try to get the unit by failure pid */
+            if ((unit = getUnitByFailurePid(UNITD_DATA->units, infoPid)))
+                *unit->failureExitCode = info->si_status;
         }
     }
 

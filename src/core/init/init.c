@@ -215,7 +215,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     /* We put the pipes to listen before to start processes to be ready for restart. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
-    ENABLE_RESTART = true;
     unitdCloseLog();
     /* Create the boot units array */
     addBootUnits(bootUnits, units);
@@ -332,7 +331,6 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     /* We put the pipes to listen before to start processes to be ready for restart. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
-    ENABLE_RESTART = true;
     unitdCloseLog();
     /* Create the boot units array */
     addBootUnits(bootUnits, units);

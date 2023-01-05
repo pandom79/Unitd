@@ -733,32 +733,15 @@ startUnitTimerThread(void *arg)
 
     /* Try to get the persistent "nextTime" */
     rv = setNextTimeFromDisk(&unit);
-
-    /* If it exists but the left time is expired then we execute the unit */
-    if (rv == 0 && *leftTime <= 0) {
-        if (UNITD_DEBUG)
-            logInfo(SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
-                                             unitName);
-        /* Unit execution management. */
-        if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit)) == EUIDOWN) {
-            logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
-                       unitName);
-            goto out;
-        }
-        rv = 1;
-    }
-
-    /* If the persistent "nextTime" doesn't exist or it is not valid or the left time is expired then
+    /* If the persistent "nextTime" doesn't exist or is not valid or the left time is expired then
      * we regenerate and save it.
-     * Skip this step if rv = EUIDOWN (Shutting down)
-     * See above and executeUnit() function.
     */
-    if (rv != 0) {
+    if (rv != 0 || *leftTime <= 0) {
         if (UNITD_DEBUG)
             logInfo(SYSTEM, "%s: the persistent 'nextTime' doesn't exist or "
                             "it is not valid "
                             "or the left time is expired. "
-                            "Regenerating it by interval ...\n", unitName);
+                            "Regenerating it by interval ...", unitName);
         setNextTimeFromInterval(&unit);
         assert(unit->nextTime && *leftTime != -1);
         if ((rv = saveTime(unit, NULL, NULL, -1)) != 0) {

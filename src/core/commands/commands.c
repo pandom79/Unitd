@@ -184,7 +184,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 *pData->signalNum = SIGKILL;
                 setStopAndDuration(&pData);
                 if ((*unit)->showResult)
-                    logErrorStr(CONSOLE | UNITD_BOOT_LOG, "Timeout expired for the %s unit!\n", (*unit)->name);
+                    logErrorStr(CONSOLE | UNITD_BOOT_LOG, "Timeout expired for %s unit!\n", (*unit)->name);
                 arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc,
                                                 (*unit)->name));
             }
@@ -208,6 +208,72 @@ execProcess(const char *command, char **argv, Unit **unit)
     }
 
     return *pData->exitCode;
+}
+
+int
+execFailure(const char *command, char **argv, Unit **unit)
+{
+    pid_t child;
+    int status, millisec, res, *failureExitCode;
+    bool showWaitMsg = false;
+    const char *unitName = NULL;
+
+    assert(command);
+    assert(*unit);
+
+    unitName = (*unit)->name;
+    failureExitCode = (*unit)->failureExitCode;
+
+    child = fork();
+    switch (child) {
+        case 0:
+            (void)execv(command, argv);
+            _exit(errno);
+        case -1:
+            logError(SYSTEM, "src/core/commands/commands.c", "execFailure", errno,
+                     strerror(errno), "Unable to execute fork");
+            return EXIT_FAILURE;
+    }
+
+    assert(child > 0);
+    *(*unit)->failurePid = child;
+
+    /* Timeout */
+    millisec = 0;
+    while (millisec <= TIMEOUT_MS) {
+        res = waitpid(child, &status, WNOHANG);
+        if ((res > 0 && WIFEXITED(status)) || res == -1 || *failureExitCode != -1) {
+            /* Set the exit code if it hasn't already been set by the signal handler */
+            if (*failureExitCode == -1)
+                *failureExitCode = WEXITSTATUS(status);
+            break;
+        }
+        else {
+            if (millisec > MIN_TIMEOUT_MS) {
+                if (!showWaitMsg) {
+                    logWarning(SYSTEM, "%s: waiting for '%s' failure command to exit (%d sec) ...\n",
+                               unitName, command, (TIMEOUT_MS / 1000));
+                    showWaitMsg = true;
+                }
+            }
+            msleep(TIMEOUT_INC_MS);
+            millisec += TIMEOUT_INC_MS;
+        }
+    }
+
+    /* If it's not exited yet, kill it */
+    if (res == 0 && *failureExitCode == -1) {
+        kill(child, SIGKILL);
+        /* After killed, waiting for the pid's status
+         * to avoid zombie process creation
+        */
+        waitpid(child, &status, WNOHANG);
+        *failureExitCode = EXIT_FAILURE;
+        logErrorStr(SYSTEM, "%s: timeout expired for '%s' failure command!\n",
+                    unitName, command);
+    }
+
+    return *failureExitCode;
 }
 
 int

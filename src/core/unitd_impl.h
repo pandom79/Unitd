@@ -55,7 +55,6 @@ extern State STATE_CMDLINE;
 extern State STATE_SHUTDOWN;
 extern char *STATE_CMDLINE_DIR;
 extern bool LISTEN_SOCK_REQUEST;
-extern bool ENABLE_RESTART;
 extern Time *BOOT_START;
 extern Time *BOOT_STOP;
 extern Time *SHUTDOWN_START;
