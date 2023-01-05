@@ -92,8 +92,8 @@ unitdSockConn(int *socketConnection, struct sockaddr_un *name)
                       sizeof(struct sockaddr_un))) == -1) {
         logErrorStr(SYSTEM,
                          !USER_INSTANCE ?
-                         "Unitd system instance could be not running!\n" :
-                         "Unitd user instance could be not running!\n");
+                         "Unitd system instance could be not running!" :
+                         "Unitd user instance could be not running!");
         rv = EUIDOWN;
     }
     return rv;
