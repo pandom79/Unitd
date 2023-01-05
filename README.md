@@ -75,7 +75,7 @@ To do that, on slackware, according the default options, I run :
 gtk-update-icon-cache -f /usr/share/icons/*
 update-mime-database /usr/share/mime
 ```
-Note that If you use a different distro or build options then you should check the paths and command names.
+Please note that if you use a different distro or build options then you should check the paths and command names.
 
 According the default options, you should see the following folders:<br>
 
@@ -128,6 +128,7 @@ RestartMax = num                    (optional and not repeatable. A numeric valu
 [Command]                           (required and not repeatable)
 Run = /sbin/NetworkManager          (required and not repeatable)
 Stop = /sbin/NetworkManager -stop   (optional and not repeatable)
+Failure = /your/failure/command     (optional and not repeatable)
 
 [State]                             (required and not repeatable)
 WantedBy = multi-user-net           (required and repeatable for system instance)
@@ -148,11 +149,19 @@ we can assert the **Unit B** has a conflict with the **Unit A**.<br>
 In the conflict case, I'd recommend to set the **Conflict** property in both the units.<br>
 
 **Restart** and **RestartMax**<br>
-Please note, if both are defined then Restart property will be ignored.<br><br>
+Please note, if both are defined then Restart property will be ignored.<br>
+
 **Stop**<br>
 This property could use the variable **$PID** which can be passed as argument to a custom stop command.<br>
 Example:<br>
 ```Stop = /path/your/command $PID```
+
+**Failure**<br>
+In this propery we can set a command which will be executed if the **Run** propery command fails.<br>
+This property should have to contain an oneshot command.<br>
+About the daemon units, the failure command will be also executed if a daemon crashes or signaled for some reason.<br>
+A system administrator could want be warned or run some specific tasks if a critical daemon unit unexpectedly fails.<br>
+The goal of this property is to satisfy these needs.<br>
 
 ### Timers
 
