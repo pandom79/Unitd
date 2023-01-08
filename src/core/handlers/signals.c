@@ -56,7 +56,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
             unitPipe = unit->pipe;
 
             if (infoCode == CLD_EXITED || infoCode == CLD_KILLED)
-                waitpid(infoPid, &status, 0);
+                uWaitPid(infoPid, &status, 0);
 
             if (unit->type == ONESHOT) {
                 if (infoCode == CLD_EXITED)

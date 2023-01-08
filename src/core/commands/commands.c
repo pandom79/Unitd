@@ -8,12 +8,22 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
+pid_t
+uWaitPid(pid_t pid, int *statLoc, int options)
+{
+    pid_t res;
+    do
+        res = waitpid(pid, statLoc, options);
+    while (res == -1 && errno == EINTR);
+    return res;
+}
+
 void
 reapPendingChild()
 {
     pid_t p;
     do {
-        p = waitpid(-1, NULL, WNOHANG);
+        p = uWaitPid(-1, NULL, WNOHANG);
         if (p > 0 && UNITD_DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "The pid %d has been reaped!\n", p);
     } while (p != (pid_t)0 && p != (pid_t)-1);
@@ -59,7 +69,7 @@ execScript(const char *unitdDataDir, const char *relScriptName, char **argv, cha
                           strerror(errno), "Unable to execute fork");
             return EXIT_FAILURE;
     }
-    waitpid(child, &status, 0);
+    uWaitPid(child, &status, 0);
     if (WIFEXITED(status))
         exitCode = WEXITSTATUS(status);
 
@@ -124,13 +134,11 @@ execProcess(const char *command, char **argv, Unit **unit)
         default:
             break;
         case DAEMON:
-            while (waitpid(child, &status, WNOHANG) == 0) {
+            while (uWaitPid(child, &status, WNOHANG) == 0) {
                 /* Meanwhile, it could be catched by signal handler and restarts eventually */
                 if ((pData->pStateData->pState == DEAD || pData->pStateData->pState == RESTARTING)
-                    && *pData->exitCode == -1) {
-                    *pData->exitCode = -1;
+                    && *pData->exitCode == -1)
                     *pData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
-                }
                 break;
             }
             break;
@@ -138,7 +146,7 @@ execProcess(const char *command, char **argv, Unit **unit)
             millisec = 0;
             /* Timeout */
             while (millisec <= TIMEOUT_MS) {
-                res = waitpid(child, &status, WNOHANG);
+                res = uWaitPid(child, &status, WNOHANG);
                 if ((res > 0 && WIFEXITED(status)) ||
                     res == -1 ||
                     *pData->exitCode != -1) {
@@ -178,7 +186,7 @@ execProcess(const char *command, char **argv, Unit **unit)
                 /* After killed, waiting for the pid's status
                  * to avoid zombie process creation
                 */
-                waitpid(child, &status, WNOHANG);
+                uWaitPid(child, &status, WNOHANG);
                 *pData->exitCode = -1;
                 *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
                 *pData->signalNum = SIGKILL;
@@ -241,7 +249,7 @@ execFailure(const char *command, char **argv, Unit **unit)
     /* Timeout */
     millisec = 0;
     while (millisec <= TIMEOUT_MS) {
-        res = waitpid(child, &status, WNOHANG);
+        res = uWaitPid(child, &status, WNOHANG);
         if ((res > 0 && WIFEXITED(status)) || res == -1 || *failureExitCode != -1) {
             /* Set the exit code if it hasn't already been set by the signal handler */
             if (*failureExitCode == -1)
@@ -267,7 +275,7 @@ execFailure(const char *command, char **argv, Unit **unit)
         /* After killed, waiting for the pid's status
          * to avoid zombie process creation
         */
-        waitpid(child, &status, WNOHANG);
+        uWaitPid(child, &status, WNOHANG);
         *failureExitCode = EXIT_FAILURE;
         logErrorStr(SYSTEM, "%s: timeout expired for '%s' failure command!\n",
                     unitName, command);
@@ -297,7 +305,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
 
     if (pid != -1) {
         /* Check if the pid exists */
-        waitPidRes = waitpid(pid, &status, WNOHANG);
+        waitPidRes = uWaitPid(pid, &status, WNOHANG);
         if (waitPidRes == 0) {
             if (command && argv) {
                 if (UNITD_DEBUG)
@@ -340,7 +348,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
         millisec = 0;
         /* Timeout */
         while (millisec <= TIMEOUT_STOP_MS) {
-            res = waitpid(pid, &status, WNOHANG);
+            res = uWaitPid(pid, &status, WNOHANG);
             if (res > 0) {
                 if (WIFEXITED(status) || WIFSIGNALED(status))
                     break;
@@ -358,7 +366,7 @@ stopDaemon(const char *command, char **argv, Unit **unit)
             /* After killed, waiting for the pid's status
              * to avoid zombie process creation.
             */
-            waitpid(pid, &status, WNOHANG);
+            uWaitPid(pid, &status, WNOHANG);
         }
     }
 

@@ -21,4 +21,5 @@ void cmdlineRelease(char **);
 int stopDaemon(const char *, char **, Unit **);
 void reapPendingChild();
 int execUScript(Array **, const char *);
+pid_t uWaitPid(pid_t, int *, int);
 
