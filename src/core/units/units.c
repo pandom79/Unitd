@@ -351,7 +351,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(mutex);
         unit->mutex = mutex;
         if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-            logError(ALL, "src/core/units/units.c", "unitNew", rv, strerror(rv),
+            logError(CONSOLE, "src/core/units/units.c", "unitNew", rv, strerror(rv),
                           "Unable to run pthread_mutex_init");
         }
         assert(rv == 0);
@@ -362,7 +362,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(cv);
         unit->cv = cv;
         if ((rv = pthread_cond_init(cv, NULL)) != 0) {
-            logError(ALL, "src/core/units/units.c", "unitNew", rv, strerror(rv),
+            logError(CONSOLE, "src/core/units/units.c", "unitNew", rv, strerror(rv),
                           "Unable to run pthread_cond_init");
         }
         assert(rv == 0);
@@ -1255,13 +1255,13 @@ pipeNew()
     assert(mutex);
     pipeObj->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(ALL, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
+        logError(CONSOLE, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
     }
     assert(rv == 0);
 
     if ((rv = pipe(pipeObj->fds)) != 0) {
-        logError(ALL, "src/core/units/units.c", "pipeNew", errno, strerror(errno),
+        logError(CONSOLE, "src/core/units/units.c", "pipeNew", errno, strerror(errno),
                       "Unable to run pipe");
     }
     assert(rv == 0);

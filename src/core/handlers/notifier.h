@@ -9,18 +9,24 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 typedef struct {
     Pipe *pipe;
     int *fd;
-    int *wd;
-    pthread_mutex_t *mutex;
-    char *watchDir;
+    Array *watchers;
 } Notifier;
 
-extern Array *NOTIFIERS;
+typedef struct {
+    int *fd;
+    int *wd;
+    char *path;
+    int *mask;
+} Watcher;
+
+extern Notifier *NOTIFIER;
 extern bool NOTIFIER_WORKING;
 
 Notifier* notifierNew();
 void notifierRelease(Notifier **);
-void setNotifiers();
-void startNotifiers();
-void* startNotifiersThread(void *);
-void stopNotifiers();
-void* stopNotifiersThread(void *);
+Watcher* watcherNew(Notifier *, const char *, int);
+void watcherRelease(Watcher **);
+void setNotifier();
+void startNotifier();
+void* startNotifierThread(void *);
+void stopNotifier();

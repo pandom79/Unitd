@@ -13,27 +13,11 @@ Cleaner *CLEANER;
 Cleaner*
 cleanerNew()
 {
-    int rv = 0;
-    Cleaner *cleaner = NULL;
-    pthread_mutex_t *mutex = NULL;
-
     /* Cleaner */
-    cleaner = calloc(1, sizeof(Cleaner));
+    Cleaner *cleaner = calloc(1, sizeof(Cleaner));
     assert(cleaner);
-
-    /* Mutex */
-    mutex = calloc(1, sizeof(pthread_mutex_t));
-    assert(mutex);
-    cleaner->mutex = mutex;
-    if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(UNITD_BOOT_LOG, "src/core/handlers/cleaner.c", "cleanerNew", rv, strerror(rv),
-                      "Unable to run pthread_mutex_init");
-    }
-    assert(rv == 0);
-
     /* Pipe */
     cleaner->pipe = pipeNew();
-
     return cleaner;
 }
 
@@ -41,18 +25,7 @@ void
 cleanerRelease(Cleaner **cleaner)
 {
     Cleaner *cleanerTemp = *cleaner;
-    pthread_mutex_t *mutex = NULL;
-    int rv = 0;
-
     if (cleanerTemp) {
-        /* Destroy and free the mutex */
-        if ((mutex = cleanerTemp->mutex)) {
-            if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                logError(CONSOLE, "src/core/handlers/cleaner.c", "cleanerRelease", rv,
-                              strerror(rv), "Unable to run pthread_mutex_destroy");
-            }
-            objectRelease(&mutex);
-        }
         /* Pipe */
         pipeRelease(&cleanerTemp->pipe);
         /* Release cleaner */
@@ -66,10 +39,8 @@ startCleanerThread(void *arg UNUSED)
     int rv, input, fd;
     fd_set fds;
     struct timeval tv = {0};
-    pthread_mutex_t *mutex = NULL;
     Pipe *pipe = NULL;
 
-    mutex = CLEANER->mutex;
     pipe = CLEANER->pipe;
     fd = pipe->fds[0];
     rv = input = 0;
@@ -78,13 +49,6 @@ startCleanerThread(void *arg UNUSED)
     if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleanerThread",
                       rv, strerror(rv), "Unable to lock the pipe mutex");
-        kill(UNITD_PID, SIGTERM);
-    }
-
-    /* Unlock mutex just before main loop. */
-    if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleanerThread",
-                      rv, strerror(rv), "Unable to unlock the cleaner mutex");
         kill(UNITD_PID, SIGTERM);
     }
 
@@ -119,7 +83,7 @@ startCleanerThread(void *arg UNUSED)
                           rv, strerror(rv), "Unable to unlock the pipe mutex");
         }
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "Start cleaner thread (detached) exited successfully\n");
+            logInfo(CONSOLE | SYSTEM, "Cleaner thread exited successfully\n");
         pthread_exit(0);
 }
 
@@ -144,10 +108,6 @@ startCleaner()
                  rv);
         kill(UNITD_PID, SIGTERM);
     }
-
-    /* Lock. It will be unlocked in startCleanerThread. */
-    handleMutex(CLEANER->mutex, true);
-
     if ((rv = pthread_create(&thread, &attr, startCleanerThread, NULL)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleaner", rv,
                       strerror(rv), "Unable to create the start cleaner thread (detached)");
@@ -155,12 +115,8 @@ startCleaner()
     }
     else {
         if (UNITD_DEBUG)
-            logInfo(UNITD_BOOT_LOG, "Start cleaner thread (detached) created successfully\n");
+            logInfo(CONSOLE | SYSTEM, "Thread created successfully for the cleaner\n");
     }
-
-    /* Assure us that the pipe of the cleaner is listening */
-    handleMutex(CLEANER->mutex, true);
-    handleMutex(CLEANER->mutex, false);
     pthread_attr_destroy(&attr);
 }
 
