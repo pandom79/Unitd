@@ -784,6 +784,9 @@ showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
             printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
             printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
 
+            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "ENABLED", DEFAULT_COLOR);
+            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
+
             printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
             printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
 
@@ -817,7 +820,15 @@ showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     maxLenName = len;
                 printf("%*s", maxLenName - len + PADDING, "");
 
-                /* STATUS */
+                /* Enabled */
+                bool enabled = unitDisplay->enabled;
+                printf("%s", (enabled ? "true" : "false"));
+                if (enabled)
+                    printf("%*s", WIDTH_ENABLED - 3 + PADDING, "");
+                else
+                    printf("%*s", WIDTH_ENABLED - 4 + PADDING, "");
+
+                /* Status */
                 finalStatus = pData->finalStatus;
                 status = pStateData->desc;
                 printStatus(pState, status, *finalStatus, false);
