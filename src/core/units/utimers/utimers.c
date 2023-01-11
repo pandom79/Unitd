@@ -157,9 +157,8 @@ setLeftTimeAndDuration(Unit **unit)
     /* Calculating the left time as duration between next and current */
     *nextTime->durationSec = *leftTime;
     *nextTime->durationMillisec = 0;
-    char *leftTimeDuration = stringGetDiffTime(nextTime, current);
-    if (strcmp(leftTimeDuration, "0.0s") == 0)
-        stringSet(&leftTimeDuration, "expired");
+    char *leftTimeDuration = *leftTime <= 0 ? stringNew("expired") :
+                                              stringGetDiffTime(nextTime, current);
     strcpy((*unit)->leftTimeDuration, leftTimeDuration);
     assert(strlen((*unit)->leftTimeDuration) > 0);
 

@@ -9,7 +9,7 @@ add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
 ver = '5.0.7'
 so_ver = '5'
-wrapper_ver = '2.0.5'
+wrapper_ver = '2.0.6'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 
