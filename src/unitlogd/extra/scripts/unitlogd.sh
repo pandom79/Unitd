@@ -46,4 +46,9 @@ case $OPERATION in
         rm -rf "$log"
         mv "$tmp_log" "$log"
     ;;
+    "create-kmsg-log")
+        rm -rf "$UNITLOGD_KMSG_PATH" || true
+        touch "$UNITLOGD_KMSG_PATH"
+        chmod 0600 "$UNITLOGD_KMSG_PATH"
+    ;;
 esac;

@@ -12,9 +12,11 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 int unitlogdOpenLog(const char *);
 int unitlogdOpenBootLog(const char *);
 int unitlogdOpenIndex(const char *);
+int unitlogdOpenKmsg(const char *);
 int unitlogdCloseLog();
 int unitlogdCloseBootLog();
 int unitlogdCloseIndex();
+int unitlogdCloseKmsg();
 void logEntry(FILE **, const char *);
 char* getLogOffset();
 bool matchLogLine(bool, IndexEntry *);
@@ -22,5 +24,6 @@ int execUlScript(Array **, const char *);
 int handleLockFile(bool);
 int getLockFileFd();
 off_t getFileSize(const char *);
+void writeKmsg(char *);
 
 #endif // FILE_H

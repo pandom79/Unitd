@@ -9,7 +9,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "../unitlogd_impl.h"
 
 char *BOOT_ID_STR;
-const char *DMESG_LOG_PATH;
+FILE *UNITLOGD_KMSG_FILE;
 
 char*
 getBootIdStr()
@@ -29,44 +29,51 @@ getBootIdStr()
 }
 
 int
-appendDmsg()
+createKmsgLog()
 {
-    int rv = 0, kernelInfo = LOG_KERN | LOG_INFO;
-    FILE *fp = NULL;
+    int rv = 0;
+
+    /* Env vars */
+    Array *envVars = arrayNew(objectRelease);
+    addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
+    addEnvVar(&envVars, "UNITLOGD_KMSG_PATH", UNITLOGD_KMSG_PATH);
+    /* Must be null terminated */
+    arrayAdd(envVars, NULL);
+    /* Exec script */
+    rv = execUlScript(&envVars, "create-kmsg-log");
+
+    arrayRelease(&envVars);
+    return rv;
+}
+
+void
+appendKmsg()
+{
     char *line = NULL;
     size_t len = 0;
 
-    if ((fp = fopen(DMESG_LOG_PATH, "r")) == NULL) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/init/init.c", "appendDmsg",
-                 errno, strerror(errno), "Unable to open '%s' file!", DMESG_LOG_PATH);
-        rv = 1;
-        return rv;
-    }
-    while (getline(&line, &len, fp) != -1) {
-        char *buffer = stringNew("<");
-        char kernelInfoStr[10] = {0};
-        sprintf(kernelInfoStr, "%d", kernelInfo);
-        assert(strlen(kernelInfoStr) > 0);
-        stringConcat(&buffer, kernelInfoStr);
-        stringConcat(&buffer, ">");
-        stringConcat(&buffer, line);
-        processLine(buffer);
-        objectRelease(&buffer);
-    }
+    unitlogdOpenKmsg("r");
+    assert(UNITLOGD_KMSG_FILE);
+
+    while (getline(&line, &len, UNITLOGD_KMSG_FILE) != -1)
+        processLine(line);
 
     objectRelease(&line);
-    fclose(fp);
-    fp = NULL;
-    return rv;
+    unitlogdCloseKmsg();
+    assert(!UNITLOGD_KMSG_FILE);
 }
+
 
 void
 assertMacros()
 {
     assert(UNITLOGD_PATH);
+    assert(UNITLOGD_DATA_PATH);
     assert(UNITLOGD_LOG_PATH);
     assert(UNITLOGD_INDEX_PATH);
     assert(UNITLOGD_BOOT_LOG_PATH);
+    assert(UNITLOGD_LOCK_PATH);
+    assert(UNITLOGD_KMSG_PATH);
 }
 
 int
@@ -114,10 +121,6 @@ unitlogdInit()
         rv = 1;
         goto out;
     }
-
-    /* Append dmesg */
-    if ((rv = appendDmsg()) != 0)
-        goto out;
 
     out:
         /* Close index and log */

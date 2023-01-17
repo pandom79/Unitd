@@ -10,13 +10,13 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 const char *DEV_LOG_NAME = "/dev/log";
 const char *DEV_KMSG_NAME = "/proc/kmsg";
-const char *DMESG_LOG_PATH = "/var/log/dmesg.log";
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
 bool UNITLOGD_DEBUG = false;
 FILE *UNITLOGD_INDEX_FILE = NULL;
 FILE *UNITLOGD_LOG_FILE = NULL;
 FILE *UNITLOGD_BOOT_LOG_FILE = NULL;
+FILE *UNITLOGD_KMSG_FILE = NULL;
 char *BOOT_ID_STR = NULL;
 bool UNITLOGD_EXIT = false;
 

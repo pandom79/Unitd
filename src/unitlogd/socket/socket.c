@@ -84,6 +84,8 @@ startForwarderThread(void *arg)
     const char *devName = socketThread->devName;
     fd_set fds;
     char *buffer = NULL;
+    bool kmsgAppended = false;
+    struct timeval tv = {0};
 
     rv = length = 0;
     fileFd = maxFd = pipeFd = -1;
@@ -111,9 +113,11 @@ startForwarderThread(void *arg)
         FD_ZERO(&fds);
         FD_SET(pipeFd, &fds);
         FD_SET(fileFd, &fds);
+        /* Reset the timeout */
+        tv.tv_usec = 100000; //100 ms
 
         /* Wait for data */
-        if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
+        if (select(maxFd, &fds, NULL, NULL, !kmsgAppended ? &tv : NULL) == -1 && errno == EINTR)
             continue;
         if (FD_ISSET(pipeFd, &fds)) {
             if ((length = uRead(pipeFd, &input, sizeof(int))) == -1) {
@@ -124,7 +128,7 @@ startForwarderThread(void *arg)
             if (input == THREAD_EXIT)
                 goto out;
         }
-        else if (FD_ISSET(fileFd, &fds)) {
+        if (FD_ISSET(fileFd, &fds)) {
             /* Prepare the buffer */
             bufferSize = BUFFER_SIZE;
             buffer = calloc(bufferSize, sizeof(char));
@@ -134,19 +138,50 @@ startForwarderThread(void *arg)
                          errno, strerror(errno), "Unable to read from dev (%s)!", devName);
                 goto out;
             }
-            /* Redirect to dev/log */
+
+            /* The buffer records in /proc/kmsg will be removed after read, thus, we are not able
+             * to append these data if we are restarting unitlog daemon.
+             * To fix that, we check if the first record contains "] Linux version" string.
+             * If not so, we append kmsg log file content
+             * without lose facilities, priorities and, accordingly, the colours.
+            */
+            if (!kmsgAppended) {
+                if (stringContainsStr(buffer, "] Linux version")) {
+                    if ((rv = createKmsgLog()) != 0) {
+                        if (!UNITLOGD_EXIT)
+                            kill(UNITLOGD_PID, SIGTERM);
+                        goto out;
+                    }
+                }
+                else
+                    appendKmsg();
+                kmsgAppended = true;
+            }
+
+            /* Populate kmsg.log and redirect to dev/log */
             Array *lines = stringSplit(buffer, NEW_LINE, true);
             int len = lines ? lines->size : 0;
+            char *line = NULL;
             for (int i = 0; i < len; i++) {
-                if ((rv = forwardToLog(arrayGet(lines, i))) != 0)
+                line = arrayGet(lines, i);
+                writeKmsg(line);
+                if ((rv = forwardToLog(line)) != 0)
                     break;
             }
             arrayRelease(&lines);
             objectRelease(&buffer);
-            if (rv != 0 && !UNITLOGD_EXIT) {
-                kill(UNITLOGD_PID, SIGTERM);
+            if (rv != 0) {
+                if (!UNITLOGD_EXIT)
+                    kill(UNITLOGD_PID, SIGTERM);
                 goto out;
             }
+        }
+        else if (!kmsgAppended) {
+            /* If we are restarting unitlog daemon and /proc/kmsg is already empty then
+             * we append kmsg log file content to avoid having an empty boot.
+            */
+            appendKmsg();
+            kmsgAppended = true;
         }
     }
 

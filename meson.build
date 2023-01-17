@@ -4,10 +4,10 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '5.0.7', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '5.0.8', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '5.0.7'
+ver = '5.0.8'
 so_ver = '5'
 wrapper_ver = '2.0.6'
 project_name = 'unitd'
@@ -38,6 +38,7 @@ unitlogd_log_path = unitlogd_path/unitlogd_name+'.log'
 unitlogd_index_path = unitlogd_path/'index.dat'
 unitlogd_boot_log_path = unitlogd_path/'boot.log'
 unitlogd_lock_path = unitlogd_path/'.lock'
+unitlogd_kmsg_path = unitlogd_path/'kmsg.log'
 
 # Setting build options macro paths
 doc_path = get_option('DOC_PATH')
@@ -79,6 +80,7 @@ conf_data.set('UNITLOGD_LOG_PATH', unitlogd_log_path)
 conf_data.set('UNITLOGD_INDEX_PATH', unitlogd_index_path)
 conf_data.set('UNITLOGD_BOOT_LOG_PATH', unitlogd_boot_log_path)
 conf_data.set('UNITLOGD_LOCK_PATH', unitlogd_lock_path)
+conf_data.set('UNITLOGD_KMSG_PATH', unitlogd_kmsg_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)
 
 # Copy the configuration header

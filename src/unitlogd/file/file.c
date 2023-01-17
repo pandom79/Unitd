@@ -77,7 +77,6 @@ unitlogdCloseLog()
     return rv;
 }
 
-
 int
 unitlogdOpenIndex(const char *mode)
 {
@@ -110,6 +109,40 @@ unitlogdCloseIndex()
 
     return rv;
 }
+
+int
+unitlogdOpenKmsg(const char *mode)
+{
+    if (!UNITLOGD_KMSG_FILE) {
+        const char *kmsgPath = UNITLOGD_KMSG_PATH;
+        UNITLOGD_KMSG_FILE = fopen(kmsgPath, mode);
+        if (!UNITLOGD_KMSG_FILE) {
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/file/file.c", "unitlogdOpenKmsg", errno, strerror(errno),
+                          "Unable to open the file '%s' in mode '%s'", kmsgPath, mode);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int
+unitlogdCloseKmsg()
+{
+    int rv = 0;
+
+    if (UNITLOGD_KMSG_FILE) {
+        const char *kmsgPath = UNITLOGD_KMSG_PATH;
+        if ((rv = fclose(UNITLOGD_KMSG_FILE)) != 0) {
+            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/file/file.c", "unitlogdCloseKmsg", errno, strerror(errno),
+                     "Unable to close the file '%s'", kmsgPath);
+        }
+        UNITLOGD_KMSG_FILE = NULL;
+    }
+
+    return rv;
+}
+
 
 void
 logEntry(FILE **file, const char *line)
@@ -320,3 +353,19 @@ getFileSize(const char *path)
 
     return ret;
 }
+
+void
+writeKmsg(char *line)
+{
+    assert(line);
+
+    unitlogdOpenKmsg("a");
+    assert(UNITLOGD_KMSG_FILE);
+
+    logEntry(&UNITLOGD_KMSG_FILE, line);
+    logEntry(&UNITLOGD_KMSG_FILE, NEW_LINE);
+
+    unitlogdCloseKmsg();
+    assert(!UNITLOGD_KMSG_FILE);
+}
+

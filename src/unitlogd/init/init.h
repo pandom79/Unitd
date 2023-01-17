@@ -23,11 +23,10 @@ typedef struct {
 } SocketThread;
 
 char *getBootIdStr();
-int appendDmsg();
 void assertMacros();
 int unitlogdInit();
 int unitlogdShutdown();
-
-extern const char *DMESG_LOG_PATH;
+int createKmsgLog();
+void appendKmsg();
 
 #endif // INIT_H
