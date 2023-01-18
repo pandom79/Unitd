@@ -64,10 +64,12 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run);
  * The "unit name" argument can also contain the ".unit" suffix.
  * You can also start this unit invoking it with "run" = true and "force" = true
  * to resolve eventual conflicts.
+ * The reset option only works for timer unit only if run option is set as well.
  * SockMessageOut struct must be freed via the sockMessageOutRelease function.
 */
 int
-enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run, bool reEnable);
+enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
+           bool run, bool reEnable, bool reset);
 
 /* Get the dependencies, conflicts or unit wanted states according the boolean parameters values.
  * The "unit name" argument can also contain the ".unit" suffix.

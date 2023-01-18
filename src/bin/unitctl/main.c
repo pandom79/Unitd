@@ -358,15 +358,15 @@ int main(int argc, char **argv) {
             break;
         case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
-            if (argc < 3 || argc > 7 ||
-               (argc > 3 && !run && !force && !UNITCTL_DEBUG && !USER_INSTANCE)) {
+            if (argc < 3 || argc > 8 ||
+               (argc > 3 && !run && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
                 showUsage();
                 rv = 1;
                 goto out;
             }
             arg = argv[argc - 1];
             rv = showData(command, &sockMessageOut, arg, force, false, run,
-                          command == ENABLE_COMMAND ? false : true, false);
+                          command == ENABLE_COMMAND ? false : true, reset);
             break;
         case CAT_COMMAND:
         case EDIT_COMMAND:

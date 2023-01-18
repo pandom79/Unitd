@@ -1387,7 +1387,8 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
 }
 
 int
-enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run, bool reEnable)
+enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
+           bool run, bool reEnable, bool reset)
 {
     SockMessageIn *sockMessageIn = NULL;
     int rv, socketConnection, bufferSize;
@@ -1403,6 +1404,11 @@ enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bo
     if (run) {
         options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[RUN_OPT].name));
+    }
+    if (reset) {
+        if (!options)
+            options = arrayNew(objectRelease);
+        arrayAdd(options, stringNew(OPTIONS_DATA[RESET_OPT].name));
     }
     if (force) {
         if (!options)
@@ -1676,7 +1682,7 @@ showData(Command command, SockMessageOut **sockMessageOut, const char *arg,
             break;
         case RE_ENABLE_COMMAND:
         case ENABLE_COMMAND:
-            rv = enableUnit(sockMessageOut, arg, force, run, reEnable);
+            rv = enableUnit(sockMessageOut, arg, force, run, reEnable, reset);
             break;
         case LIST_REQUIRES_COMMAND:
         case LIST_CONFLICTS_COMMAND:
