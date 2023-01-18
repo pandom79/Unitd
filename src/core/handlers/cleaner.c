@@ -123,8 +123,8 @@ startCleaner()
 void
 stopCleaner()
 {
-    int rv = 0, output = THREAD_EXIT;
     if (CLEANER) {
+        int rv = 0, output = THREAD_EXIT;
         Pipe *pipe = CLEANER->pipe;
         if ((rv = uWrite(pipe->fds[1], &output, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "stopCleaner",
@@ -140,6 +140,5 @@ stopCleaner()
             logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "stopCleaner",
                           rv, strerror(rv), "Unable to unlock the pipe mutex");
         }
-        cleanerRelease(&CLEANER);
     }
 }

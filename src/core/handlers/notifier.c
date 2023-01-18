@@ -13,7 +13,50 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 bool USER_INSTANCE;
 Notifier *NOTIFIER;
-bool NOTIFIER_WORKING;
+const WatcherData WATCHER_DATA_ITEMS[] = {
+    { UNITD_WATCHER, IN_MODIFY },
+};
+
+static void
+checkUnitChanging(const char *eventName)
+{
+    char *unitName = getUnitName(eventName);
+    if (unitName) {
+        int rv = 0;
+        Unit *unit = getUnitByName(UNITD_DATA->units, unitName);
+        if (unit) {
+            if ((rv = pthread_mutex_lock(&NOTIFIER_MUTEX)) != 0) {
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging",
+                         rv, strerror(rv), "Unable to lock the notifier mutex!");
+                kill(UNITD_PID, SIGTERM);
+            }
+
+            unit->isChanged = true;
+            if (UNITD_DEBUG)
+                syslog(LOG_DAEMON | LOG_DEBUG, "Unit '%s' is changed!!\n", unitName);
+
+            if ((rv = pthread_mutex_unlock(&NOTIFIER_MUTEX)) != 0) {
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging",
+                         rv, strerror(rv), "Unable to unlock the notifier mutex!");
+                kill(UNITD_PID, SIGTERM);
+            }
+        }
+        objectRelease(&unitName);
+    }
+}
+
+static WatcherType
+getWatcherTypeByWd(Array *watchers, int eventWd)
+{
+    Watcher *watcher = NULL;
+    int len = watchers ? watchers->size : 0;
+    for (int i = 0; i < len; i++) {
+        watcher = arrayGet(watchers, i);
+        if (*watcher->wd == eventWd)
+            return watcher->watcherData.watcherType;
+    }
+    return -1;
+}
 
 Notifier*
 notifierNew()
@@ -70,13 +113,13 @@ notifierRelease(Notifier **notifier)
 }
 
 Watcher*
-watcherNew(Notifier *notifier, const char *path, int mask)
+watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
 {
     Watcher *watcher = NULL;
 
     assert(notifier && *notifier->fd != -1);
     assert(path && strlen(path) > 0);
-    assert(mask > 0);
+    assert(watcherType >= 0);
 
     watcher = calloc(1, sizeof(Watcher));
     assert(watcher);
@@ -87,17 +130,14 @@ watcherNew(Notifier *notifier, const char *path, int mask)
     /* Path */
     watcher->path = stringNew(path);
 
-    /* Mask */
-    int *watcherMask = calloc(1, sizeof(int));
-    assert(watcherMask);
-    *watcherMask = mask;
-    watcher->mask = watcherMask;
+    /* Watcher data */
+    watcher->watcherData = WATCHER_DATA_ITEMS[watcherType];
 
     /* Watcher fd */
     int *wd = calloc(1, sizeof(int));
     assert(wd);
     /* Adding the path to the watch list. */
-    if ((*wd = inotify_add_watch(*watcher->fd, path, mask)) == -1) {
+    if ((*wd = inotify_add_watch(*watcher->fd, path, watcher->watcherData.mask)) == -1) {
         logError(CONSOLE, "src/core/handlers/notifier.c", "watcherNew",
                  errno, strerror(errno), "Inotify_add_watch returned -1");
     }
@@ -106,6 +146,7 @@ watcherNew(Notifier *notifier, const char *path, int mask)
 
     return watcher;
 }
+
 
 void
 watcherRelease(Watcher **watcher)
@@ -124,30 +165,32 @@ watcherRelease(Watcher **watcher)
         }
         objectRelease(&wd);
         objectRelease(&path);
-        objectRelease(&(*watcher)->mask);
         objectRelease(watcher);
         /* Fd will be freed by notifierRelease func. */
     }
 }
 
 void*
-startNotifierThread(void *arg UNUSED)
+startNotifierThread(void *arg)
 {
-    int rv, length, i, input, maxFd;
+    int rv, length, i, input, maxFd, allEvents;
     int *fd, *fdPipe;
     char buffer[EVENT_BUF_LEN] = {0};
     fd_set fds;
-    bool *isWorking;
     Pipe *pipe = NULL;
+    Array *watchers = NULL;
+    Notifier *notifier = NULL;
 
-    assert(NOTIFIER);
+    rv = i = length = allEvents = 0;
+    maxFd = -1;
+    notifier = (Notifier *)arg;
+    assert(notifier);
 
     /* Get notifier data */
-    pipe = NOTIFIER->pipe;
-    fd = NOTIFIER->fd;
-    isWorking = &NOTIFIER_WORKING;
-    rv = i = length = 0;
-    maxFd = -1;
+    pipe = notifier->pipe;
+    fd = notifier->fd;
+    watchers = notifier->watchers;
+    assert(watchers);
 
     /* Lock pipe mutex */
     if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
@@ -158,6 +201,12 @@ startNotifierThread(void *arg UNUSED)
 
     fdPipe = &pipe->fds[0];
     maxFd = getMaxFileDesc(fd, fdPipe);
+
+    /* Building all events */
+    assert((length = watchers->size) > 0);
+    for (i = 0; i < length; i++)
+        allEvents |= ((Watcher *)arrayGet(watchers, i))->watcherData.mask;
+    assert(allEvents > 0);
 
     while (1) {
         FD_ZERO(&fds);
@@ -186,23 +235,14 @@ startNotifierThread(void *arg UNUSED)
             i = 0;
             while (i < length) {
                 struct inotify_event *event = (struct inotify_event *)&buffer[i];
-                /* In this case we only evaluate 'IN_MODIFY' event */
-                if (event->len && (event->mask & IN_MODIFY)) {
-                    char *unitName = getUnitName(event->name);
-                    if (unitName) {
-                        Unit *unit = getUnitByName(UNITD_DATA->units, unitName);
-                        if (unit) {
-                            /* If another thread is working then we wait it (very extreme case) */
-                            while (*isWorking)
-                                msleep(200);
-
-                            *isWorking = true;
-                            unit->isChanged = true;
-                            if (UNITD_DEBUG)
-                                syslog(LOG_DAEMON | LOG_DEBUG, "Unit '%s' is changed!!\n", unitName);
-                            *isWorking = false;
-                        }
-                        objectRelease(&unitName);
+                /* Evaluating all events defined by watchers. */
+                if (event->len && (event->mask & allEvents)) {
+                    WatcherType watcherType = getWatcherTypeByWd(watchers, event->wd);
+                    assert(watcherType >= 0);
+                    switch (watcherType) {
+                        case UNITD_WATCHER:
+                            checkUnitChanging(event->name);
+                            break;
                     }
                     i += EVENT_SIZE + event->len;
                 }
@@ -229,22 +269,26 @@ setNotifier()
     Array *watchers = NOTIFIER->watchers;
 
     if (!USER_INSTANCE)
-        arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_PATH, IN_MODIFY));
+        arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_PATH, UNITD_WATCHER));
     else {
         /* For user instance we have to monitor two dirs */
-        arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_PATH, IN_MODIFY));
-        arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_LOCAL_PATH, IN_MODIFY));
+        arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_PATH, UNITD_WATCHER));
+        arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_LOCAL_PATH, UNITD_WATCHER));
     }
 }
 
 void
-startNotifier()
+startNotifier(Notifier *notifier)
 {
     int rv = 0;
-    setNotifier();
-    assert(NOTIFIER);
     pthread_t thread;
     pthread_attr_t attr;
+
+    if (!notifier) {
+        setNotifier();
+        notifier = NOTIFIER;
+    }
+    assert(notifier);
 
     if ((rv = pthread_attr_init(&attr)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifier", errno,
@@ -256,7 +300,7 @@ startNotifier()
                  strerror(errno), "pthread_attr_setdetachstate returned %d exit code", rv);
         kill(UNITD_PID, SIGTERM);
     }
-    if ((rv = pthread_create(&thread, &attr, startNotifierThread, NULL)) != 0) {
+    if ((rv = pthread_create(&thread, &attr, startNotifierThread, notifier)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifier", rv,
                  strerror(rv), "Unable to create detached thread");
         kill(UNITD_PID, SIGTERM);
@@ -269,10 +313,13 @@ startNotifier()
 }
 
 void
-stopNotifier()
+stopNotifier(Notifier *notifier)
 {
-    if (NOTIFIER) {
-        Pipe *pipe = NOTIFIER->pipe;
+    if (!notifier)
+        notifier = NOTIFIER;
+
+    if (notifier) {
+        Pipe *pipe = notifier->pipe;
         int rv = 0, output = THREAD_EXIT;
 
         if ((rv = uWrite(pipe->fds[1], &output, sizeof(int))) == -1) {
@@ -289,6 +336,5 @@ stopNotifier()
             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier",
                      rv, strerror(rv), "Unable to unlock the pipe mutex");
         }
-        notifierRelease(&NOTIFIER);
     }
 }

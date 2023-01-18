@@ -409,13 +409,12 @@ setTimerDataForUnit(Unit **unit)
 int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
-    int rv, rvMutex;
+    int rv = 0;
     Array **unitsDisplay, **errors, **messages, *units;
     char *buffer, *unitName;
 
     Unit *unit = NULL;
 
-    rv = rvMutex = 0;
     buffer = unitName = NULL;
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     errors = &(*sockMessageOut)->errors;
@@ -434,6 +433,9 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     /* Try to get the unit from memory */
     unit = getUnitByName(units, unitName);
     if (unit) {
+        /* Waiting for notifier. */
+        handleMutex(&NOTIFIER_MUTEX, true);
+        handleMutex(&NOTIFIER_MUTEX, false);
         if (unit->isChanged) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
@@ -444,23 +446,17 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
                                        !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
-
         /* We lock the mutex for the same reasons explained in listenPipeThread Func.
          * Take a quick look there.
         */
-        if ((rvMutex = handleMutex(unit->mutex, true)) != 0)
-            logErrorStr(SYSTEM, "Unable to lock the mutex in getUnitStatusServer func");
-
+        handleMutex(unit->mutex, true);
         /* Set an eventual timer for the unit */
         if (unit->type != TIMER)
             setTimerDataForUnit(&unit);
-
         /* Create copy for client */
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
-
-        /* Unlock only if it's locked */
-        if ((rvMutex = handleMutex(unit->mutex, false)) != 0)
-            logErrorStr(SYSTEM, "Unable to unlock the mutex in getUnitStatusServer func");
+        /* Unlock */
+        handleMutex(unit->mutex, false);
     }
     else {
         /* Check and parse unitName. We don't consider the units into memory
@@ -534,9 +530,9 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         pType = &unit->type;
         unitErrors = &unit->errors;
 
-        /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (NOTIFIER_WORKING)
-            msleep(200);
+        /* Waiting for notifier. */
+        handleMutex(&NOTIFIER_MUTEX, true);
+        handleMutex(&NOTIFIER_MUTEX, false);
 
         if (*pState == DEAD) {
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
@@ -563,9 +559,10 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             unit->isStopping = true;
             stopProcesses(NULL, unit);
         }
-        /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (NOTIFIER_WORKING)
-            msleep(200);
+
+        /* Waiting for notifier. */
+        handleMutex(&NOTIFIER_MUTEX, true);
+        handleMutex(&NOTIFIER_MUTEX, false);
 
         if (unit->isChanged || *pType == ONESHOT || (unit->isChanged && *pType == TIMER) ||
            (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
@@ -806,9 +803,10 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
         len = stopConflictsArr->size;
         for (int i = 0; i < len; i++) {
             unitConflict = arrayGet(stopConflictsArr, i);
-            /* Waiting for notifier. Basically, it should never happen. Extreme case */
-            while (NOTIFIER_WORKING)
-                msleep(200);
+
+            /* Waiting for notifier. */
+            handleMutex(&NOTIFIER_MUTEX, true);
+            handleMutex(&NOTIFIER_MUTEX, false);
 
             pDataConflict = unitConflict->processData;
             pStateConflict = &pDataConflict->pStateData->pState;
@@ -1073,6 +1071,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
     unit = getUnitByName(*units, unitName);
     if (unit) {
         if (reEnable) {
+            /* Waiting for notifier. */
+            handleMutex(&NOTIFIER_MUTEX, true);
+            handleMutex(&NOTIFIER_MUTEX, false);
             if (!run && unit->isChanged) {
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
                 arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CHANGED_RE_ENABLE_MSG].desc));
@@ -1098,9 +1099,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
                 goto out;
             }
 
-            /* Waiting for notifier. Basically, it should never happen. Extreme case */
-            while (NOTIFIER_WORKING)
-                msleep(200);
+            /* Waiting for notifier. */
+            handleMutex(&NOTIFIER_MUTEX, true);
+            handleMutex(&NOTIFIER_MUTEX, false);
 
             if (unit->isChanged) {
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_CHANGED_ERR].desc));
@@ -1248,9 +1249,9 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
         for (int i = 0; i < len; i++) {
             unitConflict = arrayGet(unitsConflicts, i);
 
-            /* Waiting for notifier. Basically, it should never happen. Extreme case */
-            while (NOTIFIER_WORKING)
-                msleep(200);
+            /* Waiting for notifier. */
+            handleMutex(&NOTIFIER_MUTEX, true);
+            handleMutex(&NOTIFIER_MUTEX, false);
 
             pDataConflict = unitConflict->processData;
             pStateConflict = &pDataConflict->pStateData->pState;
@@ -1373,9 +1374,10 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
      */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        /* Waiting for notifier. Basically, it should never happen. Extreme case */
-        while (NOTIFIER_WORKING)
-            msleep(200);
+        /* Waiting for notifier. */
+        handleMutex(&NOTIFIER_MUTEX, true);
+        handleMutex(&NOTIFIER_MUTEX, false);
+
         /* If the unit content is changed then we force the user to stop the unit.
          * In this way, we will read the data on the disk (updated) which is that we expect.
          */

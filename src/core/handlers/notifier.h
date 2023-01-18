@@ -12,21 +12,31 @@ typedef struct {
     Array *watchers;
 } Notifier;
 
+typedef enum {
+    UNITD_WATCHER = 0
+} WatcherType;
+
+typedef struct {
+    WatcherType watcherType;
+    int mask;
+} WatcherData;
+
 typedef struct {
     int *fd;
     int *wd;
     char *path;
-    int *mask;
+    WatcherData watcherData;
 } Watcher;
 
+extern const WatcherData WATCHER_DATA_ITEMS[];
 extern Notifier *NOTIFIER;
 extern bool NOTIFIER_WORKING;
 
 Notifier* notifierNew();
 void notifierRelease(Notifier **);
-Watcher* watcherNew(Notifier *, const char *, int);
+Watcher* watcherNew(Notifier *, const char *, WatcherType);
 void watcherRelease(Watcher **);
 void setNotifier();
-void startNotifier();
+void startNotifier(Notifier *);
 void* startNotifierThread(void *);
-void stopNotifier();
+void stopNotifier(Notifier *);

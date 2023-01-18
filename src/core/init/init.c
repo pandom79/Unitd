@@ -93,6 +93,7 @@ char *UNITD_USER_CONF_PATH;
 State STATE_USER;
 char *STATE_USER_DIR;
 pthread_mutex_t START_MUTEX;
+pthread_mutex_t NOTIFIER_MUTEX;
 
 static void
 addBootUnits(Array **bootUnits, Array **units) {
@@ -164,7 +165,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     /* Start the cleaner */
     startCleaner();
     /* Start the notifiers */
-    startNotifier();
+    startNotifier(NULL);
     //******************* DEFAULT OR CMDLINE STATE ************************
     /* Set the default state variable.
      * Actually, the following errors should never happen because the unitd-check initialization
@@ -233,7 +234,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Stop the cleaner */
         stopCleaner();
         /* Stop the notifiers */
-        stopNotifier();
+        stopNotifier(NULL);
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         logInfo(CONSOLE | UNITD_BOOT_LOG, "The system is going down ...\n");
         if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -317,7 +318,7 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     /* Start the cleaner */
     startCleaner();
     /* Start the notifiers */
-    startNotifier();
+    startNotifier(NULL);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
 
@@ -350,7 +351,7 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
         /* Stop the cleaner */
         stopCleaner();
         /* Stop the notifiers */
-        stopNotifier();
+        stopNotifier(NULL);
         //********************* STOPPING UNITS **********************************
         closePipes(units, NULL);
         stopProcesses(units, NULL);
@@ -370,10 +371,14 @@ unitdEnd(UnitdData **unitdData)
     timeRelease(&BOOT_START);
     timeRelease(&BOOT_STOP);
     userDataRelease();
+    notifierRelease(&NOTIFIER);
+    cleanerRelease(&CLEANER);
     if ((rv = pthread_mutex_destroy(&START_MUTEX)) != 0)
         logError(CONSOLE | SYSTEM, "src/core/init/init.c", "unitdEnd", rv, strerror(rv),
                  "Unable to destroy the start mutex");
-
+    if ((rv = pthread_mutex_destroy(&NOTIFIER_MUTEX)) != 0)
+        logError(CONSOLE | SYSTEM, "src/core/init/init.c", "unitdEnd", rv, strerror(rv),
+                 "Unable to destroy the notifier mutex");
     if (*unitdData) {
         arrayRelease(&(*unitdData)->bootUnits);
         arrayRelease(&(*unitdData)->initUnits);
