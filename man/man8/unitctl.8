@@ -184,7 +184,9 @@ Set the default state
 .It Fl e
 The reset option is used by timer units to reset the count starting by current time.
 .Bd -tag -width indent
-It works with the following sub-commands: start and restart
+It works with the following sub-commands: start, restart, enable and re-enable.
+.Bd -tag -width indent
+About enable and re-enable sub-commands, the reset option will work only if the run option is set as well.
 .Ed
 .It Fl r
 Run the operation
