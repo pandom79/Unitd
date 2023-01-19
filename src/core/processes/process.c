@@ -215,7 +215,7 @@ startProcess(void *arg)
             cmdlineRelease(cmdline);
             break;
         case TIMER:
-            statusThread = startUnitTimer(unit);
+            statusThread = startTimerUnit(unit);
             break;
         default:
             break;

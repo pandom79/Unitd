@@ -348,7 +348,7 @@ printStatus(PState pState, const char *status, int finalStatus, bool newline)
             if (pState == DEAD)
                 printf("%s%s%s", GREY_COLOR, status, DEFAULT_COLOR);
             /* The timers can have a restarting state and a final status equal to success.
-             * Read the comment in startUnitTimerThread. (Restart case).
+             * Read the comment in startTimerUnitThread. (Restart case).
             */
             else if (pState == RESTARTING)
                 logWarning(CONSOLE, "%s", status);

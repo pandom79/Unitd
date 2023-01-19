@@ -14,8 +14,8 @@ struct eventData {
 
 int parseTimerUnit(Array **, Unit **, bool);
 int checkInterval(Unit **unit);
-int startUnitTimer(Unit *);
-void* startUnitTimerThread(void *);
+int startTimerUnit(Unit *);
+void* startTimerUnitThread(void *);
 int setNextTimeFromDisk(Unit **);
 int setNextTimeFromInterval(Unit **);
 int saveTime(Unit *, const char *, Time *, int);

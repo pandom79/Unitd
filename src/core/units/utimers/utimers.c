@@ -699,7 +699,7 @@ disarmTimer(Unit *unit)
 }
 
 void*
-startUnitTimerThread(void *arg)
+startTimerUnitThread(void *arg)
 {
     Unit *unit = NULL;
     const char *unitName = NULL;
@@ -716,7 +716,7 @@ startUnitTimerThread(void *arg)
     leftTime = unit->leftTime;
 
     if ((rv = pthread_mutex_lock(unitPipe->mutex)) != 0) {
-         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread",
+         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
                   rv, strerror(rv), "Unable to acquire the lock of the pipe mutex for '%s'",
                   unitName);
          kill(UNITD_PID, SIGTERM);
@@ -761,7 +761,7 @@ startUnitTimerThread(void *arg)
     /* Listening the pipe */
     while (true) {
         if ((rv = uRead(unitPipe->fds[0], &input, sizeof(int))) == -1) {
-            logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread", errno,
+            logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread", errno,
                      strerror(errno), "Unable to read from pipe for '%s'",
                      unitName);
             kill(UNITD_PID, SIGTERM);
@@ -777,7 +777,7 @@ startUnitTimerThread(void *arg)
             disarmTimer(unit);
 
             if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread",
+                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
                          rv, strerror(rv), "Unable to lock the mutex (restart timer)",
                          unitName);
                 kill(UNITD_PID, SIGTERM);
@@ -796,7 +796,7 @@ startUnitTimerThread(void *arg)
 
             /* Unlock */
             if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread", rv,
+                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread", rv,
                          strerror(rv), "Unable to unlock the mutex (restart timer)",
                          unitName);
                 kill(UNITD_PID, SIGTERM);
@@ -804,7 +804,7 @@ startUnitTimerThread(void *arg)
 
             /* Lock */
             if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread",
+                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
                          rv, strerror(rv), "Unable to lock the mutex (restart timer before start)",
                          unitName);
                 kill(UNITD_PID, SIGTERM);
@@ -828,7 +828,7 @@ startUnitTimerThread(void *arg)
 
             /* Unlock */
             if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread", rv,
+                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread", rv,
                          strerror(rv), "Unable to unlock the mutex (restart timer after start)",
                          unitName);
                 kill(UNITD_PID, SIGTERM);
@@ -841,7 +841,7 @@ startUnitTimerThread(void *arg)
     out:
         disarmTimer(unit);
         if ((rv = pthread_mutex_unlock(unitPipe->mutex)) != 0) {
-            logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimerThread",
+            logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
                       rv, strerror(rv), "Unable to unlock the pipe mutex for the %s unit",
                       unitName);
             kill(UNITD_PID, SIGTERM);
@@ -850,7 +850,7 @@ startUnitTimerThread(void *arg)
 }
 
 int
-startUnitTimer(Unit *unit)
+startTimerUnit(Unit *unit)
 {
     pthread_t thread;
     pthread_attr_t attr;
@@ -861,13 +861,13 @@ startUnitTimer(Unit *unit)
     unitName = unit->name;
 
     if ((rv = pthread_attr_init(&attr)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer", errno,
+        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnit", errno,
                       strerror(errno), "pthread_attr_init returned bad exit code %d", rv);
         kill(UNITD_PID, SIGTERM);
     }
 
     if ((rv = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer", errno,
+        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnit", errno,
                       strerror(errno), "pthread_attr_setdetachstate returned bad exit code %d",
                  rv);
         kill(UNITD_PID, SIGTERM);
@@ -875,8 +875,8 @@ startUnitTimer(Unit *unit)
 
     *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
 
-    if ((rv = pthread_create(&thread, &attr, startUnitTimerThread, unit)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startUnitTimer",
+    if ((rv = pthread_create(&thread, &attr, startTimerUnitThread, unit)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnit",
                  rv, strerror(rv), "Unable to create the unit timer thread for '%s'", unitName);
         kill(UNITD_PID, SIGTERM);
     }
