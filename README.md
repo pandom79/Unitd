@@ -91,7 +91,7 @@ According the default options, you should see the following folders:<br>
     - reboot.state
     - single-user.state
 
-As you can see, the first boot will load the **multi-user-net** state.<br/>
+As you can see, the first boot will bring the system into **multi-user-net** state.<br/>
 Every state requires at least one unit which is normally a terminal.<br/>
 For this reason, I suggest you to copy this [unit](https://github.com/pandom79/Unitd/blob/master/units/agetty-1.unit) in **/usr/lib64/unitd/units**.<br>
 After that, check the **Run** property of the **Command** section works and enable this unit via the following command:<br>
@@ -166,14 +166,13 @@ The goal of this property is to satisfy these needs.<br>
 ### Timers
 
 The timers have **.utimer** as configuration file extension.<br>
-The purpose of a timer is to start an unit when a period of time has elapsed.<br>
-This period can be set in the timer unit configuration file.<br>
+The purpose of a timer is to start an unit when a period of time has elapsed which can be set in the timer unit configuration file.<br>
 There is an one to one relation between unit and timer.<br>
 That means that a timer named **test.utimer** will try to start an unit named **test.unit** when that period has elapsed.<br>
 These units cannot run forcing operation.<br>
-That means that if **test.unit** has some conflicts then the starting of this unit<br> 
-via the timer will always fail if those conflicts exist.<br>
+That means that if **test.unit** has some conflicts then the starting of this unit via the timer will always fail.<br>
 These units can be started or restarted with the **reset** option.<br>
+The reset option also works with enable/re-enable command only if the run option is set as well.<br>
 That will cause a recalculation of the remaining time starting from the current.
 
 ### Timer unit configuration file
