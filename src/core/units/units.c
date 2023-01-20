@@ -351,10 +351,10 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(mutex);
         unit->mutex = mutex;
         if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-            logError(CONSOLE, "src/core/units/units.c", "unitNew", rv, strerror(rv),
+            logError(CONSOLE | SYSTEM, "src/core/units/units.c", "unitNew", rv, strerror(rv),
                           "Unable to run pthread_mutex_init");
+            kill(UNITD_PID, SIGTERM);
         }
-        assert(rv == 0);
 
         /* Initialize condition variable */
         pthread_cond_t *cv = NULL;
@@ -362,10 +362,10 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         assert(cv);
         unit->cv = cv;
         if ((rv = pthread_cond_init(cv, NULL)) != 0) {
-            logError(CONSOLE, "src/core/units/units.c", "unitNew", rv, strerror(rv),
+            logError(CONSOLE | SYSTEM, "src/core/units/units.c", "unitNew", rv, strerror(rv),
                           "Unable to run pthread_cond_init");
+            kill(UNITD_PID, SIGTERM);
         }
-        assert(rv == 0);
     }
 
     return unit;
@@ -1059,7 +1059,7 @@ unitRelease(Unit **unit)
         /* Destroy and free the condition variable */
         if ((cv = unitTemp->cv)) {
             if ((rv = pthread_cond_destroy(cv)) != 0) {
-                logError(CONSOLE, "src/core/units/units.c", "unitRelease", rv,
+                logError(CONSOLE | SYSTEM, "src/core/units/units.c", "unitRelease", rv,
                               strerror(rv), "Unable to run pthread_cond_destroy");
             }
             objectRelease(&cv);
@@ -1069,7 +1069,7 @@ unitRelease(Unit **unit)
         if ((mutex = unitTemp->mutex)) {
             /* Destroy and free the mutex */
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                logError(CONSOLE, "src/core/units/units.c", "unitRelease", rv,
+                logError(CONSOLE | SYSTEM, "src/core/units/units.c", "unitRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             objectRelease(&mutex);
@@ -1255,16 +1255,16 @@ pipeNew()
     assert(mutex);
     pipeObj->mutex = mutex;
     if ((rv = pthread_mutex_init(mutex, NULL)) != 0) {
-        logError(CONSOLE, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
+        logError(CONSOLE | SYSTEM, "src/core/units/units.c", "pipeNew", rv, strerror(rv),
                       "Unable to run pthread_mutex_init");
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rv == 0);
 
     if ((rv = pipe(pipeObj->fds)) != 0) {
-        logError(CONSOLE, "src/core/units/units.c", "pipeNew", errno, strerror(errno),
+        logError(CONSOLE | SYSTEM, "src/core/units/units.c", "pipeNew", errno, strerror(errno),
                       "Unable to run pipe");
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(rv == 0);
 
     return pipeObj;
 }
@@ -1280,7 +1280,7 @@ pipeRelease(Pipe **pipe)
         /* Destroy and free the mutex */
         if ((mutex = pipeTemp->mutex)) {
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
-                logError(CONSOLE, "src/core/units/units.c", "pipeRelease", rv,
+                logError(CONSOLE | SYSTEM, "src/core/units/units.c", "pipeRelease", rv,
                               strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             objectRelease(&mutex);

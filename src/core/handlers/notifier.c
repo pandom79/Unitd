@@ -73,10 +73,10 @@ notifierNew()
     assert(fd);
     /* Creating inotify instance */
     if ((*fd = inotify_init()) == -1) {
-        logError(CONSOLE, "src/core/handlers/notifier.c", "notifierNew",
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierNew",
                  errno, strerror(errno), "Inotify_init returned -1");
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(*fd != -1);
     notifier->fd = fd;
 
     /* Pipe */
@@ -117,7 +117,7 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
 {
     Watcher *watcher = NULL;
 
-    assert(notifier && *notifier->fd != -1);
+    assert(notifier);
     assert(path && strlen(path) > 0);
     assert(watcherType >= 0);
 
@@ -140,8 +140,8 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
     if ((*wd = inotify_add_watch(*watcher->fd, path, watcher->watcherData.mask)) == -1) {
         logError(CONSOLE, "src/core/handlers/notifier.c", "watcherNew",
                  errno, strerror(errno), "Inotify_add_watch returned -1");
+        kill(UNITD_PID, SIGTERM);
     }
-    assert(*wd != -1);
     watcher->wd = wd;
 
     return watcher;
@@ -202,11 +202,22 @@ startNotifierThread(void *arg)
     fdPipe = &pipe->fds[0];
     maxFd = getMaxFileDesc(fd, fdPipe);
 
-    /* Building all events */
-    assert((length = watchers->size) > 0);
+    /* At least one watcher must be here. */
+    if ((length = watchers->size) < 1) {
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
+                 rv, strerror(rv), "Watchers size less than 1");
+        kill(UNITD_PID, SIGTERM);
+        goto out;
+    }
+    /* Building and checking the events */
     for (i = 0; i < length; i++)
         allEvents |= ((Watcher *)arrayGet(watchers, i))->watcherData.mask;
-    assert(allEvents > 0);
+    if (allEvents <= 0) {
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
+                 rv, strerror(rv), "The events (%d) are less/equal than 0", allEvents);
+        kill(UNITD_PID, SIGTERM);
+        goto out;
+    }
 
     while (1) {
         FD_ZERO(&fds);
@@ -238,10 +249,14 @@ startNotifierThread(void *arg)
                 /* Evaluating all events defined by watchers. */
                 if (event->len && (event->mask & allEvents)) {
                     WatcherType watcherType = getWatcherTypeByWd(watchers, event->wd);
-                    assert(watcherType >= 0);
                     switch (watcherType) {
                         case UNITD_WATCHER:
                             checkUnitChanging(event->name);
+                            break;
+                        default:
+                            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
+                                     EPERM, strerror(EPERM), "Bad watcher type (%d) returned!", watcherType);
+                            kill(UNITD_PID, SIGTERM);
                             break;
                     }
                     i += EVENT_SIZE + event->len;
