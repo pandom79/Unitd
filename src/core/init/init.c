@@ -237,7 +237,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         stopNotifier(NULL);
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
         logInfo(CONSOLE | UNITD_BOOT_LOG, "The system is going down ...\n");
-        if (SHUTDOWN_COMMAND == NO_COMMAND) SHUTDOWN_COMMAND = REBOOT_COMMAND;
         if (SHUTDOWN_COMMAND == HALT_COMMAND) {
             shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);
             stringAppendStr(&shutDownStateStr, ".state");
@@ -344,7 +343,6 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     shutdown:
         /* Shutdown start */
         SHUTDOWN_START = timeNew(NULL);
-
         /* Open the log in append mode if it is closed */
         if (!UNITD_BOOT_LOG_FILE)
             unitdOpenLog("a");

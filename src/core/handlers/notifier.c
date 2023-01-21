@@ -199,22 +199,30 @@ startNotifierThread(void *arg)
         kill(UNITD_PID, SIGTERM);
     }
 
+    /* Before to start, we wait for system is up.
+     * We check if ctrl+alt+del is pressed as well.
+    */
+    while (!LISTEN_SOCK_REQUEST && SHUTDOWN_COMMAND == NO_COMMAND)
+        msleep(50);
+    if (SHUTDOWN_COMMAND != NO_COMMAND)
+        goto out;
+
     fdPipe = &pipe->fds[0];
     maxFd = getMaxFileDesc(fd, fdPipe);
 
     /* At least one watcher must be here. */
-    if ((length = watchers->size) < 1) {
+    if ((length = watchers->size) == 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                 rv, strerror(rv), "Watchers size less than 1");
+                 rv, strerror(rv), "No watcher found!");
         kill(UNITD_PID, SIGTERM);
         goto out;
     }
     /* Building and checking the events */
     for (i = 0; i < length; i++)
         allEvents |= ((Watcher *)arrayGet(watchers, i))->watcherData.mask;
-    if (allEvents <= 0) {
+    if (allEvents == 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                 rv, strerror(rv), "The events (%d) are less/equal than 0", allEvents);
+                 rv, strerror(rv), "No event found!");
         kill(UNITD_PID, SIGTERM);
         goto out;
     }
@@ -255,7 +263,7 @@ startNotifierThread(void *arg)
                             break;
                         default:
                             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                                     EPERM, strerror(EPERM), "Bad watcher type (%d) returned!", watcherType);
+                                     EPERM, strerror(EPERM), "No watcher type (%d) found!", watcherType);
                             kill(UNITD_PID, SIGTERM);
                             break;
                     }

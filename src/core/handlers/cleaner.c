@@ -52,6 +52,14 @@ startCleanerThread(void *arg UNUSED)
         kill(UNITD_PID, SIGTERM);
     }
 
+    /* Before to start, we wait for system is up.
+     * We check if ctrl+alt+del is pressed as well.
+    */
+    while (!LISTEN_SOCK_REQUEST && SHUTDOWN_COMMAND == NO_COMMAND)
+        msleep(50);
+    if (SHUTDOWN_COMMAND != NO_COMMAND)
+        goto out;
+
     while (1) {
         FD_ZERO(&fds);
         FD_SET(fd, &fds);
