@@ -1,6 +1,6 @@
 [Unit]
 Description = File systems unmounted
-Requires = send-signals
+Requires = send-signals.unit
 Type = oneshot
 
 [Command]

@@ -247,8 +247,6 @@ int main(int argc, char **argv) {
         /* The system is going down */
 #ifndef UNITD_TEST
         sync();
-        if (SHUTDOWN_COMMAND == NO_COMMAND)
-            SHUTDOWN_COMMAND = REBOOT_COMMAND;
         switch (SHUTDOWN_COMMAND) {
             case REBOOT_COMMAND:
                 logInfo(CONSOLE, "System reboot ...");

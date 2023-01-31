@@ -33,7 +33,11 @@ typedef enum {
     UNIT_ENABLE_STATE_ERR = 20,
     UNITS_LIST_EMPTY_ERR = 21,
     UNIT_EXIST_ERR = 22,
-    UTIMER_INTERVAL_ERR = 23
+    UTIMER_INTERVAL_ERR = 23,
+    UPATH_WELL_FORMED_PATH_ERR = 24,
+    UPATH_PATH_SEC_ERR = 25,
+    UPATH_ACCESS_ERR = 26,
+    UPATH_PATH_RESOURCE_ERR = 27
 } UnitsErrorsEnum;
 typedef struct {
     UnitsErrorsEnum errorEnum;
@@ -91,4 +95,4 @@ PType getPTypeByPTypeStr(const char *);
 Pipe* pipeNew();
 void pipeRelease(Pipe **);
 PType getPTypeByUnitName(const char *);
-int loadOtherUnits(Array **, const char *, const char *, bool, bool, PType);
+int loadOtherUnits(Array **, const char *, const char *, bool, bool, ListFilter);

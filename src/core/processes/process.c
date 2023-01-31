@@ -217,6 +217,9 @@ startProcess(void *arg)
         case TIMER:
             statusThread = startTimerUnit(unit);
             break;
+        case UPATH:
+            statusThread = startNotifier(unit);
+            break;
         default:
             break;
     }
@@ -245,6 +248,13 @@ startProcess(void *arg)
                 pipeRelease(&unit->pipe);
                 *finalStatus = FINAL_STATUS_FAILURE;
             }
+            break;
+        case UPATH:
+            if (statusThread == 0 && pData->pStateData->pState == RUNNING)
+                *finalStatus = FINAL_STATUS_SUCCESS;
+            else
+                *finalStatus = FINAL_STATUS_FAILURE;
+            break;
         default:
             break;
     }
@@ -376,8 +386,8 @@ getRunningUnits(Array **units)
          * closepipes() in single mode, therefore, its state can be Restarting as well.
         */
         if ((unitType == DAEMON && pData->pStateData->pState == RUNNING) ||
-            (unitType == TIMER && (pData->pStateData->pState == RUNNING ||
-                                   pData->pStateData->pState == RESTARTING)))
+           ((unitType == TIMER || unitType == UPATH) &&
+            (pData->pStateData->pState == RUNNING || pData->pStateData->pState == RESTARTING)))
             arrayAdd(runningUnits, unit);
     }
 
@@ -461,6 +471,11 @@ stopProcess(void *arg)
             *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
             setStopAndDuration(&pData);
             break;
+        case UPATH:
+            statusThread = stopNotifier(unit);
+            *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
+            setStopAndDuration(&pData);
+            break;
         default:
             break;
     }
@@ -475,6 +490,7 @@ stopProcess(void *arg)
                 *finalStatus = FINAL_STATUS_FAILURE;
             break;
         case TIMER:
+        case UPATH:
             if (statusThread == 0 && pData->pStateData->pState == DEAD)
                 *finalStatus = FINAL_STATUS_SUCCESS;
             else

@@ -9,10 +9,11 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 typedef enum {
     NO_FUNC = -1,
     PARSE_UNIT = 0,
-    PARSE_UNIT_TIMER = 1,
-    PARSE_SOCK_REQUEST = 2,
-    PARSE_SOCK_RESPONSE_UNITLIST = 3,
-    PARSE_SOCK_RESPONSE = 4
+    PARSE_TIMER_UNIT = 1,
+    PARSE_PATH_UNIT = 2,
+    PARSE_SOCK_REQUEST = 3,
+    PARSE_SOCK_RESPONSE_UNITLIST = 4,
+    PARSE_SOCK_RESPONSE = 5
 } ParserFuncType;
 
 /* STATIC DATA */
@@ -27,7 +28,8 @@ typedef enum {
     ACCEPTED_VALUE_ERR = 4,
     DUPLICATE_VALUE_ERR = 5,
     REQUIRED_VALUE_ERR = 6,
-    NUMERIC_ERR = 7
+    NUMERIC_ERR = 7,
+    EMPTY_VALUE_ERR = 8
 } ErrorsEnum;
 
 typedef struct {
@@ -55,6 +57,8 @@ extern int UNITS_SECTIONS_ITEMS_LEN;
 extern SectionData UNITS_SECTIONS_ITEMS[];
 extern int UTIMERS_SECTIONS_ITEMS_LEN;
 extern SectionData UTIMERS_SECTIONS_ITEMS[];
+extern int UPATH_SECTIONS_ITEMS_LEN;
+extern SectionData UPATH_SECTIONS_ITEMS[];
 
 /* Properties */
 typedef struct PropertyName {
@@ -77,6 +81,8 @@ extern int UNITS_PROPERTIES_ITEMS_LEN;
 extern PropertyData UNITS_PROPERTIES_ITEMS[];
 extern int UTIMERS_PROPERTIES_ITEMS_LEN;
 extern PropertyData UTIMERS_PROPERTIES_ITEMS[];
+extern int UPATH_PROPERTIES_ITEMS_LEN;
+extern PropertyData UPATH_PROPERTIES_ITEMS[];
 
 /* Functions */
 void parserInit(ParserFuncType funcType);

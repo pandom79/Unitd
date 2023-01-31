@@ -1,6 +1,6 @@
 [Unit]
 Description = Kernel parameters configured
-Requires = filesystems
+Requires = filesystems.unit
 Type = oneshot
 
 [Command]

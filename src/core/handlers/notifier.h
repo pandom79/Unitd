@@ -6,14 +6,12 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-typedef struct {
-    Pipe *pipe;
-    int *fd;
-    Array *watchers;
-} Notifier;
-
 typedef enum {
-    UNITD_WATCHER = 0
+    UNITD_WATCHER = 0,
+    PATH_EXISTS_WATCHER = 1,
+    PATH_EXISTS_GLOB_WATCHER = 2,
+    PATH_RESOURCE_CHANGED_WATCHER = 3,
+    PATH_DIRECTORY_NOT_EMPTY_WATCHER = 4
 } WatcherType;
 
 typedef struct {
@@ -22,7 +20,6 @@ typedef struct {
 } WatcherData;
 
 typedef struct {
-    int *fd;
     int *wd;
     char *path;
     WatcherData watcherData;
@@ -33,10 +30,12 @@ extern Notifier *NOTIFIER;
 extern bool NOTIFIER_WORKING;
 
 Notifier* notifierNew();
+int notifierInit(Notifier *);
 void notifierRelease(Notifier **);
+void notifierClose(Notifier *);
 Watcher* watcherNew(Notifier *, const char *, WatcherType);
 void watcherRelease(Watcher **);
-void setNotifier();
-void startNotifier(Notifier *);
+void setUnitdNotifier();
+int startNotifier(Unit *);
 void* startNotifierThread(void *);
-void stopNotifier(Notifier *);
+int stopNotifier(Unit *);

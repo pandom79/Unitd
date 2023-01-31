@@ -1,6 +1,6 @@
 [Unit]
 Description = Devices deactivated
-Requires = umount-filesystems
+Requires = umount-filesystems.unit
 Type = oneshot
 
 [Command]

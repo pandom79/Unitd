@@ -1,6 +1,6 @@
 [Unit]
 Description = File systems mounted
-Requires = kmods
+Requires = kmods.unit
 Type = oneshot
 
 [Command]

@@ -29,6 +29,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include <utmp.h>
 #include <sys/utsname.h>
 #include <pwd.h>
+#include <fnmatch.h>
 
 #define UNUSED __attribute__((unused))
 
@@ -59,6 +60,7 @@ typedef enum {
     DAEMON = 0,
     ONESHOT = 1,
     TIMER = 2,
+    UPATH = 3
 } PType;
 
 typedef struct PTypeData {
@@ -70,6 +72,7 @@ static const struct PTypeData PTYPE_DATA_ITEMS[] = {
     { DAEMON, "daemon" },
     { ONESHOT, "oneshot" },
     { TIMER, "timer" },
+    { UPATH, "path" },
 };
 
 typedef enum {
@@ -140,6 +143,12 @@ typedef struct {
 } Timer;
 
 typedef struct {
+    Pipe *pipe;
+    int *fd;
+    Array *watchers;
+} Notifier;
+
+typedef struct {
     char *desc;
     Array *requires;
     PType type;
@@ -167,6 +176,8 @@ typedef struct {
     PState *timerPState;
     pid_t *failurePid;
     int *failureExitCode;
+    char *pathUnitName;
+    PState *pathUnitPState;
     // Timer
     Timer *timer;
     bool *wakeSystem;
@@ -181,6 +192,16 @@ typedef struct {
     char *leftTimeDuration;
     Time *nextTime;
     char *nextTimeDate;
+    // Path Unit
+    Notifier *notifier;
+    char *pathExists;
+    char *pathExistsMonitor;
+    char *pathExistsGlob;
+    char *pathExistsGlobMonitor;
+    char *pathResourceChanged;
+    char *pathResourceChangedMonitor;
+    char *pathDirectoryNotEmpty;
+    char *pathDirectoryNotEmptyMonitor;
 } Unit;
 
 typedef struct {
@@ -222,7 +243,8 @@ typedef enum {
     LIST_FAILED_COMMAND = 25,
     LIST_RESTARTABLE_COMMAND = 26,
     LIST_RESTARTED_COMMAND = 27,
-    LIST_TIMERS_COMMAND = 28
+    LIST_TIMERS_COMMAND = 28,
+    LIST_UPATH_COMMAND = 29
 } Command;
 
 /* Socket */
@@ -242,7 +264,8 @@ typedef enum {
     FAILED_FILTER = 4,
     RESTARTABLE_FILTER = 5,
     RESTARTED_FILTER = 6,
-    TIMERS_FILTER = 7
+    TIMERS_FILTER = 7,
+    UPATH_FILTER = 8
 } ListFilter ;
 
 #endif //UNITD_TYPES_H

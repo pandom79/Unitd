@@ -121,6 +121,8 @@ sources = files(
                 'src/core/units/units.h',
                 'src/core/units/utimers/utimers.c',
                 'src/core/units/utimers/utimers.h',
+                'src/core/units/upath/upath.c',
+                'src/core/units/upath/upath.h',
                 'src/core/commands/commands.c',
                 'src/core/commands/commands.h',
                 'src/core/processes/process.c',
@@ -220,10 +222,12 @@ install_subdir('man/man8', install_dir: mandir)
 # Install mime-type
 install_data('mime-type/unit.xml', install_dir: prefix/datadir/'mime'/'packages')
 install_data('mime-type/utimer.xml', install_dir: prefix/datadir/'mime'/'packages')
+install_data('mime-type/upath.xml', install_dir: prefix/datadir/'mime'/'packages')
 
 # Install icon
 install_data('artwork/unit.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable'/'apps')
 install_data('artwork/utimer.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable'/'apps')
+install_data('artwork/upath.svg', install_dir: prefix/datadir/'icons'/'hicolor'/'scalable'/'apps')
 
 # Install unitd logo
 install_data('artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')

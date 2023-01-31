@@ -1,6 +1,6 @@
 [Unit]
 Description = Static devnodes
-Requires = pseudofs
+Requires = pseudofs.unit
 Type = oneshot
 
 [Command]

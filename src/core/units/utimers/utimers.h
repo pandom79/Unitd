@@ -19,7 +19,7 @@ void* startTimerUnitThread(void *);
 int setNextTimeFromDisk(Unit **);
 int setNextTimeFromInterval(Unit **);
 int saveTime(Unit *, const char *, Time *, int);
-int executeUnit(Unit *);
+int executeUnit(Unit *, PType);
 void setLeftTimeAndDuration(Unit **);
 void setNextTimeDate(Unit **);
 int resetNextTime(const char *);

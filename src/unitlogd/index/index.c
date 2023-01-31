@@ -372,6 +372,6 @@ setIndexErr(bool isIndex)
         logInfo(CONSOLE | SYSTEM, "Please, run the following steps:\n"
                                   "[1] Stop unitlog daemon.\n"
                                   "[2] Run 'rm -rf %s'.\n"
-                                  "[3] Start unitlog daemon.\n", UNITLOGD_PATH);
+                                  "[3] Restart the system.\n", UNITLOGD_PATH);
     }
 }

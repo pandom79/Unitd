@@ -1,6 +1,6 @@
 [Unit]
 Description = Console setup
-Requires = pseudofs
+Requires = pseudofs.unit
 Type = oneshot
 
 [Command]

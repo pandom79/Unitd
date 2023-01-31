@@ -225,11 +225,27 @@ fillUnitsDisplayList(Array **units, Array **unitsDisplay, ListFilter listFilter)
     Unit *unit = NULL;
     int lenUnits = (*units ? (*units)->size : 0);
     assert(*unitsDisplay);
+    bool add = false;
+    PType pType = NO_PROCESS_TYPE;
 
     for (int i = 0; i < lenUnits; i++) {
+        add = false;
         unit = arrayGet(*units, i);
-        if (listFilter != TIMERS_FILTER ||
-           (listFilter == TIMERS_FILTER && unit->type == TIMER))
+        pType = unit->type;
+        switch (listFilter) {
+            case TIMERS_FILTER:
+                if (pType == TIMER)
+                    add = true;
+                break;
+            case UPATH_FILTER:
+                if (pType == UPATH)
+                    add = true;
+                break;
+            default:
+                add = true;
+                break;
+        }
+        if (add)
             arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE_UNITLIST));
     }
 }
@@ -297,6 +313,9 @@ getListFilterByCommand(Command command)
             case LIST_TIMERS_COMMAND:
                 listFilter = TIMERS_FILTER;
                 break;
+            case LIST_UPATH_COMMAND:
+                listFilter = UPATH_FILTER;
+                break;
             default:
                 break;
         }
@@ -311,7 +330,7 @@ getListFilterByOpt(Array *options)
     int len = options ? options->size : 0;
     for (int i = 0; i < len; i++) {
         listFilterOpt = arrayGet(options, i);
-        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= TIMERS_FILTER; listFilter++) {
+        for (ListFilter listFilter = ENABLED_FILTER; listFilter <= UPATH_FILTER; listFilter++) {
             if (strcmp(listFilterOpt, LIST_FILTER_DATA[listFilter].desc) == 0) {
                 return listFilter;
             }

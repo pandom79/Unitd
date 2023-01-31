@@ -22,6 +22,54 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 bool UNITCTL_DEBUG;
 
+static void
+printOtherDataForUnit(Unit *otherUnit, PType pType)
+{
+    PState *pState = NULL;
+    char *unitName = NULL;
+
+    switch (pType) {
+        case TIMER:
+            unitName = otherUnit->timerName ? stringNew(otherUnit->timerName) : NULL;
+            pState = otherUnit->timerPState;
+            break;
+        case UPATH:
+            unitName = otherUnit->pathUnitName ? stringNew(otherUnit->pathUnitName) : NULL;
+            pState = otherUnit->pathUnitPState;
+            break;
+        default:
+            break;
+    }
+    if (unitName && pState) {
+        switch (*pState) {
+            case DEAD:
+                stringPrependStr(&unitName, GREY_COLOR);
+                break;
+            case RESTARTING:
+                stringPrependStr(&unitName, YELLOW_COLOR);
+                break;
+            case RUNNING:
+                stringPrependStr(&unitName, GREEN_COLOR);
+                break;
+            default:
+                break;
+        }
+        stringAppendStr(&unitName, DEFAULT_COLOR);
+        switch (pType) {
+            case TIMER:
+                printf("%*s %s", MAX_LEN_KEY, "Timer :", unitName);
+                break;
+            case UPATH:
+                printf("%*s %s", MAX_LEN_KEY, "Path unit :", unitName);
+                break;
+            default:
+                break;
+        }
+        printf("\n");
+        objectRelease(&unitName);
+    }
+}
+
 static int
 writeUnitContent(State defaultState, const char *unitPath, const char *unitName)
 {
@@ -89,6 +137,87 @@ writeUnitContent(State defaultState, const char *unitPath, const char *unitName)
     fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
     /* WantedBy property */
     propertyName = UNITS_PROPERTIES_ITEMS[9].propertyName.desc;
+    if (!USER_INSTANCE) {
+        fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
+        /* In this case, we don't consider the cmdline state which is an exception
+         * but we set the default state instead.
+         * Anyway, the user can change in whatever way wants.
+        */
+        for (State state = POWEROFF; state <= REBOOT; state++) {
+            if (state == defaultState)
+                fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+            else
+                fprintf(fp, "# %s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
+        }
+    }
+    else
+        fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[USER].desc);
+    fprintf(fp, "\n");
+
+    out:
+        /* Close file */
+        fclose(fp);
+        fp = NULL;
+        return rv;
+}
+
+static int
+writePathUnitContent(State defaultState, const char *unitPath, const char *unitName)
+{
+    int rv = 0;
+    FILE *fp = NULL;
+    const char *propertyName = NULL;
+
+    /* Open unit file in write mode */
+    if ((fp = fopen(unitPath, "w")) == NULL) {
+        logError(CONSOLE, "src/core/socket/socket_client.c",
+                          "writePathUnitContent", errno, strerror(errno),
+                          "Unable to open (write mode) %s unit", unitPath);
+        rv = 1;
+        goto out;
+    }
+
+    /* UNIT SECTION */
+    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[0].sectionName.desc);
+    /* Description property */
+    fprintf(fp, "%s = set the description for %s ...\n\n", UPATH_PROPERTIES_ITEMS[0].propertyName.desc,
+            unitName);
+    /* Requires property */
+    propertyName = UPATH_PROPERTIES_ITEMS[1].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+    /* Conflicts property */
+    propertyName = UPATH_PROPERTIES_ITEMS[2].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
+    fprintf(fp, "# %s = unit name 1\n", propertyName);
+    fprintf(fp, "# %s = ...\n", propertyName);
+    fprintf(fp, "# %s = unit name n\n\n", propertyName);
+
+    /* PATH SECTION */
+    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[1].sectionName.desc);
+    /* PathExists property */
+    propertyName = UPATH_PROPERTIES_ITEMS[3].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "%s = set the path ...\n\n", propertyName);
+    /* PathExistsGlob property */
+    propertyName = UPATH_PROPERTIES_ITEMS[4].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "%s = set the path ...\n\n", propertyName);
+    /* PathResourceChanged property */
+    propertyName = UPATH_PROPERTIES_ITEMS[5].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "%s = set the path ...\n\n", propertyName);
+    /* PathDirectoryNotEmpty property */
+    propertyName = UPATH_PROPERTIES_ITEMS[6].propertyName.desc;
+    fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
+    fprintf(fp, "%s = set the path ...\n\n", propertyName);
+
+    /* STATE SECTION */
+    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[2].sectionName.desc);
+    /* WantedBy property */
+    propertyName = UPATH_PROPERTIES_ITEMS[7].propertyName.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception
@@ -186,9 +315,9 @@ writeTimerContent(State defaultState, const char *unitPath, const char *unitName
     fprintf(fp, "%s = set the months number ...\n\n", propertyName);
 
     /* STATE SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
+    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[2].sectionName.desc);
     /* WantedBy property */
-    propertyName = UNITS_PROPERTIES_ITEMS[9].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[10].propertyName.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception
@@ -244,7 +373,7 @@ getLastTime(Unit *unit)
             /* Should be there only one file with this pattern. */
             if (lenResults > 1) {
                 rv = 1;
-                logError(UNITD_BOOT_LOG | SYSTEM, "src/core/socket/socket_client.c", "getLastTime",
+                logError(SYSTEM, "src/core/socket/socket_client.c", "getLastTime",
                          rv, strerror(rv),
                          "Have been found '%d' files with '%s' pattern!\n",
                          lenResults, pattern);
@@ -265,13 +394,13 @@ getLastTime(Unit *unit)
             /* Check values */
             if (!isValidNumber(timeStr, false)) {
                 rv = 1;
-                logError(UNITD_BOOT_LOG | SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv,
+                logError(SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv,
                          strerror(rv), "The time from '%s' file is not valid!\n", fileName);
                 goto out;
             }
             if (!isValidNumber(finalStatusStr, true)) {
                 rv = 1;
-                logError(UNITD_BOOT_LOG | SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv,
+                logError(SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv,
                          strerror(rv), "The final status from '%s' file is not valid!\n", fileName);
                 goto out;
             }
@@ -1047,7 +1176,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 /* Restartable.
                  * We show this property only if the unit is not a timer.
                 */
-                if (unit->type != TIMER) {
+                if (unit->type != TIMER && unit->type != UPATH) {
                     printf("%*s %s", MAX_LEN_KEY, "Restartable :", (unit->restart ? "true" : "false"));
                     if (unit->restartMax != -1)
                         printf(" (Max %d)", unit->restartMax);
@@ -1055,27 +1184,10 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 }
 
                 /* Evetual timer data for the unit */
-                char *timerName = unit->timerName ? stringNew(unit->timerName) : NULL;
-                if (timerName) {
-                    PState *timerPState = unit->timerPState;
-                    switch (*timerPState) {
-                        case DEAD:
-                            stringPrependStr(&timerName, GREY_COLOR);
-                            break;
-                        case RESTARTING:
-                            stringPrependStr(&timerName, YELLOW_COLOR);
-                            break;
-                        case RUNNING:
-                            stringPrependStr(&timerName, GREEN_COLOR);
-                            break;
-                        default:
-                            break;
-                    }
-                    stringAppendStr(&timerName, DEFAULT_COLOR);
-                    printf("%*s %s", MAX_LEN_KEY, "Timer :", timerName);
-                    printf("\n");
-                }
-                objectRelease(&timerName);
+                printOtherDataForUnit(unit, TIMER);
+
+                /* Evetual path unit data for the unit */
+                printOtherDataForUnit(unit, UPATH);
 
                 /* Timer Unit Data */
                 interval = unit->intervalStr;
@@ -1821,6 +1933,9 @@ createUnit(const char *arg)
     }
 
     switch (pType) {
+        case UPATH:
+            writePathUnitContent(defaultState, unitPath, unitName);
+            break;
         case TIMER:
             writeTimerContent(defaultState, unitPath, unitName);
             break;

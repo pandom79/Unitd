@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-    <mime-type type="application/x-utimer">
+    <mime-type type="application/x-upath">
         <sub-class-of type="text/plain"/>
-        <comment>Unitd timer unit</comment>
-        <glob pattern="*.utimer"/>
-        <icon name="utimer.svg"/>
+        <comment>Unitd path unit</comment>
+        <glob pattern="*.upath"/>
+        <icon name="upath.svg"/>
     </mime-type>
 </mime-info>

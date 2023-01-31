@@ -15,7 +15,100 @@ bool USER_INSTANCE;
 Notifier *NOTIFIER;
 const WatcherData WATCHER_DATA_ITEMS[] = {
     { UNITD_WATCHER, IN_MODIFY },
+    { PATH_EXISTS_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB | IN_CREATE },
+    { PATH_EXISTS_GLOB_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB | IN_CREATE },
+    { PATH_RESOURCE_CHANGED_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE |
+                                     IN_MOVED_FROM | IN_MOVED_TO },
+    { PATH_DIRECTORY_NOT_EMPTY_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE |
+                                        IN_MOVED_FROM | IN_MOVED_TO }
 };
+
+int
+notifierInit(Notifier *notifier)
+{
+    Array *watchers = NULL;
+    Watcher *watcher = NULL;
+    int len = 0, rv = 0;
+
+    assert(notifier);
+    watchers = notifier->watchers;
+    len = watchers ? watchers->size : 0;
+    if ((*notifier->fd = inotify_init()) == -1) {
+        rv = 1;
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierInit",
+                 errno, strerror(errno), "Inotify_init func returned -1");
+    }
+    for (int i = 0; i < len; i++) {
+        watcher = arrayGet(watchers, i);
+        if ((*watcher->wd = inotify_add_watch(*notifier->fd, watcher->path, watcher->watcherData.mask)) == -1) {
+            rv = 1;
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierInit",
+                     errno, strerror(errno), "Inotify_add_watch returned -1 for '%s' path", watcher->path);
+            break;
+        }
+    }
+
+    return rv;
+}
+
+void
+notifierClose(Notifier *notifier)
+{
+    Array *watchers = NULL;
+    Watcher *watcher = NULL;
+    int len, fd, rv;
+
+    assert(notifier);
+    rv = fd = -1;
+    watchers = notifier->watchers;
+    fd = *notifier->fd;
+    len = watchers ? watchers->size : 0;
+    for (int i = 0; i < len; i++) {
+        watcher = arrayGet(watchers, i);
+        if ((rv = inotify_rm_watch(fd, *watcher->wd)) == -1 && errno != EINVAL) {
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierClose",
+                     errno, strerror(errno), "Inotify_rm_watch func returned -1 for %s path",
+                     watcher->path);
+        }
+    }
+    close(fd);
+}
+
+static bool
+isEmptyFolder(const char *pathFolder)
+{
+    bool ret = true;
+
+    if (pathFolder) {
+        int rv = 0, len = 0;
+        glob_t results;
+        const char *entry = NULL;
+        char *pattern = NULL;
+
+        /* Building pattern end execute glob */
+        pattern = stringNew(pathFolder);
+        stringAppendStr(&pattern, "/*");
+        if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
+            len = results.gl_pathc;
+            for (int i = 0; i < len; i++) {
+                entry = results.gl_pathv[i];
+                /* The files "." and ".." are already discarded by glob.
+                 * We only discard backup and swap files.
+                 */
+                if (!stringEndsWithChr(entry, '~') &&
+                    !stringEndsWithStr(entry, ".swp") &&
+                    !stringEndsWithStr(entry, ".swpx")) {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+        globfree(&results);
+        objectRelease(&pattern);
+    }
+
+    return ret;
+}
 
 static void
 checkUnitChanging(const char *eventName)
@@ -45,6 +138,50 @@ checkUnitChanging(const char *eventName)
     }
 }
 
+static bool
+checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
+{
+    char *completeEventName = NULL;
+    bool execUnit = false;
+
+    assert(unit);
+    assert(watcherType >= 0);
+    assert(eventName);
+
+    switch (watcherType) {
+        case PATH_EXISTS_WATCHER:
+            if (access(unit->pathExists, F_OK) == 0)
+                execUnit = true;
+            break;
+        case PATH_EXISTS_GLOB_WATCHER:
+            completeEventName = stringNew(unit->pathExistsGlobMonitor);
+            stringAppendStr(&completeEventName, eventName);
+            if (fnmatch(unit->pathExistsGlob, completeEventName, 0) == 0)
+                execUnit = true;
+            objectRelease(&completeEventName);
+            break;
+        case PATH_RESOURCE_CHANGED_WATCHER:
+            completeEventName = stringNew(unit->pathResourceChangedMonitor);
+            stringAppendStr(&completeEventName, eventName);
+            if (strcmp(completeEventName, unit->pathResourceChanged) == 0)
+                execUnit = true;
+            objectRelease(&completeEventName);
+            break;
+        case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
+            execUnit = !isEmptyFolder(unit->pathDirectoryNotEmptyMonitor);
+            break;
+        default:
+            break;
+    }
+    if (execUnit) {
+        *unit->processData->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
+        executeUnit(unit, UPATH);
+        *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
+    }
+
+    return execUnit;
+}
+
 static WatcherType
 getWatcherTypeByWd(Array *watchers, int eventWd)
 {
@@ -71,12 +208,7 @@ notifierNew()
     /* Fd */
     fd = calloc(1, sizeof(int));
     assert(fd);
-    /* Creating inotify instance */
-    if ((*fd = inotify_init()) == -1) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierNew",
-                 errno, strerror(errno), "Inotify_init returned -1");
-        kill(UNITD_PID, SIGTERM);
-    }
+    *fd = -1;
     notifier->fd = fd;
 
     /* Pipe */
@@ -92,22 +224,11 @@ void
 notifierRelease(Notifier **notifier)
 {
     Notifier *notifierTemp = *notifier;
-    int rv = 0;
     if (notifierTemp) {
-        /* First, we release the watchers because we need the fd. */
+        notifierClose(*notifier);
         arrayRelease(&notifierTemp->watchers);
-
-        /* Close and release the inotify instance */
-        if ((rv = close(*notifierTemp->fd)) == -1) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierRelease",
-                     errno, strerror(errno), "Close returned -1");
-        }
         objectRelease(&notifierTemp->fd);
-
-        /* Pipe */
         pipeRelease(&notifierTemp->pipe);
-
-        /* Release notifier */
         objectRelease(notifier);
     }
 }
@@ -124,9 +245,6 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
     watcher = calloc(1, sizeof(Watcher));
     assert(watcher);
 
-    /* Inotify instance fd */
-    watcher->fd = notifier->fd;
-
     /* Path */
     watcher->path = stringNew(path);
 
@@ -136,37 +254,19 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
     /* Watcher fd */
     int *wd = calloc(1, sizeof(int));
     assert(wd);
-    /* Adding the path to the watch list. */
-    if ((*wd = inotify_add_watch(*watcher->fd, path, watcher->watcherData.mask)) == -1) {
-        logError(CONSOLE, "src/core/handlers/notifier.c", "watcherNew",
-                 errno, strerror(errno), "Inotify_add_watch returned -1");
-        kill(UNITD_PID, SIGTERM);
-    }
+    *wd = -1;
     watcher->wd = wd;
 
     return watcher;
 }
 
-
 void
 watcherRelease(Watcher **watcher)
 {
     if (*watcher) {
-        int rv = 0;
-        int *fd = (*watcher)->fd;
-        int *wd = (*watcher)->wd;
-        char *path = (*watcher)->path;
-        if (*fd != -1 && *wd != -1) {
-            /* Removing the path from watch list. */
-            if ((rv = inotify_rm_watch(*fd, *wd)) == -1) {
-                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "watcherRelease",
-                         errno, strerror(errno), "Inotify_rm_watch returned -1 (%s)", path);
-            }
-        }
-        objectRelease(&wd);
-        objectRelease(&path);
+        objectRelease(&(*watcher)->wd);
+        objectRelease(&(*watcher)->path);
         objectRelease(watcher);
-        /* Fd will be freed by notifierRelease func. */
     }
 }
 
@@ -180,10 +280,13 @@ startNotifierThread(void *arg)
     Pipe *pipe = NULL;
     Array *watchers = NULL;
     Notifier *notifier = NULL;
+    Unit *unit = NULL;
+    bool executedUnit = false;
 
     rv = i = length = allEvents = 0;
     maxFd = -1;
-    notifier = (Notifier *)arg;
+    unit = (Unit *)arg;
+    notifier = unit ? unit->notifier : NOTIFIER;
     assert(notifier);
 
     /* Get notifier data */
@@ -231,7 +334,7 @@ startNotifierThread(void *arg)
         FD_ZERO(&fds);
         FD_SET(*fdPipe, &fds);
         FD_SET(*fd, &fds);
-
+        executedUnit = false;
         /* Wait for data */
         if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
             continue;
@@ -251,15 +354,27 @@ startNotifierThread(void *arg)
                 kill(UNITD_PID, SIGTERM);
             }
 
+            /* Evaluating all events defined by watchers. */
             i = 0;
             while (i < length) {
+                /* If the unit has been executed then break and restart. */
+                if (executedUnit)
+                    break;
                 struct inotify_event *event = (struct inotify_event *)&buffer[i];
-                /* Evaluating all events defined by watchers. */
+                if (UNITD_DEBUG)
+                    logInfo(SYSTEM, "Event: name = %s, length = %d, wd = %d, mask = %d",
+                            event->name, event->len, event->wd, event->mask);
                 if (event->len && (event->mask & allEvents)) {
                     WatcherType watcherType = getWatcherTypeByWd(watchers, event->wd);
                     switch (watcherType) {
                         case UNITD_WATCHER:
                             checkUnitChanging(event->name);
+                            break;
+                        case PATH_EXISTS_WATCHER:
+                        case PATH_EXISTS_GLOB_WATCHER:
+                        case PATH_RESOURCE_CHANGED_WATCHER:
+                        case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
+                            executedUnit = checkUnitExecution(unit, watcherType, event->name);
                             break;
                         default:
                             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
@@ -267,8 +382,8 @@ startNotifierThread(void *arg)
                             kill(UNITD_PID, SIGTERM);
                             break;
                     }
-                    i += EVENT_SIZE + event->len;
                 }
+                i += EVENT_SIZE + event->len;
             }
         }
     }
@@ -285,12 +400,12 @@ startNotifierThread(void *arg)
 }
 
 void
-setNotifier()
+setUnitdNotifier()
 {
+    int rv = 0;
     assert(!NOTIFIER);
     NOTIFIER = notifierNew();
     Array *watchers = NOTIFIER->watchers;
-
     if (!USER_INSTANCE)
         arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_PATH, UNITD_WATCHER));
     else {
@@ -298,19 +413,27 @@ setNotifier()
         arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_PATH, UNITD_WATCHER));
         arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_LOCAL_PATH, UNITD_WATCHER));
     }
+    if ((rv = notifierInit(NOTIFIER)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "setUnitdNotifier", errno,
+                 strerror(errno), "NotifierInit func returned %d exit code", rv);
+        kill(UNITD_PID, SIGTERM);
+    }
 }
 
-void
-startNotifier(Notifier *notifier)
+int
+startNotifier(Unit *unit)
 {
     int rv = 0;
     pthread_t thread;
     pthread_attr_t attr;
+    Notifier *notifier = NULL;
 
-    if (!notifier) {
-        setNotifier();
+    if (!unit) {
+        setUnitdNotifier();
         notifier = NOTIFIER;
     }
+    else
+        notifier = unit->notifier;
     assert(notifier);
 
     if ((rv = pthread_attr_init(&attr)) != 0) {
@@ -323,7 +446,7 @@ startNotifier(Notifier *notifier)
                  strerror(errno), "pthread_attr_setdetachstate returned %d exit code", rv);
         kill(UNITD_PID, SIGTERM);
     }
-    if ((rv = pthread_create(&thread, &attr, startNotifierThread, notifier)) != 0) {
+    if ((rv = pthread_create(&thread, &attr, startNotifierThread, unit)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifier", rv,
                  strerror(rv), "Unable to create detached thread");
         kill(UNITD_PID, SIGTERM);
@@ -333,18 +456,19 @@ startNotifier(Notifier *notifier)
             logInfo(CONSOLE | SYSTEM, "Thread created successfully for the notifier\n");
     }
     pthread_attr_destroy(&attr);
+    if (unit && rv == 0)
+        *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
+    return rv;
 }
 
-void
-stopNotifier(Notifier *notifier)
+int
+stopNotifier(Unit *unit)
 {
-    if (!notifier)
-        notifier = NOTIFIER;
+    int rv = 0, output = THREAD_EXIT;
+    Notifier *notifier = !unit ? NOTIFIER : unit->notifier;
 
     if (notifier) {
         Pipe *pipe = notifier->pipe;
-        int rv = 0, output = THREAD_EXIT;
-
         if ((rv = uWrite(pipe->fds[1], &output, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier",
                      errno, strerror(errno), "Unable to write into pipe for the notifier");
@@ -360,4 +484,5 @@ stopNotifier(Notifier *notifier)
                      rv, strerror(rv), "Unable to unlock the pipe mutex");
         }
     }
+    return rv;
 }

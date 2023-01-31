@@ -35,6 +35,7 @@ getSkipCheckAdmin(Command command)
         case LIST_RESTARTABLE_COMMAND:
         case LIST_RESTARTED_COMMAND:
         case LIST_TIMERS_COMMAND:
+        case LIST_UPATH_COMMAND:
         case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             return true;
@@ -75,6 +76,7 @@ showUsage()
             "list-restartable   List the restartable units\n"
             "list-restarted     List the restarted units\n"
             "list-timers        List the timers\n"
+            "list-paths         List the path units\n"
     );
     fprintf(stdout,
             "analyze            Analyze the %s boot process\n",
@@ -290,6 +292,7 @@ int main(int argc, char **argv) {
         case LIST_RESTARTABLE_COMMAND:
         case LIST_RESTARTED_COMMAND:
         case LIST_TIMERS_COMMAND:
+        case LIST_UPATH_COMMAND:
         case ANALYZE_COMMAND:
         case GET_DEFAULT_STATE_COMMAND:
             if (argc > 4 ||

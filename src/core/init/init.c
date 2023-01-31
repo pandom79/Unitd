@@ -53,9 +53,10 @@ CommandData COMMANDS_DATA[] = {
     { LIST_FAILED_COMMAND, "list-failed" },
     { LIST_RESTARTABLE_COMMAND, "list-restartable" },
     { LIST_RESTARTED_COMMAND, "list-restarted" },
-    { LIST_TIMERS_COMMAND, "list-timers" }
+    { LIST_TIMERS_COMMAND, "list-timers" },
+    { LIST_UPATH_COMMAND, "list-paths" },
 };
-int COMMANDS_LEN = 29;
+int COMMANDS_LEN = 30;
 
 /* List Filter */
 const ListFilterData LIST_FILTER_DATA[] = {
@@ -67,8 +68,9 @@ const ListFilterData LIST_FILTER_DATA[] = {
     { RESTARTABLE_FILTER, "restartable" },
     { RESTARTED_FILTER, "restarted" },
     { TIMERS_FILTER, "timers" },
+    { UPATH_FILTER, "upath" }
 };
-int LIST_FILTER_LEN = 8;
+int LIST_FILTER_LEN = 9;
 
 /* Unitd errors */
 const UnitdErrorsData UNITD_ERRORS_ITEMS[] = {

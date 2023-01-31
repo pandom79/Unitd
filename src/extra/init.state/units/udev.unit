@@ -1,6 +1,6 @@
 [Unit]
 Description = Udev started
-Requires = kmods
+Requires = kmods.unit
 Type = oneshot
 
 [Command]

@@ -454,7 +454,7 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
 
     assert(*unit);
     /* Initialize the parser */
-    parserInit(PARSE_UNIT_TIMER);
+    parserInit(PARSE_TIMER_UNIT);
     /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))
@@ -533,13 +533,13 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
                         (*unit)->desc = stringNew(value);
                         break;
                     case REQUIRES:
-                        dep = getUnitName(value);
+                        dep = stringNew(value);
                         arrayAdd(requires, dep);
                         if ((*errors)->size == 0 || isAggregate)
                              checkRequires(units, unit, isAggregate);
                         break;
                     case CONFLICTS:
-                        conflict = getUnitName(value);
+                        conflict = stringNew(value);
                         arrayAdd(conflicts, conflict);
                         if ((*errors)->size == 0 || isAggregate)
                             checkConflicts(unit, value, isAggregate);
@@ -738,7 +738,7 @@ startTimerUnitThread(void *arg)
                 logInfo(SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
                                 unitName);
             /* Unit execution management. */
-            if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit)) == EUIDOWN) {
+            if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit, TIMER)) == EUIDOWN) {
                 logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
                            unitName);
                 goto out;
@@ -811,7 +811,7 @@ startTimerUnitThread(void *arg)
             }
 
             /* Executing the unit ... */
-            if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit)) == EUIDOWN)
+            if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit, TIMER)) == EUIDOWN)
                 logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
                            unitName);
             else {
@@ -927,10 +927,10 @@ checkResponse(SockMessageOut *sockMessageOut)
 }
 
 int
-executeUnit(Unit *timerUnit)
+executeUnit(Unit *otherUnit, PType pType)
 {
     char *unitName = NULL;
-    const char *timerUnitName = NULL;
+    const char *otherUnitName = NULL;
     int rv = 0, socketConnection = 1;
     SockMessageOut *sockMessageOut = sockMessageOutNew();
     SockMessageIn *sockMessageIn = sockMessageInNew();
@@ -938,11 +938,11 @@ executeUnit(Unit *timerUnit)
     Array *units = UNITD_DATA->units;
     Array *options = arrayNew(objectRelease);
 
-    assert(timerUnit);
-    timerUnitName = timerUnit->name;
+    assert(otherUnit);
+    otherUnitName = otherUnit->name;
 
-    /* Get unit name by timerUnitName */
-    unitName = getUnitNameByOther(timerUnitName, TIMER);
+    /* Get unit name by other */
+    unitName = getUnitNameByOther(otherUnitName, pType);
 
     /* Populate sockMessageIn */
     sockMessageIn->arg = unitName;
@@ -955,12 +955,12 @@ executeUnit(Unit *timerUnit)
     Unit *unit = getUnitByName(units, unitName);
     if (unit) {
         if (unit->type == DAEMON && unit->processData->pStateData->pState == RUNNING) {
-            logInfo(SYSTEM, "%s: '%s' is already running. Skipped!", timerUnitName, unitName);
+            logInfo(SYSTEM, "%s: '%s' is already running. Skipped!", otherUnitName, unitName);
             goto out;
         }
     }
 
-    logInfo(SYSTEM, "%s: Starting '%s' ...", timerUnitName, unitName);
+    logInfo(SYSTEM, "%s: Starting '%s' ...", otherUnitName, unitName);
 
     /* If we are shutting down the instance then exit with a custom exit code.(EUIDOWN) */
     if (SHUTDOWN_COMMAND != NO_COMMAND) {
@@ -976,10 +976,10 @@ executeUnit(Unit *timerUnit)
         if (unit) {
             int finalStatus = *unit->processData->finalStatus;
             if (UNITD_DEBUG)
-                logInfo(SYSTEM, "%s: Final status for '%s' = %d ...", timerUnitName, unitName,
+                logInfo(SYSTEM, "%s: Final status for '%s' = %d ...", otherUnitName, unitName,
                         finalStatus);
             if (finalStatus == FINAL_STATUS_SUCCESS) {
-                logSuccess(SYSTEM, "%s: '%s' executed successfully.", timerUnitName, unitName);
+                logSuccess(SYSTEM, "%s: '%s' executed successfully.", otherUnitName, unitName);
                 rv = 0;
             }
             else
@@ -987,12 +987,12 @@ executeUnit(Unit *timerUnit)
         }
     }
     if (rv != 0)
-        logErrorStr(SYSTEM, "%s: Unable to start '%s'!", timerUnitName, unitName);
+        logErrorStr(SYSTEM, "%s: Unable to start '%s'!", otherUnitName, unitName);
 
     out:
         /* Save the result on disk only if we are not shutting down the instance. */
-        if (rv != EUIDOWN)
-            saveTime(NULL, timerUnitName, now, rv);
+        if (pType == TIMER && rv != EUIDOWN)
+            saveTime(NULL, otherUnitName, now, rv);
         timeRelease(&now);
         sockMessageOutRelease(&sockMessageOut);
         sockMessageInRelease(&sockMessageIn);

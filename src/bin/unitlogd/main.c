@@ -151,6 +151,7 @@ int main(int argc, char **argv) {
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd lock path = %s\n", UNITLOGD_LOCK_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd kmesg path = %s\n", UNITLOGD_KMSG_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
         }
     }

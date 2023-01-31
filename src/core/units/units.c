@@ -74,7 +74,7 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { UNABLE_OPEN_UNIT_ERR, "Unable to open '%s'!" },
     { REQUIRE_ITSELF_ERR, "'%s' cannot require itself!" },
     { CONFLICT_ITSELF_ERR, "'%s' cannot have a conflict with itself!" },
-    { UNSATISFIED_DEP_ERR, "'%s' dependency is not satisfied for the '%s'!" },
+    { UNSATISFIED_DEP_ERR, "'%s' dependency is not satisfied for '%s'!" },
     { BIDIRECTIONAL_DEP_ERR, "Bidirectional dependency detected between '%s' and '%s'!" },
     { DEPS_ERR, "The '%s' property is not properly configured for '%s', '%s' and '%s'!" },
     { CONFLICT_DEP_ERROR, "'%s' cannot have a dependency and a conflict with '%s'!" },
@@ -95,6 +95,10 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { UNITS_LIST_EMPTY_ERR, "There are no units!" },
     { UNIT_EXIST_ERR, "'%s' already exists!" },
     { UTIMER_INTERVAL_ERR, "At least one criterion must be defined for the interval!" },
+    { UPATH_WELL_FORMED_PATH_ERR, "The '%s' property path is not well formed!"},
+    { UPATH_PATH_SEC_ERR, "At least one path to be monitored must be defined!" },
+    { UPATH_ACCESS_ERR, "Unable to access to '%s' property path!" },
+    { UPATH_PATH_RESOURCE_ERR, "The '%s' property path doesn't look like a %s!"}
 };
 
 const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
@@ -150,6 +154,8 @@ getPTypeByUnitName(const char *unitFile)
     if (unitFile) {
         if (stringEndsWithStr(unitFile, ".utimer"))
             return TIMER;
+        else if (stringEndsWithStr(unitFile, ".upath"))
+            return UPATH;
         else
             return DAEMON;
     }
@@ -330,12 +336,25 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         }
         unit->timerPState = timerPState;
 
+        /* Eventual path unit name */
+        unit->pathUnitName = (unitFrom && unitFrom->pathUnitName ? stringNew(unitFrom->pathUnitName) : NULL);
+
+        /* Eventual path unit pstate */
+        PState *pathUnitPState = NULL;
+        if (unitFrom && unitFrom->pathUnitPState) {
+            pathUnitPState = calloc(1, sizeof(PState));
+            assert(pathUnitPState);
+            *pathUnitPState = *unitFrom->pathUnitPState;
+        }
+        unit->pathUnitPState = pathUnitPState;
+
         // TIMER DATA
 
         /* Interval as string */
         unit->intervalStr = (unitFrom && unitFrom->intervalStr ? stringNew(unitFrom->intervalStr) : NULL);
 
         // END TIMER DATA
+
     }
 
     if (funcType == PARSE_UNIT) {
@@ -344,6 +363,16 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
         unit->showResult = true;
         unit->isStopping = false;
         unit->isChanged = false;
+
+        /* Path unit data. */
+        unit->pathExists = NULL;
+        unit->pathExistsMonitor = NULL;
+        unit->pathExistsGlob = NULL;
+        unit->pathExistsGlobMonitor = NULL;
+        unit->pathResourceChanged = NULL;
+        unit->pathResourceChangedMonitor = NULL;
+        unit->pathDirectoryNotEmpty = NULL;
+        unit->pathDirectoryNotEmptyMonitor = NULL;
 
         /* Initialize mutex */
         pthread_mutex_t *mutex = NULL;
@@ -632,12 +661,12 @@ loadUnits(Array **units, const char *path, const char *dirName,
           ParserFuncType funcType, bool parse)
 {
     glob_t results;
-    char *pattern, *patternTimer, *unitName, *unitPath;
+    char *pattern, *patternTimer, *patternPath, *unitName, *unitPath;
     int rv, startIdx, endIdx;
     Unit *unit = NULL;
     size_t lenResults = 0;
 
-    pattern = patternTimer = unitName = unitPath = NULL;
+    pattern = patternTimer = patternPath = unitName = unitPath = NULL;
     rv = startIdx = endIdx = 0;
 
     assert(path);
@@ -645,6 +674,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
     /* Building the pattern */
     pattern = stringNew(path);
     patternTimer = stringNew(path);
+    patternPath = stringNew(path);
 
     if (currentState != NO_STATE) {
         stringAppendChr(&pattern, '/');
@@ -653,11 +683,15 @@ loadUnits(Array **units, const char *path, const char *dirName,
         stringAppendChr(&patternTimer, '/');
         stringAppendStr(&patternTimer, dirName);
         stringAppendStr(&patternTimer, "/*.utimer");
+        stringAppendChr(&patternPath, '/');
+        stringAppendStr(&patternPath, dirName);
+        stringAppendStr(&patternPath, "/*.upath");
     }
     else {
         if (!unitNameArg) {
             stringAppendStr(&pattern, "/*.unit");
             stringAppendStr(&patternTimer, "/*.utimer");
+            stringAppendStr(&patternPath, "/*.upath");
         }
         else {
             stringAppendChr(&pattern, '/');
@@ -670,12 +704,18 @@ loadUnits(Array **units, const char *path, const char *dirName,
         logWarning(UNITD_BOOT_LOG, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
 
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
-
-        /* Aggregate the timers pattern if unitname is null */
-        if (!unitNameArg && (rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0) {
-            logWarning(UNITD_BOOT_LOG, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
-                     "GLOB_NOMATCH", "No timers found for %s state",
-                     STATE_DATA_ITEMS[currentState].desc);
+        /* Aggregate the patterns if unitname is null */
+        if (!unitNameArg) {
+            if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0) {
+                logWarning(UNITD_BOOT_LOG, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
+                         "GLOB_NOMATCH", "No timers found for %s state",
+                         STATE_DATA_ITEMS[currentState].desc);
+            }
+            if ((rv = glob(patternPath, GLOB_APPEND, NULL, &results)) != 0) {
+                logWarning(UNITD_BOOT_LOG, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
+                         "GLOB_NOMATCH", "No path units found for %s state",
+                         STATE_DATA_ITEMS[currentState].desc);
+            }
         }
 
         lenResults = results.gl_pathc;
@@ -724,6 +764,11 @@ loadUnits(Array **units, const char *path, const char *dirName,
                             if (rv == 0 || isAggregate)
                                 checkInterval(&unit);
                             break;
+                        case UPATH:
+                            rv = parsePathUnit(units, &unit, isAggregate);
+                            if (rv == 0 || isAggregate)
+                                checkWatchers(&unit, isAggregate);
+                            break;
                         default:
                             break;
                     }
@@ -751,6 +796,9 @@ loadUnits(Array **units, const char *path, const char *dirName,
                             case TIMER:
                                 /* We always need of the pipe. No need of a processDataHistory instead. */
                                 unit->pipe = pipeNew();
+                                break;
+                            case UPATH:
+                                addWatchers(&unit);
                                 break;
                             default:
                                 break;
@@ -802,6 +850,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
 
     objectRelease(&pattern);
     objectRelease(&patternTimer);
+    objectRelease(&patternPath);
     globfree(&results);
     return rv;
 }
@@ -809,7 +858,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
 /* We load the units which have a suffix different by ".unit". */
 int
 loadOtherUnits(Array **units, const char *path, const char *dirName,
-               bool isAggregate, bool parse, PType pType)
+               bool isAggregate, bool parse, ListFilter listFilter)
 {
     glob_t results;
     char *pattern, *unitName, *unitPath;
@@ -821,16 +870,19 @@ loadOtherUnits(Array **units, const char *path, const char *dirName,
     rv = startIdx = endIdx = 0;
 
     assert(path);
-    assert(pType != DAEMON && pType != ONESHOT);
+    assert(listFilter == TIMERS_FILTER || listFilter == UPATH_FILTER);
 
     /* Building the pattern */
     pattern = stringNew(path);
     stringAppendChr(&pattern, '/');
     stringAppendStr(&pattern, dirName);
 
-    switch (pType) {
-        case TIMER:
+    switch (listFilter) {
+        case TIMERS_FILTER:
             stringAppendStr(&pattern, "/*.utimer");
+            break;
+        case UPATH_FILTER:
+            stringAppendStr(&pattern, "/*.upath");
             break;
         default:
             break;
@@ -853,7 +905,7 @@ loadOtherUnits(Array **units, const char *path, const char *dirName,
                 /* Create the unit */
                 unit = unitNew(NULL, PARSE_SOCK_RESPONSE_UNITLIST);
                 unit->name = unitName;
-                unit->type = pType;
+                unit->type = getPTypeByUnitName(unitName);
                 assert(unit->type != NO_PROCESS_TYPE);
                 unit->path = stringNew(unitPath);
 
@@ -862,9 +914,12 @@ loadOtherUnits(Array **units, const char *path, const char *dirName,
 
                 /* Parse the Unit file */
                 if (parse) {
-                    switch (pType) {
+                    switch (unit->type) {
                         case TIMER:
                             rv = parseTimerUnit(units, &unit, isAggregate);
+                            break;
+                        case UPATH:
+                            rv = parsePathUnit(units, &unit, isAggregate);
                             break;
                         default:
                             break;
@@ -955,7 +1010,7 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                         (*unit)->desc = stringNew(value);
                         break;
                     case REQUIRES:
-                        dep = getUnitName(value);
+                        dep = stringNew(value);
                         arrayAdd(requires, dep);
                         if ((*errors)->size == 0 || isAggregate)
                              checkRequires(units, unit, isAggregate);
@@ -975,7 +1030,7 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                         (*unit)->restartMax = atoi(value);
                         break;
                     case CONFLICTS:
-                        conflict = getUnitName(value);
+                        conflict = stringNew(value);
                         arrayAdd(conflicts, conflict);
                         if ((*errors)->size == 0 || isAggregate)
                             checkConflicts(unit, value, isAggregate);
@@ -1087,6 +1142,9 @@ unitRelease(Unit **unit)
         /* Eventual timer data for the unit */
         objectRelease(&unitTemp->timerName);
         objectRelease(&unitTemp->timerPState);
+        /* Eventual path unit data for the unit */
+        objectRelease(&unitTemp->pathUnitName);
+        objectRelease(&unitTemp->pathUnitPState);
 
         /* Unit timer data */
         objectRelease(&unitTemp->wakeSystem);
@@ -1102,6 +1160,17 @@ unitRelease(Unit **unit)
         timeRelease(&unitTemp->nextTime);
         objectRelease(&unitTemp->intervalStr);
         timerRelease(&unitTemp->timer);
+
+        /* Path unit */
+        objectRelease(&unitTemp->pathExists);
+        objectRelease(&unitTemp->pathExistsMonitor);
+        objectRelease(&unitTemp->pathExistsGlob);
+        objectRelease(&unitTemp->pathExistsGlobMonitor);
+        objectRelease(&unitTemp->pathResourceChanged);
+        objectRelease(&unitTemp->pathResourceChangedMonitor);
+        objectRelease(&unitTemp->pathDirectoryNotEmpty);
+        objectRelease(&unitTemp->pathDirectoryNotEmptyMonitor);
+        notifierRelease(&unitTemp->notifier);
 
         /* Unit */
         objectRelease(unit);

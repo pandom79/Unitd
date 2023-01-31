@@ -589,6 +589,8 @@ getUnitNameByOther(const char *fromUnitName, PType unitType)
         case TIMER:
             endIndex = stringIndexOfStr(fromUnitName, ".utimer");
             break;
+        case UPATH:
+            endIndex = stringIndexOfStr(fromUnitName, ".upath");
         default:
             break;
     }
@@ -602,24 +604,34 @@ getUnitNameByOther(const char *fromUnitName, PType unitType)
 }
 
 char*
-getTimerNameByUnit(const char *unitName)
+getOtherNameByUnitName(const char *unitName, PType pType)
 {
-    char *timerName = NULL;
+    char *otherName = NULL;
     int endIndex = -1;
 
     assert(unitName);
+    assert(pType > NO_PROCESS_TYPE);
 
     endIndex = stringIndexOfStr(unitName, ".unit");
 
     if (endIndex != -1)
-        timerName = stringSub(unitName, 0, endIndex - 1);
+        otherName = stringSub(unitName, 0, endIndex - 1);
     else {
-        timerName = stringNew(unitName);
+        otherName = stringNew(unitName);
     }
-    assert(timerName);
-    stringAppendStr(&timerName, ".utimer");
+    assert(otherName);
+    switch (pType) {
+        case TIMER:
+            stringAppendStr(&otherName, ".utimer");
+            break;
+        case UPATH:
+            stringAppendStr(&otherName, ".upath");
+            break;
+        default:
+            break;
+    }
 
-    return timerName;
+    return otherName;
 }
 
 void

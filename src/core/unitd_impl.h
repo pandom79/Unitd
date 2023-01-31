@@ -25,6 +25,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "commands/commands.h"
 #include "units/units.h"
 #include "units/utimers/utimers.h"
+#include "units/upath/upath.h"
 #include "file/file.h"
 #include "logger/logger.h"
 

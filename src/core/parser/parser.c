@@ -24,7 +24,8 @@ static ErrorsData ERRORS_ITEMS[] = {
     { ACCEPTED_VALUE_ERR, "The '%s' value for the '%s' property is not allowed!" },
     { DUPLICATE_VALUE_ERR, "Duplicate value for the '%s' property!" },
     { REQUIRED_VALUE_ERR, "The '%s' %s is required!" },
-    { NUMERIC_ERR, "The '%s' property only accepts a numeric value greater than zero!" }
+    { NUMERIC_ERR, "The '%s' property only accepts a numeric value greater than zero!" },
+    { EMPTY_VALUE_ERR, "The '%s' property has an empty value!" },
 };
 
 void
@@ -39,11 +40,17 @@ parserInit(ParserFuncType func)
             PARSER_PROPERTIES_ITEMS_LEN = UNITS_PROPERTIES_ITEMS_LEN;
             PARSER_PROPERTIES_ITEMS = UNITS_PROPERTIES_ITEMS;
             break;
-        case PARSE_UNIT_TIMER:
+        case PARSE_TIMER_UNIT:
             PARSER_SECTIONS_ITEMS_LEN = UTIMERS_SECTIONS_ITEMS_LEN;
             PARSER_SECTIONS_ITEMS = UTIMERS_SECTIONS_ITEMS;
             PARSER_PROPERTIES_ITEMS_LEN = UTIMERS_PROPERTIES_ITEMS_LEN;
             PARSER_PROPERTIES_ITEMS = UTIMERS_PROPERTIES_ITEMS;
+            break;
+        case PARSE_PATH_UNIT:
+            PARSER_SECTIONS_ITEMS_LEN = UPATH_SECTIONS_ITEMS_LEN;
+            PARSER_SECTIONS_ITEMS = UPATH_SECTIONS_ITEMS;
+            PARSER_PROPERTIES_ITEMS_LEN = UPATH_PROPERTIES_ITEMS_LEN;
+            PARSER_PROPERTIES_ITEMS = UPATH_PROPERTIES_ITEMS;
             break;
         case PARSE_SOCK_REQUEST:
             /* We have not sections */
@@ -262,6 +269,12 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
                 return error;
             }
             else {
+                /* Check empty value */
+                if (strcmp(value, "") == 0) {
+                    error = getMsg(numLine, ERRORS_ITEMS[EMPTY_VALUE_ERR].desc,
+                                   key);
+                    return error;
+                }
                 /* Check if a property is a number */
                 if (currentPropertyData->numeric && !isValidNumber(value, false)) {
                     error = getMsg(numLine, ERRORS_ITEMS[NUMERIC_ERR].desc,

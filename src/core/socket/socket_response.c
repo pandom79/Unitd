@@ -61,6 +61,8 @@ NextTimeDate=value      (optional and repeatable)
 LeftTimeDuration=value  (optional and repeatable)
 TimerName=value         (optional and repeatable)
 TimerPState=value       (optional and repeatable)
+PathUnitName=value      (optional and repeatable)
+PathUnitPState=value    (optional and repeatable)
 Path=value              (optional and repeatable)
 RestartMax=value        (optional and repeatable)
 UnitError=value1        (optional and repeatable)
@@ -109,22 +111,24 @@ enum PropertyNameEnum  {
     LEFTTIMEDURATION = 13,
     TIMERNAME = 14,
     TIMERPSTATE = 15,
-    PATH = 16,
-    RESTARTMAX = 17,
-    UNITERROR = 18,
-    EXITCODE = 19,
-    SIGNALNUM = 20,
-    DATETIMESTART = 21,
-    DATETIMESTOP = 22,
-    INTERVAL = 23,
-    PIDH = 24,
-    EXITCODEH = 25,
-    PSTATEH = 26,
-    SIGNALNUMH = 27,
-    FINALSTATUSH = 28,
-    DATETIMESTARTH = 29,
-    DATETIMESTOPH = 30,
-    DURATIONH = 31
+    PATHUNITNAME = 16,
+    PATHUNITPSTATE = 17,
+    PATH = 18,
+    RESTARTMAX = 19,
+    UNITERROR = 20,
+    EXITCODE = 21,
+    SIGNALNUM = 22,
+    DATETIMESTART = 23,
+    DATETIMESTOP = 24,
+    INTERVAL = 25,
+    PIDH = 26,
+    EXITCODEH = 27,
+    PSTATEH = 28,
+    SIGNALNUMH = 29,
+    FINALSTATUSH = 30,
+    DATETIMESTARTH = 31,
+    DATETIMESTOPH = 32,
+    DURATIONH = 33
 };
 
 /* Sections */
@@ -135,7 +139,7 @@ SectionData SOCKRES_SECTIONS_ITEMS[] = {
 };
 
 /* Properties */
-int SOCKRES_PROPERTIES_ITEMS_LEN = 32;
+int SOCKRES_PROPERTIES_ITEMS_LEN = 34;
 PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { NO_SECTION, { MESSAGE, "Message" }, true, false, false, 0, NULL, NULL },
     { NO_SECTION, { ERROR, "Error" }, true, false, false, 0, NULL, NULL },
@@ -153,6 +157,8 @@ PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
     { UNIT, { LEFTTIMEDURATION, "LeftTimeDuration" }, true, false, false, 0, NULL, NULL },
     { UNIT, { TIMERNAME, "TimerName" }, true, false, false, 0, NULL, NULL },
     { UNIT, { TIMERPSTATE, "TimerPState" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { PATHUNITNAME, "PathUnitName" }, true, false, false, 0, NULL, NULL },
+    { UNIT, { PATHUNITPSTATE, "PathUnitPState" }, true, false, false, 0, NULL, NULL },
     { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
     { UNIT, { RESTARTMAX, "RestartMax" }, true, false, false, 0, NULL, NULL },
     { UNIT, { UNITERROR, "UnitError" }, true, false, false, 0, NULL, NULL },
@@ -347,6 +353,22 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                 stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERPSTATE].propertyName.desc);
                 stringConcat(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *timerPState);
+                stringConcat(&buffer, TOKEN);
+            }
+            /* Path unit name */
+            char *pathUnitName = unit->pathUnitName;
+            if (pathUnitName) {
+                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITNAME].propertyName.desc);
+                stringConcat(&buffer, ASSIGNER);
+                stringConcat(&buffer, pathUnitName);
+                stringConcat(&buffer, TOKEN);
+            }
+            /* Path unit process state */
+            PState *pathUnitPState = unit->pathUnitPState;
+            if (pathUnitPState) {
+                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITPSTATE].propertyName.desc);
+                stringConcat(&buffer, ASSIGNER);
+                setValueForBuffer(&buffer, *pathUnitPState);
                 stringConcat(&buffer, TOKEN);
             }
             /* Path */
@@ -585,6 +607,14 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         unitDisplay->timerPState = calloc(1, sizeof (PState));
                         assert(unitDisplay->timerPState);
                         *unitDisplay->timerPState = atoi(value);
+                        break;
+                    case PATHUNITNAME:
+                        unitDisplay->pathUnitName = stringNew(value);
+                        break;
+                    case PATHUNITPSTATE:
+                        unitDisplay->pathUnitPState = calloc(1, sizeof (PState));
+                        assert(unitDisplay->pathUnitPState);
+                        *unitDisplay->pathUnitPState = atoi(value);
                         break;
                     case RESTARTNUM:
                         unitDisplay->restartNum = atoi(value);

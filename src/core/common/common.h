@@ -32,7 +32,7 @@ void* handleMutexThread(void *);
 void setStopAndDuration(ProcessData **);
 int getMaxFileDesc(int *, int *);
 char* getUnitNameByOther(const char *, PType);
-char* getTimerNameByUnit(const char *);
+char* getOtherNameByUnitName(const char *, PType);
 void showVersion();
 int uRead(int, void *, size_t);
 int uWrite(int, void *, size_t);

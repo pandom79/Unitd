@@ -1,6 +1,6 @@
 [Unit]
 Description = Kernel modules loaded
-Requires = static-devnodes
+Requires = static-devnodes.unit
 Type = oneshot
 
 [Command]

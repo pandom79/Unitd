@@ -16,9 +16,6 @@ Time *BOOT_STOP;
 */
 bool LISTEN_SOCK_REQUEST;
 
-/* This boolean is useful to interrupt the main loop */
-bool IS_SHUTDOWN_COMMAND = false;
-
 /* The following variable is useful for unitd daemon to know how it has to
  * poweroff the machine
 */
@@ -140,7 +137,7 @@ listenSocketRequest()
     BOOT_STOP = timeNew(NULL);
 
     /* Main loop */
-    while (!IS_SHUTDOWN_COMMAND) {
+    while (SHUTDOWN_COMMAND == NO_COMMAND) {
         /* Copy the entire monitored set of fd to readFds */
         refreshFdSet(&readFds);
         LISTEN_SOCK_REQUEST = true;
@@ -219,7 +216,6 @@ socketDispatchRequest(char *buffer, int *socketFd)
             case REBOOT_COMMAND:
             case HALT_COMMAND:
             case KEXEC_COMMAND:
-                IS_SHUTDOWN_COMMAND = true;
                 SHUTDOWN_COMMAND = command;
                 NO_WTMP = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[NO_WTMP_OPT].name);
                 goto out;
@@ -289,15 +285,15 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
         /* If the filter is TIMER then we can pull out the units from glob
          * rather than load all and then to filter.
         */
-        if (listFilter == TIMERS_FILTER) {
+        if (listFilter == TIMERS_FILTER || listFilter == UPATH_FILTER) {
             if (!USER_INSTANCE) {
                 /* Loading only timer units */
-                loadOtherUnits(&unitsDisplay, UNITS_PATH, NULL, false, true, TIMER);
+                loadOtherUnits(&unitsDisplay, UNITS_PATH, NULL, false, true, listFilter);
             }
             else {
                 /* Loading only timer units */
-                loadOtherUnits(&unitsDisplay, UNITS_USER_PATH, NULL, false, true, TIMER);
-                loadOtherUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, false, true, TIMER);
+                loadOtherUnits(&unitsDisplay, UNITS_USER_PATH, NULL, false, true, listFilter);
+                loadOtherUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, false, true, listFilter);
             }
         }
         else {
@@ -378,7 +374,7 @@ setTimerDataForUnit(Unit **unit)
     assert(*unit);
 
     /* Get eventual timer data for the unit */
-    timerName = getTimerNameByUnit((*unit)->name);
+    timerName = getOtherNameByUnitName((*unit)->name, TIMER);
     timerUnit = getUnitByName(UNITD_DATA->units, timerName);
     if (!timerUnit) {
         /* The timer is not in memory then let's to find on the disk. */
@@ -405,6 +401,49 @@ setTimerDataForUnit(Unit **unit)
     arrayRelease(&errors);
     objectRelease(&timerName);
 }
+
+static void
+setPathDataForUnit(Unit **unit)
+{
+    int rv = 1;
+    char *pathUnitName = NULL;
+    Unit *pathUnit = NULL;
+    Array *tmpUnits, *errors;
+
+    tmpUnits = errors = NULL;
+
+    assert(*unit);
+
+    /* Get eventual path unit data for the unit */
+    pathUnitName = getOtherNameByUnitName((*unit)->name, UPATH);
+    pathUnit = getUnitByName(UNITD_DATA->units, pathUnitName);
+    if (!pathUnit) {
+        /* The unit is not in memory then let's to find on the disk. */
+        tmpUnits = arrayNew(unitRelease);
+        errors = arrayNew(objectRelease);
+        rv = loadAndCheckUnit(&tmpUnits, false, pathUnitName, false, &errors);
+        if (rv == 0) {
+            assert(tmpUnits->size == 1);
+            pathUnit = arrayGet(tmpUnits, 0);
+            assert(pathUnit);
+        }
+    }
+    if (pathUnit) {
+        /* Path unit name */
+        stringSet(&(*unit)->pathUnitName, pathUnit->name);
+        /* Path unit pState */
+        objectRelease(&(*unit)->pathUnitPState);
+        (*unit)->pathUnitPState = calloc(1, sizeof(PState));
+        assert((*unit)->pathUnitPState);
+        *(*unit)->pathUnitPState = pathUnit->processData->pStateData->pState;
+    }
+
+    arrayRelease(&tmpUnits);
+    arrayRelease(&errors);
+    objectRelease(&pathUnitName);
+}
+
+
 
 int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
@@ -453,6 +492,9 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         /* Set an eventual timer for the unit */
         if (unit->type != TIMER)
             setTimerDataForUnit(&unit);
+        /* Set an eventual path unit data for the unit */
+        if (unit->type != UPATH)
+            setPathDataForUnit(&unit);
         /* Create copy for client */
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
         /* Unlock */
@@ -469,6 +511,9 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
             /* Set an eventual timer for the unit */
             if (unit->type != TIMER)
                 setTimerDataForUnit(&unit);
+            /* Set an eventual path unit data for the unit */
+            if (unit->type != UPATH)
+                setPathDataForUnit(&unit);
         }
     }
 
@@ -553,7 +598,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
     if (unit && !isDead) {
         /* Stop the process */
         if ((*pType == DAEMON && *pState == RUNNING) ||
-            (*pType == TIMER && (*pState == RUNNING  || *pState == RESTARTING))) {
+            ((*pType == TIMER || *pType == UPATH) && (*pState == RUNNING  || *pState == RESTARTING))) {
             /* We don't show the result on the console and don't catch it by signal handler */
             unit->showResult = false;
             unit->isStopping = true;
@@ -725,6 +770,10 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             parseTimerUnit(unitsDisplay, &unit, true);
             checkInterval(&unit);
             break;
+        case UPATH:
+            parsePathUnit(unitsDisplay, &unit, true);
+            checkWatchers(&unit, true);
+            break;
         default:
             break;
     }
@@ -837,6 +886,9 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             resetNextTime(unitName);
 
     }
+    else if (unit->type == UPATH)
+        addWatchers(&unit);
+
     startProcesses(units, unit);
 
     out:
