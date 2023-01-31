@@ -17,6 +17,8 @@ Run ```man unitd``` to consult the manual page.<br/>
 - <a href="#unit-configuration-file">Unit configuration file</a>
 - <a href="#timers">Timers</a>
 - <a href="#timer-unit-configuration-file">Timer unit configuration file</a>
+- <a href="#path-unit">Path unit</a>
+- <a href="#path-unit-configuration-file">Path unit configuration file</a>
 - <a href="#how-to-configure-the-units">How to configure the units?</a>
 - <a href="#unitctl">Unitctl</a>
 - <a href="#unitlogd-and-unitlogctl">Unitlogd and Unitlogctl</a>
@@ -115,10 +117,10 @@ The units created by user will be placed in **$HOME/.config/unitd/units**.
 [Unit]                              (required and not repeatable)
 Description = NetworkManager	    (required and not repeatable)
 
-Requires = dbus                     (optional and repeatable)
+Requires = dbus.unit                (optional and repeatable)
 Requires = ...
 
-Conflict = dhcpcd                   (optional and repeatable)
+Conflict = dhcpcd.unit              (optional and repeatable)
 Conflict = ...
 
 Type = oneshot|daemon               (optional and not repeatable. If omitted is "daemon")
@@ -157,7 +159,7 @@ Example:<br>
 ```Stop = /path/your/command $PID```
 
 **Failure**<br>
-In this propery we can set a command which will be executed if the **Run** propery command fails.<br>
+In this propery we can set a command which will be executed if the **Run** property command fails.<br>
 This property should have to contain an oneshot command.<br>
 About the daemon units, the failure command will be also executed if a daemon crashes or signaled for some reason.<br>
 A system administrator could want be warned or run some specific tasks if a critical daemon unit unexpectedly fails.<br>
@@ -181,10 +183,10 @@ That will cause a recalculation of the remaining time starting from the current.
 [Unit]                              (required and not repeatable)
 Description = NetworkManager	    (required and not repeatable)
 
-Requires = dbus                     (optional and repeatable)
+Requires = dbus.unit                (optional and repeatable)
 Requires = ...
 
-Conflict = dhcpcd                   (optional and repeatable)
+Conflict = dhcpcd.unit              (optional and repeatable)
 Conflict = ...
 
 WakeSystem = true|false             (optional and not repeatable. If omitted  is "false")
@@ -205,8 +207,47 @@ WantedBy = user                     (required and not repeatable for user instan
 **WakeSystem**<br>
 The timers configured with **WakeSystem = true** will activate the system in suspension case.<br>
 **Interval**<br>
-Even if the interval section properties are optionals, at least one criterion must be defined.
+Even if the interval section properties are optionals, at least one criterion must be defined.<br>
 
+### Path unit
+
+The path unit have **.upath** as configuration file extension.<br>
+The purpose of a path unit is to start an unit when a file system event occurred.<br>
+Tha path units follow the same timers policy about the relation and activation of the unit.<br>
+
+### Path unit configuration file
+
+```
+[Unit]                              (required and not repeatable)
+Description = NetworkManager	    (required and not repeatable)
+
+Requires = dbus.unit                (optional and repeatable)
+Requires = ...
+
+Conflict = dhcpcd.unit              (optional and repeatable)
+Conflict = ...
+
+[Path]                              (required and not repeatable)
+PathExists = ...                    (optional and not repeatable)
+PathExistsGlob = ...                (optional and not repeatable)
+PathResourceChanged = ...           (optional and not repeatable)
+PathDirectoryNotEmpty = ...         (optional and not repeatable)
+
+[State]                             (required and not repeatable)
+WantedBy = multi-user-net           (required and repeatable for system instance)
+WantedBy = ...
+WantedBy = user                     (required and not repeatable for user instance)
+```
+**Path**<br>
+Even if the path section properties are optionals, at least one path must be defined.<br>
+**PathExists**<br>
+Watch the mere existence of a file or directory. If the resource specified exists, the related unit will be activated.<br>
+**PathExistsGlob**<br>
+Works similarly, but checks for the existence of at least one resource matching the globbing pattern specified.<br> 
+**PathResourceChanged**<br>
+Watch the defined resource changing. If the resource specified changes, the related unit will be activated.<br>
+**PathDirectoryNotEmpty**<br>
+Watch a directory and activate the related unit whenever it contains at least one resource.
 
 ### How to configure the units?
 
@@ -241,7 +282,7 @@ WantedBy = graphical
 ```
 [Unit]
 Description = Bluetooth manager
-Requires = dbus
+Requires = dbus.unit
 
 [Command]
 Run = set bluetooth command
@@ -260,7 +301,7 @@ I created an oneshot unit named *check-dbus* which content could be:
 ```
 [Unit]
 Description = Check dbus
-Requires = dbus
+Requires = dbus.unit
 Type = oneshot
 
 [Command]
