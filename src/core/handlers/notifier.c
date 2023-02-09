@@ -225,7 +225,7 @@ notifierRelease(Notifier **notifier)
 {
     Notifier *notifierTemp = *notifier;
     if (notifierTemp) {
-        notifierClose(*notifier);
+        notifierClose(notifierTemp);
         arrayRelease(&notifierTemp->watchers);
         objectRelease(&notifierTemp->fd);
         pipeRelease(&notifierTemp->pipe);
@@ -413,11 +413,8 @@ setUnitdNotifier()
         arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_PATH, UNITD_WATCHER));
         arrayAdd(watchers, watcherNew(NOTIFIER, UNITS_USER_LOCAL_PATH, UNITD_WATCHER));
     }
-    if ((rv = notifierInit(NOTIFIER)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "setUnitdNotifier", errno,
-                 strerror(errno), "NotifierInit func returned %d exit code", rv);
+    if ((rv = notifierInit(NOTIFIER)) != 0)
         kill(UNITD_PID, SIGTERM);
-    }
 }
 
 int

@@ -955,7 +955,7 @@ executeUnit(Unit *otherUnit, PType pType)
     Unit *unit = getUnitByName(units, unitName);
     if (unit) {
         if (unit->type == DAEMON && unit->processData->pStateData->pState == RUNNING) {
-            logInfo(SYSTEM, "%s: '%s' is already running. Skipped!", otherUnitName, unitName);
+            logWarning(SYSTEM, "%s: '%s' is already running. Skipped!", otherUnitName, unitName);
             goto out;
         }
     }
