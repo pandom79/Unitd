@@ -296,11 +296,11 @@ startProcess(void *arg)
 int
 startProcesses(Array **units, Unit *singleUnit)
 {
-    int rv, numThreads, *rvThread;
+    int rv, result, numThreads, *rvThread;
     Unit *unit = NULL;
     const char *unitName = NULL;
 
-    rv = numThreads = 0;
+    rv = result = numThreads = 0;
 
     if (!singleUnit)
         numThreads = (*units ? (*units)->size : 0);
@@ -357,12 +357,12 @@ startProcesses(Array **units, Unit *singleUnit)
                                  unitName, *rvThread);
             }
             if (*rvThread == 1)
-                rv = 1;
+                result = 1;
             objectRelease(&rvThread);
         }
     }
 
-    return rv;
+    return result;
 }
 
 Array*

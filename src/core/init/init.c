@@ -152,10 +152,12 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         logError(ALL, "src/core/init/init.c", "unitdInit", rv,
                       "An error has occurred in loadUnits for init.state", NULL);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
     }
     if ((rv = startProcesses(initUnits, NULL)) != 0) {
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
     }
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)

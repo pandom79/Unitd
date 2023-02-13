@@ -662,12 +662,12 @@ loadUnits(Array **units, const char *path, const char *dirName,
 {
     glob_t results;
     char *pattern, *patternTimer, *patternPath, *unitName, *unitPath;
-    int rv, startIdx, endIdx;
+    int rv, startIdx, endIdx, resultInitFinal;
     Unit *unit = NULL;
     size_t lenResults = 0;
 
     pattern = patternTimer = patternPath = unitName = unitPath = NULL;
-    rv = startIdx = endIdx = 0;
+    rv = startIdx = endIdx = resultInitFinal = 0;
 
     assert(path);
 
@@ -758,6 +758,8 @@ loadUnits(Array **units, const char *path, const char *dirName,
                         case DAEMON:
                         case ONESHOT:
                             rv = parseUnit(units, &unit, isAggregate, currentState);
+                            if (rv != 0 && (currentState == INIT || currentState == FINAL))
+                                resultInitFinal = 1;
                             break;
                         case TIMER:
                             rv = parseTimerUnit(units, &unit, isAggregate);
@@ -815,7 +817,7 @@ loadUnits(Array **units, const char *path, const char *dirName,
         if (currentState != NO_STATE) {
             /* If we are in the init or final state then show the configuration error and emergency shell */
             if (currentState == INIT || currentState == FINAL) {
-                if (rv == 1) {
+                if (resultInitFinal == 1) {
                     logWarning(CONSOLE, "[*] CONFIGURATION ERRORS\n");
                     for (size_t i = 0; i < lenResults; i++) {
                         unit = arrayGet(*units, i);
