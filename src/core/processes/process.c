@@ -177,7 +177,7 @@ startProcess(void *arg)
                 *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
 
                 if (UNITD_DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "The dependency '%s' for '%s' went in ABEND!\n",
+                    logInfo(UNITD_BOOT_LOG, "The dependency '%s' for '%s' went to an ABEND!\n",
                                  unitNameDep, unitName);
                 goto out;
             }

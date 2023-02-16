@@ -163,7 +163,7 @@ writeLogLine(char *buffer, LogLine **logLine)
         stringConcat(&line, DEFAULT_COLOR);
 
     /* Adding new line */
-    if (!stringEndsWithStr(buffer, "\n"))
+    if (!stringEndsWithStr(line, NEW_LINE))
         stringConcat(&line, NEW_LINE);
 
     if (UNITLOGD_DEBUG)
