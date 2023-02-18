@@ -381,9 +381,8 @@ getRunningUnits(Array **units)
         unitType = unit->type;
         /* For the daemon and oneshot units we don't consider the restarting state because
          * closePipes() called before assure us the processes will have a state different by Restarting.
-         * That's not true for the timers because closePipes() don't cosider them.
-         * The timer which have a pipe will be stopped by stopProcess func which calls
-         * closepipes() in single mode, therefore, its state can be Restarting as well.
+         * That's not true for the timers and path units because closePipes() doesn't consider them,
+         * therefore, their state can be "Restarting" as well.
         */
         if ((unitType == DAEMON && pData->pStateData->pState == RUNNING) ||
            ((unitType == TIMER || unitType == UPATH) &&

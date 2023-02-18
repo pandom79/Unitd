@@ -282,7 +282,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     if (!bootAnalyze) {
         fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay, listFilter);
 
-        /* If the filter is TIMER then we can pull out the units from glob
+        /* If the filter is TIMER or UPATH then we can pull out the units from glob
          * rather than load all and then to filter.
         */
         if (listFilter == TIMERS_FILTER || listFilter == UPATH_FILTER) {
@@ -362,88 +362,61 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
 }
 
 static void
-setTimerDataForUnit(Unit **unit)
+setOtherDataForUnit(Unit **unit, PType pType)
 {
     int rv = 1;
-    char *timerName = NULL;
-    Unit *timerUnit = NULL;
+    char *otherName = NULL;
+    Unit *otherUnit = NULL;
     Array *tmpUnits, *errors;
 
     tmpUnits = errors = NULL;
 
     assert(*unit);
+    assert(pType == TIMER || pType == UPATH);
 
-    /* Get eventual timer data for the unit */
-    timerName = getOtherNameByUnitName((*unit)->name, TIMER);
-    timerUnit = getUnitByName(UNITD_DATA->units, timerName);
-    if (!timerUnit) {
-        /* The timer is not in memory then let's to find on the disk. */
-        tmpUnits = arrayNew(unitRelease);
-        errors = arrayNew(objectRelease);
-        rv = loadAndCheckUnit(&tmpUnits, false, timerName, false, &errors);
-        if (rv == 0) {
-            assert(tmpUnits->size == 1);
-            timerUnit = arrayGet(tmpUnits, 0);
-            assert(timerUnit);
-        }
-    }
-    if (timerUnit) {
-        /* Timer name */
-        stringSet(&(*unit)->timerName, timerUnit->name);
-        /* Timer PState */
-        objectRelease(&(*unit)->timerPState);
-        (*unit)->timerPState = calloc(1, sizeof(PState));
-        assert((*unit)->timerPState);
-        *(*unit)->timerPState = timerUnit->processData->pStateData->pState;
-    }
-
-    arrayRelease(&tmpUnits);
-    arrayRelease(&errors);
-    objectRelease(&timerName);
-}
-
-static void
-setPathDataForUnit(Unit **unit)
-{
-    int rv = 1;
-    char *pathUnitName = NULL;
-    Unit *pathUnit = NULL;
-    Array *tmpUnits, *errors;
-
-    tmpUnits = errors = NULL;
-
-    assert(*unit);
-
-    /* Get eventual path unit data for the unit */
-    pathUnitName = getOtherNameByUnitName((*unit)->name, UPATH);
-    pathUnit = getUnitByName(UNITD_DATA->units, pathUnitName);
-    if (!pathUnit) {
+    /* Get eventual other data for the unit */
+    otherName = getOtherNameByUnitName((*unit)->name, pType);
+    otherUnit = getUnitByName(UNITD_DATA->units, otherName);
+    if (!otherUnit) {
         /* The unit is not in memory then let's to find on the disk. */
         tmpUnits = arrayNew(unitRelease);
         errors = arrayNew(objectRelease);
-        rv = loadAndCheckUnit(&tmpUnits, false, pathUnitName, false, &errors);
+        rv = loadAndCheckUnit(&tmpUnits, false, otherName, false, &errors);
         if (rv == 0) {
             assert(tmpUnits->size == 1);
-            pathUnit = arrayGet(tmpUnits, 0);
-            assert(pathUnit);
+            otherUnit = arrayGet(tmpUnits, 0);
+            assert(otherUnit);
         }
     }
-    if (pathUnit) {
-        /* Path unit name */
-        stringSet(&(*unit)->pathUnitName, pathUnit->name);
-        /* Path unit pState */
-        objectRelease(&(*unit)->pathUnitPState);
-        (*unit)->pathUnitPState = calloc(1, sizeof(PState));
-        assert((*unit)->pathUnitPState);
-        *(*unit)->pathUnitPState = pathUnit->processData->pStateData->pState;
+    if (otherUnit) {
+        switch (pType) {
+            case TIMER:
+                /* Timer name */
+                stringSet(&(*unit)->timerName, otherUnit->name);
+                /* Timer PState */
+                objectRelease(&(*unit)->timerPState);
+                (*unit)->timerPState = calloc(1, sizeof(PState));
+                assert((*unit)->timerPState);
+                *(*unit)->timerPState = otherUnit->processData->pStateData->pState;
+                break;
+            case UPATH:
+                /* Path unit name */
+                stringSet(&(*unit)->pathUnitName, otherUnit->name);
+                /* Path unit pState */
+                objectRelease(&(*unit)->pathUnitPState);
+                (*unit)->pathUnitPState = calloc(1, sizeof(PState));
+                assert((*unit)->pathUnitPState);
+                *(*unit)->pathUnitPState = otherUnit->processData->pStateData->pState;
+                break;
+            default:
+                break;
+        }
     }
 
     arrayRelease(&tmpUnits);
     arrayRelease(&errors);
-    objectRelease(&pathUnitName);
+    objectRelease(&otherName);
 }
-
-
 
 int
 getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
@@ -489,12 +462,13 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
          * Take a quick look there.
         */
         handleMutex(unit->mutex, true);
-        /* Set an eventual timer for the unit */
-        if (unit->type != TIMER)
-            setTimerDataForUnit(&unit);
-        /* Set an eventual path unit data for the unit */
-        if (unit->type != UPATH)
-            setPathDataForUnit(&unit);
+
+        if (unit->type == DAEMON || unit->type == ONESHOT) {
+            /* Set eventual other data for the unit */
+            setOtherDataForUnit(&unit, TIMER);
+            setOtherDataForUnit(&unit, UPATH);
+        }
+
         /* Create copy for client */
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
         /* Unlock */
@@ -508,12 +482,11 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         if (rv == 0) {
             assert((*unitsDisplay)->size == 1);
             unit = arrayGet((*unitsDisplay), 0);
-            /* Set an eventual timer for the unit */
-            if (unit->type != TIMER)
-                setTimerDataForUnit(&unit);
-            /* Set an eventual path unit data for the unit */
-            if (unit->type != UPATH)
-                setPathDataForUnit(&unit);
+            if (unit->type == DAEMON || unit->type == ONESHOT) {
+                /* Set eventual other data for the unit */
+                setOtherDataForUnit(&unit, TIMER);
+                setOtherDataForUnit(&unit, UPATH);
+            }
         }
     }
 

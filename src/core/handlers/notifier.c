@@ -158,14 +158,12 @@ checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
             stringAppendStr(&completeEventName, eventName);
             if (fnmatch(unit->pathExistsGlob, completeEventName, 0) == 0)
                 execUnit = true;
-            objectRelease(&completeEventName);
             break;
         case PATH_RESOURCE_CHANGED_WATCHER:
             completeEventName = stringNew(unit->pathResourceChangedMonitor);
             stringAppendStr(&completeEventName, eventName);
             if (strcmp(completeEventName, unit->pathResourceChanged) == 0)
                 execUnit = true;
-            objectRelease(&completeEventName);
             break;
         case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
             execUnit = !isEmptyFolder(unit->pathDirectoryNotEmptyMonitor);
@@ -179,6 +177,7 @@ checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
         *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
     }
 
+    objectRelease(&completeEventName);
     return execUnit;
 }
 
