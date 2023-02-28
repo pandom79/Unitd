@@ -213,7 +213,7 @@ Even if the interval section properties are optionals, at least one criterion mu
 
 The path unit have **.upath** as configuration file extension.<br>
 The purpose of a path unit is to start an unit when a file system event occurred.<br>
-Tha path units follow the same timers policy about the relation and activation of the unit.<br>
+These units follow the same timers policy about the relation and activation of the unit.<br>
 
 ### Path unit configuration file
 

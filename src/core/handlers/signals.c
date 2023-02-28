@@ -70,7 +70,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         *pStateData = PSTATE_DATA_ITEMS[EXITED];
                         setStopAndDuration(&pData);
                         if (UNITD_DEBUG) {
-                            syslog(LOG_DAEMON | LOG_DEBUG,
+                            logInfo(SYSTEM,
                                    "The process %s with pid %d is exited with the following values: "
                                    "Exit code = %d, status = %s, finalStatus = %d, type = %s, "
                                    "dateTimeStart = %s, dateTimeStop = %s, duration = %s\n",
@@ -81,7 +81,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         if (unitPipe) {
                             output = CLD_EXITED;
                             if (uWrite(unitPipe->fds[1], &output, sizeof(int)) == -1) {
-                                logError(CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
+                                logError(SYSTEM, "src/core/handlers/signal_handler.c", "signalsHandler",
                                               errno, strerror(errno), "Unable to write into pipe for the %s unit (exit case)",
                                               unitName);
                             }
@@ -94,9 +94,9 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         *pData->signalNum = info->si_status;
                         setStopAndDuration(&pData);
                         if (UNITD_DEBUG) {
-                            syslog(LOG_DAEMON | LOG_DEBUG,
+                            logInfo(SYSTEM,
                                    "The process %s with pid %d is terminated with the following values: "
-                                   "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s"
+                                   "Exit code = %d, signal = %d, status = %s, finalStatus = %d, type = %s, "
                                    "dateTimeStart = %s, dateTimeStop = %s, duration = %s\n",
                                    unitName, infoPid, *exitCode, *pData->signalNum, pStateData->desc,
                                    *finalStatus, PTYPE_DATA_ITEMS[unit->type].desc, pData->dateTimeStartStr,
@@ -105,7 +105,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                         if (unitPipe) {
                             output = CLD_KILLED;
                             if (uWrite(unitPipe->fds[1], &output, sizeof(int)) == -1) {
-                                logError(CONSOLE, "src/core/handlers/signal_handler.c", "signalsHandler",
+                                logError(SYSTEM, "src/core/handlers/signal_handler.c", "signalsHandler",
                                               errno, strerror(errno), "Unable to write into pipe for the %s unit (kill case)",
                                               unitName);
                             }
@@ -126,11 +126,11 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                                             errno, strerror(errno), "Unable to send SIGCONT to %d pid!", infoPid);
                         }
                         else
-                            syslog(LOG_DAEMON | LOG_DEBUG, "'%s' with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...\n",
-                                                            unitName, infoPid);
+                            logWarning(SYSTEM, "'%s' with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...",
+                                       unitName, infoPid);
                         break;
                     case CLD_CONTINUED:
-                        syslog(LOG_DAEMON | LOG_DEBUG, "'%s' with '%d' pid has received a SIGCONT signal!\n", unitName, infoPid);
+                        logWarning(SYSTEM, "'%s' with '%d' pid has received a SIGCONT signal!", unitName, infoPid);
                         *pData->signalNum = SIGCONT;
                         break;
                 }
