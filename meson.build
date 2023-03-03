@@ -4,10 +4,10 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '5.1.2', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '5.1.3', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '5.1.2'
+ver = '5.1.3'
 so_ver = '5'
 wrapper_ver = '2.0.6'
 project_name = 'unitd'
@@ -90,18 +90,11 @@ run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 rt_dep = meson.get_compiler('c').find_library('rt', required : true)
 deps = [dependency('threads'), dependency('wrapper', version: wrapper_ver), rt_dep]
 # Checking commands/packages dependencies
-# We set 'check: false' because we don't interest about its exit code.
 # Awk
-message('Checking awk command ...')
-run_command('awk', check: false)
-message('Awk command found!')
+find_program('awk', required: true)
 # Pkill and pgrep (procps-ng package)
-message('Checking pkill command ...')
-run_command('pkill', check: false)
-message('Pkill command found!')
-message('Checking pgrep command ...')
-run_command('pgrep', check: false)
-message('Pgrep command found!')
+find_program('pkill', required: true)
+find_program('pgrep', required: true)
 
 # Unitd sources
 sources = files(
