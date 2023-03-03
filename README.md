@@ -64,9 +64,8 @@ Download the release from [here](https://github.com/pandom79/Unitd/releases) and
 Run the following steps as root user:</br>
 ```
 cd Unitd
-meson setup build
+meson setup build -DOS_NAME="Slackware Linux"
 cd build
-meson configure -DOS_NAME="Slackware Linux"
 meson compile
 meson install
 ```
