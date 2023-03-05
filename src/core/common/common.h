@@ -36,3 +36,5 @@ char* getOtherNameByUnitName(const char *, PType);
 void showVersion();
 int uRead(int, void *, size_t);
 int uWrite(int, void *, size_t);
+ssize_t uSend(int, const void *, size_t, int);
+ssize_t uRecv(int, void *, size_t, int);

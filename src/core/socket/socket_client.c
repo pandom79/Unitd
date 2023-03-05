@@ -655,7 +655,7 @@ unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
         syslog(LOG_DAEMON | LOG_DEBUG, "UnitdShutdown::Buffer sent (%lu): \n%s", strlen(buffer), buffer);
 
     /* Sending the message */
-    if ((rv = send(socketConnection, buffer, strlen(buffer), 0)) == -1) {
+    if ((rv = uSend(socketConnection, buffer, strlen(buffer), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "unitdShutdown",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -698,7 +698,7 @@ getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter listFi
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitsList",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1053,7 +1053,7 @@ getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatus::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitStatus",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1337,7 +1337,7 @@ stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
         syslog(LOG_DAEMON | LOG_DEBUG, "StopUnit::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "stopUnit",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1408,7 +1408,7 @@ startUnit(SockMessageOut **sockMessageOut, const char *unitName,
         syslog(LOG_DAEMON | LOG_DEBUG, "StartUnit::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "startUnit",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1468,7 +1468,7 @@ disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
         syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnit::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "disableUnit",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1544,7 +1544,7 @@ enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnit::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "enableUnit",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1614,7 +1614,7 @@ getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitData::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitData",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1666,7 +1666,7 @@ getDefaultState(SockMessageOut **sockMessageOut)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultState::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getDefaultState",
                       errno, strerror(errno), "Send error");
         goto out;
@@ -1739,7 +1739,7 @@ setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer sent (%lu): \n%s", strlen(bufferReq), bufferReq);
 
     /* Sending the request */
-    if ((rv = send(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
+    if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "setDefaultState",
                       errno, strerror(errno), "Send error");
         goto out;

@@ -667,3 +667,25 @@ uWrite(int fd, void *buf, size_t nbytes)
 
     return rv;
 }
+
+ssize_t
+uSend(int fd, const void *buf, size_t nbytes, int flags)
+{
+    ssize_t rv = 0;
+
+    while ((rv = send(fd, buf, nbytes, flags)) == -1 && errno == EINTR)
+        continue;
+
+    return rv;
+}
+
+ssize_t
+uRecv(int fd, void *buf, size_t nbytes, int flags)
+{
+    ssize_t rv = 0;
+
+    while ((rv = recv(fd, buf, nbytes, flags)) == -1 && errno == EINTR)
+        continue;
+
+    return rv;
+}

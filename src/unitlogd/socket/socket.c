@@ -61,7 +61,7 @@ forwardToLog(char *buffer)
                  strerror(errno), "Connect error");
         goto out;
     }
-    if ((rv = send(socketFd, buffer, strlen(buffer), 0)) == -1 && !UNITLOGD_EXIT) {
+    if ((rv = uSend(socketFd, buffer, strlen(buffer), 0)) == -1 && !UNITLOGD_EXIT) {
         logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "forwardToLog", errno,
                  strerror(errno), "send error");
         goto out;
@@ -266,7 +266,7 @@ startUnixThread(void *arg)
             bufferSize = BUFFER_SIZE;
             buffer = calloc(bufferSize, sizeof(char));
             assert(buffer);
-            if ((rv = recv(socketFd, buffer, bufferSize, 0)) == -1) {
+            if ((rv = uRecv(socketFd, buffer, bufferSize, 0)) == -1) {
                 logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",
                          errno, strerror(errno), "Unable to read from socket for the dev (%s)!", devName);
                 kill(UNITLOGD_PID, SIGTERM);

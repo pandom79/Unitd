@@ -352,7 +352,7 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%lu): \n%s",
                                             strlen(buffer), buffer);
         /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitListServer",
                           errno, strerror(errno), "Send func returned -1 exit code!");
         }
@@ -497,7 +497,7 @@ getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
             syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatusServer::Buffer sent (%lu): \n%s",
                                             strlen(buffer), buffer);
         /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitStatusServer",
                           errno, strerror(errno), "Send func returned -1 exit code!");
         }
@@ -623,7 +623,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
                 syslog(LOG_DAEMON | LOG_DEBUG, "StopUnitServer::Buffer sent (%lu): \n%s",
                                                 strlen(buffer), buffer);
             /* Sending the response */
-            if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
                 logError(SYSTEM, "src/core/socket/socket_server.c", "stopUnitServer",
                               errno, strerror(errno), "Send func returned -1 exit code!");
             }
@@ -872,7 +872,7 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
                 syslog(LOG_DAEMON | LOG_DEBUG, "StartUnitServer::Buffer sent (%lu): \n%s",
                                                 strlen(buffer), buffer);
             /* Sending the response */
-            if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
                 logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer",
                               errno, strerror(errno), "Send func returned -1 exit code!");
             }
@@ -1035,7 +1035,7 @@ disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
                 syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnitServer::Buffer sent (%lu): \n%s",
                        strlen(buffer), buffer);
             /* Sending the response */
-            if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+            if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
                 logError(SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer",
                               errno, strerror(errno), "Send func returned -1 exit code!");
             }
@@ -1341,7 +1341,7 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
         /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer",
                           errno, strerror(errno), "Send func returned -1 exit code!");
         }
@@ -1447,7 +1447,7 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
             syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitDataServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
         /* Sending the response */
-        if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitDataServer",
                           errno, strerror(errno), "Send func returned -1 exit code!");
         }
@@ -1489,7 +1489,7 @@ getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
     /* Sending the response */
-    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+    if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "getDefaultStateServer",
                       errno, strerror(errno), "Send func returned -1 exit code!");
     }
@@ -1547,7 +1547,7 @@ setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
     /* Sending the response */
-    if ((rv = send(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+    if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "setDefaultStateServer",
                       errno, strerror(errno), "Send func returned -1 exit code!");
     }

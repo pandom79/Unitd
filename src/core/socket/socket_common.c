@@ -109,7 +109,7 @@ readMessage(int *socketFd, char **buffer, int *bufferSize)
     assert(*bufferSize > 0);
 
     while (1) {
-        if ((rv = recv(*socketFd, *buffer, *bufferSize, MSG_PEEK | MSG_TRUNC)) == -1) {
+        if ((rv = uRecv(*socketFd, *buffer, *bufferSize, MSG_PEEK | MSG_TRUNC)) == -1) {
             logError(CONSOLE, "src/core/socket/socket_common.c",
                           "readMessage", errno, strerror(errno), "Recv error");
             goto out;
