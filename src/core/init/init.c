@@ -240,7 +240,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         /* Stop the notifiers */
         stopNotifier(NULL);
         //******************* POWEROFF (HALT) / REBOOT STATE **********************
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "The system is going down ...\n");
+        logInfo(CONSOLE | UNITD_BOOT_LOG, "%sThe system is going down ...%s\n", WHITE_COLOR, DEFAULT_COLOR);
         if (SHUTDOWN_COMMAND == HALT_COMMAND) {
             shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);
             stringAppendStr(&shutDownStateStr, ".state");

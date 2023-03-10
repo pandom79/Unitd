@@ -706,16 +706,10 @@ loadUnits(Array **units, const char *path, const char *dirName,
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         /* Aggregate the patterns if unitname is null */
         if (!unitNameArg) {
-            if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0) {
-                logWarning(UNITD_BOOT_LOG, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
-                         "GLOB_NOMATCH", "No timers found for %s state",
-                         STATE_DATA_ITEMS[currentState].desc);
-            }
-            if ((rv = glob(patternPath, GLOB_APPEND, NULL, &results)) != 0) {
-                logWarning(UNITD_BOOT_LOG, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH,
-                         "GLOB_NOMATCH", "No path units found for %s state",
-                         STATE_DATA_ITEMS[currentState].desc);
-            }
+            if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0)
+                logWarning(UNITD_BOOT_LOG, "No timers found for %s state.\n", STATE_DATA_ITEMS[currentState].desc);
+            if ((rv = glob(patternPath, GLOB_APPEND, NULL, &results)) != 0)
+                logWarning(UNITD_BOOT_LOG, "No path units found for %s state.\n", STATE_DATA_ITEMS[currentState].desc);
         }
 
         lenResults = results.gl_pathc;

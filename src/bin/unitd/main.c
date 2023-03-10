@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
         }
 
         /* Welcome msg */
-        logInfo(CONSOLE, "Welcome to %s!\n", OS_NAME);
+        logInfo(CONSOLE, "%sWelcome to %s!%s\n", WHITE_COLOR, OS_NAME, DEFAULT_COLOR);
 
         /* Detecting virtualization environment */
         Array *envVars = arrayNew(objectRelease);
@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
         SHUTDOWN_STOP = timeNew(NULL);
         char *diff = stringGetDiffTime(SHUTDOWN_STOP, SHUTDOWN_START);
         char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "%s\n", msg);
+        logInfo(CONSOLE | UNITD_BOOT_LOG, "%s%s%s\n", WHITE_COLOR, msg, DEFAULT_COLOR);
         objectRelease(&diff);
         objectRelease(&msg);
         timeRelease(&SHUTDOWN_START);
@@ -249,19 +249,19 @@ int main(int argc, char **argv) {
         sync();
         switch (SHUTDOWN_COMMAND) {
             case REBOOT_COMMAND:
-                logInfo(CONSOLE, "System reboot ...");
+                logInfo(CONSOLE, "%sSystem reboot ...%s", WHITE_COLOR, DEFAULT_COLOR);
                 reboot(RB_AUTOBOOT);
                 break;
             case POWEROFF_COMMAND:
-                logInfo(CONSOLE, "System power off ...");
+                logInfo(CONSOLE, "%sSystem power off ...%s", WHITE_COLOR, DEFAULT_COLOR);
                 reboot(RB_POWER_OFF);
                 break;
             case HALT_COMMAND:
-                logInfo(CONSOLE, "System halt ...");
+                logInfo(CONSOLE, "%sSystem halt ...%s", WHITE_COLOR, DEFAULT_COLOR);
                 reboot(RB_HALT_SYSTEM);
                 break;
             case KEXEC_COMMAND:
-                logInfo(CONSOLE, "System reboot with kexec ...");
+                logInfo(CONSOLE, "%sSystem reboot with kexec ...%s", WHITE_COLOR, DEFAULT_COLOR);
                 reboot(RB_KEXEC);
                 break;
             default:
