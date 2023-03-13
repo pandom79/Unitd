@@ -191,6 +191,13 @@ processLine(char *buffer)
 
     assert(buffer);
 
+    /* When we call this function from appendKmsg() func, the buffer already contains new line char at the end.
+     * In warning or error case, we'll have a double new line char which is bad.
+     * For this reason, we always remove this char making easier its management in writeLogLine func.
+    */
+    if (stringEndsWithStr(buffer, NEW_LINE))
+        buffer[strlen(buffer) - 1] = '\0';
+
     /* Set facility and priority */
     setFacAndPri(buffer, &logLine);
     /* Set host name */
