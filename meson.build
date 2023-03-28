@@ -4,12 +4,12 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '5.1.6', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '6.0.0', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '5.1.6'
-so_ver = '5'
-wrapper_ver = '2.0.7'
+ver = '6.0.0'
+so_ver = '6'
+ulib_ver = '3.0.0'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 
@@ -61,7 +61,7 @@ endif
 # Configuration
 conf_data = configuration_data()
 conf_data.set('UNITD_VER', ver)
-conf_data.set('WRAPPER_VER', wrapper_ver)
+conf_data.set('ULIB_VER', ulib_ver)
 conf_data.set('OS_NAME', get_option('OS_NAME'))
 conf_data.set('OUR_UTMP_FILE', our_utmp_file)
 conf_data.set('OUR_WTMP_FILE', our_wtmp_file)
@@ -88,7 +88,7 @@ run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 
 # Dependencies
 rt_dep = meson.get_compiler('c').find_library('rt', required : true)
-deps = [dependency('threads'), dependency('wrapper', version: wrapper_ver), rt_dep]
+deps = [dependency('threads'), dependency('ulib', version: ulib_ver), rt_dep]
 # Checking commands/packages dependencies
 # Awk
 find_program('awk', required: true)

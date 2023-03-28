@@ -54,17 +54,17 @@ marshallRequest(SockMessageIn *sockMessageIn)
 
     /* Command */
     buffer = stringNew(SOCKREQ_PROPERTIES_ITEMS[COMMAND].propertyName.desc);
-    stringConcat(&buffer, ASSIGNER);
+    stringAppendStr(&buffer, ASSIGNER);
     sprintf(commandStr, "%d", sockMessageIn->command);
-    stringConcat(&buffer, commandStr);
-    stringConcat(&buffer, TOKEN);
+    stringAppendStr(&buffer, commandStr);
+    stringAppendStr(&buffer, TOKEN);
     /* Unit name */
     arg = sockMessageIn->arg;
     if (sockMessageIn->arg) {
-        stringConcat(&buffer, SOCKREQ_PROPERTIES_ITEMS[ARG].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, arg);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, SOCKREQ_PROPERTIES_ITEMS[ARG].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, arg);
+        stringAppendStr(&buffer, TOKEN);
     }
     /* Options */
     options = sockMessageIn->options;
@@ -72,10 +72,10 @@ marshallRequest(SockMessageIn *sockMessageIn)
     if (len > 0)
         optionKey = SOCKREQ_PROPERTIES_ITEMS[OPTION].propertyName.desc;
     for (int i = 0; i < len; i++) {
-        stringConcat(&buffer, optionKey);
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, arrayGet(options, i));
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, optionKey);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, arrayGet(options, i));
+        stringAppendStr(&buffer, TOKEN);
     }
 
     return buffer;

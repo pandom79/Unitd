@@ -141,11 +141,11 @@ setValueForBuffer(char **buffer, int value)
 {
     assert(*buffer);
     if (value == -1 || value == -2)
-        stringConcat(buffer, NONE);
+        stringAppendStr(buffer, NONE);
     else {
         char valueStr[10] = {0};
         sprintf(valueStr, "%d", value);
-        stringConcat(buffer, valueStr);
+        stringAppendStr(buffer, valueStr);
     }
 }
 

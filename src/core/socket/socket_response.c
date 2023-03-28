@@ -213,11 +213,11 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         if (i == 0 && !buffer)
             buffer = stringNew(msgKey);
         else
-            stringConcat(&buffer, msgKey);
+            stringAppendStr(&buffer, msgKey);
 
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, arrayGet(messages, i));
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, arrayGet(messages, i));
+        stringAppendStr(&buffer, TOKEN);
     }
 
     /* Errors */
@@ -229,11 +229,11 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         if (i == 0 && !buffer)
             buffer = stringNew(errKey);
         else
-            stringConcat(&buffer, errKey);
+            stringAppendStr(&buffer, errKey);
 
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, arrayGet(errors, i));
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, arrayGet(errors, i));
+        stringAppendStr(&buffer, TOKEN);
     }
 
     /* Units */
@@ -248,185 +248,185 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         if (i == 0 && !buffer)
             buffer = stringNew(SOCKRES_SECTIONS_ITEMS[UNIT].sectionName.desc);
         else
-            stringConcat(&buffer, SOCKRES_SECTIONS_ITEMS[UNIT].sectionName.desc);
+            stringAppendStr(&buffer, SOCKRES_SECTIONS_ITEMS[UNIT].sectionName.desc);
 
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
 
         /* The following data are in common between
          * PARSE_SOCK_RESPONSE_UNITLIST and PARSE_SOCK_RESPONSE
         */
 
         /* Name */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[NAME].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, unit->name);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[NAME].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, unit->name);
+        stringAppendStr(&buffer, TOKEN);
         /* Enabled */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[ENABLED].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, (unit->enabled ? "1" : "0"));
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[ENABLED].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, (unit->enabled ? "1" : "0"));
+        stringAppendStr(&buffer, TOKEN);
         /* Pid */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PID].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PID].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, *pData->pid);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
         /* Process State */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PSTATE].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PSTATE].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, pData->pStateData->pState);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
         /* Final Status */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[FINALSTATUS].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[FINALSTATUS].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, *pData->finalStatus);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
         /* Description */
         unitDesc = unit->desc;
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DESC].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, (unitDesc ? unitDesc : NONE));
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DESC].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, (unitDesc ? unitDesc : NONE));
+        stringAppendStr(&buffer, TOKEN);
         /* Duration */
         duration = pData->duration;
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DURATION].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DURATION].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
         if (duration)
-            stringConcat(&buffer, duration);
+            stringAppendStr(&buffer, duration);
         else {
             if (pData->timeStart) {
                 Time *currentTimeStop = timeNew(NULL);
                 char *diff = stringGetDiffTime(currentTimeStop, pData->timeStart);
-                stringConcat(&buffer, diff);
+                stringAppendStr(&buffer, diff);
                 timeRelease(&currentTimeStop);
                 objectRelease(&diff);
             }
             else
-                stringConcat(&buffer, NONE);
+                stringAppendStr(&buffer, NONE);
         }
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
         /* RestartNum */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTNUM].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTNUM].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, unit->restartNum);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
         /* Restartable */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTABLE].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
-        stringConcat(&buffer, ((unit->restart || unit->restartMax > 0) ? "1" : "0"));
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTABLE].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, ((unit->restart || unit->restartMax > 0) ? "1" : "0"));
+        stringAppendStr(&buffer, TOKEN);
         /* Type */
-        stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TYPE].propertyName.desc);
-        stringConcat(&buffer, ASSIGNER);
+        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[TYPE].propertyName.desc);
+        stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, unit->type);
-        stringConcat(&buffer, TOKEN);
+        stringAppendStr(&buffer, TOKEN);
         /* Next time (date) */
         char *nextTimeDate = unit->nextTimeDate;
         if (nextTimeDate && strlen(nextTimeDate) > 0) {
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[NEXTTIMEDATE].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
-            stringConcat(&buffer, nextTimeDate);
-            stringConcat(&buffer, TOKEN);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[NEXTTIMEDATE].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, nextTimeDate);
+            stringAppendStr(&buffer, TOKEN);
         }
         /* Left time (duration) */
         char *leftTimeDuration = unit->leftTimeDuration;
         if (leftTimeDuration && strlen(leftTimeDuration) > 0) {
             setLeftTimeAndDuration(&unit);
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[LEFTTIMEDURATION].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
-            stringConcat(&buffer, leftTimeDuration);
-            stringConcat(&buffer, TOKEN);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[LEFTTIMEDURATION].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, leftTimeDuration);
+            stringAppendStr(&buffer, TOKEN);
         }
 
         if (funcType == PARSE_SOCK_RESPONSE) {
             /* Timer name */
             char *timerName = unit->timerName;
             if (timerName) {
-                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERNAME].propertyName.desc);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, timerName);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERNAME].propertyName.desc);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, timerName);
+                stringAppendStr(&buffer, TOKEN);
             }
             /* Timer process state */
             PState *timerPState = unit->timerPState;
             if (timerPState) {
-                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERPSTATE].propertyName.desc);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERPSTATE].propertyName.desc);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *timerPState);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
             }
             /* Path unit name */
             char *pathUnitName = unit->pathUnitName;
             if (pathUnitName) {
-                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITNAME].propertyName.desc);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, pathUnitName);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITNAME].propertyName.desc);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, pathUnitName);
+                stringAppendStr(&buffer, TOKEN);
             }
             /* Path unit process state */
             PState *pathUnitPState = unit->pathUnitPState;
             if (pathUnitPState) {
-                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITPSTATE].propertyName.desc);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITPSTATE].propertyName.desc);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pathUnitPState);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
             }
             /* Path */
             unitPath = unit->path;
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[PATH].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
-            stringConcat(&buffer, (unitPath ? unitPath : NONE));
-            stringConcat(&buffer, TOKEN);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PATH].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, (unitPath ? unitPath : NONE));
+            stringAppendStr(&buffer, TOKEN);
             /* RestartMax */
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTMAX].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTMAX].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, unit->restartMax);
-            stringConcat(&buffer, TOKEN);
+            stringAppendStr(&buffer, TOKEN);
             /* Unit errors */
             unitErrors = unit->errors;
             lenUnitErrors = (unitErrors ? unitErrors->size : 0);
             for (int j = 0; j < lenUnitErrors; j++) {
                 if (!unitErrorKey)
                     unitErrorKey = SOCKRES_PROPERTIES_ITEMS[UNITERROR].propertyName.desc;
-                stringConcat(&buffer, unitErrorKey);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, arrayGet(unitErrors, j));
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, unitErrorKey);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, arrayGet(unitErrors, j));
+                stringAppendStr(&buffer, TOKEN);
             }
             /* Exit code */
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[EXITCODE].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[EXITCODE].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, *pData->exitCode);
-            stringConcat(&buffer, TOKEN);
+            stringAppendStr(&buffer, TOKEN);
             /* Signal Num */
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[SIGNALNUM].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[SIGNALNUM].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, *pData->signalNum);
-            stringConcat(&buffer, TOKEN);
+            stringAppendStr(&buffer, TOKEN);
             /* Date Time Start */
             dateTimeStart = pData->dateTimeStartStr;
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTART].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTART].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
             if (dateTimeStart)
-                stringConcat(&buffer, dateTimeStart);
+                stringAppendStr(&buffer, dateTimeStart);
             else
-                stringConcat(&buffer, NONE);
-            stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, NONE);
+            stringAppendStr(&buffer, TOKEN);
             /* Date Time Stop */
             dateTimeStop = pData->dateTimeStopStr;
-            stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTOP].propertyName.desc);
-            stringConcat(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTOP].propertyName.desc);
+            stringAppendStr(&buffer, ASSIGNER);
             if (dateTimeStop)
-                stringConcat(&buffer, dateTimeStop);
+                stringAppendStr(&buffer, dateTimeStop);
             else
-                stringConcat(&buffer, NONE);
-            stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, NONE);
+            stringAppendStr(&buffer, TOKEN);
             /* Interval */
             char *intervalStr = unit->intervalStr;
             if (intervalStr && strlen(intervalStr) > 0) {
-                stringConcat(&buffer, SOCKRES_PROPERTIES_ITEMS[INTERVAL].propertyName.desc);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, intervalStr);
+                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[INTERVAL].propertyName.desc);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, intervalStr);
             }
             /* Process Data history */
             pDataHistory = unit->processDataHistory;
@@ -435,64 +435,64 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                 pDataHistorySecKey = SOCKRES_SECTIONS_ITEMS[PDATAHISTORY].sectionName.desc;
             for (int j = 0; j < lenPdataHistory; j++) {
                 pData = arrayGet(pDataHistory, j);
-                stringConcat(&buffer, pDataHistorySecKey);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, pDataHistorySecKey);
+                stringAppendStr(&buffer, TOKEN);
                 /* Pid history */
                 if (!pidHKey)
                     pidHKey = SOCKRES_PROPERTIES_ITEMS[PIDH].propertyName.desc;
-                stringConcat(&buffer, pidHKey);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, pidHKey);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->pid);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
                 /* Exit code history */
                 if (!exitCodeHKey)
                     exitCodeHKey = SOCKRES_PROPERTIES_ITEMS[EXITCODEH].propertyName.desc;
-                stringConcat(&buffer, exitCodeHKey);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, exitCodeHKey);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->exitCode);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
                 /* Process State History */
                 if (!pStateHKey)
                     pStateHKey = SOCKRES_PROPERTIES_ITEMS[PSTATEH].propertyName.desc;
-                stringConcat(&buffer, pStateHKey);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, pStateHKey);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, pData->pStateData->pState);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
                 /* Signal number History */
                 if (!signalNumHKey)
                     signalNumHKey = SOCKRES_PROPERTIES_ITEMS[SIGNALNUMH].propertyName.desc;
-                stringConcat(&buffer, signalNumHKey);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, signalNumHKey);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->signalNum);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
                 /* Final status History */
                 if (!finalStatusHKey)
                     finalStatusHKey = SOCKRES_PROPERTIES_ITEMS[FINALSTATUSH].propertyName.desc;
-                stringConcat(&buffer, finalStatusHKey);
-                stringConcat(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, finalStatusHKey);
+                stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->finalStatus);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, TOKEN);
                 /* Date time start history */
                 if (!datetimeStartHKey)
                     datetimeStartHKey = SOCKRES_PROPERTIES_ITEMS[DATETIMESTARTH].propertyName.desc;
-                stringConcat(&buffer, datetimeStartHKey);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, pData->dateTimeStartStr);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, datetimeStartHKey);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, pData->dateTimeStartStr);
+                stringAppendStr(&buffer, TOKEN);
                 /* Date time stop history */
                 if (!datetimeStopHKey)
                     datetimeStopHKey = SOCKRES_PROPERTIES_ITEMS[DATETIMESTOPH].propertyName.desc;
-                stringConcat(&buffer, datetimeStopHKey);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, pData->dateTimeStopStr);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, datetimeStopHKey);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, pData->dateTimeStopStr);
+                stringAppendStr(&buffer, TOKEN);
                 /* Duration history */
                 if (!durationKey)
                     durationKey = SOCKRES_PROPERTIES_ITEMS[DURATIONH].propertyName.desc;
-                stringConcat(&buffer, durationKey);
-                stringConcat(&buffer, ASSIGNER);
-                stringConcat(&buffer, pData->duration);
-                stringConcat(&buffer, TOKEN);
+                stringAppendStr(&buffer, durationKey);
+                stringAppendStr(&buffer, ASSIGNER);
+                stringAppendStr(&buffer, pData->duration);
+                stringAppendStr(&buffer, TOKEN);
             }
         }
     }

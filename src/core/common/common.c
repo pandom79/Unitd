@@ -641,8 +641,8 @@ showVersion()
     printf("  libunitd : ");
     logSuccess(CONSOLE, UNITD_VER);
     printf("\n");
-    printf("libwrapper : ");
-    logSuccess(CONSOLE, WRAPPER_VER);
+    printf("   libulib : ");
+    logSuccess(CONSOLE, ULIB_VER);
     printf("\n");
 }
 

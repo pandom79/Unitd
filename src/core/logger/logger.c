@@ -233,15 +233,15 @@ logError(int options, const char *transUnit, const char *funcName,
         if (!(*returnValueStr))
             sprintf(returnValueStr, "%d", returnValue);
         char *all = stringNew("An error has occurred! File = ");
-        stringConcat(&all, transUnit);
-        stringConcat(&all, ", Function = ");
-        stringConcat(&all, funcName);
-        stringConcat(&all, ", Return value = ");
-        stringConcat(&all, returnValueStr);
-        stringConcat(&all, ", Description = ");
-        stringConcat(&all, errDesc);
-        stringConcat(&all, ". ");
-        stringConcat(&all, format);
+        stringAppendStr(&all, transUnit);
+        stringAppendStr(&all, ", Function = ");
+        stringAppendStr(&all, funcName);
+        stringAppendStr(&all, ", Return value = ");
+        stringAppendStr(&all, returnValueStr);
+        stringAppendStr(&all, ", Description = ");
+        stringAppendStr(&all, errDesc);
+        stringAppendStr(&all, ". ");
+        stringAppendStr(&all, format);
         /* To 'va_start' function we pass 'format' to avoid compiler warning.
          * We can do that because the same "args" present in "format", are present in "all" as well.
          */
