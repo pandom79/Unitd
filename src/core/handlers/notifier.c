@@ -162,7 +162,7 @@ checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
         case PATH_RESOURCE_CHANGED_WATCHER:
             completeEventName = stringNew(unit->pathResourceChangedMonitor);
             stringAppendStr(&completeEventName, eventName);
-            if (strcmp(completeEventName, unit->pathResourceChanged) == 0)
+            if (stringEquals(completeEventName, unit->pathResourceChanged))
                 execUnit = true;
             break;
         case PATH_DIRECTORY_NOT_EMPTY_WATCHER:

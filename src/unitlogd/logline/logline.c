@@ -139,15 +139,15 @@ writeLogLine(char *buffer, LogLine **logLine)
     if (!line)
         line = stringNew((*logLine)->timeStamp);
     else
-        stringConcat(&line, (*logLine)->timeStamp);
+        stringAppendStr(&line, (*logLine)->timeStamp);
 
-    stringConcat(&line, " ");
-    stringConcat(&line, (*logLine)->hostName);
+    stringAppendStr(&line, " ");
+    stringAppendStr(&line, (*logLine)->hostName);
 
     /* Evaluating Kernel facility */
     if (stringStartsWithStr((*logLine)->fac, "kern")) {
         kernel = true;
-        stringConcat(&line, " kernel:");
+        stringAppendStr(&line, " kernel:");
         idx = stringIndexOfChr(buffer, ']') + 1;
     }
 
@@ -155,16 +155,16 @@ writeLogLine(char *buffer, LogLine **logLine)
     other = stringSub(buffer, idx, strlen(buffer) - 1);
     assert(other);
     stringLtrim(other, NULL);
-    stringConcat(&line, " ");
-    stringConcat(&line, other);
+    stringAppendStr(&line, " ");
+    stringAppendStr(&line, other);
 
     /* Reset color */
     if (error || warn)
-        stringConcat(&line, DEFAULT_COLOR);
+        stringAppendStr(&line, DEFAULT_COLOR);
 
     /* Adding new line */
     if (!stringEndsWithStr(line, NEW_LINE))
-        stringConcat(&line, NEW_LINE);
+        stringAppendStr(&line, NEW_LINE);
 
     if (UNITLOGD_DEBUG)
         logInfo(CONSOLE, "Log line: \n%s\n", line);

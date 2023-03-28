@@ -101,7 +101,7 @@ getStateByStr(char *stateArg)
         stateStr = stringNew(stateArg);
 
     for (int i = 0; i < STATE_DATA_ITEMS_LEN; i++) {
-        if (strcmp(stateStr, STATE_DATA_ITEMS[i].desc) == 0) {
+        if (stringEquals(stateStr, STATE_DATA_ITEMS[i].desc)) {
             ret = i;
             break;
         }
@@ -361,12 +361,12 @@ parseProcCmdLine()
             char *value = arrayGet(values, i);
             stringTrim(value, NULL);
             /* Unitd debug */
-            if (strcmp(value, PROC_CMDLINE_UNITD_DEBUG) == 0) {
+            if (stringEquals(value, PROC_CMDLINE_UNITD_DEBUG)) {
                 UNITD_DEBUG = true;
                 continue;
             }
             /* Single */
-            else if (strcmp(value, "single") == 0 || strcmp(value, STATE_DATA_ITEMS[SINGLE_USER].desc) == 0) {
+            else if (stringEquals(value, "single") || stringEquals(value, STATE_DATA_ITEMS[SINGLE_USER].desc)) {
                 STATE_CMDLINE = SINGLE_USER;
                 continue;
             }
@@ -374,7 +374,7 @@ parseProcCmdLine()
                 /* We exclude INIT, SINGLE (already handled), REBOOT,
                  * POWEROFF and FINAL STATE */
                 for (State state = MULTI_USER; state <= GRAPHICAL; state++) {
-                    if (strcmp(value, STATE_DATA_ITEMS[state].desc) == 0) {
+                    if (stringEquals(value, STATE_DATA_ITEMS[state].desc)) {
                         STATE_CMDLINE = state;
                         break;
                     }

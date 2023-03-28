@@ -43,7 +43,7 @@ addSocketThread(Array **socketThreads, const char *devName)
     assert(devName);
     SocketThread *socketThread = socketThreadNew();
     socketThread->devName = stringNew(devName);
-    if (strcmp(devName, DEV_LOG_NAME) == 0)
+    if (stringEquals(devName, DEV_LOG_NAME))
         socketThread->sockType = UNIX;
     else
         socketThread->sockType = FORWARDER;

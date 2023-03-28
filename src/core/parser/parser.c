@@ -208,7 +208,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
     if (!value) {
         for (int i = 0; i < PARSER_SECTIONS_ITEMS_LEN; i++) {
             currentSectionData =  &PARSER_SECTIONS_ITEMS[i];
-            if (strcmp(key, currentSectionData->sectionName.desc) == 0) {
+            if (stringEquals(key, currentSectionData->sectionName.desc)) {
                 /* Setting the current section */
                 SECTION_CURRENT = i;
                 /* Incrementing the counter */
@@ -222,7 +222,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
         /* Check property name */
         for (int i = 0; i < PARSER_PROPERTIES_ITEMS_LEN; i++) {
             currentPropertyData = &PARSER_PROPERTIES_ITEMS[i];
-            if (strcmp(key, currentPropertyData->propertyName.desc) == 0) {
+            if (stringEquals(key, currentPropertyData->propertyName.desc)) {
                 *propertyData = currentPropertyData;
                 /* Incrementing the counter */
                 currentPropertyData->propertyCount++;
@@ -270,7 +270,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
             }
             else {
                 /* Check empty value */
-                if (strcmp(value, "") == 0) {
+                if (stringEquals(value, "")) {
                     error = getMsg(numLine, ERRORS_ITEMS[EMPTY_VALUE_ERR].desc,
                                    key);
                     return error;
@@ -284,7 +284,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
                 /* Check if the property has the default values */
                 if ((acceptedValues = currentPropertyData->acceptedValues)) {
                     while (*acceptedValues) {
-                        if (strcmp(value, *acceptedValues) == 0) {
+                        if (stringEquals(value, *acceptedValues)) {
                             valueFound = true;
                             break;
                         }
@@ -300,7 +300,7 @@ checkKeyVal(char *key, char *value, int numLine, PropertyData **propertyData)
                 if ((notDupValues = currentPropertyData->notDupValues)) {
                     size = notDupValues->size;
                     for (int i = 0; i < size; i++) {
-                        if (strcmp(value, arrayGet(notDupValues, i)) == 0) {
+                        if (stringEquals(value, arrayGet(notDupValues, i))) {
                             isDuplicate = true;
                             break;
                         }

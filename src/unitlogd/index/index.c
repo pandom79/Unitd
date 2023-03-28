@@ -140,7 +140,7 @@ getIndex(Array **index, bool isIndex)
                     bootId = stringNew(value);
                 /* The stop entry 'bootId' value must match the
                  * 'bootId' value of the just previous start entry */
-                if (!isStartEntry && strcmp(value, bootId) != 0) {
+                if (!isStartEntry && !stringEquals(value, bootId)) {
                     rv = 1;
                     logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
                              strerror(rv), "The '%s' bootId at line %d doesn't match the previous '%s' bootId at line %d",
@@ -230,39 +230,39 @@ writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
 
     if (isStarting)
         /* For the indentation */
-        stringConcat(&buffer, " ");
+        stringAppendStr(&buffer, " ");
 
     /* BOOT ID */
-    stringConcat(&buffer, TOKEN_ENTRY);
-    stringConcat(&buffer, indexEntry->bootId);
-    stringConcat(&buffer, TOKEN_ENTRY);
+    stringAppendStr(&buffer, TOKEN_ENTRY);
+    stringAppendStr(&buffer, indexEntry->bootId);
+    stringAppendStr(&buffer, TOKEN_ENTRY);
 
     if (isStarting) {
         /* START TIME */
         sprintf(timeStr, "%lu", *indexEntry->start->sec);
         assert(strlen(timeStr) > 0);
-        stringConcat(&buffer, timeStr);
+        stringAppendStr(&buffer, timeStr);
 
         /* START OFFSET */
         if (isIndex) {
-            stringConcat(&buffer, TOKEN_ENTRY);
-            stringConcat(&buffer, indexEntry->startOffset);
+            stringAppendStr(&buffer, TOKEN_ENTRY);
+            stringAppendStr(&buffer, indexEntry->startOffset);
         }
     }
     else {
         /* STOP TIME */
         sprintf(timeStr, "%lu", *indexEntry->stop->sec);
         assert(strlen(timeStr) > 0);
-        stringConcat(&buffer, timeStr);
+        stringAppendStr(&buffer, timeStr);
 
         /* STOP OFFSET */
         if (isIndex) {
-            stringConcat(&buffer, TOKEN_ENTRY);
-            stringConcat(&buffer, indexEntry->stopOffset);
+            stringAppendStr(&buffer, TOKEN_ENTRY);
+            stringAppendStr(&buffer, indexEntry->stopOffset);
         }
     }
     /* NEW LINE */
-    stringConcat(&buffer, NEW_LINE);
+    stringAppendStr(&buffer, NEW_LINE);
 
     logEntry(isIndex ? &UNITLOGD_INDEX_FILE : &UNITLOGD_LOG_FILE, buffer);
 

@@ -26,7 +26,7 @@ getUlCommand(const char *commandName)
 {
     assert(commandName);
     for (int i = 0; i < UL_COMMAND_DATA_LEN; i++) {
-        if (strcmp(commandName, UL_COMMAND_DATA[i].name) == 0)
+        if (stringEquals(commandName, UL_COMMAND_DATA[i].name))
             return i;
     }
     return NO_UL_COMMAND;

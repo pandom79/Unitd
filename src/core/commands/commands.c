@@ -535,7 +535,7 @@ execUScript(Array **envVars, const char *operation)
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd.sh", scriptParams->arr, (*envVars)->arr);
 
     /* We exclude the following test for "virtualization" operation */
-    if (strcmp(operation, "virtualization") != 0 && rv != 0)
+    if (stringEquals(operation, "virtualization") && rv != 0)
         logError(CONSOLE | SYSTEM, "src/core/commands/commands.c", "execUScript", rv, strerror(rv),
                  "ExecScript error for the '%s' operation", operation);
 

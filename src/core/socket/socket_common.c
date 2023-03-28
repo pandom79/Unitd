@@ -13,7 +13,7 @@ getCommand(const char *command)
 {
     assert(command);
     for (int i = 0; i < COMMANDS_LEN; i++) {
-        if (strcmp(command, COMMANDS_DATA[i].name) == 0)
+        if (stringEquals(command, COMMANDS_DATA[i].name))
             return i;
     }
     return NO_COMMAND;
@@ -331,7 +331,7 @@ getListFilterByOpt(Array *options)
     for (int i = 0; i < len; i++) {
         listFilterOpt = arrayGet(options, i);
         for (ListFilter listFilter = ENABLED_FILTER; listFilter <= UPATH_FILTER; listFilter++) {
-            if (strcmp(listFilterOpt, LIST_FILTER_DATA[listFilter].desc) == 0) {
+            if (stringEquals(listFilterOpt, LIST_FILTER_DATA[listFilter].desc)) {
                 return listFilter;
             }
         }

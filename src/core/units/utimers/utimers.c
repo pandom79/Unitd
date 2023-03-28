@@ -545,7 +545,7 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
                             checkConflicts(unit, value, isAggregate);
                         break;
                     case WAKESYSTEM:
-                        if (strcmp(value, BOOL_VALUES[true]) == 0) {
+                        if (stringEquals(value, BOOL_VALUES[true])) {
                             (*unit)->wakeSystem = calloc(1, sizeof(bool));
                             assert((*unit)->wakeSystem);
                             *(*unit)->wakeSystem = true;

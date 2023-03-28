@@ -580,7 +580,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         unitDisplay->name = stringNew(value);
                         break;
                     case DESC:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             unitDisplay->desc = NULL;
                         else
                             unitDisplay->desc = stringNew(value);
@@ -620,7 +620,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         unitDisplay->restartNum = atoi(value);
                         break;
                     case RESTARTMAX:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             unitDisplay->restartMax = -1;
                         else
                             unitDisplay->restartMax = atoi(value);
@@ -634,13 +634,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         arrayAdd(*unitErrors, stringNew(value));
                         break;
                     case PID:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pData->pid = -1;
                         else
                             *pData->pid = atoi(value);
                         break;
                     case EXITCODE:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pData->exitCode = -1;
                         else
                             *pData->exitCode = atoi(value);
@@ -649,31 +649,31 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         *pData->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
                         break;
                     case SIGNALNUM:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pData->signalNum = -1;
                         else
                             *pData->signalNum = atoi(value);
                         break;
                     case FINALSTATUS:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pData->finalStatus = FINAL_STATUS_READY;
                         else
                             *pData->finalStatus = atoi(value);
                         break;
                     case DATETIMESTART:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             pData->dateTimeStartStr = NULL;
                         else
                             pData->dateTimeStartStr = stringNew(value);
                         break;
                     case DATETIMESTOP:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             pData->dateTimeStopStr = NULL;
                         else
                             pData->dateTimeStopStr = stringNew(value);
                         break;
                     case DURATION:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             pData->duration = NULL;
                         else
                             pData->duration = stringNew(value);
@@ -682,13 +682,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         unitDisplay->intervalStr = stringNew(value);
                         break;
                     case PIDH:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pDataHistory->pid = -1;
                         else
                             *pDataHistory->pid = atoi(value);
                         break;
                     case EXITCODEH:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pDataHistory->exitCode = -1;
                         else
                             *pDataHistory->exitCode = atoi(value);
@@ -697,13 +697,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         *pDataHistory->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
                         break;
                     case SIGNALNUMH:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pDataHistory->signalNum = -1;
                         else
                             *pDataHistory->signalNum = atoi(value);
                         break;
                     case FINALSTATUSH:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             *pDataHistory->finalStatus = FINAL_STATUS_READY;
                         else
                             *pDataHistory->finalStatus = atoi(value);
@@ -712,13 +712,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         pDataHistory->dateTimeStartStr = stringNew(value);
                         break;
                     case DATETIMESTOPH:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             pDataHistory->dateTimeStopStr = NULL;
                         else
                             pDataHistory->dateTimeStopStr = stringNew(value);
                         break;
                     case DURATIONH:
-                        if (strcmp(value, NONE) == 0)
+                        if (stringEquals(value, NONE))
                             pDataHistory->duration = NULL;
                         else
                             pDataHistory->duration = stringNew(value);

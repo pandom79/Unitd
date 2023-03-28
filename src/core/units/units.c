@@ -142,7 +142,7 @@ PType
 getPTypeByPTypeStr(const char *typeStr)
 {
     for (PType i = DAEMON; i <= ONESHOT; i++) {
-        if (strcmp(typeStr, PTYPE_DATA_ITEMS[i].desc) == 0)
+        if (stringEquals(typeStr, PTYPE_DATA_ITEMS[i].desc))
             return i;
     }
     return NO_PROCESS_TYPE;
@@ -169,7 +169,7 @@ getUnitByName(Array *units, const char *unitName)
     int len = (units ? units->size : 0);
     for (int i = 0; i < len; i++) {
         unit = arrayGet(units, i);
-        if (strcmp(unit->name, unitName) == 0)
+        if (stringEquals(unit->name, unitName))
             return unit;
     }
     return NULL;
@@ -561,7 +561,7 @@ checkConflicts(Unit **currentUnit, const char *conflictName, bool isAggregate)
     errors = (*currentUnit)->errors;
 
     /* The unit cannot be in conflict with itself */
-    if (strcmp(conflictName, currentUnitName) == 0) {
+    if (stringEquals(conflictName, currentUnitName)) {
         rv = 1;
         arrayAdd(errors, getMsg(-1, UNITS_ERRORS_ITEMS[CONFLICT_ITSELF_ERR].desc,
                                 currentUnitName));
@@ -608,7 +608,7 @@ checkRequires(Array **units, Unit **currentUnit, bool isAggregate)
         depName = arrayGet(deps, i);
         assert(depName);
         /* The unit cannot depend by itself */
-        if (strcmp(depName, currentUnitName) == 0) {
+        if (stringEquals(depName, currentUnitName)) {
             rv = 1;
             arrayAdd(errors, getMsg(-1, UNITS_ERRORS_ITEMS[REQUIRE_ITSELF_ERR].desc,
                                       currentUnitName));
@@ -1013,13 +1013,13 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
                         break;
                     case TYPE:
                         /* If the type is different than default */
-                        if (strcmp(value, PTYPE_DATA_ITEMS[DAEMON].desc) != 0)
+                        if (!stringEquals(value, PTYPE_DATA_ITEMS[DAEMON].desc))
                             (*unit)->type = getPTypeByPTypeStr(value);
                         break;
                     case RESTART:
-                        if (strcmp(value, BOOL_VALUES[true]) == 0)
+                        if (stringEquals(value, BOOL_VALUES[true]))
                             (*unit)->restart = true;
-                        else if (strcmp(value, BOOL_VALUES[false]) == 0)
+                        else if (stringEquals(value, BOOL_VALUES[false]))
                             (*unit)->restart = false;
                         break;
                     case RESTART_MAX:

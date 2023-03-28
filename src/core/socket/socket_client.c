@@ -539,21 +539,21 @@ getMaxLen(Array *unitsDisplay, const char *param)
     lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
     for (int i = 0; i < lenUnits; i++) {
         unit = arrayGet(unitsDisplay, i);
-        if (strcmp(param, "name") == 0) {
+        if (stringEquals(param, "name")) {
             if ((len = strlen(unit->name)) > rv)
                 rv = len;
         }
-        else if (strcmp(param, "duration") == 0) {
+        else if (stringEquals(param, "duration")) {
             duration = unit->processData->duration;
             if (duration && (len = strlen(duration)))
                 rv = len;
         }
-        else if (strcmp(param, "desc") == 0) {
+        else if (stringEquals(param, "desc")) {
             desc = unit->desc;
             if (desc && (len = strlen(desc)) > rv)
                 rv = len;
         }
-        else if (strcmp(param, "leftTime") == 0) {
+        else if (stringEquals(param, "leftTime")) {
             leftTime = unit->leftTimeDuration;
             if (leftTime && (len = strlen(leftTime)) > rv)
                 rv = len;
@@ -1224,7 +1224,7 @@ showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 printf("%*s ", MAX_LEN_KEY, "Status :");
                 printStatus(pState, status, *finalStatus, true);
                 /* Date time start */
-                if (dateTimeStart && strcmp(dateTimeStart, NONE) != 0)
+                if (dateTimeStart && !stringEquals(dateTimeStart, NONE))
                     printf("%*s %s\n", MAX_LEN_KEY, "Started at :", dateTimeStart);
                 /* Date time stop */
                 if (dateTimeStop)
