@@ -26,7 +26,7 @@ Run ```man unitd``` to consult the manual page.<br/>
 
 ### Dependencies
 
-- [Wrapper](https://github.com/pandom79/wrapper) library
+- [Ulib](https://github.com/pandom79/Ulib) library
 - A POSIX thread library
 - A POSIX shell
 - A POSIX awk
