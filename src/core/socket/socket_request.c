@@ -19,24 +19,28 @@ Option=valueN|
 
 */
 
-//CONFIGURING THE PARSER ACCORDING THE COMMUNICATION PROTOCOL
-
 /* Properties */
-enum PropertyNameEnum  {
+typedef enum {
     COMMAND = 0,
     ARG = 1,
     OPTION = 2,
-};
+} Keys;
 
-/* Properties */
-int SOCKREQ_PROPERTIES_ITEMS_LEN = 3;
-PropertyData SOCKREQ_PROPERTIES_ITEMS[] = {
-    { NO_SECTION, { COMMAND, "Command" }, false, true, false, 0, NULL, NULL },
-    { NO_SECTION, { ARG, "Arg" }, false, false, false, 0, NULL, NULL },
-    { NO_SECTION, { OPTION, "Option" }, true, false, false, 0, NULL, NULL },
-};
-
-//END PARSER CONFIGURATION
+static const char*
+asStr(Keys key)
+{
+    assert(key >= COMMAND);
+    switch (key) {
+        case COMMAND:
+            return "Command";
+        case ARG:
+            return "Arg";
+        case OPTION:
+            return "Option";
+        default:
+            return "";
+    }
+}
 
 char*
 marshallRequest(SockMessageIn *sockMessageIn)
@@ -53,7 +57,7 @@ marshallRequest(SockMessageIn *sockMessageIn)
     assert(sockMessageIn->command != NO_COMMAND);
 
     /* Command */
-    buffer = stringNew(SOCKREQ_PROPERTIES_ITEMS[COMMAND].propertyName.desc);
+    buffer = stringNew(asStr(COMMAND));
     stringAppendStr(&buffer, ASSIGNER);
     sprintf(commandStr, "%d", sockMessageIn->command);
     stringAppendStr(&buffer, commandStr);
@@ -61,7 +65,7 @@ marshallRequest(SockMessageIn *sockMessageIn)
     /* Unit name */
     arg = sockMessageIn->arg;
     if (sockMessageIn->arg) {
-        stringAppendStr(&buffer, SOCKREQ_PROPERTIES_ITEMS[ARG].propertyName.desc);
+        stringAppendStr(&buffer, asStr(ARG));
         stringAppendStr(&buffer, ASSIGNER);
         stringAppendStr(&buffer, arg);
         stringAppendStr(&buffer, TOKEN);
@@ -70,7 +74,7 @@ marshallRequest(SockMessageIn *sockMessageIn)
     options = sockMessageIn->options;
     len = (options ? options->size : 0);
     if (len > 0)
-        optionKey = SOCKREQ_PROPERTIES_ITEMS[OPTION].propertyName.desc;
+        optionKey = asStr(OPTION);
     for (int i = 0; i < len; i++) {
         stringAppendStr(&buffer, optionKey);
         stringAppendStr(&buffer, ASSIGNER);
@@ -84,73 +88,54 @@ marshallRequest(SockMessageIn *sockMessageIn)
 int
 unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
 {
-    Array *entries, *lineData, **options, *errors;
-    int rv, len, errorsSize;
-    PropertyData *propertyData = NULL;
-    char *value, *error;
+    Array *entries, **options, *keyval;
+    int rv, len;
+    char *value, *entry, *key;
 
-    rv = len = errorsSize = 0;
-    entries = lineData = NULL;
-    value = error = NULL;
-    errors = NULL;
+    rv = len = 0;
+    entries = NULL;
+    value = entry = key = NULL;
 
     assert(buffer);
     assert(sockMessageIn);
     options = &(*sockMessageIn)->options;
 
-    /* Parser init */
-    parserInit(PARSE_SOCK_REQUEST);
-
-    /* Get the entries (simulating the file lines) */
+    /* Get the entries */
     entries = stringSplit(buffer, TOKEN, true);
     len = (entries ? entries->size : 0);
     for (int i = 0; i < len; i++) {
-        rv = parseLine(arrayGet(entries, i), i + 1, &lineData, &propertyData);
-        if (lineData) {
-            if (rv != 0) {
-                error = arrayGet(lineData, 2);
-                assert(error);
-                logErrorStr(SYSTEM, "An error has occurred in unmarshallRequest! Error = %s", error);
-                logErrorStr(SYSTEM, "Buffer =  %s", buffer);
-                goto out;
-            }
-            if ((value = arrayGet(lineData, 1))) {
-                switch (propertyData->propertyName.propertyNameEnum) {
-                    case COMMAND:
-                        (*sockMessageIn)->command = atoi(value);
-                        break;
-                    case ARG:
-                        (*sockMessageIn)->arg = stringNew(value);
-                        break;
-                    case OPTION:
-                        if (!(*options))
-                            *options = arrayNew(objectRelease);
-                        arrayAdd(*options, stringNew(value));
-                        break;
-                    default:
-                        break;
-                }
-            }
+        entry = arrayGet(entries, i);
+        /* Each entry has "Key(0)=Value(1)" format. */
+        keyval = stringSplit(entry, ASSIGNER, false);
+        key = arrayGet(keyval, 0);
+        value = arrayGet(keyval, 1);
+        if (stringEquals(asStr(COMMAND), key)) {
+            (*sockMessageIn)->command = atoi(value);
+            goto next;
         }
-        arrayRelease(&lineData);
-    }
+        if (stringEquals(asStr(ARG), key)) {
+            (*sockMessageIn)->arg = stringNew(value);
+            goto next;
+        }
+        if (stringEquals(asStr(OPTION), key)) {
+            if (!(*options))
+                *options = arrayNew(objectRelease);
+            arrayAdd(*options, stringNew(value));
+            goto next;
+        }
+        // Should never happen
+        logError(CONSOLE | SYSTEM, "src/core/socket/socket_request.c", "unmarshallRequest", EPERM,
+                 strerror(EPERM), "Property %s not found!", key);
+        arrayRelease(&keyval);
+        rv = EPERM;
+        goto out;
 
-    /* Parser end */
-    parserEnd(&errors, true);
-    /* These errors should never occurred */
-    errorsSize = (errors  ? errors->size : 0);
-    if (errorsSize > 0) {
-        syslog(LOG_DAEMON | LOG_ERR, "The parserEnd func in unmarshallRequest func returned "
-                                     "the following errors:\n");
-        for (int i = 0; i < errorsSize; i++) {
-            syslog(LOG_DAEMON | LOG_ERR, "Error %d = %s", i, (char *)arrayGet(errors, i));
-        }
-        rv = 1;
+        next:
+            arrayRelease(&keyval);
+            continue;
     }
 
     out:
-        arrayRelease(&errors);
-        arrayRelease(&lineData);
         arrayRelease(&entries);
         return rv;
 }

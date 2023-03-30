@@ -7,6 +7,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
 #include "../unitd_impl.h"
+
 /* COMMUNICATION PROTOCOL (RESPONSE) ACCORDING THE PARSER FUNCTIONALITY */
 
 /* PARSE_SOCK_RESPONSE_UNITLIST functionality
@@ -86,98 +87,128 @@ DurationH=value         (optional and repeatable)
 
 */
 
-//CONFIGURING THE PARSER ACCORDING THE COMMUNICATION PROTOCOL
-
-enum SectionNameEnum  {
-  UNIT = 0,
-  PDATAHISTORY = 1,
-};
-
 /* Properties */
-enum PropertyNameEnum  {
-    MESSAGE = 0,
-    ERROR = 1,
-    NAME = 2,
-    ENABLED = 3,
-    PID = 4,
-    PSTATE = 5,
-    FINALSTATUS = 6,
-    DESC = 7,
-    DURATION = 8,
-    RESTARTNUM = 9,
-    RESTARTABLE = 10,
-    TYPE = 11,
-    NEXTTIMEDATE = 12,
-    LEFTTIMEDURATION = 13,
-    TIMERNAME = 14,
-    TIMERPSTATE = 15,
-    PATHUNITNAME = 16,
-    PATHUNITPSTATE = 17,
-    PATH = 18,
-    RESTARTMAX = 19,
-    UNITERROR = 20,
-    EXITCODE = 21,
-    SIGNALNUM = 22,
-    DATETIMESTART = 23,
-    DATETIMESTOP = 24,
-    INTERVAL = 25,
-    PIDH = 26,
-    EXITCODEH = 27,
-    PSTATEH = 28,
-    SIGNALNUMH = 29,
-    FINALSTATUSH = 30,
-    DATETIMESTARTH = 31,
-    DATETIMESTOPH = 32,
-    DURATIONH = 33
-};
+typedef enum {
+    UNIT_SEC = 0,
+    MESSAGE = 1,
+    ERROR = 2,
+    NAME = 3,
+    ENABLED = 4,
+    PID = 5,
+    PSTATE = 6,
+    FINALSTATUS = 7,
+    DESC = 8,
+    DURATION = 9,
+    RESTARTNUM = 10,
+    RESTARTABLE = 11,
+    TYPE = 12,
+    NEXTTIMEDATE = 13,
+    LEFTTIMEDURATION = 14,
+    TIMERNAME = 15,
+    TIMERPSTATE = 16,
+    PATHUNITNAME = 17,
+    PATHUNITPSTATE = 18,
+    PATH = 19,
+    RESTARTMAX = 20,
+    UNITERROR = 21,
+    EXITCODE = 22,
+    SIGNALNUM = 23,
+    DATETIMESTART = 24,
+    DATETIMESTOP = 25,
+    INTERVAL = 26,
+    PDATAHISTORY_SEC = 27,
+    PIDH = 28,
+    EXITCODEH = 29,
+    PSTATEH = 30,
+    SIGNALNUMH = 31,
+    FINALSTATUSH = 32,
+    DATETIMESTARTH = 33,
+    DATETIMESTOPH = 34,
+    DURATIONH = 35
+} Keys;
 
-/* Sections */
-int SOCKRES_SECTIONS_ITEMS_LEN = 2;
-SectionData SOCKRES_SECTIONS_ITEMS[] = {
-    { { UNIT, "[Unit]" }, true, false, 0 },
-    { { PDATAHISTORY, "[PDataHistory]" }, true, false, 0 },
-};
+static const char*
+asStr(Keys key)
+{
+    assert(key >= UNIT_SEC);
+    switch (key) {
+        case UNIT_SEC:
+            return "[Unit]";
+        case PDATAHISTORY_SEC:
+            return "[PDataHistory]";
+        case MESSAGE:
+            return "Message";
+        case ERROR:
+            return "Error";
+        case NAME:
+            return "Name";
+        case ENABLED:
+            return "Enabled";
+        case PID:
+            return "Pid";
+        case PSTATE:
+            return "PState";
+        case FINALSTATUS:
+            return "FinalStatus";
+        case DESC:
+            return "Desc";
+        case DURATION:
+            return "Duration";
+        case RESTARTNUM:
+            return "RestartNum";
+        case RESTARTABLE:
+            return "Restartable";
+        case TYPE:
+            return "Type";
+        case NEXTTIMEDATE:
+            return "NextTimeDate";
+        case LEFTTIMEDURATION:
+            return "LeftTimeDuration";
+        case TIMERNAME:
+            return "TimerName";
+        case TIMERPSTATE:
+            return "TimerPState";
+        case PATHUNITNAME:
+            return "PathUnitName";
+        case PATHUNITPSTATE:
+            return "PathUnitPState";
+        case PATH:
+            return "Path";
+        case RESTARTMAX:
+            return "RestartMax";
+        case UNITERROR:
+            return "UnitError";
+        case EXITCODE:
+            return "ExitCode";
+        case SIGNALNUM:
+            return "SignalNum";
+        case DATETIMESTART:
+            return "DateTimeStart";
+        case DATETIMESTOP:
+            return "DateTimeStop";
+        case INTERVAL:
+            return "Interval";
+        case PIDH:
+            return "PidH";
+        case EXITCODEH:
+            return "ExitCodeH";
+        case PSTATEH:
+            return "PStateH";
+        case SIGNALNUMH:
+            return "SignalNumH";
+        case FINALSTATUSH:
+            return "FinalStatusH";
+        case DATETIMESTARTH:
+            return "DateTimeStartH";
+        case DATETIMESTOPH:
+            return "DateTimeStopH";
+        case DURATIONH:
+            return "DurationH";
+        default:
+            return "";
+    }
 
-/* Properties */
-int SOCKRES_PROPERTIES_ITEMS_LEN = 34;
-PropertyData SOCKRES_PROPERTIES_ITEMS[] = {
-    { NO_SECTION, { MESSAGE, "Message" }, true, false, false, 0, NULL, NULL },
-    { NO_SECTION, { ERROR, "Error" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { NAME, "Name" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { ENABLED, "Enabled" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { PID, "Pid" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { PSTATE, "PState" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { FINALSTATUS, "FinalStatus" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { DESC, "Desc" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { DURATION, "Duration" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { RESTARTNUM, "RestartNum" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { RESTARTABLE, "Restartable" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { TYPE, "Type" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { NEXTTIMEDATE, "NextTimeDate" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { LEFTTIMEDURATION, "LeftTimeDuration" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { TIMERNAME, "TimerName" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { TIMERPSTATE, "TimerPState" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { PATHUNITNAME, "PathUnitName" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { PATHUNITPSTATE, "PathUnitPState" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { PATH, "Path" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { RESTARTMAX, "RestartMax" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { UNITERROR, "UnitError" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { EXITCODE, "ExitCode" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { SIGNALNUM, "SignalNum" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { DATETIMESTART, "DateTimeStart" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { DATETIMESTOP, "DateTimeStop" }, true, false, false, 0, NULL, NULL },
-    { UNIT, { INTERVAL, "Interval" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { PIDH, "PidH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { EXITCODEH, "ExitCodeH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { PSTATEH, "PStateH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { SIGNALNUMH, "SignalNumH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { FINALSTATUSH, "FinalStatusH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { DATETIMESTARTH, "DateTimeStartH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { DATETIMESTOPH, "DateTimeStopH" }, true, false, false, 0, NULL, NULL },
-    { PDATAHISTORY, { DURATIONH, "DurationH" }, true, false, false, 0, NULL, NULL }
-};
-
-//END PARSER CONFIGURATION
+}
 
 char*
 marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
@@ -208,7 +239,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
     messages = sockMessageOut->messages;
     len = (messages ? messages->size : 0);
     if (len > 0)
-        msgKey = SOCKRES_PROPERTIES_ITEMS[MESSAGE].propertyName.desc;
+        msgKey = asStr(MESSAGE);
     for (int i = 0; i < len; i++) {
         if (i == 0 && !buffer)
             buffer = stringNew(msgKey);
@@ -224,7 +255,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
     errors = sockMessageOut->errors;
     len = (errors ? errors->size : 0);
     if (len > 0)
-        errKey = SOCKRES_PROPERTIES_ITEMS[ERROR].propertyName.desc;
+        errKey = asStr(ERROR);
     for (int i = 0; i < len; i++) {
         if (i == 0 && !buffer)
             buffer = stringNew(errKey);
@@ -246,9 +277,9 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
 
         /* Unit section */
         if (i == 0 && !buffer)
-            buffer = stringNew(SOCKRES_SECTIONS_ITEMS[UNIT].sectionName.desc);
+            buffer = stringNew(asStr(UNIT_SEC));
         else
-            stringAppendStr(&buffer, SOCKRES_SECTIONS_ITEMS[UNIT].sectionName.desc);
+            stringAppendStr(&buffer, asStr(UNIT_SEC));
 
         stringAppendStr(&buffer, TOKEN);
 
@@ -257,39 +288,39 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         */
 
         /* Name */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[NAME].propertyName.desc);
+        stringAppendStr(&buffer, asStr(NAME));
         stringAppendStr(&buffer, ASSIGNER);
         stringAppendStr(&buffer, unit->name);
         stringAppendStr(&buffer, TOKEN);
         /* Enabled */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[ENABLED].propertyName.desc);
+        stringAppendStr(&buffer, asStr(ENABLED));
         stringAppendStr(&buffer, ASSIGNER);
         stringAppendStr(&buffer, (unit->enabled ? "1" : "0"));
         stringAppendStr(&buffer, TOKEN);
         /* Pid */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PID].propertyName.desc);
+        stringAppendStr(&buffer, asStr(PID));
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, *pData->pid);
         stringAppendStr(&buffer, TOKEN);
         /* Process State */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PSTATE].propertyName.desc);
+        stringAppendStr(&buffer, asStr(PSTATE));
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, pData->pStateData->pState);
         stringAppendStr(&buffer, TOKEN);
         /* Final Status */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[FINALSTATUS].propertyName.desc);
+        stringAppendStr(&buffer, asStr(FINALSTATUS));
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, *pData->finalStatus);
         stringAppendStr(&buffer, TOKEN);
         /* Description */
         unitDesc = unit->desc;
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DESC].propertyName.desc);
+        stringAppendStr(&buffer, asStr(DESC));
         stringAppendStr(&buffer, ASSIGNER);
         stringAppendStr(&buffer, (unitDesc ? unitDesc : NONE));
         stringAppendStr(&buffer, TOKEN);
         /* Duration */
         duration = pData->duration;
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DURATION].propertyName.desc);
+        stringAppendStr(&buffer, asStr(DURATION));
         stringAppendStr(&buffer, ASSIGNER);
         if (duration)
             stringAppendStr(&buffer, duration);
@@ -306,24 +337,24 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         }
         stringAppendStr(&buffer, TOKEN);
         /* RestartNum */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTNUM].propertyName.desc);
+        stringAppendStr(&buffer, asStr(RESTARTNUM));
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, unit->restartNum);
         stringAppendStr(&buffer, TOKEN);
         /* Restartable */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTABLE].propertyName.desc);
+        stringAppendStr(&buffer, asStr(RESTARTABLE));
         stringAppendStr(&buffer, ASSIGNER);
         stringAppendStr(&buffer, ((unit->restart || unit->restartMax > 0) ? "1" : "0"));
         stringAppendStr(&buffer, TOKEN);
         /* Type */
-        stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[TYPE].propertyName.desc);
+        stringAppendStr(&buffer, asStr(TYPE));
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, unit->type);
         stringAppendStr(&buffer, TOKEN);
         /* Next time (date) */
         char *nextTimeDate = unit->nextTimeDate;
         if (nextTimeDate && strlen(nextTimeDate) > 0) {
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[NEXTTIMEDATE].propertyName.desc);
+            stringAppendStr(&buffer, asStr(NEXTTIMEDATE));
             stringAppendStr(&buffer, ASSIGNER);
             stringAppendStr(&buffer, nextTimeDate);
             stringAppendStr(&buffer, TOKEN);
@@ -332,7 +363,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         char *leftTimeDuration = unit->leftTimeDuration;
         if (leftTimeDuration && strlen(leftTimeDuration) > 0) {
             setLeftTimeAndDuration(&unit);
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[LEFTTIMEDURATION].propertyName.desc);
+            stringAppendStr(&buffer, asStr(LEFTTIMEDURATION));
             stringAppendStr(&buffer, ASSIGNER);
             stringAppendStr(&buffer, leftTimeDuration);
             stringAppendStr(&buffer, TOKEN);
@@ -342,7 +373,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             /* Timer name */
             char *timerName = unit->timerName;
             if (timerName) {
-                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERNAME].propertyName.desc);
+                stringAppendStr(&buffer, asStr(TIMERNAME));
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, timerName);
                 stringAppendStr(&buffer, TOKEN);
@@ -350,7 +381,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             /* Timer process state */
             PState *timerPState = unit->timerPState;
             if (timerPState) {
-                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[TIMERPSTATE].propertyName.desc);
+                stringAppendStr(&buffer, asStr(TIMERPSTATE));
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *timerPState);
                 stringAppendStr(&buffer, TOKEN);
@@ -358,7 +389,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             /* Path unit name */
             char *pathUnitName = unit->pathUnitName;
             if (pathUnitName) {
-                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITNAME].propertyName.desc);
+                stringAppendStr(&buffer, asStr(PATHUNITNAME));
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, pathUnitName);
                 stringAppendStr(&buffer, TOKEN);
@@ -366,19 +397,19 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             /* Path unit process state */
             PState *pathUnitPState = unit->pathUnitPState;
             if (pathUnitPState) {
-                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PATHUNITPSTATE].propertyName.desc);
+                stringAppendStr(&buffer, asStr(PATHUNITPSTATE));
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pathUnitPState);
                 stringAppendStr(&buffer, TOKEN);
             }
             /* Path */
             unitPath = unit->path;
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[PATH].propertyName.desc);
+            stringAppendStr(&buffer, asStr(PATH));
             stringAppendStr(&buffer, ASSIGNER);
             stringAppendStr(&buffer, (unitPath ? unitPath : NONE));
             stringAppendStr(&buffer, TOKEN);
             /* RestartMax */
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[RESTARTMAX].propertyName.desc);
+            stringAppendStr(&buffer, asStr(RESTARTMAX));
             stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, unit->restartMax);
             stringAppendStr(&buffer, TOKEN);
@@ -387,25 +418,25 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             lenUnitErrors = (unitErrors ? unitErrors->size : 0);
             for (int j = 0; j < lenUnitErrors; j++) {
                 if (!unitErrorKey)
-                    unitErrorKey = SOCKRES_PROPERTIES_ITEMS[UNITERROR].propertyName.desc;
+                    unitErrorKey = asStr(UNITERROR);
                 stringAppendStr(&buffer, unitErrorKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, arrayGet(unitErrors, j));
                 stringAppendStr(&buffer, TOKEN);
             }
             /* Exit code */
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[EXITCODE].propertyName.desc);
+            stringAppendStr(&buffer, asStr(EXITCODE));
             stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, *pData->exitCode);
             stringAppendStr(&buffer, TOKEN);
             /* Signal Num */
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[SIGNALNUM].propertyName.desc);
+            stringAppendStr(&buffer, asStr(SIGNALNUM));
             stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, *pData->signalNum);
             stringAppendStr(&buffer, TOKEN);
             /* Date Time Start */
             dateTimeStart = pData->dateTimeStartStr;
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTART].propertyName.desc);
+            stringAppendStr(&buffer, asStr(DATETIMESTART));
             stringAppendStr(&buffer, ASSIGNER);
             if (dateTimeStart)
                 stringAppendStr(&buffer, dateTimeStart);
@@ -414,7 +445,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringAppendStr(&buffer, TOKEN);
             /* Date Time Stop */
             dateTimeStop = pData->dateTimeStopStr;
-            stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[DATETIMESTOP].propertyName.desc);
+            stringAppendStr(&buffer, asStr(DATETIMESTOP));
             stringAppendStr(&buffer, ASSIGNER);
             if (dateTimeStop)
                 stringAppendStr(&buffer, dateTimeStop);
@@ -424,7 +455,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             /* Interval */
             char *intervalStr = unit->intervalStr;
             if (intervalStr && strlen(intervalStr) > 0) {
-                stringAppendStr(&buffer, SOCKRES_PROPERTIES_ITEMS[INTERVAL].propertyName.desc);
+                stringAppendStr(&buffer, asStr(INTERVAL));
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, intervalStr);
             }
@@ -432,63 +463,63 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             pDataHistory = unit->processDataHistory;
             lenPdataHistory = (pDataHistory ? pDataHistory->size : 0);
             if (lenPdataHistory > 0)
-                pDataHistorySecKey = SOCKRES_SECTIONS_ITEMS[PDATAHISTORY].sectionName.desc;
+                pDataHistorySecKey = asStr(PDATAHISTORY_SEC);
             for (int j = 0; j < lenPdataHistory; j++) {
                 pData = arrayGet(pDataHistory, j);
                 stringAppendStr(&buffer, pDataHistorySecKey);
                 stringAppendStr(&buffer, TOKEN);
                 /* Pid history */
                 if (!pidHKey)
-                    pidHKey = SOCKRES_PROPERTIES_ITEMS[PIDH].propertyName.desc;
+                    pidHKey = asStr(PIDH);
                 stringAppendStr(&buffer, pidHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->pid);
                 stringAppendStr(&buffer, TOKEN);
                 /* Exit code history */
                 if (!exitCodeHKey)
-                    exitCodeHKey = SOCKRES_PROPERTIES_ITEMS[EXITCODEH].propertyName.desc;
+                    exitCodeHKey = asStr(EXITCODEH);
                 stringAppendStr(&buffer, exitCodeHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->exitCode);
                 stringAppendStr(&buffer, TOKEN);
                 /* Process State History */
                 if (!pStateHKey)
-                    pStateHKey = SOCKRES_PROPERTIES_ITEMS[PSTATEH].propertyName.desc;
+                    pStateHKey = asStr(PSTATEH);
                 stringAppendStr(&buffer, pStateHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, pData->pStateData->pState);
                 stringAppendStr(&buffer, TOKEN);
                 /* Signal number History */
                 if (!signalNumHKey)
-                    signalNumHKey = SOCKRES_PROPERTIES_ITEMS[SIGNALNUMH].propertyName.desc;
+                    signalNumHKey = asStr(SIGNALNUMH);
                 stringAppendStr(&buffer, signalNumHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->signalNum);
                 stringAppendStr(&buffer, TOKEN);
                 /* Final status History */
                 if (!finalStatusHKey)
-                    finalStatusHKey = SOCKRES_PROPERTIES_ITEMS[FINALSTATUSH].propertyName.desc;
+                    finalStatusHKey = asStr(FINALSTATUSH);
                 stringAppendStr(&buffer, finalStatusHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 setValueForBuffer(&buffer, *pData->finalStatus);
                 stringAppendStr(&buffer, TOKEN);
                 /* Date time start history */
                 if (!datetimeStartHKey)
-                    datetimeStartHKey = SOCKRES_PROPERTIES_ITEMS[DATETIMESTARTH].propertyName.desc;
+                    datetimeStartHKey = asStr(DATETIMESTARTH);
                 stringAppendStr(&buffer, datetimeStartHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, pData->dateTimeStartStr);
                 stringAppendStr(&buffer, TOKEN);
                 /* Date time stop history */
                 if (!datetimeStopHKey)
-                    datetimeStopHKey = SOCKRES_PROPERTIES_ITEMS[DATETIMESTOPH].propertyName.desc;
+                    datetimeStopHKey = asStr(DATETIMESTOPH);
                 stringAppendStr(&buffer, datetimeStopHKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, pData->dateTimeStopStr);
                 stringAppendStr(&buffer, TOKEN);
                 /* Duration history */
                 if (!durationKey)
-                    durationKey = SOCKRES_PROPERTIES_ITEMS[DURATIONH].propertyName.desc;
+                    durationKey = asStr(DURATIONH);
                 stringAppendStr(&buffer, durationKey);
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, pData->duration);
@@ -504,20 +535,17 @@ int
 unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
 {
 
-    int rv, errorsSize, len, unitSectionCount, pDataHistorySecCount;
-    Array *errors, *entries, *lineData, **unitsDisplay, **unitErrors, **messages,
-          **sockErrors, **pDatasHistory;
-    PropertyData *propertyData = NULL;
-    char *value, *error;
+    int rv, len;
+    Array *entries, **unitsDisplay, **unitErrors, **messages,
+          **sockErrors, **pDatasHistory, *keyval;
+    char *value, *key, *entry;
     Unit *unitDisplay = NULL;
     ProcessData *pData, *pDataHistory;
-    SectionData *unitSecData = &SOCKRES_SECTIONS_ITEMS[UNIT];
-    SectionData *pDataHSecData = &SOCKRES_SECTIONS_ITEMS[PDATAHISTORY];
 
-    rv = errorsSize = len = unitSectionCount = pDataHistorySecCount = 0;
-    entries = lineData = NULL;
+    rv = len = 0;
+    entries = keyval = NULL;
     pData = pDataHistory = NULL;
-    errors = NULL;
+    value = key = entry = NULL;
 
     assert(buffer);
     assert(*sockMessageOut);
@@ -525,228 +553,261 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
     messages = &(*sockMessageOut)->messages;
     sockErrors = &(*sockMessageOut)->errors;
 
-    /* Parser init */
-    parserInit(PARSE_SOCK_RESPONSE);
-
-    /* Get the entries (simulating the file lines) */
+    /* Get the entries */
     entries = stringSplit(buffer, TOKEN, true);
     len = (entries ? entries->size : 0);
     for (int i = 0; i < len; i++) {
-        rv = parseLine(arrayGet(entries, i), i + 1, &lineData, &propertyData);
-        if (lineData) {
-            if (rv != 0) {
-                error = arrayGet(lineData, 2);
-                assert(error);
-                logErrorStr(SYSTEM, "An error has occurred in unmarshallResponse! Error = %s", error);
-                logErrorStr(SYSTEM, "Buffer =  %s", buffer);
-                goto out;
-            }
-            if ((value = arrayGet(lineData, 1))) {
-                /* Check unit section */
-                if (unitSectionCount < unitSecData->sectionCount) {
-                    /* Create the array */
-                    if (!(*unitsDisplay))
-                        *unitsDisplay = arrayNew(unitRelease);
-                    /* Create the unit */
-                    unitDisplay = unitNew(NULL, PARSE_SOCK_RESPONSE);
-                    pData = unitDisplay->processData;
-                    pDatasHistory = &unitDisplay->processDataHistory;
-                    unitErrors = &unitDisplay->errors;
-                    /* Adding the unit to array */
-                    arrayAdd(*unitsDisplay, unitDisplay);
-                    unitSectionCount++;
-                }
-                /* Check Process data history section */
-                if (pDataHistorySecCount < pDataHSecData->sectionCount) {
-                    if (!(*pDatasHistory))
-                        *pDatasHistory = arrayNew(processDataRelease);
-
-                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
-                    arrayAdd(*pDatasHistory, pDataHistory);
-                    pDataHistorySecCount++;
-                }
-                switch (propertyData->propertyName.propertyNameEnum) {
-                    case MESSAGE:
-                        if (!(*messages))
-                            *messages = arrayNew(objectRelease);
-                        arrayAdd(*messages, stringNew(value));
-                        break;
-                    case ERROR:
-                        if (!(*sockErrors))
-                            *sockErrors = arrayNew(objectRelease);
-                        arrayAdd(*sockErrors, stringNew(value));
-                        break;
-                    case NAME:
-                        unitDisplay->name = stringNew(value);
-                        break;
-                    case DESC:
-                        if (stringEquals(value, NONE))
-                            unitDisplay->desc = NULL;
-                        else
-                            unitDisplay->desc = stringNew(value);
-                        break;
-                    case PATH:
-                        unitDisplay->path = stringNew(value);
-                        break;
-                    case ENABLED:
-                        unitDisplay->enabled = atoi(value);
-                        break;
-                    case RESTARTABLE:
-                        unitDisplay->restart = atoi(value);
-                        break;
-                    case NEXTTIMEDATE:
-                        unitDisplay->nextTimeDate = stringNew(value);
-                        break;
-                    case LEFTTIMEDURATION:
-                        unitDisplay->leftTimeDuration = stringNew(value);
-                        break;
-                    case TIMERNAME:
-                        unitDisplay->timerName = stringNew(value);
-                        break;
-                    case TIMERPSTATE:
-                        unitDisplay->timerPState = calloc(1, sizeof (PState));
-                        assert(unitDisplay->timerPState);
-                        *unitDisplay->timerPState = atoi(value);
-                        break;
-                    case PATHUNITNAME:
-                        unitDisplay->pathUnitName = stringNew(value);
-                        break;
-                    case PATHUNITPSTATE:
-                        unitDisplay->pathUnitPState = calloc(1, sizeof (PState));
-                        assert(unitDisplay->pathUnitPState);
-                        *unitDisplay->pathUnitPState = atoi(value);
-                        break;
-                    case RESTARTNUM:
-                        unitDisplay->restartNum = atoi(value);
-                        break;
-                    case RESTARTMAX:
-                        if (stringEquals(value, NONE))
-                            unitDisplay->restartMax = -1;
-                        else
-                            unitDisplay->restartMax = atoi(value);
-                        break;
-                    case TYPE:
-                        unitDisplay->type = atoi(value);
-                        break;
-                    case UNITERROR:
-                        if (!(*unitErrors))
-                            *unitErrors = arrayNew(objectRelease);
-                        arrayAdd(*unitErrors, stringNew(value));
-                        break;
-                    case PID:
-                        if (stringEquals(value, NONE))
-                            *pData->pid = -1;
-                        else
-                            *pData->pid = atoi(value);
-                        break;
-                    case EXITCODE:
-                        if (stringEquals(value, NONE))
-                            *pData->exitCode = -1;
-                        else
-                            *pData->exitCode = atoi(value);
-                        break;
-                    case PSTATE:
-                        *pData->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
-                        break;
-                    case SIGNALNUM:
-                        if (stringEquals(value, NONE))
-                            *pData->signalNum = -1;
-                        else
-                            *pData->signalNum = atoi(value);
-                        break;
-                    case FINALSTATUS:
-                        if (stringEquals(value, NONE))
-                            *pData->finalStatus = FINAL_STATUS_READY;
-                        else
-                            *pData->finalStatus = atoi(value);
-                        break;
-                    case DATETIMESTART:
-                        if (stringEquals(value, NONE))
-                            pData->dateTimeStartStr = NULL;
-                        else
-                            pData->dateTimeStartStr = stringNew(value);
-                        break;
-                    case DATETIMESTOP:
-                        if (stringEquals(value, NONE))
-                            pData->dateTimeStopStr = NULL;
-                        else
-                            pData->dateTimeStopStr = stringNew(value);
-                        break;
-                    case DURATION:
-                        if (stringEquals(value, NONE))
-                            pData->duration = NULL;
-                        else
-                            pData->duration = stringNew(value);
-                        break;
-                    case INTERVAL:
-                        unitDisplay->intervalStr = stringNew(value);
-                        break;
-                    case PIDH:
-                        if (stringEquals(value, NONE))
-                            *pDataHistory->pid = -1;
-                        else
-                            *pDataHistory->pid = atoi(value);
-                        break;
-                    case EXITCODEH:
-                        if (stringEquals(value, NONE))
-                            *pDataHistory->exitCode = -1;
-                        else
-                            *pDataHistory->exitCode = atoi(value);
-                        break;
-                    case PSTATEH:
-                        *pDataHistory->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
-                        break;
-                    case SIGNALNUMH:
-                        if (stringEquals(value, NONE))
-                            *pDataHistory->signalNum = -1;
-                        else
-                            *pDataHistory->signalNum = atoi(value);
-                        break;
-                    case FINALSTATUSH:
-                        if (stringEquals(value, NONE))
-                            *pDataHistory->finalStatus = FINAL_STATUS_READY;
-                        else
-                            *pDataHistory->finalStatus = atoi(value);
-                        break;
-                    case DATETIMESTARTH:
-                        pDataHistory->dateTimeStartStr = stringNew(value);
-                        break;
-                    case DATETIMESTOPH:
-                        if (stringEquals(value, NONE))
-                            pDataHistory->dateTimeStopStr = NULL;
-                        else
-                            pDataHistory->dateTimeStopStr = stringNew(value);
-                        break;
-                    case DURATIONH:
-                        if (stringEquals(value, NONE))
-                            pDataHistory->duration = NULL;
-                        else
-                            pDataHistory->duration = stringNew(value);
-                        break;
-                    default:
-                        break;
-                }
-            }
+        entry = arrayGet(entries, i);
+        /* Each entry has "Key(0)=Value(1)" format. */
+        keyval = stringSplit(entry, ASSIGNER, false);
+        if (!keyval) {
+            // Section
+            key = entry;
+            value = NULL;
         }
-        arrayRelease(&lineData);
-    }
-
-    /* Parser end */
-    parserEnd(&errors, true);
-    /* These errors should never occurred */
-    errorsSize = (errors ? errors->size : 0);
-    if (errorsSize > 0) {
-        syslog(LOG_DAEMON | LOG_ERR, "The parserEnd func in unmarshallResponse func has returned "
-                                     "the following errors:\n");
-        for (int i = 0; i < errorsSize; i++) {
-            syslog(LOG_DAEMON | LOG_ERR, "Error %d = %s", i, (char *)arrayGet(errors, i));
+        else {
+            // Property
+            key = arrayGet(keyval, 0);
+            value = arrayGet(keyval, 1);
         }
-        rv = 1;
+
+        if (!value) {
+            // SECTIONS
+            if (stringEquals(key, asStr(UNIT_SEC))) {
+                /* Create the array */
+                if (!(*unitsDisplay))
+                    *unitsDisplay = arrayNew(unitRelease);
+                /* Create the unit */
+                unitDisplay = unitNew(NULL, PARSE_SOCK_RESPONSE);
+                pData = unitDisplay->processData;
+                pDatasHistory = &unitDisplay->processDataHistory;
+                unitErrors = &unitDisplay->errors;
+                /* Adding the unit to array */
+                arrayAdd(*unitsDisplay, unitDisplay);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PDATAHISTORY_SEC))) {
+                if (!(*pDatasHistory))
+                    *pDatasHistory = arrayNew(processDataRelease);
+                pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
+                arrayAdd(*pDatasHistory, pDataHistory);
+                goto next;
+            }
+            // Should never happen
+            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse", EPERM,
+                     strerror(EPERM), "Section %s not found!", key);
+            arrayRelease(&keyval);
+            rv = 1;
+            goto out;
+
+        }
+        else {
+            // PROPERTIES
+            if (stringEquals(key, asStr(MESSAGE))) {
+                if (!(*messages))
+                    *messages = arrayNew(objectRelease);
+                arrayAdd(*messages, stringNew(value));
+                goto next;
+            }
+            if (stringEquals(key, asStr(ERROR))) {
+                if (!(*sockErrors))
+                    *sockErrors = arrayNew(objectRelease);
+                arrayAdd(*sockErrors, stringNew(value));
+                goto next;
+            }
+            if (stringEquals(key, asStr(NAME))) {
+                unitDisplay->name = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DESC))) {
+                if (stringEquals(value, NONE))
+                    unitDisplay->desc = NULL;
+                else
+                    unitDisplay->desc = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PATH))) {
+                unitDisplay->path = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(ENABLED))) {
+                unitDisplay->enabled = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(RESTARTABLE))) {
+                unitDisplay->restart = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(NEXTTIMEDATE))) {
+                unitDisplay->nextTimeDate = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(LEFTTIMEDURATION))) {
+                unitDisplay->leftTimeDuration = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(TIMERNAME))) {
+                unitDisplay->timerName = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(TIMERPSTATE))) {
+                unitDisplay->timerPState = calloc(1, sizeof (PState));
+                assert(unitDisplay->timerPState);
+                *unitDisplay->timerPState = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PATHUNITNAME))) {
+                unitDisplay->pathUnitName = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PATHUNITPSTATE))) {
+                unitDisplay->pathUnitPState = calloc(1, sizeof (PState));
+                assert(unitDisplay->pathUnitPState);
+                *unitDisplay->pathUnitPState = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(RESTARTNUM))) {
+                unitDisplay->restartNum = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(RESTARTMAX))) {
+                if (stringEquals(value, NONE))
+                    unitDisplay->restartMax = -1;
+                else
+                    unitDisplay->restartMax = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(TYPE))) {
+                unitDisplay->type = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(UNITERROR))) {
+                if (!(*unitErrors))
+                    *unitErrors = arrayNew(objectRelease);
+                arrayAdd(*unitErrors, stringNew(value));
+                goto next;
+            }
+            if (stringEquals(key, asStr(PID))) {
+                if (stringEquals(value, NONE))
+                    *pData->pid = -1;
+                else
+                    *pData->pid = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(EXITCODE))) {
+                if (stringEquals(value, NONE))
+                    *pData->exitCode = -1;
+                else
+                    *pData->exitCode = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PSTATE))) {
+                *pData->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
+                goto next;
+            }
+            if (stringEquals(key, asStr(SIGNALNUM))) {
+                if (stringEquals(value, NONE))
+                    *pData->signalNum = -1;
+                else
+                    *pData->signalNum = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(FINALSTATUS))) {
+                if (stringEquals(value, NONE))
+                    *pData->finalStatus = FINAL_STATUS_READY;
+                else
+                    *pData->finalStatus = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DATETIMESTART))) {
+                if (stringEquals(value, NONE))
+                    pData->dateTimeStartStr = NULL;
+                else
+                    pData->dateTimeStartStr = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DATETIMESTOP))) {
+                if (stringEquals(value, NONE))
+                    pData->dateTimeStopStr = NULL;
+                else
+                    pData->dateTimeStopStr = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DURATION))) {
+                if (stringEquals(value, NONE))
+                    pData->duration = NULL;
+                else
+                    pData->duration = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(INTERVAL))) {
+                unitDisplay->intervalStr = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PIDH))) {
+                if (stringEquals(value, NONE))
+                    *pDataHistory->pid = -1;
+                else
+                    *pDataHistory->pid = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(EXITCODEH))) {
+                if (stringEquals(value, NONE))
+                    *pDataHistory->exitCode = -1;
+                else
+                    *pDataHistory->exitCode = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(PSTATEH))) {
+                *pDataHistory->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
+                goto next;
+            }
+            if (stringEquals(key, asStr(SIGNALNUMH))) {
+                if (stringEquals(value, NONE))
+                    *pDataHistory->signalNum = -1;
+                else
+                    *pDataHistory->signalNum = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(FINALSTATUSH))) {
+                if (stringEquals(value, NONE))
+                    *pDataHistory->finalStatus = FINAL_STATUS_READY;
+                else
+                    *pDataHistory->finalStatus = atoi(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DATETIMESTARTH))) {
+                pDataHistory->dateTimeStartStr = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DATETIMESTOPH))) {
+                if (stringEquals(value, NONE))
+                    pDataHistory->dateTimeStopStr = NULL;
+                else
+                    pDataHistory->dateTimeStopStr = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(key, asStr(DURATIONH))) {
+                if (stringEquals(value, NONE))
+                    pDataHistory->duration = NULL;
+                else
+                    pDataHistory->duration = stringNew(value);
+                goto next;
+            }
+            // Should never happen
+            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse", EPERM,
+                     strerror(EPERM), "Property %s not found!", key);
+            arrayRelease(&keyval);
+            rv = EPERM;
+            goto out;
+        }
+
+        next:
+            arrayRelease(&keyval);
+            continue;
     }
 
     out:
-        arrayRelease(&errors);
-        arrayRelease(&lineData);
         arrayRelease(&entries);
         return rv;
 }
