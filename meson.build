@@ -4,12 +4,12 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '6.0.1', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '6.0.2', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '6.0.1'
+ver = '6.0.2'
 so_ver = '6'
-ulib_ver = '3.0.1'
+ulib_ver = '3.0.2'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 
@@ -21,6 +21,13 @@ localstatedir = get_option('localstatedir')
 sbin_path = get_option('sbindir')
 libdir = get_option('libdir')
 mandir = get_option('mandir')
+build_root = meson.global_build_root()
+
+# Get doxygen options
+doxy_latex = get_option('DOXY_LATEX')
+conf_doxy_latex = 'YES'
+doxy_html = get_option('DOXY_HTML')
+conf_doxy_html = 'YES'
 
 # Setting unitd macro path
 unitd_conf_path = sysconfdir/project_name
@@ -95,6 +102,24 @@ find_program('awk', required: true)
 # Pkill and pgrep (procps-ng package)
 find_program('pkill', required: true)
 find_program('pgrep', required: true)
+# Doxygen
+if doxy_html == true or doxy_latex == true
+    find_program('doxygen', required: true)
+    if (doxy_latex == false)
+        conf_doxy_latex = 'NO'
+    endif
+    if (doxy_html == false)
+        conf_doxy_html = 'NO'
+    endif
+    # Configuration
+    conf_doxy = configuration_data()
+    conf_doxy.set('BUILD_ROOT', build_root)
+    conf_doxy.set('LATEX', conf_doxy_latex)
+    conf_doxy.set('HTML', conf_doxy_html)
+    configure_file(input: 'Doxyfile.in', output: 'Doxyfile', configuration: conf_doxy)
+    message('Building the documentation ... ')
+    run_command('doxygen', build_root/'Doxyfile', check: true)
+endif
 
 # Unitd sources
 sources = files(
@@ -200,6 +225,14 @@ install_subdir('src/extra/final.state', install_dir: unitd_data_path)
 # Install documentation
 install_data('LICENSE', install_dir: doc_path)
 install_data('README.md', install_dir: doc_path)
+
+# Install doxy documentation
+if (doxy_html == true)
+    install_subdir(build_root/'html', install_dir: doc_path)
+endif
+if (doxy_latex == true)
+    install_subdir(build_root/'latex', install_dir: doc_path)
+endif
 
 # Install bash completion
 install_data('completion/bash/unitctl', install_dir: bash_comp_path)

@@ -1,9 +1,8 @@
-/*
-(C) 2021 by Domenico Panella <pandom79@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 3.
-See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
+/**
+ * @brief Unitd types
+ * @file unitd.h
+ * @author Domenico Panella <pandom79@gmail.com>
+ *
 */
 
 #ifndef UNITD_TYPES_H
@@ -33,7 +32,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #define UNUSED __attribute__((unused))
 
-/* Process */
 typedef enum {
     DEAD = 0,
     EXITED = 1,
@@ -42,6 +40,15 @@ typedef enum {
     RESTARTING = 4
 } PState;
 
+/**
+ * @struct PStateData
+ * @brief This structure contains the possible values of the process state.
+ * @var PStateData::pState
+ * Represents the state of a process.
+ * @var PStateData::desc
+ * Represents the description of a process.
+ *
+*/
 typedef struct PStateData {
     PState pState;
     const char *desc;
@@ -63,6 +70,15 @@ typedef enum {
     UPATH = 3
 } PType;
 
+/**
+ * @struct PTypeData
+ * @brief This structure contains the data of a process type.
+ * @var PTypeData::pType
+ * Represents the type of a process.
+ * @var PTypeData::desc
+ * Represents the description of a process type.
+ *
+*/
 typedef struct PTypeData {
     PType pType;
     const char *desc;
@@ -81,6 +97,31 @@ typedef enum {
     FINAL_STATUS_FAILURE = 1
 } FinalStatusEnum;
 
+/**
+ * @struct ProcessData
+ * @brief This structure contains the data of a process.
+ * @var ProcessData::pid
+ * Represents the pid of the process.
+ * @var ProcessData::exitCode
+ * Represents the exit code of the process.
+ * @var ProcessData::pStateData
+ * Represents the data of the process state.
+ * @var ProcessData::signalNum
+ * Represents the signal number received by process.
+ * @var ProcessData::finalStatus
+ * Represents the final status of the process.
+ * @var ProcessData::dateTimeStartStr
+ * Represents the start timestamp of the process as string.
+ * @var ProcessData::dateTimeStopStr
+ * Represents the stop timestamp of the process as string.
+ * @var ProcessData::timeStart
+ * Represents the start timestamp of the process.
+ * @var ProcessData::timeStop
+ * Represents the stop timestamp of the process.
+ * @var ProcessData::duration
+ * Represents the duration of the process as string.
+ *
+*/
 typedef struct {
     pid_t *pid;
     int *exitCode;
@@ -111,6 +152,15 @@ typedef enum {
     USER = 9
 } State;
 
+/**
+ * @struct StateData
+ * @brief This structure contains the data of the process state.
+ * @var StateData::state
+ * Represents the state of the process.
+ * @var StateData::desc
+ * Represents the process state description.
+ *
+*/
 typedef struct StateData {
     State state;
     const char *desc;
@@ -130,11 +180,34 @@ static const struct StateData STATE_DATA_ITEMS[] = {
 };
 
 /* Units */
+
+/**
+ * @struct Pipe
+ * @brief This structure contains the data to handle a pipe.
+ * @var Pipe::fds[]
+ * Array of file descriptors.
+ * @var Pipe::mutex
+ * Represents the pipe's mutex.
+ *
+*/
 typedef struct {
     int fds[2];
     pthread_mutex_t *mutex;
 } Pipe;
 
+/**
+ * @struct Timer
+ * @brief This structure contains the data to handle a timer.
+ * @var Timer::timerId
+ * Represents the timer id.
+ * @var Timer::eventData
+ * Represents the event data.
+ * @var Timer::sev
+ * Represents the signal event structure.
+ * @var Timer::its
+ * Represents the itimerspec structure.
+ *
+*/
 typedef struct {
     timer_t *timerId;
     struct eventData *eventData;
@@ -142,12 +215,128 @@ typedef struct {
     struct itimerspec *its;
 } Timer;
 
+/**
+ * @struct Notifier
+ * @brief This structure represents the Notifier.
+ * @var Notifier::pipe
+ * Represents the notifier's pipe.
+ * @var Notifier::fd
+ * Represents the file descriptor to monitor.
+ * @var Notifier::watchers
+ * This structure contains all watchers.
+ */
 typedef struct {
     Pipe *pipe;
     int *fd;
     Array *watchers;
 } Notifier;
 
+/**
+ * @struct Unit
+ * @brief This structure represents the unit.
+ * @var Unit::desc
+ * Represents the unit description.
+ * @var Unit::requires
+ * Represents the unit dependencies.
+ * @var Unit::type
+ * Represents the process type of the unit.
+ * @var Unit::restart
+ * Set restart mode for an unit.
+ * @var Unit::restartMax
+ * Set the maximum restart number for an unit.
+ * @var Unit::conflicts
+ * Represents the unit conflicts.
+ * @var Unit::runCmd
+ * Represents the command to start an unit.
+ * @var Unit::stopCmd
+ * Represents the command to stop an unit.
+ * @var Unit::failureCmd
+ * Represents the command to run when an unit fails.
+ * @var Unit::wantedBy
+ * Represents the wanted states of the unit.
+ * @var Unit::restartNum
+ * Represents the restart number of the unit.
+ * @var Unit::name
+ * Represents the unit name.
+ * @var Unit::path
+ * Represents the unit path.
+ * @var Unit::enabled
+ * Boolean value which allows to enable/disable an unit for a state.
+ * @var Unit::errors
+ * Contains the unit errors.
+ * @var Unit::cv
+ * The condition variable of the unit.
+ * @var Unit::mutex
+ * The mutex of the unit.
+ * @var Unit::processDataHistory
+ * Contains the history of the process data.
+ * @var Unit::processData
+ * Contains the process data.
+ * @var Unit::pipe
+ * Represents the unit pipe.
+ * @var Unit::showResult
+ * Boolean value which allows to show the data on the console.
+ * @var Unit::isStopping
+ * Boolean value which allows to understand if a process is stopping.
+ * @var Unit::isChanged
+ * Boolean value which allows to understand if the unit content is changed.
+ * @var Unit::timerName
+ * The timer unit name.
+ * @var Unit::timerPState
+ * The process state of a timer unit.
+ * @var Unit::failurePid
+ * Represents the pid of the failure command.
+ * @var Unit::failureExitCode
+ * Represents the pid of the failure command.
+ * @var Unit::pathUnitName
+ * The path unit name.
+ * @var Unit::pathUnitPState
+ * The process state of te path unit.
+ * @var Unit::timer
+ * Represents the timer of the unit.
+ * @var Unit::wakeSystem
+ * Set the wake mode for a timer.
+ * @var Unit::intSeconds
+ * Set the elapsed time in seconds.
+ * @var Unit::intMinutes
+ * Set the elapsed time in minutes.
+ * @var Unit::intHours
+ * Set the elapsed time in hours.
+ * @var Unit::intDays
+ * Set the elapsed time in days.
+ * @var Unit::intWeeks
+ * Set the elapsed time in weeks.
+ * @var Unit::intMonths
+ * Set the elapsed time in months.
+ * @var Unit::intervalStr
+ * Set the interval as string.
+ * @var Unit::leftTime
+ * Represents the left time.
+ * @var Unit::leftTimeDuration
+ * Represents the left time as string.
+ * @var Unit::nextTime
+ * Represents the the next time.
+ * @var Unit::nextTimeDate
+ * Represents the next time as string.
+ * @var Unit::notifier
+ * Represents the notifier struct.
+ * @var Unit::pathExists
+ * Contains the path which must be checked the existence.
+ * @var Unit::pathExistsMonitor
+ * Contains the real path defined in "pathExists".
+ * @var Unit::pathExistsGlob
+ * Contains the glob pattern.
+ * @var Unit::pathExistsGlobMonitor
+ * Contains the real path to monitor defined in "pathExistsGlob".
+ * @var Unit::pathResourceChanged
+ * Contains the resource path that can be changed.
+ * @var Unit::pathResourceChangedMonitor
+ * Contains the real resource path defined in "pathResourceChanged".
+ * @var Unit::pathDirectoryNotEmpty
+ * Contains the folder path must be checked.
+ * @var Unit::pathDirectoryNotEmptyMonitor
+ * Contains the real folder defined in "pathDirectoryNotEmpty".
+ */
 typedef struct {
     char *desc;
     Array *requires;
@@ -204,6 +393,20 @@ typedef struct {
     char *pathDirectoryNotEmptyMonitor;
 } Unit;
 
+/**
+ * @struct UnitdData
+ * @brief This structure contains all data.
+ * @var UnitdData::bootUnits
+ * This structure contains the boot units.
+ * @var UnitdData::initUnits
+ * This structure contains the initialization units.
+ * @var UnitdData::units
+ * This structure contains the units for the default or command line state.
+ * @var UnitdData::shutDownUnits
+ * This structure contains the units for the poweroff/reboot state.
+ * @var UnitdData::finalUnits
+ * This structure contains the finalization units.
+*/
 typedef struct {
     Array *bootUnits;
     Array *initUnits;
@@ -212,59 +415,139 @@ typedef struct {
     Array *finalUnits;
 } UnitdData;
 
-/* Commands */
+/**
+ * @brief This enumerator represents the commands received by unit daemon.
+ *
+ */
 typedef enum {
+    /** No command */
     NO_COMMAND = -1,
+    /** Reboot the system.<br>
+     *  Available for system instance.
+    */
     REBOOT_COMMAND = 0,
+    /** Poweroff the unitd instance. */
     POWEROFF_COMMAND = 1,
+    /** Halt the system.<br>
+     *  Available for system instance.
+    */
     HALT_COMMAND = 2,
+    /** List the units. */
     LIST_COMMAND = 3,
+    /** Show the unit status. */
     STATUS_COMMAND = 4,
+    /** Stop the unit. */
     STOP_COMMAND = 5,
+    /** Start the unit. */
     START_COMMAND = 6,
+    /** Restart the unit. */
     RESTART_COMMAND = 7,
+    /** Disable the unit. */
     DISABLE_COMMAND = 8,
+    /** Enable the unit. */
     ENABLE_COMMAND = 9,
+    /** List the dependencies of the unit. */
     LIST_REQUIRES_COMMAND = 10,
+    /** List the conflicts of the unit. */
     LIST_CONFLICTS_COMMAND = 11,
+    /** List the wanted states of the unit. */
     LIST_STATES_COMMAND = 12,
+    /** Show the default state.<br>
+     *  Available for system instance.
+    */
     GET_DEFAULT_STATE_COMMAND = 13,
+    /** Set the default state.<br>
+     *  Available for system instance.
+    */
     SET_DEFAULT_STATE_COMMAND = 14,
+    /** Reboot the system with kexec.<br>
+     *  Available for system instance.
+    */
     KEXEC_COMMAND = 15,
+    /** Show the unit content.
+    */
     CAT_COMMAND = 16,
+    /** Edit the unit content.
+    */
     EDIT_COMMAND = 17,
+    /** Analyze the boot process of the unitd instance.
+    */
     ANALYZE_COMMAND = 18,
+    /** Re-enable the unit.
+    */
     RE_ENABLE_COMMAND = 19,
+    /** Create the unit.
+    */
     CREATE_COMMAND = 20,
+    /** Show the enabled units.
+    */
     LIST_ENABLED_COMMAND = 21,
+    /** Show the disabled units.
+    */
     LIST_DISABLED_COMMAND = 22,
+    /** Show the started units.
+    */
     LIST_STARTED_COMMAND = 23,
+    /** Show the dead units.
+    */
     LIST_DEAD_COMMAND = 24,
+    /** Show the failed units.
+    */
     LIST_FAILED_COMMAND = 25,
+    /** Show the restartable units.
+    */
     LIST_RESTARTABLE_COMMAND = 26,
+    /** Show the restarted units.
+    */
     LIST_RESTARTED_COMMAND = 27,
+    /** Show the timer units.
+    */
     LIST_TIMERS_COMMAND = 28,
+    /** Show the path units.
+    */
     LIST_UPATH_COMMAND = 29
 } Command;
 
-/* Socket */
+/**
+ *  @struct SockMessageOut
+ *  @brief This structure the response message from unix socket.
+ *  @var SockMessageOut::unitsDisplay
+ *  This structure contains the received units.
+ *  @var SockMessageOut::errors
+ *  This structure contains the received errors.
+ *  @var SockMessageOut::messages
+ *  This structure contains the messages errors.
+ */
 typedef struct {
     Array *unitsDisplay;
     Array *errors;
     Array *messages;
 } SockMessageOut;
 
-/* List filter */
+/**
+ * @brief This enumerator represents the filter to apply to units list.
+ *
+ */
 typedef enum {
+    /** No filter */
     NO_FILTER = -1,
+    /** List the enabled units. */
     ENABLED_FILTER = 0,
+    /** List the disabled units. */
     DISABLED_FILTER = 1,
+    /** List the started units. */
     STARTED_FILTER = 2,
+    /** List the dead units. */
     DEAD_FILTER = 3,
+    /** List the failed units. */
     FAILED_FILTER = 4,
+    /** List the restartable units. */
     RESTARTABLE_FILTER = 5,
+    /** List the restarted units. */
     RESTARTED_FILTER = 6,
+    /** List the timer units. */
     TIMERS_FILTER = 7,
+    /** List the path units. */
     UPATH_FILTER = 8
 } ListFilter ;
 

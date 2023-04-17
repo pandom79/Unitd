@@ -61,7 +61,7 @@ Normally, the final user should not consider these states.
 
 Download the release from [here](https://github.com/pandom79/Unitd/releases) and uncompress it.<br/>
 
-Run the following steps as root user:</br>
+Run the following steps as root user:<br>
 ```
 cd Unitd
 meson setup build -DOS_NAME="Slackware Linux"

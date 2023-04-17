@@ -10,4 +10,5 @@ option('OUR_UTMP_FILE', type: 'string', description: 'The utmp login registry pa
 option('OUR_WTMP_FILE', type: 'string', description: 'The wtmp login registry path')
 option('DOC_PATH', type: 'string', description: 'The documentation path')
 option('BASH_COMP_PATH', type: 'string', description: 'The bash completion path')
-
+option('DOXY_HTML', type: 'boolean', value: true)
+option('DOXY_LATEX', type: 'boolean', value: true)
