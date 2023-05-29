@@ -126,8 +126,7 @@ setNextTimeDate(Unit **unit)
 
     /* Set next time (Date) */
     char *nextTimeDate = stringGetTimeStamp(nextTime, false, "%d-%m-%Y %H:%M:%S");
-    strcpy((*unit)->nextTimeDate, nextTimeDate);
-    assert(strlen((*unit)->nextTimeDate) > 0);
+    assert(stringCopy((*unit)->nextTimeDate, nextTimeDate));
 
     if (UNITD_DEBUG)
         logInfo(SYSTEM, "%s: next time in seconds = %lu, Date = %s\n",
@@ -159,8 +158,7 @@ setLeftTimeAndDuration(Unit **unit)
     *nextTime->durationMillisec = 0;
     char *leftTimeDuration = *leftTime <= 0 ? stringNew("expired") :
                                               stringGetDiffTime(nextTime, current);
-    strcpy((*unit)->leftTimeDuration, leftTimeDuration);
-    assert(strlen((*unit)->leftTimeDuration) > 0);
+    assert(stringCopy((*unit)->leftTimeDuration, leftTimeDuration));
 
     if (UNITD_DEBUG)
         logInfo(SYSTEM, "%s: Left time in seconds = %lu, Duration = %s\n",
@@ -195,20 +193,17 @@ saveTime(Unit *unit, const char *timerUnitName, Time *currentTime, int finalStat
     if (unit) {
         char timeStr[50] = {0};
         sprintf(timeStr, "%lu", *unit->nextTime->sec);
-        assert(strlen(timeStr) > 0);
         stringAppendStr(&filePath, timeStr);
     }
     else {
         /* Current time */
         char currentTimeStr[50] = {0};
         sprintf(currentTimeStr, "%lu", *currentTime->sec);
-        assert(strlen(currentTimeStr) > 0);
         stringAppendStr(&filePath, currentTimeStr);
         stringAppendChr(&filePath, '|');
         /* Final status */
         char finalStatusStr[3] = {0};
         sprintf(finalStatusStr, "%d", finalStatus);
-        assert(strlen(finalStatusStr) > 0);
         stringAppendStr(&filePath, finalStatusStr);
     }
 
@@ -383,7 +378,6 @@ checkInterval(Unit **unit)
         if (intMonths && *intMonths > 0) {
             char months[10] = {0};
             sprintf(months, "%d", *intMonths);
-            assert(strlen(months) > 0);
             stringAppendStr(&interval, months);
             stringAppendStr(&interval, "M ");
         }
@@ -391,7 +385,6 @@ checkInterval(Unit **unit)
         if (intWeeks && *intWeeks > 0) {
             char weeks[10] = {0};
             sprintf(weeks, "%d", *intWeeks);
-            assert(strlen(weeks) > 0);
             stringAppendStr(&interval, weeks);
             stringAppendStr(&interval, "w ");
         }
@@ -399,7 +392,6 @@ checkInterval(Unit **unit)
         if (intDays && *intDays > 0) {
             char days[10] = {0};
             sprintf(days, "%d", *intDays);
-            assert(strlen(days) > 0);
             stringAppendStr(&interval, days);
             stringAppendStr(&interval, "d ");
         }
@@ -407,7 +399,6 @@ checkInterval(Unit **unit)
         if (intHours && *intHours > 0) {
             char hours[10] = {0};
             sprintf(hours, "%d", *intHours);
-            assert(strlen(hours) > 0);
             stringAppendStr(&interval, hours);
             stringAppendStr(&interval, "h ");
         }
@@ -415,7 +406,6 @@ checkInterval(Unit **unit)
         if (intMinutes && *intMinutes > 0) {
             char minutes[10] = {0};
             sprintf(minutes, "%d", *intMinutes);
-            assert(strlen(minutes) > 0);
             stringAppendStr(&interval, minutes);
             stringAppendStr(&interval, "m ");
         }
@@ -423,15 +413,13 @@ checkInterval(Unit **unit)
         if (intSeconds && *intSeconds > 0) {
             char seconds[10] = {0};
             sprintf(seconds, "%d", *intSeconds);
-            assert(strlen(seconds) > 0);
             stringAppendStr(&interval, seconds);
             stringAppendStr(&interval, "s ");
         }
 
         /* Trim and copy */
         stringTrim(interval, NULL);
-        strcpy(intervalStr, interval);
-        assert(strlen(intervalStr) > 0);
+        assert(stringCopy(intervalStr, interval));
     }
 
     objectRelease(&interval);
@@ -789,10 +777,8 @@ startTimerUnitThread(void *arg)
              * In this way, the requires check is satisfied as well.
             */
             *unit->processData->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
-            strcpy(unit->nextTimeDate, "-");
-            assert(strlen(unit->nextTimeDate) == 1);
-            strcpy(unit->leftTimeDuration, "-");
-            assert(strlen(unit->leftTimeDuration) == 1);
+            assert(stringCopy(unit->nextTimeDate, "-"));
+            assert(stringCopy(unit->leftTimeDuration, "-"));
 
             /* Unlock */
             if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {

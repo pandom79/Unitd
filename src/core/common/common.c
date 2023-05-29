@@ -295,7 +295,6 @@ unitdUserCheck(const char *userIdStr, const char *userName)
     assert(userName);
     assert(EUIRUN);
     sprintf(euirun, "%d", EUIRUN);
-    assert(strlen(euirun) > 0);
 
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);

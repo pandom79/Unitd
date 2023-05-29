@@ -556,8 +556,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
-                unit = getUnitByName(*units, unitName);
-                assert(unit == NULL);
+                unit = NULL;
                 if (sendResponse) {
                     rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
                     goto out;
@@ -586,8 +585,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
            (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
-            unit = getUnitByName(*units, unitName);
-            assert(unit == NULL);
+            unit = NULL;
             if (sendResponse) {
                 rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
                 if (rv != 0)
@@ -708,9 +706,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             if (unit) {
                 /* We always remove the unit */
                 arrayRemove(*units, unit);
-                unit = getUnitByName(*units, unitName);
+                unit = NULL;
             }
-            assert(unit == NULL);
         }
     }
 

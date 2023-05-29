@@ -434,7 +434,6 @@ stopProcess(void *arg)
                 if (stringContainsStr(command, PID_CMD_VAR)) {
                     char pidStr[30] = {0};
                     sprintf(pidStr, "%d", *pData->pid);
-                    assert(strlen(pidStr) > 0);
                     stringReplaceStr(&command, PID_CMD_VAR, pidStr);
                 }
                 /* Split cmdline */
