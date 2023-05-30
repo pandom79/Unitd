@@ -178,7 +178,6 @@ getLogOffset()
     }
 
     sprintf(offsetStr, "%lu", offset);
-    assert(strlen(offsetStr) > 0);
     ret = stringNew(offsetStr);
 
     out:

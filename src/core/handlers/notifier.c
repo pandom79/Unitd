@@ -14,7 +14,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 bool USER_INSTANCE;
 Notifier *NOTIFIER;
 const WatcherData WATCHER_DATA_ITEMS[] = {
-    { UNITD_WATCHER, IN_MODIFY },
+    { UNITD_WATCHER, IN_MODIFY | IN_DELETE | IN_MOVED_FROM },
     { PATH_EXISTS_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB | IN_CREATE },
     { PATH_EXISTS_GLOB_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB | IN_CREATE },
     { PATH_RESOURCE_CHANGED_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE |
@@ -238,7 +238,7 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
     Watcher *watcher = NULL;
 
     assert(notifier);
-    assert(path && strlen(path) > 0);
+    assert(path && !stringEquals(path, ""));
     assert(watcherType >= 0);
 
     watcher = calloc(1, sizeof(Watcher));

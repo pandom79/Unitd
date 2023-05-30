@@ -4,12 +4,12 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '6.0.4', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '6.0.5', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
-ver = '6.0.4'
+ver = '6.0.5'
 so_ver = '6'
-ulib_ver = '4.0.0'
+ulib_ver = '4.0.1'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 

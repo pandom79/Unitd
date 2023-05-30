@@ -95,7 +95,6 @@ showBootsList()
 
         /* Idx */
         sprintf(idxStr, "%d", idx);
-        assert(strlen(idxStr) > 0);
         printf("%s%*s", idxStr, (WIDTH_IDX - (int)strlen(idxStr)) + PADDING, "");
 
         /* Boot id */
@@ -283,7 +282,6 @@ showCurrentBoot(bool pager, bool follow)
     assert(maxIdx != -1);
     /* Get max idx as string */
     sprintf(maxIdxStr, "%d", maxIdx);
-    assert(strlen(maxIdxStr) > 0);
 
     /* Show */
     rv = showBoot(pager, follow, maxIdxStr);

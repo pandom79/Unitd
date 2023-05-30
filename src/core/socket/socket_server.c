@@ -556,8 +556,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
             if (unit->isChanged || (*unitErrors && (*unitErrors)->size > 0)) {
                 /* Release the unit and load "dead" data */
                 arrayRemove(*units, unit);
-                unit = getUnitByName(*units, unitName);
-                assert(unit == NULL);
+                unit = NULL;
                 if (sendResponse) {
                     rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
                     goto out;
@@ -582,12 +581,12 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         handleMutex(&NOTIFIER_MUTEX, true);
         handleMutex(&NOTIFIER_MUTEX, false);
 
-        if (unit->isChanged || *pType == ONESHOT || (unit->isChanged && *pType == TIMER) ||
+        if (unit->isChanged || *pType == ONESHOT ||
+           (unit->errors && unit->errors->size > 0) ||
            (*pType == DAEMON && (*pState == EXITED || *pState == KILLED))) {
             /* Release the unit and load "dead" data */
             arrayRemove(*units, unit);
-            unit = getUnitByName(*units, unitName);
-            assert(unit == NULL);
+            unit = NULL;
             if (sendResponse) {
                 rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
                 if (rv != 0)
@@ -608,7 +607,7 @@ stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **soc
         }
     }
 
-    if (isDead) {
+    if (isDead && sendResponse) {
         if (!(*errors))
             *errors = arrayNew(objectRelease);
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "dead"));
@@ -708,9 +707,8 @@ startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **so
             if (unit) {
                 /* We always remove the unit */
                 arrayRemove(*units, unit);
-                unit = getUnitByName(*units, unitName);
+                unit = NULL;
             }
-            assert(unit == NULL);
         }
     }
 
@@ -1284,7 +1282,6 @@ enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **s
             /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
                (unitConflict->errors && unitConflict->errors->size > 0) ||
-               (unitConflict->isChanged && unitConflict->type == TIMER) ||
                (unitConflict->type == DAEMON && (*pStateConflict == EXITED || *pStateConflict == KILLED)))
                 arrayRemove(*units, unitConflict);
         }

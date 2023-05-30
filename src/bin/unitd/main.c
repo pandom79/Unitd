@@ -195,7 +195,6 @@ int main(int argc, char **argv) {
         /* Get userId as string */
         char userIdStr[20] = {0};
         sprintf(userIdStr, "%d", userId);
-        assert(strlen(userIdStr) > 0);
 
         /* Check the user directories are there and the instance is not already running for this user */
         if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0) {
