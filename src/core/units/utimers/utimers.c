@@ -764,6 +764,7 @@ startTimerUnitThread(void *arg)
 
             disarmTimer(unit);
 
+            /* Lock */
             if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
                          rv, strerror(rv), "Unable to lock the mutex (restart timer)",
@@ -788,36 +789,36 @@ startTimerUnitThread(void *arg)
                 kill(UNITD_PID, SIGTERM);
             }
 
-            /* Lock */
-            if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
-                         rv, strerror(rv), "Unable to lock the mutex (restart timer before start)",
-                         unitName);
-                kill(UNITD_PID, SIGTERM);
-            }
-
             /* Executing the unit ... */
             if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit, TIMER)) == EUIDOWN)
                 logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
                            unitName);
             else {
+                *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
+
+                /* Lock */
+                if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
+                    logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
+                             rv, strerror(rv), "Unable to lock the mutex (restart timer before start)",
+                             unitName);
+                    kill(UNITD_PID, SIGTERM);
+                }
+
                 setNextTimeFromInterval(&unit);
                 assert(unit->nextTime && *leftTime != -1);
                 if ((rv = saveTime(unit, NULL, NULL, -1)) != 0)
                     kill(UNITD_PID, SIGTERM);
 
-                /* Now, we arm the timer because the unit execution could be take some seconds. */
+                /* Now, we arm the timer because the unit execution could take some seconds. */
                 armTimer(unit);
-            }
 
-            *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
-
-            /* Unlock */
-            if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread", rv,
-                         strerror(rv), "Unable to unlock the mutex (restart timer after start)",
-                         unitName);
-                kill(UNITD_PID, SIGTERM);
+                /* Unlock */
+                if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
+                    logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread", rv,
+                             strerror(rv), "Unable to unlock the mutex (restart timer after start)",
+                             unitName);
+                    kill(UNITD_PID, SIGTERM);
+                }
             }
         }
         else if (input == THREAD_EXIT)

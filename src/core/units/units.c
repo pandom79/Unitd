@@ -293,14 +293,26 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
     }
     unit->leftTime = leftTime;
 
-    /* Left time (date) */
-    unit->leftTimeDuration = (unitFrom && unitFrom->leftTimeDuration ? stringNew(unitFrom->leftTimeDuration) : NULL);
+    /* Left time (duration) */
+    if (unitFrom && unitFrom->leftTimeDuration) {
+        unit->leftTimeDuration = calloc(50, sizeof(char));
+        assert(unit->leftTimeDuration);
+        assert(strcpy(unit->leftTimeDuration, unitFrom->leftTimeDuration));
+    }
+    else
+        unit->leftTimeDuration = NULL;
 
     /* Next time */
     unit->nextTime = (unitFrom && unitFrom->nextTime ? timeNew(unitFrom->nextTime) : NULL);
 
     /* Next time (date) */
-    unit->nextTimeDate = (unitFrom && unitFrom->nextTimeDate ? stringNew(unitFrom->nextTimeDate) : NULL);
+    if (unitFrom && unitFrom->nextTimeDate) {
+        unit->nextTimeDate = calloc(50, sizeof(char));
+        assert(unit->nextTimeDate);
+        assert(strcpy(unit->nextTimeDate, unitFrom->nextTimeDate));
+    }
+    else
+        unit->nextTimeDate = NULL;
 
     //END TIMER DATA
 
