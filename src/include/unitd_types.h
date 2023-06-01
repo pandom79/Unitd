@@ -1,6 +1,6 @@
 /**
  * @brief Unitd types
- * @file unitd.h
+ * @file unitd_types.h
  * @author Domenico Panella <pandom79@gmail.com>
  *
 */
@@ -30,8 +30,9 @@
 #include <pwd.h>
 #include <fnmatch.h>
 
-#define UNUSED __attribute__((unused))
-
+/**
+ * This enumerator represents the process state.<br>
+ */
 typedef enum {
     DEAD = 0,
     EXITED = 1,
@@ -47,14 +48,13 @@ typedef enum {
  * Represents the state of a process.
  * @var PStateData::desc
  * Represents the description of a process.
- *
-*/
-typedef struct PStateData {
+ */
+typedef struct {
     PState pState;
     const char *desc;
 } PStateData;
 
-static const struct PStateData PSTATE_DATA_ITEMS[] = {
+static const PStateData PSTATE_DATA_ITEMS[] = {
     { DEAD, "Dead" },
     { EXITED, "Exited" },
     { KILLED, "Killed" },
@@ -62,6 +62,9 @@ static const struct PStateData PSTATE_DATA_ITEMS[] = {
     { RESTARTING, "Restarting" }
 };
 
+/**
+ * This enumerator represents the process type.<br>
+ */
 typedef enum {
     NO_PROCESS_TYPE = -1,
     DAEMON = 0,
@@ -79,23 +82,17 @@ typedef enum {
  * Represents the description of a process type.
  *
 */
-typedef struct PTypeData {
+typedef struct {
     PType pType;
     const char *desc;
 } PTypeData;
 
-static const struct PTypeData PTYPE_DATA_ITEMS[] = {
+static const PTypeData PTYPE_DATA_ITEMS[] = {
     { DAEMON, "daemon" },
     { ONESHOT, "oneshot" },
     { TIMER, "timer" },
     { UPATH, "path" },
 };
-
-typedef enum {
-    FINAL_STATUS_READY = -1,
-    FINAL_STATUS_SUCCESS = 0,
-    FINAL_STATUS_FAILURE = 1
-} FinalStatusEnum;
 
 /**
  * @struct ProcessData
@@ -138,6 +135,9 @@ typedef struct {
 /* States */
 static const int STATE_DATA_ITEMS_LEN = 10;
 
+/**
+ * This enumerator represents the possible states.<br>
+ */
 typedef enum {
     NO_STATE = -1,
     INIT = 0,
@@ -161,12 +161,12 @@ typedef enum {
  * Represents the process state description.
  *
 */
-typedef struct StateData {
+typedef struct {
     State state;
     const char *desc;
 } StateData;
 
-static const struct StateData STATE_DATA_ITEMS[] = {
+static const StateData STATE_DATA_ITEMS[] = {
     { INIT, "init" },
     { POWEROFF, "poweroff" },
     { SINGLE_USER, "single-user" },

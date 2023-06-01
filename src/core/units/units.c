@@ -297,7 +297,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
     if (unitFrom && unitFrom->leftTimeDuration) {
         unit->leftTimeDuration = calloc(50, sizeof(char));
         assert(unit->leftTimeDuration);
-        assert(strcpy(unit->leftTimeDuration, unitFrom->leftTimeDuration));
+        assert(stringCopy(unit->leftTimeDuration, unitFrom->leftTimeDuration));
     }
     else
         unit->leftTimeDuration = NULL;
@@ -309,7 +309,7 @@ unitNew(Unit *unitFrom, ParserFuncType funcType)
     if (unitFrom && unitFrom->nextTimeDate) {
         unit->nextTimeDate = calloc(50, sizeof(char));
         assert(unit->nextTimeDate);
-        assert(strcpy(unit->nextTimeDate, unitFrom->nextTimeDate));
+        assert(stringCopy(unit->nextTimeDate, unitFrom->nextTimeDate));
     }
     else
         unit->nextTimeDate = NULL;

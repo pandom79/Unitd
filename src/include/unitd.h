@@ -127,7 +127,7 @@ int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force
 
 /**
  * Get the dependencies, conflicts or unit wanted states according the boolean parameters values.<br>
- * SockMessageOut struct must be freed via the sockMessageOutRelease function.
+ * SockMessageOut struct must be freed via the sockMessageOutRelease() function.
  * @param sockMessageOut
  * @param unitName
  * @param requires

@@ -42,6 +42,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define PROC_CMDLINE_UNITD_DEBUG    "unitd_debug=true"
 #define PATH_ENV_VAR                "/usr/bin:/usr/sbin:/bin:/sbin"
 
+#define UNUSED __attribute__((unused))
 
 extern pid_t UNITD_PID;
 extern UnitdData *UNITD_DATA;
@@ -91,6 +92,14 @@ typedef struct {
     const char *desc;
 } UnitdMessagesData;
 extern const UnitdMessagesData UNITD_MESSAGES_ITEMS[];
+
+/* Types */
+typedef enum {
+    FINAL_STATUS_READY = -1,
+    FINAL_STATUS_SUCCESS = 0,
+    FINAL_STATUS_FAILURE = 1
+} FinalStatusEnum;
+
 /*********************************************************************************/
 
 /* UNITCTL commands */
