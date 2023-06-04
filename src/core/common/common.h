@@ -14,7 +14,6 @@ typedef struct {
 } MutexThreadData;
 
 int readSymLink(const char *, char **);
-int msleep(long);
 void addEnvVar(Array **, const char *, const char *);
 State getStateByStr(char *);
 int getDefaultStateStr(char **);
