@@ -618,11 +618,11 @@ void
 showVersion()
 {
     printf("%s%s%s\n", WHITE_UNDERLINE_COLOR, "LINK INFO", DEFAULT_COLOR);
-    printf("  libunitd : ");
-    logSuccess(CONSOLE, UNITD_VER);
+    printf("libunitd : ");
+    logInfo(CONSOLE, "%s%s%s", WHITE_COLOR, UNITD_VER, DEFAULT_COLOR);
     printf("\n");
-    printf("   libulib : ");
-    logSuccess(CONSOLE, ULIB_VER);
+    printf("libulib  : ");
+    logInfo(CONSOLE, "%s%s%s", WHITE_COLOR, ULIB_VER, DEFAULT_COLOR);
     printf("\n");
 }
 

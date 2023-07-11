@@ -546,18 +546,18 @@ printLogSizeInfo(off_t prevLogSize, off_t freedLogSize, off_t currentLogSize)
     printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LOG SIZE INFO\n", DEFAULT_COLOR);
     if (prevLogSizeStr) {
         logInfo(CONSOLE, "Previous : ");
-        logSuccess(CONSOLE, "%s\n", prevLogSizeStr);
+        logInfo(CONSOLE, "%s%s%s\n", WHITE_COLOR, prevLogSizeStr, DEFAULT_COLOR);
     }
     if (freedLogSizeStr) {
         logInfo(CONSOLE, "   Freed : ");
-        logSuccess(CONSOLE, "%s\n", freedLogSizeStr);
+        logInfo(CONSOLE, "%s%s%s\n", WHITE_COLOR, freedLogSizeStr, DEFAULT_COLOR);
     }
     if (currentLogSizeStr) {
         if (prevLogSize == -1 && freedLogSize == -1)
             logInfo(CONSOLE, "Current : ");
         else
             logInfo(CONSOLE, " Current : ");
-        logSuccess(CONSOLE, "%s\n", currentLogSizeStr);
+        logInfo(CONSOLE, "%s%s%s\n", WHITE_COLOR, currentLogSizeStr, DEFAULT_COLOR);
     }
 
     objectRelease(&prevLogSizeStr);

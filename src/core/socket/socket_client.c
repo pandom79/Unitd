@@ -2030,7 +2030,7 @@ showBootAnalyze(SockMessageOut **sockMessageOut)
                 //Duration
                 duration = unitDisplay->processData->duration;
                 if (duration)
-                    logSuccess(CONSOLE, "%s", duration);
+                    logInfo(CONSOLE, "%s%s%s", WHITE_COLOR, duration, DEFAULT_COLOR);
                 else
                     printf("-");
                 len = (duration ? strlen(duration) : 1);
