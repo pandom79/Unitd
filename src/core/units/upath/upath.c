@@ -214,7 +214,11 @@ parsePathUnit(Array **units, Unit **unit, bool isAggregate) {
 
     assert(*unit);
     /* Initialize the parser */
-    parserInit(PARSE_PATH_UNIT);
+    PARSER_SECTIONS_ITEMS_LEN = UPATH_SECTIONS_ITEMS_LEN;
+    PARSER_SECTIONS_ITEMS = UPATH_SECTIONS_ITEMS;
+    PARSER_PROPERTIES_ITEMS_LEN = UPATH_PROPERTIES_ITEMS_LEN;
+    PARSER_PROPERTIES_ITEMS = UPATH_PROPERTIES_ITEMS;
+    parserInit();
     /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))

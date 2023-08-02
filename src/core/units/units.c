@@ -961,7 +961,11 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
 
     assert(*unit);
     /* Initialize the parser */
-    parserInit(PARSE_UNIT);
+    PARSER_SECTIONS_ITEMS_LEN = UNITS_SECTIONS_ITEMS_LEN;
+    PARSER_SECTIONS_ITEMS = UNITS_SECTIONS_ITEMS;
+    PARSER_PROPERTIES_ITEMS_LEN = UNITS_PROPERTIES_ITEMS_LEN;
+    PARSER_PROPERTIES_ITEMS = UNITS_PROPERTIES_ITEMS;
+    parserInit();
     /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))

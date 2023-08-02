@@ -52,12 +52,8 @@ typedef struct SectionData {
     int sectionCount;
 } SectionData;
 
-extern int UNITS_SECTIONS_ITEMS_LEN;
-extern SectionData UNITS_SECTIONS_ITEMS[];
-extern int UTIMERS_SECTIONS_ITEMS_LEN;
-extern SectionData UTIMERS_SECTIONS_ITEMS[];
-extern int UPATH_SECTIONS_ITEMS_LEN;
-extern SectionData UPATH_SECTIONS_ITEMS[];
+extern int PARSER_SECTIONS_ITEMS_LEN;
+extern SectionData *PARSER_SECTIONS_ITEMS;
 
 /* Properties */
 typedef struct PropertyName {
@@ -76,15 +72,11 @@ typedef struct PropertyData {
     Array *notDupValues;
 } PropertyData;
 
-extern int UNITS_PROPERTIES_ITEMS_LEN;
-extern PropertyData UNITS_PROPERTIES_ITEMS[];
-extern int UTIMERS_PROPERTIES_ITEMS_LEN;
-extern PropertyData UTIMERS_PROPERTIES_ITEMS[];
-extern int UPATH_PROPERTIES_ITEMS_LEN;
-extern PropertyData UPATH_PROPERTIES_ITEMS[];
+extern int PARSER_PROPERTIES_ITEMS_LEN;
+extern PropertyData *PARSER_PROPERTIES_ITEMS;
 
 /* Functions */
-void parserInit(ParserFuncType funcType);
+void parserInit();
 int parseLine(char *, int, Array **keyVal, PropertyData **);
 char* checkKeyVal(char *key, char *value, int numLine, PropertyData **);
 bool isValidNumber(const char *, bool);

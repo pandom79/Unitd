@@ -8,6 +8,11 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #define EUIDOWN         120
 
+extern int UTIMERS_SECTIONS_ITEMS_LEN;
+extern SectionData UTIMERS_SECTIONS_ITEMS[];
+extern int UTIMERS_PROPERTIES_ITEMS_LEN;
+extern PropertyData UTIMERS_PROPERTIES_ITEMS[];
+
 struct eventData {
     const char *timerUnitName;
 };

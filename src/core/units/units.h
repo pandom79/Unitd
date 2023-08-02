@@ -8,6 +8,11 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #define UNITD_DATA_PATH_CMD_VAR  "$UNITD_DATA_PATH"
 
+extern int UNITS_SECTIONS_ITEMS_LEN;
+extern SectionData UNITS_SECTIONS_ITEMS[];
+extern int UNITS_PROPERTIES_ITEMS_LEN;
+extern PropertyData UNITS_PROPERTIES_ITEMS[];
+
 /* Specific Errors */
 typedef enum {
     UNABLE_OPEN_UNIT_ERR = 0,

@@ -10,11 +10,10 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 static int SECTION_CURRENT = NO_SECTION;
 
-/* These static variables will be set according the functionality which requires them */
-static int PARSER_SECTIONS_ITEMS_LEN = -1;
-static SectionData *PARSER_SECTIONS_ITEMS;
-static int PARSER_PROPERTIES_ITEMS_LEN = -1;
-static PropertyData *PARSER_PROPERTIES_ITEMS;
+int PARSER_SECTIONS_ITEMS_LEN;
+SectionData *PARSER_SECTIONS_ITEMS;
+int PARSER_PROPERTIES_ITEMS_LEN;
+PropertyData *PARSER_PROPERTIES_ITEMS;
 
 static ErrorsData ERRORS_ITEMS[] = {
     { FIRST_CHARACTER_ERR, "An invalid character was found at the beginning of the line!" },
@@ -29,32 +28,9 @@ static ErrorsData ERRORS_ITEMS[] = {
 };
 
 void
-parserInit(ParserFuncType func)
+parserInit()
 {
     PropertyData *propertyData = NULL;
-    assert(func != NO_FUNC);
-    switch (func) {
-        case PARSE_UNIT:
-            PARSER_SECTIONS_ITEMS_LEN = UNITS_SECTIONS_ITEMS_LEN;
-            PARSER_SECTIONS_ITEMS = UNITS_SECTIONS_ITEMS;
-            PARSER_PROPERTIES_ITEMS_LEN = UNITS_PROPERTIES_ITEMS_LEN;
-            PARSER_PROPERTIES_ITEMS = UNITS_PROPERTIES_ITEMS;
-            break;
-        case PARSE_TIMER_UNIT:
-            PARSER_SECTIONS_ITEMS_LEN = UTIMERS_SECTIONS_ITEMS_LEN;
-            PARSER_SECTIONS_ITEMS = UTIMERS_SECTIONS_ITEMS;
-            PARSER_PROPERTIES_ITEMS_LEN = UTIMERS_PROPERTIES_ITEMS_LEN;
-            PARSER_PROPERTIES_ITEMS = UTIMERS_PROPERTIES_ITEMS;
-            break;
-        case PARSE_PATH_UNIT:
-            PARSER_SECTIONS_ITEMS_LEN = UPATH_SECTIONS_ITEMS_LEN;
-            PARSER_SECTIONS_ITEMS = UPATH_SECTIONS_ITEMS;
-            PARSER_PROPERTIES_ITEMS_LEN = UPATH_PROPERTIES_ITEMS_LEN;
-            PARSER_PROPERTIES_ITEMS = UPATH_PROPERTIES_ITEMS;
-            break;
-        default:
-            break;
-    }
     /* Reset all */
     for (int i = 0; i < PARSER_SECTIONS_ITEMS_LEN; i++) {
         PARSER_SECTIONS_ITEMS[i].sectionCount = 0;
@@ -107,8 +83,8 @@ char*
 getMsg(int numLine, const char *message, ...)
 {
     char *error = NULL;
-    char numLineStr[1000];
-    char replacedMess[1000];
+    char numLineStr[1000] = {0};
+    char replacedMess[1000] = {0};
 
     assert(message);
 
