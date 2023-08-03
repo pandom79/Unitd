@@ -9,7 +9,7 @@ add_global_arguments(['-Wno-incompatible-pointer-types'], language: 'c')
 
 ver = '6.1.0'
 so_ver = '6'
-ulib_ver = '4.0.3'
+ulib_ver = '4.1.0'
 project_name = 'unitd'
 unitlogd_name = 'unitlogd'
 
@@ -133,8 +133,6 @@ sources = files(
                 'src/core/logger/logger.h',
                 'src/core/common/common.c',
                 'src/core/common/common.h',
-                'src/core/parser/parser.c',
-                'src/core/parser/parser.h',
                 'src/core/units/units.c',
                 'src/core/units/units.h',
                 'src/core/units/utimers/utimers.c',

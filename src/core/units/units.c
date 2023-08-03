@@ -655,7 +655,7 @@ checkRequires(Array **units, Unit **currentUnit, bool isAggregate)
                 if (unitDepDep && arrayContainsStr(unitDepDep->requires, currentUnitName)) {
                     rv = 1;
                     arrayAdd(errors, getMsg(-1, UNITS_ERRORS_ITEMS[DEPS_ERR].desc,
-                                            UNITS_PROPERTIES_ITEMS[REQUIRES].propertyName.desc,
+                                            UNITS_PROPERTIES_ITEMS[REQUIRES].property.desc,
                                             currentUnitName, unitDep->name, unitDepDep->name));
                     if (!isAggregate)
                         return rv;
@@ -1017,7 +1017,7 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
             }
             else {
                 if ((value = arrayGet(lineData, 1))) {
-                    switch (propertyData->propertyName.propertyNameEnum) {
+                    switch (propertyData->property.id) {
                     case DESCRIPTION:
                         (*unit)->desc = stringNew(value);
                         break;

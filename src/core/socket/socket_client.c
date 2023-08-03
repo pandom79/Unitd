@@ -87,56 +87,56 @@ writeUnitContent(State defaultState, const char *unitPath, const char *unitName)
     }
 
     /* UNIT SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[0].sectionName.desc);
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[0].section.desc);
     /* Description property */
-    fprintf(fp, "%s = set the description for %s ...\n\n", UNITS_PROPERTIES_ITEMS[0].propertyName.desc,
+    fprintf(fp, "%s = set the description for %s ...\n\n", UNITS_PROPERTIES_ITEMS[0].property.desc,
             unitName);
     /* Requires property */
-    propertyName = UNITS_PROPERTIES_ITEMS[1].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[1].property.desc;
     fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
     /* Type property */
-    propertyName = UNITS_PROPERTIES_ITEMS[2].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[2].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Available values : oneshot, daemon (default).\n");
     fprintf(fp, "# %s = set the type ...\n\n", propertyName);
     /* Restart property */
-    propertyName = UNITS_PROPERTIES_ITEMS[3].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[3].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Available values : true, false (default).\n");
     fprintf(fp, "# %s = set the value ...\n\n", propertyName);
     /* RestartMax property */
-    propertyName = UNITS_PROPERTIES_ITEMS[4].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[4].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "# If it is set then Restart property will be ignored.\n");
     fprintf(fp, "# %s = set the number ...\n\n", propertyName);
     /* Conflicts property */
-    propertyName = UNITS_PROPERTIES_ITEMS[5].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[5].property.desc;
     fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
 
     /* COMMAND SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[1].sectionName.desc);
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[1].section.desc);
     /* Run property */
-    fprintf(fp, "%s = set the command to run ...\n\n", UNITS_PROPERTIES_ITEMS[6].propertyName.desc);
+    fprintf(fp, "%s = set the command to run ...\n\n", UNITS_PROPERTIES_ITEMS[6].property.desc);
     /* Stop property */
-    propertyName = UNITS_PROPERTIES_ITEMS[7].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[7].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# %s = set the command to stop ...\n\n", propertyName);
     /* Failure property */
-    propertyName = UNITS_PROPERTIES_ITEMS[8].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[8].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# %s = set the command to run on failure ...\n\n", propertyName);
 
     /* STATE SECTION */
-    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].sectionName.desc);
+    fprintf(fp, "%s\n", UNITS_SECTIONS_ITEMS[2].section.desc);
     /* WantedBy property */
-    propertyName = UNITS_PROPERTIES_ITEMS[9].propertyName.desc;
+    propertyName = UNITS_PROPERTIES_ITEMS[9].property.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception
@@ -178,46 +178,46 @@ writePathUnitContent(State defaultState, const char *unitPath, const char *unitN
     }
 
     /* UNIT SECTION */
-    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[0].sectionName.desc);
+    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[0].section.desc);
     /* Description property */
-    fprintf(fp, "%s = set the description for %s ...\n\n", UPATH_PROPERTIES_ITEMS[0].propertyName.desc,
+    fprintf(fp, "%s = set the description for %s ...\n\n", UPATH_PROPERTIES_ITEMS[0].property.desc,
             unitName);
     /* Requires property */
-    propertyName = UPATH_PROPERTIES_ITEMS[1].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[1].property.desc;
     fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
     /* Conflicts property */
-    propertyName = UPATH_PROPERTIES_ITEMS[2].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[2].property.desc;
     fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
 
     /* PATH SECTION */
-    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[1].sectionName.desc);
+    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[1].section.desc);
     /* PathExists property */
-    propertyName = UPATH_PROPERTIES_ITEMS[3].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[3].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "%s = set the path ...\n\n", propertyName);
     /* PathExistsGlob property */
-    propertyName = UPATH_PROPERTIES_ITEMS[4].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[4].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "%s = set the path ...\n\n", propertyName);
     /* PathResourceChanged property */
-    propertyName = UPATH_PROPERTIES_ITEMS[5].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[5].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "%s = set the path ...\n\n", propertyName);
     /* PathDirectoryNotEmpty property */
-    propertyName = UPATH_PROPERTIES_ITEMS[6].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[6].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "%s = set the path ...\n\n", propertyName);
 
     /* STATE SECTION */
-    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[2].sectionName.desc);
+    fprintf(fp, "%s\n", UPATH_SECTIONS_ITEMS[2].section.desc);
     /* WantedBy property */
-    propertyName = UPATH_PROPERTIES_ITEMS[7].propertyName.desc;
+    propertyName = UPATH_PROPERTIES_ITEMS[7].property.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception
@@ -259,65 +259,65 @@ writeTimerContent(State defaultState, const char *unitPath, const char *unitName
     }
 
     /* UNIT SECTION */
-    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[0].sectionName.desc);
+    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[0].section.desc);
     /* Description property */
-    fprintf(fp, "%s = set the description for %s ...\n\n", UTIMERS_PROPERTIES_ITEMS[0].propertyName.desc,
+    fprintf(fp, "%s = set the description for %s ...\n\n", UTIMERS_PROPERTIES_ITEMS[0].property.desc,
             unitName);
     /* Requires property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[1].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[1].property.desc;
     fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
     /* Conflicts property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[2].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[2].property.desc;
     fprintf(fp, "# '%s' property (optional and repeatable).\n", propertyName);
     fprintf(fp, "# %s = unit name 1\n", propertyName);
     fprintf(fp, "# %s = ...\n", propertyName);
     fprintf(fp, "# %s = unit name n\n\n", propertyName);
     /* Wake system */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[3].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[3].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Available values : true, false (default).\n");
     fprintf(fp, "# %s = set the value ...\n\n", propertyName);
 
     /* INTERVAL SECTION */
-    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[1].sectionName.desc);
+    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[1].section.desc);
     /* Seconds property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[4].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[4].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the seconds number ...\n\n", propertyName);
     /* Minutes property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[5].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[5].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the minutes number ...\n\n", propertyName);
     /* Hours property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[6].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[6].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the hours number ...\n\n", propertyName);
     /* Days property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[7].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[7].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the days number ...\n\n", propertyName);
     /* Weeks property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[8].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[8].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the weeks number ...\n\n", propertyName);
     /* Months property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[9].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[9].property.desc;
     fprintf(fp, "# '%s' property (optional and not repeatable).\n", propertyName);
     fprintf(fp, "# Accept a numeric value greater than zero.\n");
     fprintf(fp, "%s = set the months number ...\n\n", propertyName);
 
     /* STATE SECTION */
-    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[2].sectionName.desc);
+    fprintf(fp, "%s\n", UTIMERS_SECTIONS_ITEMS[2].section.desc);
     /* WantedBy property */
-    propertyName = UTIMERS_PROPERTIES_ITEMS[10].propertyName.desc;
+    propertyName = UTIMERS_PROPERTIES_ITEMS[10].property.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
         /* In this case, we don't consider the cmdline state which is an exception

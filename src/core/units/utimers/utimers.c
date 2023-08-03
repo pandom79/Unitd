@@ -520,7 +520,7 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
             }
             else {
                 if ((value = arrayGet(lineData, 1))) {
-                    switch (propertyData->propertyName.propertyNameEnum) {
+                    switch (propertyData->property.id) {
                     case DESCRIPTION:
                         (*unit)->desc = stringNew(value);
                         break;

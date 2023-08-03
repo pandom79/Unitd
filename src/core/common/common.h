@@ -8,6 +8,15 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #define EUIRUN   114
 
+typedef enum {
+    NO_FUNC = -1,
+    PARSE_UNIT = 0,
+    PARSE_TIMER_UNIT = 1,
+    PARSE_PATH_UNIT = 2,
+    PARSE_SOCK_RESPONSE_UNITLIST = 3,
+    PARSE_SOCK_RESPONSE = 4
+} ParserFuncType;
+
 typedef struct {
     pthread_mutex_t *mutex;
     bool lock;
