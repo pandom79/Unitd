@@ -72,7 +72,7 @@ checkWellFormedPath(Unit **unit, const char *path, int propertyNameEnum)
         stringEndsWithChr(path, '/')) {
         arrayAdd((*unit)->errors,
                  getMsg(-1, UNITS_ERRORS_ITEMS[UPATH_WELL_FORMED_PATH_ERR].desc,
-                        UPATH_PROPERTIES_ITEMS[propertyNameEnum].propertyName.desc));
+                        UPATH_PROPERTIES_ITEMS[propertyNameEnum].property.desc));
         return 1;
     }
 
@@ -131,7 +131,7 @@ checkWatchers(Unit **unit, bool isAggregate)
                 if (!(*watchMonitorPath)) {
                     logError(CONSOLE | SYSTEM, "src/core/units/upath/upath.c", "checkWatchers", EPERM,
                              strerror(EPERM), "The monitor path is null for %s property",
-                             UPATH_PROPERTIES_ITEMS[propertyName].propertyName.desc);
+                             UPATH_PROPERTIES_ITEMS[propertyName].property.desc);
                     kill(UNITD_PID, SIGTERM);
                 }
                 /* Check if we can access there in read mode because
@@ -139,7 +139,7 @@ checkWatchers(Unit **unit, bool isAggregate)
                 */
                 if ((rv = access(*watchMonitorPath, R_OK)) != 0) {
                     arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UPATH_ACCESS_ERR].desc,
-                                              UPATH_PROPERTIES_ITEMS[propertyName].propertyName.desc));
+                                              UPATH_PROPERTIES_ITEMS[propertyName].property.desc));
                     if (!isAggregate)
                         goto out;
                 }
@@ -270,7 +270,7 @@ parsePathUnit(Array **units, Unit **unit, bool isAggregate) {
             }
             else {
                 if ((value = arrayGet(lineData, 1))) {
-                    switch (propertyData->propertyName.propertyNameEnum) {
+                    switch (propertyData->property.id) {
                     case DESCRIPTION:
                         (*unit)->desc = stringNew(value);
                         break;

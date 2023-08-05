@@ -14,7 +14,6 @@
 #include <sys/wait.h>
 #include <sys/inotify.h>
 #include <dirent.h>
-#include <stdarg.h>
 #include <pthread.h>
 #include <glob.h>
 #include <signal.h>

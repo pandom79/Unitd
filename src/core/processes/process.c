@@ -754,7 +754,7 @@ getRestartableUnits(Array **units)
     for (int i = 0; i < lenUnits; i++) {
         unit = arrayGet(*units, i);
         /* We exclude the timers which have a different restart concept. */
-        if (unit->pipe && (unit->type != TIMER))
+        if (unit->pipe && unit->type != TIMER)
             arrayAdd(restartableUnits, unit);
     }
     return restartableUnits;
