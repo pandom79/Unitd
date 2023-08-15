@@ -1239,6 +1239,15 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
     if (durationFrom)
         pDataRet->duration = stringNew(durationFrom);
 
+    //Signal number
+    int *signalNum = calloc(1, sizeof(int));
+    assert(signalNum);
+    if (!pDataFrom)
+        *signalNum = -1;
+    else
+        *signalNum = *pDataFrom->signalNum;
+    pDataRet->signalNum = signalNum;
+
     /* If we are not showing the list then we add more data */
     if (funcType == PARSE_UNIT || funcType == PARSE_SOCK_RESPONSE) {
         //Exit code
@@ -1249,15 +1258,6 @@ processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
         else
             *exitCode = *pDataFrom->exitCode;
         pDataRet->exitCode = exitCode;
-
-        //Signal number
-        int *signalNum = calloc(1, sizeof(int));
-        assert(signalNum);
-        if (!pDataFrom)
-            *signalNum = -1;
-        else
-            *signalNum = *pDataFrom->signalNum;
-        pDataRet->signalNum = signalNum;
 
         //Date start
         char *dateTimeStartFrom = (pDataFrom ? pDataFrom->dateTimeStartStr : NULL);

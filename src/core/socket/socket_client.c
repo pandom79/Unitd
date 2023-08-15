@@ -522,7 +522,7 @@ printSignalNum(int signalNum)
         else if (signalNum == SIGSTOP || signalNum == SIGTSTP)
             logInfo(CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
         else if (signalNum == SIGCONT)
-            logSuccess(CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
+            logWarning(CONSOLE, "%d (%s)\n", signalNum, strsignal(signalNum));
     }
 }
 
@@ -823,8 +823,8 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                 }
                 else
                     sprintf(pidStr, "%d", *pid);
-                /* The restarted units require attention */
-                if (unitDisplay->restartNum > 0)
+                /* The restarted or "continuated" units require attention */
+                if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT)
                     logWarning(CONSOLE, "%s", pidStr);
                 else
                     printf("%s", pidStr);

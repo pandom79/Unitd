@@ -33,6 +33,7 @@ Restartable=value       (optional and repeatable)
 Type=value              (optional and repeatable)
 NextTimeDate=value      (optional and repeatable)
 LeftTimeDuration=value  (optional and repeatable)
+SignalNum=value         (optional and repeatable)
 */
 
 /* PARSE_SOCK_RESPONSE functionality
@@ -71,7 +72,6 @@ UnitError=value2        (optional and repeatable)
 ....
 UnitError=valueN        (optional and repeatable)
 ExitCode=value          (optional and repeatable)
-SignalNum=value         (optional and repeatable)
 DateTimeStart=value     (optional and repeatable)
 DateTimeStop=value      (optional and repeatable)
 Interval=value          (optional and repeatable)
@@ -104,15 +104,15 @@ typedef enum {
     TYPE = 12,
     NEXTTIMEDATE = 13,
     LEFTTIMEDURATION = 14,
-    TIMERNAME = 15,
-    TIMERPSTATE = 16,
-    PATHUNITNAME = 17,
-    PATHUNITPSTATE = 18,
-    PATH = 19,
-    RESTARTMAX = 20,
-    UNITERROR = 21,
-    EXITCODE = 22,
-    SIGNALNUM = 23,
+    SIGNALNUM = 15,
+    TIMERNAME = 16,
+    TIMERPSTATE = 17,
+    PATHUNITNAME = 18,
+    PATHUNITPSTATE = 19,
+    PATH = 20,
+    RESTARTMAX = 21,
+    UNITERROR = 22,
+    EXITCODE = 23,
     DATETIMESTART = 24,
     DATETIMESTOP = 25,
     INTERVAL = 26,
@@ -368,6 +368,11 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringAppendStr(&buffer, leftTimeDuration);
             stringAppendStr(&buffer, TOKEN);
         }
+        /* Signal Num */
+        stringAppendStr(&buffer, asStr(SIGNALNUM));
+        stringAppendStr(&buffer, ASSIGNER);
+        setValueForBuffer(&buffer, *pData->signalNum);
+        stringAppendStr(&buffer, TOKEN);
 
         if (funcType == PARSE_SOCK_RESPONSE) {
             /* Timer name */
@@ -428,11 +433,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
             stringAppendStr(&buffer, asStr(EXITCODE));
             stringAppendStr(&buffer, ASSIGNER);
             setValueForBuffer(&buffer, *pData->exitCode);
-            stringAppendStr(&buffer, TOKEN);
-            /* Signal Num */
-            stringAppendStr(&buffer, asStr(SIGNALNUM));
-            stringAppendStr(&buffer, ASSIGNER);
-            setValueForBuffer(&buffer, *pData->signalNum);
             stringAppendStr(&buffer, TOKEN);
             /* Date Time Start */
             dateTimeStart = pData->dateTimeStartStr;

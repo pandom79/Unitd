@@ -248,19 +248,19 @@ int main(int argc, char **argv) {
         sync();
         switch (SHUTDOWN_COMMAND) {
             case REBOOT_COMMAND:
-                logInfo(CONSOLE, "%sSystem reboot ...%s", WHITE_COLOR, DEFAULT_COLOR);
+                logSuccess(CONSOLE, "System reboot ...");
                 reboot(RB_AUTOBOOT);
                 break;
             case POWEROFF_COMMAND:
-                logInfo(CONSOLE, "%sSystem power off ...%s", WHITE_COLOR, DEFAULT_COLOR);
+                logSuccess(CONSOLE, "System power off ...");
                 reboot(RB_POWER_OFF);
                 break;
             case HALT_COMMAND:
-                logInfo(CONSOLE, "%sSystem halt ...%s", WHITE_COLOR, DEFAULT_COLOR);
+                logSuccess(CONSOLE, "System halt ...");
                 reboot(RB_HALT_SYSTEM);
                 break;
             case KEXEC_COMMAND:
-                logInfo(CONSOLE, "%sSystem reboot with kexec ...%s", WHITE_COLOR, DEFAULT_COLOR);
+                logSuccess(CONSOLE, "System reboot with kexec ...");
                 reboot(RB_KEXEC);
                 break;
             default:

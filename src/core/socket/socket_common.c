@@ -383,7 +383,7 @@ applyListFilter(Array **unitsDisplay, ListFilter listFilter)
                     remove = true;
                 break;
             case RESTARTED_FILTER:
-                if (unitDisplay->restartNum <= 0)
+                if (unitDisplay->restartNum <= 0 && *unitDisplay->processData->signalNum != SIGCONT)
                     remove = true;
                 break;
             default:
