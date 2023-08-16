@@ -62,7 +62,8 @@ typedef enum {
     UNIT_CHANGED_MSG = 7,
     UNIT_ENABLE_STATE_MSG = 8,
     UNIT_CHANGED_RE_ENABLE_MSG = 9,
-    UNIT_RE_ENABLE_MSG = 10
+    UNIT_RE_ENABLE_MSG = 10,
+    UNIT_NO_DATA_FOUND = 11
 } UnitsMessagesEnum;
 typedef struct {
     UnitsMessagesEnum errorEnum;

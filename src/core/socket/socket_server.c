@@ -1437,6 +1437,11 @@ getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     else if (states)
         *messages = arrayStrCopy(unitDisplay->wantedBy);
 
+    if (!(*messages))
+        *messages = arrayNew(objectRelease);
+    if ((*messages)->size == 0)
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND].desc));
+
     out:
         /* Marshall response */
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
