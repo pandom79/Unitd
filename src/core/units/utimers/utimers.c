@@ -442,11 +442,8 @@ parseTimerUnit(Array **units, Unit **unit, bool isAggregate) {
 
     assert(*unit);
     /* Initialize the parser */
-    PARSER_SECTIONS_ITEMS_LEN = UTIMERS_SECTIONS_ITEMS_LEN;
-    PARSER_SECTIONS_ITEMS = UTIMERS_SECTIONS_ITEMS;
-    PARSER_PROPERTIES_ITEMS_LEN = UTIMERS_PROPERTIES_ITEMS_LEN;
-    PARSER_PROPERTIES_ITEMS = UTIMERS_PROPERTIES_ITEMS;
-    parserInit();
+    parserInit(UTIMERS_SECTIONS_ITEMS_LEN, UTIMERS_SECTIONS_ITEMS, UTIMERS_PROPERTIES_ITEMS_LEN,
+               UTIMERS_PROPERTIES_ITEMS);
     /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))
