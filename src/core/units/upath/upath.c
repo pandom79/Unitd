@@ -207,6 +207,7 @@ parsePathUnit(Array **units, Unit **unit, bool isAggregate) {
     char *line, *error, *value, *unitPath, *dep, *conflict;
     Array *lineData, **errors, *requires, *conflicts, *wantedBy;
     PropertyData *propertyData = NULL;
+    SectionData *sectionData = NULL;
 
     numLine = rv = sizeErrs = 0;
     line = error = value = unitPath = dep = conflict = NULL;
@@ -246,7 +247,7 @@ parsePathUnit(Array **units, Unit **unit, bool isAggregate) {
     while (getline(&line, &len, fp) != -1) {
         numLine++;
         /* Parsing the line */
-        rv = parseLine(line, numLine, &lineData, &propertyData);
+        rv = parseLine(line, numLine, &lineData, &sectionData, &propertyData);
         /* lineData[0] -> Key   (Required)
          * lineData[1] -> Value (Optional: NULL in section case)
          * lineData[2] -> Error (Optional)
