@@ -582,7 +582,7 @@ vacuum(const char *bootIdx)
 
     /* Check input */
     if (stringContainsStr(bootIdx, RANGE_TOKEN)) {
-        idxArr = stringSplitFirst((char *)bootIdx, RANGE_TOKEN);
+        idxArr = stringSplitOnce((char *)bootIdx, RANGE_TOKEN);
         int len = idxArr ? idxArr->size : 0;
         assert(len == 2);
         const char *startIdxStr = arrayGet(idxArr, 0);

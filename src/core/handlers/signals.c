@@ -118,7 +118,7 @@ signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                          * Additionally, according restart policy, if 'restartNum' achieves 'restartMax' then
                          * this pid will remain stopped and we don't want that.
                          * At most, we set a sigcont signal. In this way the user will see it in the unit status
-                         * and will understand that is has been stopped.
+                         * and will understand that it has been stopped.
                          * That will can also be confirmed by system log.
                          */
                         if (kill(infoPid, SIGCONT) == -1) {
