@@ -31,6 +31,9 @@ char *SOCKET_USER_PATH;
 */
 int MONITORED_FD_SET[MAX_CLIENT_SUPPORTED];
 
+/* This variable represents the max socket buffer size */
+int MAX_SOCKBUF_SIZE = 0;
+
 /* The following the are some functions which handling
  * the monitored fd set.
 */
@@ -114,21 +117,24 @@ listenSocketRequest()
     /* If unitd daemon not properly exited, could have not remove the socket */
     unlinkSocket();
     /* Connection */
-    if ((socketConnection = initSocket(&name)) == -1)
+    if ((socketConnection = initSocket(&name)) == -1) {
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
+    }
     /* Binding */
     if ((rv = bind(socketConnection, (const struct sockaddr *)&name,
                    sizeof(struct sockaddr_un))) == -1) {
         logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest",
                       errno, strerror(errno), "Bind error");
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
     }    
     /* Listening */
     if ((rv = listen(socketConnection, BACK_LOG)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest",
                       errno, strerror(errno), "Listen error");
+        SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
-
     }    
     /* Adding the master socket to monitored set of fd */
     addToMonitoredFdSet(socketConnection);
@@ -260,6 +266,26 @@ socketDispatchRequest(char *buffer, int *socketFd)
         return rv;
 }
 
+static void
+resetListRes(SockMessageOut **sockMessageOut, char **buffer)
+{
+    assert(*sockMessageOut);
+    assert(*buffer);
+
+    Array **errors = &(*sockMessageOut)->errors;
+    Array **messages = &(*sockMessageOut)->messages;
+
+    arrayRelease(&(*sockMessageOut)->unitsDisplay);
+    objectRelease(buffer);
+    if (!(*errors))
+        *errors = arrayNew(objectRelease);
+    if (!(*messages))
+        *messages = arrayNew(objectRelease);
+    arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
+    arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
+    *buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
+}
+
 int
 getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
@@ -268,11 +294,12 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     Array **messages = &(*sockMessageOut)->messages;
     Array **errors = &(*sockMessageOut)->errors;
     Array *options = sockMessageIn->options;
-    int rv, lenUnits;
+    int rv, lenUnits, bufferLen;
     bool bootAnalyze = false;
+    socklen_t optlen = sizeof(int);
     ListFilter listFilter = getListFilterByOpt(options);
 
-    rv = lenUnits = 0;
+    rv = lenUnits = bufferLen = 0;
     (*sockMessageOut)->unitsDisplay = unitsDisplay;
 
     assert(*socketFd != -1);
@@ -348,13 +375,40 @@ getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **
     out:
         /* Marshall response */
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
+        bufferLen = strlen(buffer);
+
+        /* Check socket buffer size */
+        if (MAX_SOCKBUF_SIZE == 0 && getsockopt(*socketFd, SOL_SOCKET, SO_SNDBUF, &MAX_SOCKBUF_SIZE, &optlen) == -1) {
+            logError(ALL, "src/core/socket/socket_server.c", "getUnitListServer",
+                          errno, strerror(errno), "Getsockopt func returned -1 exit code!");
+            resetListRes(sockMessageOut, &buffer);
+            bufferLen = strlen(buffer);
+        }
+        else if (bufferLen >= MAX_SOCKBUF_SIZE) {
+            arrayRelease(&(*sockMessageOut)->unitsDisplay);
+            objectRelease(&buffer);
+            if (!(*errors))
+                *errors = arrayNew(objectRelease);
+            if (!(*messages))
+                *messages = arrayNew(objectRelease);
+            arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_SOCKBUF_ERR].desc));
+            arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SOCKBUF_MSG].desc, bufferLen, MAX_SOCKBUF_SIZE));
+            buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
+            bufferLen = strlen(buffer);
+        }
+
         if (UNITD_DEBUG)
-            syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%lu): \n%s",
-                                            strlen(buffer), buffer);
+            syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%d): \n%s", bufferLen, buffer);
+
         /* Sending the response */
-        if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
+        if ((rv = uSend(*socketFd, buffer, bufferLen, 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitListServer",
                           errno, strerror(errno), "Send func returned -1 exit code!");
+            if (errno == EMSGSIZE) {
+                resetListRes(sockMessageOut, &buffer);
+                bufferLen = strlen(buffer);
+                uSend(*socketFd, buffer, bufferLen, 0);
+            }
         }
 
         objectRelease(&buffer);

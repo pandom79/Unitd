@@ -711,8 +711,7 @@ getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter listFi
         goto out;
 
     if (UNITCTL_DEBUG)
-        syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer received (%lu): \n%s",
-                                        strlen(bufferRes), bufferRes);
+        syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer received (%lu): \n%s", strlen(bufferRes), bufferRes);
 
     /* Unmarshall the response */
     if (!(*sockMessageOut))
@@ -764,85 +763,110 @@ showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
 
         /* Filling sockMessageOut */
         if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
-            unitsDisplay = (*sockMessageOut)->unitsDisplay;
-            maxLenName = getMaxLen(unitsDisplay, "name");
-            maxLenDesc = getMaxLen(unitsDisplay, "desc");
-            lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
-            if (maxLenName < WIDTH_UNIT_NAME)
-                maxLenName = WIDTH_UNIT_NAME;
-            if (maxLenDesc < WIDTH_DESCRIPTION)
-                maxLenDesc = WIDTH_DESCRIPTION;
-            /* HEADER */
-            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
-            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
 
-            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "ENABLED", DEFAULT_COLOR);
-            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
-
-            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "PID", DEFAULT_COLOR);
-            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 8 - WIDTH_PID + PADDING, "", DEFAULT_COLOR);
-
-            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
-            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
-
-            printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
-            printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
-            printf("\n");
-
-            /* CELLS */
-            for (int i = 0; i < lenUnits; i++) {
-                unitDisplay = arrayGet(unitsDisplay, i);
-                ProcessData *pData = unitDisplay->processData;
-                PStateData *pStateData = pData->pStateData;
-                PState pState = pStateData->pState;
-
-                /* Unit name
-                 * Warning: don't color unit name because the bash completion fails
-                */
-                unitName = unitDisplay->name;
-                printf("%s", unitName);
-                len = strlen(unitName);
-                if (maxLenName < len)
-                    maxLenName = len;
-                printf("%*s", maxLenName - len + PADDING, "");
-
-                /* Enabled */
-                enabled = unitDisplay->enabled;
-                printf("%s", (enabled ? "true" : "false"));
-                if (enabled)
-                    printf("%*s", WIDTH_ENABLED - 3 + PADDING, "");
-                else
-                    printf("%*s", WIDTH_ENABLED - 4 + PADDING, "");
-
-                /* PID */
-                pid = pData->pid;
-                char pidStr[10];
-                if (*pid == -1) {
-                    pidStr[0] = '-';
-                    pidStr[1] = '\0';
-                }
-                else
-                    sprintf(pidStr, "%d", *pid);
-                /* The restarted or "continuated" units require attention */
-                if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT)
-                    logWarning(CONSOLE, "%s", pidStr);
-                else
-                    printf("%s", pidStr);
-                printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
-
-                /* STATUS */
-                finalStatus = pData->finalStatus;
-                status = pStateData->desc;
-                printStatus(pState, status, *finalStatus, false);
-                if (*finalStatus == FINAL_STATUS_FAILURE)
-                    printf("%*s", 10 - 6 + PADDING, ""); //Failed str
-                else
-                    printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
-                /* Description */
-                printf("%s", unitDisplay->desc);
+            /* Display the errors */
+            Array *sockErrors = (*sockMessageOut)->errors;
+            int lenErr = (sockErrors ? sockErrors->size : 0);
+            for (int i = 0; i < lenErr; i++) {
+                logErrorStr(CONSOLE, arrayGet(sockErrors, i));
                 printf("\n");
             }
-            printf("\n%d units found\n", lenUnits);
+
+            /* Display the messages */
+            Array *messages = (*sockMessageOut)->messages;
+            int lenMes = (messages ? messages->size : 0);
+            char *message = NULL;
+            for (int i = 0; i < lenMes; i++) {
+                message = arrayGet(messages, i);
+                if (stringStartsWithStr(message, "Warning"))
+                    logWarning(CONSOLE, message);
+                else
+                    logInfo(CONSOLE, message);
+                printf("\n");
+            }
+
+            /* Display unit list */
+            if (lenErr == 0) {
+                unitsDisplay = (*sockMessageOut)->unitsDisplay;
+                maxLenName = getMaxLen(unitsDisplay, "name");
+                maxLenDesc = getMaxLen(unitsDisplay, "desc");
+                lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
+                if (maxLenName < WIDTH_UNIT_NAME)
+                    maxLenName = WIDTH_UNIT_NAME;
+                if (maxLenDesc < WIDTH_DESCRIPTION)
+                    maxLenDesc = WIDTH_DESCRIPTION;
+                /* HEADER */
+                printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT NAME", DEFAULT_COLOR);
+                printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenName - WIDTH_UNIT_NAME + PADDING, "", DEFAULT_COLOR);
+
+                printf("%s%s%s", WHITE_UNDERLINE_COLOR, "ENABLED", DEFAULT_COLOR);
+                printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
+
+                printf("%s%s%s", WHITE_UNDERLINE_COLOR, "PID", DEFAULT_COLOR);
+                printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 8 - WIDTH_PID + PADDING, "", DEFAULT_COLOR);
+
+                printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STATUS", DEFAULT_COLOR);
+                printf("%s%*s%s", WHITE_UNDERLINE_COLOR, 10 - WIDTH_STATUS + PADDING, "", DEFAULT_COLOR);
+
+                printf("%s%s%s", WHITE_UNDERLINE_COLOR, "DESCRIPTION", DEFAULT_COLOR);
+                printf("%s%*s%s", WHITE_UNDERLINE_COLOR, maxLenDesc - WIDTH_DESCRIPTION, "", DEFAULT_COLOR);
+                printf("\n");
+
+                /* CELLS */
+                for (int i = 0; i < lenUnits; i++) {
+                    unitDisplay = arrayGet(unitsDisplay, i);
+                    ProcessData *pData = unitDisplay->processData;
+                    PStateData *pStateData = pData->pStateData;
+                    PState pState = pStateData->pState;
+
+                    /* Unit name
+                     * Warning: don't color unit name because the bash completion fails
+                    */
+                    unitName = unitDisplay->name;
+                    printf("%s", unitName);
+                    len = strlen(unitName);
+                    if (maxLenName < len)
+                        maxLenName = len;
+                    printf("%*s", maxLenName - len + PADDING, "");
+
+                    /* Enabled */
+                    enabled = unitDisplay->enabled;
+                    printf("%s", (enabled ? "true" : "false"));
+                    if (enabled)
+                        printf("%*s", WIDTH_ENABLED - 3 + PADDING, "");
+                    else
+                        printf("%*s", WIDTH_ENABLED - 4 + PADDING, "");
+
+                    /* PID */
+                    pid = pData->pid;
+                    char pidStr[10];
+                    if (*pid == -1) {
+                        pidStr[0] = '-';
+                        pidStr[1] = '\0';
+                    }
+                    else
+                        sprintf(pidStr, "%d", *pid);
+                    /* The restarted or "continuated" units require attention */
+                    if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT)
+                        logWarning(CONSOLE, "%s", pidStr);
+                    else
+                        printf("%s", pidStr);
+                    printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
+
+                    /* STATUS */
+                    finalStatus = pData->finalStatus;
+                    status = pStateData->desc;
+                    printStatus(pState, status, *finalStatus, false);
+                    if (*finalStatus == FINAL_STATUS_FAILURE)
+                        printf("%*s", 10 - 6 + PADDING, ""); //Failed str
+                    else
+                        printf("%*s", 10 - ((int)strlen(status)) + PADDING, ""); //Status str
+                    /* Description */
+                    printf("%s", unitDisplay->desc);
+                    printf("\n");
+                }
+                printf("\n%d units found\n", lenUnits);
+            }
         }
     }
     else { /* parent */

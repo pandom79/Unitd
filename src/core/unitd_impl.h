@@ -75,6 +75,7 @@ extern pthread_mutex_t NOTIFIER_MUTEX;
 /* Errors */
 typedef enum {
     UNITD_GENERIC_ERR = 0,
+    UNITD_SOCKBUF_ERR = 1
 } UnitdErrorsEnum;
 typedef struct {
     UnitdErrorsEnum errorEnum;
@@ -85,6 +86,7 @@ extern const UnitdErrorsData UNITD_ERRORS_ITEMS[];
 /* Messages */
 typedef enum {
     UNITD_SYSTEM_LOG_MSG = 0,
+    UNITD_SOCKBUF_MSG = 1
 } UnitdMessagesEnum;
 typedef struct {
     UnitdMessagesEnum errorEnum;

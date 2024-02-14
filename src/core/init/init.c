@@ -74,11 +74,14 @@ int LIST_FILTER_LEN = 9;
 
 /* Unitd errors */
 const UnitdErrorsData UNITD_ERRORS_ITEMS[] = {
-    { UNITD_GENERIC_ERR, "An error has occurred!" }
+    { UNITD_GENERIC_ERR, "An error has occurred!" },
+    { UNITD_SOCKBUF_ERR, "Unable to receive the data!" }
 };
 /* Unitd messages */
 const UnitdMessagesData UNITD_MESSAGES_ITEMS[] = {
-    { UNITD_SYSTEM_LOG_MSG, "Please, check the system log for details." }
+    { UNITD_SYSTEM_LOG_MSG, "Please, check the system log for details." },
+    { UNITD_SOCKBUF_MSG, "Have been requested '%lu' bytes but only '%lu' are available.\n"
+                         "Please, increase the socket buffer size." }
 };
 
 State STATE_DEFAULT;
