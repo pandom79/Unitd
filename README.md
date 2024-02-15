@@ -22,6 +22,7 @@ Run ```man unitd``` to consult the manual page.<br/>
 - <a href="#how-to-configure-the-units">How to configure the units?</a>
 - <a href="#unitctl">Unitctl</a>
 - <a href="#unitlogd-and-unitlogctl">Unitlogd and Unitlogctl</a>
+- <a href="#troubleshooting">Troubleshooting</a>
 - <a href="#note">Note</a>
 
 ### Dependencies
@@ -336,6 +337,19 @@ Run ```man unitlogd``` to consult the manual page.<br/>
 The log handling is possible via **unitlogctl** command.<br/>
 Run ```unitlogctl --help or -h``` to know the usage.<br/>
 Run ```man unitlogctl``` to consult the manual page.
+
+### Troubleshooting
+
+<ul>
+    <li>
+        <b>Socket buffer size</b><br/>
+        Unitd uses a simply socket as IPC (Interprocess Communication).<br/>
+        Could happen that the data are too large to trasmit.<br/>
+        To fix this problem, you can create a file in <b><i>/etc/sysctl.d</i></b> which content<br/>
+        could be like <a href="https://github.com/pandom79/Unitd/blob/master/sysctl/00-unitd-sockbuf.conf">this example.</a><br>
+        Adjust the values according your needs and reboot the system.<br>
+    </li>
+</ul>
 
 ### Note
 
