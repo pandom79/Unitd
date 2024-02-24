@@ -9,6 +9,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #ifndef UNITD_H
 #define UNITD_H
 
+#define _GNU_SOURCE
+
 /**
  * @brief Unitd init system library
  * @file unitd.h
@@ -95,7 +97,8 @@ int stopUnit(SockMessageOut **sockMessageOut, const char *unitName);
  * @param reset
  * @return integer
  */
-int startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool restart, bool reset);
+int startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool restart,
+              bool reset);
 
 /**
  * Disable the unit.<br>
@@ -122,8 +125,8 @@ int disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
  * @param reset
  * @return integer
  */
-int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
-               bool run, bool reEnable, bool reset);
+int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force, bool run,
+               bool reEnable, bool reset);
 
 /**
  * Get the dependencies, conflicts or unit wanted states according the boolean parameters values.<br>
@@ -135,8 +138,8 @@ int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force
  * @param states
  * @return integer
  */
-int getUnitData(SockMessageOut **sockMessageOut, const char *unitName,
-                bool requires, bool conflicts, bool states);
+int getUnitData(SockMessageOut **sockMessageOut, const char *unitName, bool requires,
+                bool conflicts, bool states);
 
 /**
  * Get the default state.<br>

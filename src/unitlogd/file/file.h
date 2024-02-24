@@ -18,7 +18,7 @@ int unitlogdCloseBootLog();
 int unitlogdCloseIndex();
 int unitlogdCloseKmsg();
 void logEntry(FILE **, const char *);
-char* getLogOffset();
+char *getLogOffset();
 bool matchLogLine(bool, IndexEntry *);
 int execUlScript(Array **, const char *);
 int handleLockFile(bool);

@@ -6,7 +6,7 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#define EUIRUN   114
+#define EUIRUN 114
 
 typedef enum {
     NO_FUNC = -1,
@@ -36,11 +36,11 @@ int setSigAction();
 int setUserData(int, struct passwd **);
 void userDataRelease();
 int handleMutex(pthread_mutex_t *, bool);
-void* handleMutexThread(void *);
+void *handleMutexThread(void *);
 void setStopAndDuration(ProcessData **);
 int getMaxFileDesc(int *, int *);
-char* getUnitNameByOther(const char *, PType);
-char* getOtherNameByUnitName(const char *, PType);
+char *getUnitNameByOther(const char *, PType);
+char *getOtherNameByUnitName(const char *, PType);
 void showVersion();
 int uRead(int, void *, size_t);
 int uWrite(int, void *, size_t);

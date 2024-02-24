@@ -11,44 +11,38 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 bool UNITLOGCTL_DEBUG;
 
 UlCommandData UL_COMMAND_DATA[] = {
-    { SHOW_LOG, "show-log" },
-    { LIST_BOOTS, "list-boots" },
-    { SHOW_BOOT, "show-boot" },
-    { INDEX_REPAIR, "index-repair" },
-    { VACUUM, "vacuum" },
-    { SHOW_SIZE, "show-size" },
+    { SHOW_LOG, "show-log" },         { LIST_BOOTS, "list-boots" }, { SHOW_BOOT, "show-boot" },
+    { INDEX_REPAIR, "index-repair" }, { VACUUM, "vacuum" },         { SHOW_SIZE, "show-size" },
     { SHOW_CURRENT, "show-current" }
 };
 int UL_COMMAND_DATA_LEN = 7;
 
-UlCommand
-getUlCommand(const char *commandName)
+UlCommand getUlCommand(const char *commandName)
 {
     assert(commandName);
     for (int i = 0; i < UL_COMMAND_DATA_LEN; i++) {
         if (stringEquals(commandName, UL_COMMAND_DATA[i].name))
             return i;
     }
+
     return NO_UL_COMMAND;
 }
 
-bool
-getSkipCheckAdmin(UlCommand ulCommand)
+bool getSkipCheckAdmin(UlCommand ulCommand)
 {
     switch (ulCommand) {
-        case SHOW_LOG:
-        case LIST_BOOTS:
-        case SHOW_BOOT:
-        case SHOW_SIZE:
-        case SHOW_CURRENT:
-            return true;
-        default:
-            return false;
+    case SHOW_LOG:
+    case LIST_BOOTS:
+    case SHOW_BOOT:
+    case SHOW_SIZE:
+    case SHOW_CURRENT:
+        return true;
+    default:
+        return false;
     }
 }
 
-int
-getBootsList(Array **bootsList)
+int getBootsList(Array **bootsList)
 {
     int rv = 0;
 
@@ -59,79 +53,63 @@ getBootsList(Array **bootsList)
     return rv;
 }
 
-int
-showBootsList()
+int showBootsList()
 {
-    int rv, len, idx;
+    int rv = 0, len = 0, idx = 0;
     Array *bootsList = NULL;
-
-    rv = len = idx = 0;
 
     if ((rv = getBootsList(&bootsList)) != 0)
         goto out;
-
     /* HEADER */
     printf("%s%s%s", WHITE_UNDERLINE_COLOR, "IDX", DEFAULT_COLOR);
     printf("%s%*s%s", WHITE_UNDERLINE_COLOR, PADDING, "", DEFAULT_COLOR);
-
     printf("%s%s%s", WHITE_UNDERLINE_COLOR, "BOOT ID", DEFAULT_COLOR);
-    printf("%s%*s%s", WHITE_UNDERLINE_COLOR, BOOT_ID_SIZE - WIDTH_BOOT_ID + PADDING, "", DEFAULT_COLOR);
-
+    printf("%s%*s%s", WHITE_UNDERLINE_COLOR, BOOT_ID_SIZE - WIDTH_BOOT_ID + PADDING, "",
+           DEFAULT_COLOR);
     printf("%s%s%s", WHITE_UNDERLINE_COLOR, "STARTED", DEFAULT_COLOR);
-    printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_STARTED + PADDING, "", DEFAULT_COLOR);
-
+    printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_STARTED + PADDING, "",
+           DEFAULT_COLOR);
     printf("%s%s%s", WHITE_UNDERLINE_COLOR, "FINISHED", DEFAULT_COLOR);
     printf("%s%*s%s", WHITE_UNDERLINE_COLOR, WIDTH_DATE - WIDTH_FINISHED, "", DEFAULT_COLOR);
-
     printf("\n");
-
     /* CELLS */
     len = bootsList ? bootsList->size : 0;
     for (int i = 0; i < len; i += 2) {
-        char idxStr[50] = {0};
+        char idxStr[50] = { 0 };
         IndexEntry *startEntry = arrayGet(bootsList, i);
         IndexEntry *stopEntry = arrayGet(bootsList, i + 1);
         char *timeStamp = NULL;
-
         /* Idx */
         sprintf(idxStr, "%d", idx);
         printf("%s%*s", idxStr, (WIDTH_IDX - (int)strlen(idxStr)) + PADDING, "");
-
         /* Boot id */
         printf("%s%*s", startEntry->bootId, PADDING, "");
-
         /* Start time */
         timeStamp = stringGetTimeStamp(startEntry->start, false, "%d-%m-%Y %H:%M:%S");
         printf("%s%*s", timeStamp, PADDING, "");
         objectRelease(&timeStamp);
-
         /* Stop time */
         if (stopEntry) {
             timeStamp = stringGetTimeStamp(stopEntry->stop, false, "%d-%m-%Y %H:%M:%S");
             printf("%s", timeStamp);
             objectRelease(&timeStamp);
-        }
-        else
+        } else
             printf("-%*s", WIDTH_DATE - 1, "");
-
         /* Increasing idx */
         idx++;
-
         /* New line */
         printf("\n");
     }
-
     printf("\n%d boots found\n", idx);
 
-    out:
-        arrayRelease(&bootsList);
-        unitlogdCloseIndex();
-        assert(!UNITLOGD_INDEX_FILE);
-        return rv;
+out:
+    arrayRelease(&bootsList);
+    unitlogdCloseIndex();
+    assert(!UNITLOGD_INDEX_FILE);
+    return rv;
 }
 
-int
-showLogLines(off_t startOffset, off_t stopOffset)
+int showLogLines(off_t startOffset, off_t stopOffset)
 {
     int rv = 0;
     char *line = NULL;
@@ -143,16 +121,14 @@ showLogLines(off_t startOffset, off_t stopOffset)
     /* Open log */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
-
     /* Set start offset */
     if (fseeko(UNITLOGD_LOG_FILE, startOffset, SEEK_SET) == -1) {
-        logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "showLogLines", errno, strerror(errno),
-                 "Fseeko func returned -1");
+        logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "showLogLines", errno,
+                 strerror(errno), "Fseeko func returned -1");
         rv = errno;
         goto out;
     }
     while (getline(&line, &len, UNITLOGD_LOG_FILE) != -1) {
-
         /* Check if we achieved the stop offset */
         if (stopOffset != -1) {
             if ((currentOffset = ftello(UNITLOGD_LOG_FILE)) == -1) {
@@ -170,67 +146,59 @@ showLogLines(off_t startOffset, off_t stopOffset)
             printf("%s", line);
     }
 
-    out:
-        objectRelease(&line);
-        unitlogdCloseLog();
-        assert(!UNITLOGD_LOG_FILE);
-
-        return rv;
+out:
+    objectRelease(&line);
+    unitlogdCloseLog();
+    assert(!UNITLOGD_LOG_FILE);
+    return rv;
 }
 
-int
-sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
+int sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
 {
-    int rv = 0;
-    int pfds[2];
+    int rv = 0, pfds[2];
     pid_t pid;
 
     /* Pipe */
     if ((rv = pipe(pfds)) < 0) {
-        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno, strerror(errno),
-                 "Pipe function returned a bad exit code");
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno,
+                 strerror(errno), "Pipe function returned a bad exit code");
         goto out;
     }
     /* Fork */
     pid = fork();
     if (pid < 0) {
         rv = errno;
-        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno, strerror(errno),
-                 "Fork function returned a bad exit code");
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno,
+                 strerror(errno), "Fork function returned a bad exit code");
         goto out;
-    }
-    else if (pid == 0) { /* child */
+    } else if (pid == 0) { /* child */
         close(pfds[0]);
         dup2(pfds[1], STDOUT_FILENO);
         close(pfds[1]);
         fn(startOffset, stopOffset);
-    }
-    else { /* parent */
+    } else { /* parent */
         /* For the debug, we show the line number */
         char *args[] = { "less", UNITLOGCTL_DEBUG ? "-RSX#3NM~g" : "-RSX#3M~g", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
         execvp(args[0], args);
-        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno, strerror(errno),
-                 "Execvp error");
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno,
+                 strerror(errno), "Execvp error");
         rv = 1;
         goto out;
     }
 
-    out:
-        return rv;
-
+out:
+    return rv;
 }
 
-int
-followLog()
+int followLog()
 {
     int rv = 0;
 
     if (UNITLOGCTL_DEBUG)
         logInfo(CONSOLE, "\n\n-- Follow the log --\n\n");
-
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
@@ -244,8 +212,7 @@ followLog()
     return rv;
 }
 
-int
-showLog(bool pager, bool follow)
+int showLog(bool pager, bool follow)
 {
     int rv = 0;
 
@@ -253,48 +220,42 @@ showLog(bool pager, bool follow)
         rv = followLog();
         goto out;
     }
-
     if (pager)
         rv = sendToPager(showLogLines, 0, -1);
     else
         rv = showLogLines(0, -1);
 
-    out:
-
-        return rv;
+out:
+    return rv;
 }
 
-int
-showCurrentBoot(bool pager, bool follow)
+int showCurrentBoot(bool pager, bool follow)
 {
     int rv = 0, maxIdx = -1;
     Array *index = NULL;
-    char maxIdxStr[10] = {0};
+    char maxIdxStr[10] = { 0 };
 
     /* Get the index */
     if ((rv = getIndex(&index, true)) != 0) {
         setIndexErr(true);
         goto out;
     }
-
     /* Get max idx which is the current. */
     maxIdx = getMaxIdx(&index);
     assert(maxIdx != -1);
     /* Get max idx as string */
     sprintf(maxIdxStr, "%d", maxIdx);
-
     /* Show */
     rv = showBoot(pager, follow, maxIdxStr);
 
-    out:
-        arrayRelease(&index);
-        unitlogdCloseIndex();
-        assert(!UNITLOGD_INDEX_FILE);
-        return rv;
+out:
+    arrayRelease(&index);
+    unitlogdCloseIndex();
+    assert(!UNITLOGD_INDEX_FILE);
+    return rv;
 }
 
-int
-showBoot(bool pager, bool follow, const char *bootIdx)
+int showBoot(bool pager, bool follow, const char *bootIdx)
 {
     int rv = 0, idx = -1, idxMax = -1, indexSize = 0;
     Array *index = NULL;
@@ -307,19 +268,16 @@ showBoot(bool pager, bool follow, const char *bootIdx)
         rv = followLog();
         goto out;
     }
-
     /* Get the index */
     if ((rv = getIndex(&index, true)) != 0) {
         setIndexErr(true);
         goto out;
     }
-
     indexSize = index ? index->size : 0;
     if (indexSize > 0) {
         /* Find the max idx */
         idxMax = getMaxIdx(&index);
         assert(idxMax != -1);
-
         if (isValidNumber(bootIdx, true)) {
             idx = atol(bootIdx);
             if (idx > idxMax)
@@ -331,51 +289,44 @@ showBoot(bool pager, bool follow, const char *bootIdx)
                 if (idx == 0) {
                     startIndexEntry = arrayGet(index, idx);
                     stopIndexEntry = arrayGet(index, idx + 1);
-                }
-                else {
+                } else {
                     startIndexEntry = arrayGet(index, idx * 2);
                     stopIndexEntry = arrayGet(index, idx * 2 + 1);
                 }
                 startOffset = atol(startIndexEntry->startOffset);
                 if (stopIndexEntry)
                     stopOffset = atol(stopIndexEntry->stopOffset);
-
                 if (UNITLOGCTL_DEBUG) {
-                    logInfo(CONSOLE, "Start - Boot id = (%d - %s), Offset = %lu\n", idx, startIndexEntry->bootId, startOffset);
+                    logInfo(CONSOLE, "Start - Boot id = (%d - %s), Offset = %lu\n", idx,
+                            startIndexEntry->bootId, startOffset);
                     if (stopIndexEntry)
-                        logInfo(CONSOLE, "Stop - Boot id = (%d - %s), Offset = %lu\n", idx, stopIndexEntry->bootId, stopOffset);
+                        logInfo(CONSOLE, "Stop - Boot id = (%d - %s), Offset = %lu\n", idx,
+                                stopIndexEntry->bootId, stopOffset);
                 }
             }
-        }
-        else
+        } else
             error = true;
-
         if (error) {
             logErrorStr(CONSOLE, "The argument '%s' is not valid!\n", bootIdx);
             logInfo(CONSOLE, "Please, enter a value between (0%s%d).\n", RANGE_TOKEN, idxMax);
             rv = 1;
             goto out;
         }
-
         if (pager)
             rv = sendToPager(showLogLines, startOffset, stopOffset);
         else
             rv = showLogLines(startOffset, stopOffset);
-
-    }
-    else
+    } else
         logWarning(CONSOLE, "The '%s' index file is empty!\n", UNITLOGD_INDEX_PATH);
 
-    out:
-        arrayRelease(&index);
-        unitlogdCloseIndex();
-        assert(!UNITLOGD_INDEX_FILE);
-
-        return rv;
+out:
+    arrayRelease(&index);
+    unitlogdCloseIndex();
+    assert(!UNITLOGD_INDEX_FILE);
+    return rv;
 }
 
-int
-createIndexFile()
+int createIndexFile()
 {
     int rv = 0;
 
@@ -392,8 +343,7 @@ createIndexFile()
     return rv;
 }
 
-int
-indexRepair()
+int indexRepair()
 {
     int rv = 0, indexSize = 0;
     Array *index = NULL;
@@ -404,7 +354,6 @@ indexRepair()
         setIndexErr(false);
         goto out;
     }
-
     /* Write the index entries */
     indexSize = index ? index->size : 0;
     if (indexSize > 0) {
@@ -429,15 +378,14 @@ indexRepair()
         }
     }
 
-    out:
-        arrayRelease(&index);
-        unitlogdCloseIndex();
-        assert(!UNITLOGD_INDEX_FILE);
-        return rv;
+out:
+    arrayRelease(&index);
+    unitlogdCloseIndex();
+    assert(!UNITLOGD_INDEX_FILE);
+    return rv;
 }
 
-int
-runTmpLogOperation(const char *operation)
+int runTmpLogOperation(const char *operation)
 {
     int rv = 0;
 
@@ -457,44 +405,36 @@ runTmpLogOperation(const char *operation)
     return rv;
 }
 
-int
-cutLog(off_t startOffset, off_t stopOffset)
+int cutLog(off_t startOffset, off_t stopOffset)
 {
     int rv = 0;
     size_t len = 0;
-    char *tmpLogPath, *line;
+    char *tmpLogPath = NULL, *line = NULL;
     FILE *tmpLogFp = NULL;
     off_t currentOffset = 0;
 
     assert(startOffset >= 0);
     assert(stopOffset > 0);
 
-    tmpLogPath = line = NULL;
-
     /* Creating the path */
     tmpLogPath = stringNew(UNITLOGD_LOG_PATH);
     stringAppendStr(&tmpLogPath, TMP_SUFFIX);
-
     /* We create a temporary log file with the new content (UNITLOGD_LOG_PATH.tmp).
      * After that, we remove 'UNITLOGD_LOG_PATH' and
      * rename UNITLOGD_LOG_PATH.tmp -> UNITLOGD_LOG_PATH.
     */
     if ((rv = runTmpLogOperation("create-tmp-log")) != 0)
         goto out;
-
     tmpLogFp = fopen(tmpLogPath, "a");
     if (!tmpLogFp) {
         rv = errno;
-        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "cutLog",
-                 errno, strerror(errno), "Unable to open '%s' in append mode!", tmpLogPath);
+        logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "cutLog", errno, strerror(errno),
+                 "Unable to open '%s' in append mode!", tmpLogPath);
         goto out;
-
     }
-
     /* Open log */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
-
     while (getline(&line, &len, UNITLOGD_LOG_FILE) != -1) {
         if ((currentOffset = ftello(UNITLOGD_LOG_FILE)) == -1) {
             rv = errno;
@@ -513,28 +453,24 @@ cutLog(off_t startOffset, off_t stopOffset)
     objectRelease(&line);
     fclose(tmpLogFp);
     tmpLogFp = NULL;
-
     /* Rename the tmp log */
     rv = runTmpLogOperation("ren-tmp-log");
 
-    out:
-        objectRelease(&tmpLogPath);
-        objectRelease(&line);
-        if (tmpLogFp) {
-            fclose(tmpLogFp);
-            tmpLogFp = NULL;
-        }
-        unitlogdCloseLog();
-        assert(!UNITLOGD_LOG_FILE);
-
-        return rv;
+out:
+    objectRelease(&tmpLogPath);
+    objectRelease(&line);
+    if (tmpLogFp) {
+        fclose(tmpLogFp);
+        tmpLogFp = NULL;
+    }
+    unitlogdCloseLog();
+    assert(!UNITLOGD_LOG_FILE);
+    return rv;
 }
 
-void
-printLogSizeInfo(off_t prevLogSize, off_t freedLogSize, off_t currentLogSize)
+void printLogSizeInfo(off_t prevLogSize, off_t freedLogSize, off_t currentLogSize)
 {
-    char *prevLogSizeStr, *freedLogSizeStr, *currentLogSizeStr;
-    prevLogSizeStr = freedLogSizeStr = currentLogSizeStr = NULL;
+    char *prevLogSizeStr = NULL, *freedLogSizeStr = NULL, *currentLogSizeStr = NULL;
 
     if (prevLogSize != -1)
         prevLogSizeStr = stringGetFileSize(prevLogSize);
@@ -542,7 +478,6 @@ printLogSizeInfo(off_t prevLogSize, off_t freedLogSize, off_t currentLogSize)
         currentLogSizeStr = stringGetFileSize(currentLogSize);
     if (freedLogSize != -1)
         freedLogSizeStr = stringGetFileSize(freedLogSize);
-
     printf("%s%s%s", WHITE_UNDERLINE_COLOR, "LOG SIZE INFO\n", DEFAULT_COLOR);
     if (prevLogSizeStr) {
         logInfo(CONSOLE, "Previous : ");
@@ -559,24 +494,19 @@ printLogSizeInfo(off_t prevLogSize, off_t freedLogSize, off_t currentLogSize)
             logInfo(CONSOLE, " Current : ");
         logInfo(CONSOLE, "%s%s%s\n", WHITE_COLOR, currentLogSizeStr, DEFAULT_COLOR);
     }
-
     objectRelease(&prevLogSizeStr);
     objectRelease(&currentLogSizeStr);
     objectRelease(&freedLogSizeStr);
 }
 
-int
-vacuum(const char *bootIdx)
+int vacuum(const char *bootIdx)
 {
-    Array *index, *idxArr;
-    int rv = 0, startIdx, stopIdx, maxIdx;
-    off_t startOffset, stopOffset, prevLogSize, currentLogSize, freedLogSize;
+    Array *index = NULL, *idxArr = NULL;
+    int rv = 0, startIdx = -1, stopIdx = -1, maxIdx = -1;
+    off_t startOffset = -1, stopOffset = -1, prevLogSize = -1, currentLogSize = -1,
+          freedLogSize = -1;
     bool rangeErr = false;
     IndexEntry *indexEntry = NULL;
-
-    startIdx = stopIdx = maxIdx = -1;
-    startOffset = stopOffset = prevLogSize = currentLogSize = freedLogSize = -1;
-    index = idxArr = NULL;
 
     assert(bootIdx);
 
@@ -593,8 +523,7 @@ vacuum(const char *bootIdx)
             stopIdx = atol(stopIdxStr);
             if (startIdx == stopIdx)
                 rangeErr = true;
-        }
-        else
+        } else
             rangeErr = true;
         if (rangeErr) {
             rv = 1;
@@ -602,8 +531,7 @@ vacuum(const char *bootIdx)
             logInfo(CONSOLE, "Please, enter a valid numeric range.\n");
             goto out;
         }
-    }
-    else {
+    } else {
         if (isValidNumber(bootIdx, true))
             startIdx = atol(bootIdx);
         else {
@@ -613,13 +541,11 @@ vacuum(const char *bootIdx)
             goto out;
         }
     }
-
     /* Get index */
     if ((rv = getIndex(&index, true)) != 0) {
         setIndexErr(true);
         goto out;
     }
-
     /* Get and check max idx */
     maxIdx = getMaxIdx(&index);
     if (maxIdx > 0) {
@@ -628,21 +554,19 @@ vacuum(const char *bootIdx)
             logErrorStr(CONSOLE, "The argument '%s' is not valid!\n", bootIdx);
             logInfo(CONSOLE, "Please, enter a value between (0%s%d).\n", RANGE_TOKEN, maxIdx - 1);
             goto out;
-        }
-        else if (stopIdx != -1 && stopIdx >= maxIdx) {
+        } else if (stopIdx != -1 && stopIdx >= maxIdx) {
             rv = 1;
             logErrorStr(CONSOLE, "The argument '%s' is not valid!\n", bootIdx);
-            logInfo(CONSOLE, "Please, enter a numeric range between (0%s%d).\n", RANGE_TOKEN, maxIdx - 1);
+            logInfo(CONSOLE, "Please, enter a numeric range between (0%s%d).\n", RANGE_TOKEN,
+                    maxIdx - 1);
             goto out;
         }
-    }
-    else {
+    } else {
         rv = 1;
         logWarning(CONSOLE, "Sorry, no vacuuming operations can be performed at this time.\n");
         logInfo(CONSOLE, "Please, try again later.\n");
         goto out;
     }
-
     /* Get 'start' offset according startIdx  */
     if (startIdx == 0)
         indexEntry = arrayGet(index, startIdx);
@@ -652,7 +576,6 @@ vacuum(const char *bootIdx)
     startOffset = atol(indexEntry->startOffset);
     if (UNITLOGCTL_DEBUG)
         logInfo(CONSOLE, "Boot id = %s, startOffset  = %lu\n", indexEntry->bootId, startOffset);
-
     /* Get 'stop' offset according stopIdx */
     if (stopIdx != -1)
         indexEntry = arrayGet(index, stopIdx * 2 + 1);
@@ -662,16 +585,13 @@ vacuum(const char *bootIdx)
     stopOffset = atol(indexEntry->stopOffset);
     if (UNITLOGCTL_DEBUG)
         logInfo(CONSOLE, "Boot id = %s, stopOffset  = %lu\n", indexEntry->bootId, stopOffset);
-
     /* Lock
      * We cannot cut the log if the unitlog daemon is writing it!
      * See startUnixThread func in socket.c.
     */
     if ((rv = handleLockFile(true)) != 0)
         goto out;
-
     /* From this point, whatever error occurred, we don't exit because we must always unlock. */
-
     /* Get previous log size */
     if ((prevLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
         /* Cut the log */
@@ -692,13 +612,11 @@ vacuum(const char *bootIdx)
             }
         }
     }
-
     /* UnLock */
     rv = handleLockFile(false);
 
-    out:
-        arrayRelease(&idxArr);
-        arrayRelease(&index);
-
-        return rv;
+out:
+    arrayRelease(&idxArr);
+    arrayRelease(&index);
+    return rv;
 }

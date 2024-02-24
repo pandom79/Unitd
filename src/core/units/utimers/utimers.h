@@ -6,7 +6,7 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#define EUIDOWN         120
+#define EUIDOWN 120
 
 extern int UTIMERS_SECTIONS_ITEMS_LEN;
 extern SectionData UTIMERS_SECTIONS_ITEMS[];
@@ -20,7 +20,7 @@ struct eventData {
 int parseTimerUnit(Array **, Unit **, bool);
 int checkInterval(Unit **unit);
 int startTimerUnit(Unit *);
-void* startTimerUnitThread(void *);
+void *startTimerUnitThread(void *);
 int setNextTimeFromDisk(Unit **);
 int setNextTimeFromInterval(Unit **);
 int saveTime(Unit *, const char *, Time *, int);
@@ -29,7 +29,7 @@ void setLeftTimeAndDuration(Unit **);
 void setNextTimeDate(Unit **);
 int resetNextTime(const char *);
 void expired(union sigval timerData);
-Timer* timerNew();
+Timer *timerNew();
 void timerRelease(Timer **);
 void armTimer(Unit *);
 void disarmTimer(Unit *unit);

@@ -14,8 +14,7 @@ FILE *UNITLOGD_BOOT_LOG_FILE;
 FILE *UNITLOGD_INDEX_FILE;
 FILE *UNITLOGD_LOG_FILE;
 
-static void
-writeFile(FILE **file, const char *color, const char *format, va_list *args)
+static void writeFile(FILE **file, const char *color, const char *format, va_list *args)
 {
     if (*file && format) {
         fflush(*file);
@@ -26,9 +25,9 @@ writeFile(FILE **file, const char *color, const char *format, va_list *args)
     }
 }
 
-static void
-writeErrorFile(FILE **file, const char *transUnit, const char *funcName, int returnValue,
-               char *returnValueStr, const char *errDesc, const char *format, va_list *args)
+static void writeErrorFile(FILE **file, const char *transUnit, const char *funcName,
+                           int returnValue, char *returnValueStr, const char *errDesc,
+                           const char *format, va_list *args)
 {
     if (*file && format) {
         fflush(*file);
@@ -52,8 +51,7 @@ writeErrorFile(FILE **file, const char *transUnit, const char *funcName, int ret
     }
 }
 
-static void
-logSystem(int priority, const char *color, const char *format, va_list *args)
+static void logSystem(int priority, const char *color, const char *format, va_list *args)
 {
     if (format) {
         char *colorStr = color ? stringNew(format) : NULL;
@@ -69,8 +67,7 @@ logSystem(int priority, const char *color, const char *format, va_list *args)
     }
 }
 
-void
-logInfo(int options, const char *format, ...)
+void logInfo(int options, const char *format, ...)
 {
     va_list args;
     if (options & CONSOLE) {
@@ -99,8 +96,7 @@ logInfo(int options, const char *format, ...)
     }
 }
 
-void
-logWarning(int options, const char *format, ...)
+void logWarning(int options, const char *format, ...)
 {
     va_list args;
     if (options & CONSOLE) {
@@ -129,8 +125,7 @@ logWarning(int options, const char *format, ...)
     }
 }
 
-void
-logErrorStr(int options, const char *format, ...)
+void logErrorStr(int options, const char *format, ...)
 {
     va_list args;
     if (options & CONSOLE) {
@@ -159,8 +154,7 @@ logErrorStr(int options, const char *format, ...)
     }
 }
 
-void
-logSuccess(int options, const char *format, ...)
+void logSuccess(int options, const char *format, ...)
 {
     va_list args;
     if (options & CONSOLE) {
@@ -189,12 +183,11 @@ logSuccess(int options, const char *format, ...)
     }
 }
 
-void
-logError(int options, const char *transUnit, const char *funcName,
-         int returnValue, const char *errDesc, const char *format, ...)
+void logError(int options, const char *transUnit, const char *funcName, int returnValue,
+              const char *errDesc, const char *format, ...)
 {
     va_list args;
-    char returnValueStr[100] = {0};
+    char returnValueStr[100] = { 0 };
 
     if (options & CONSOLE) {
         fflush(stdout);
@@ -219,14 +212,14 @@ logError(int options, const char *transUnit, const char *funcName,
     }
     if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
         va_start(args, format);
-        writeErrorFile(&UNITD_BOOT_LOG_FILE, transUnit, funcName, returnValue,
-                       returnValueStr, errDesc, format, &args);
+        writeErrorFile(&UNITD_BOOT_LOG_FILE, transUnit, funcName, returnValue, returnValueStr,
+                       errDesc, format, &args);
         va_end(args);
     }
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
-        writeErrorFile(&UNITLOGD_BOOT_LOG_FILE, transUnit, funcName, returnValue,
-                       returnValueStr, errDesc, format, &args);
+        writeErrorFile(&UNITLOGD_BOOT_LOG_FILE, transUnit, funcName, returnValue, returnValueStr,
+                       errDesc, format, &args);
         va_end(args);
     }
     if (options & SYSTEM) {

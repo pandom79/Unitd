@@ -8,8 +8,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-#define EVENT_SIZE          (sizeof(struct inotify_event))
-#define EVENT_BUF_LEN       (1024 * (EVENT_SIZE + 16))
+#define EVENT_SIZE (sizeof(struct inotify_event))
+#define EVENT_BUF_LEN (1024 * (EVENT_SIZE + 16))
 
 bool USER_INSTANCE;
 Notifier *NOTIFIER;
@@ -17,33 +17,34 @@ const WatcherData WATCHER_DATA_ITEMS[] = {
     { UNITD_WATCHER, IN_MODIFY | IN_DELETE | IN_MOVED_FROM },
     { PATH_EXISTS_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB | IN_CREATE },
     { PATH_EXISTS_GLOB_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_ATTRIB | IN_CREATE },
-    { PATH_RESOURCE_CHANGED_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE |
-                                     IN_MOVED_FROM | IN_MOVED_TO },
-    { PATH_DIRECTORY_NOT_EMPTY_WATCHER, IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE |
-                                        IN_MOVED_FROM | IN_MOVED_TO }
+    { PATH_RESOURCE_CHANGED_WATCHER,
+      IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO },
+    { PATH_DIRECTORY_NOT_EMPTY_WATCHER,
+      IN_DELETE_SELF | IN_MOVE_SELF | IN_DELETE | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO }
 };
 
-int
-notifierInit(Notifier *notifier)
+int notifierInit(Notifier *notifier)
 {
     Array *watchers = NULL;
     Watcher *watcher = NULL;
     int len = 0, rv = 0;
 
     assert(notifier);
+
     watchers = notifier->watchers;
     len = watchers ? watchers->size : 0;
     if ((*notifier->fd = inotify_init()) == -1) {
         rv = 1;
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierInit",
-                 errno, strerror(errno), "Inotify_init func returned -1");
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierInit", errno,
+                 strerror(errno), "Inotify_init func returned -1");
     }
     for (int i = 0; i < len; i++) {
         watcher = arrayGet(watchers, i);
-        if ((*watcher->wd = inotify_add_watch(*notifier->fd, watcher->path, watcher->watcherData.mask)) == -1) {
+        if ((*watcher->wd = inotify_add_watch(*notifier->fd, watcher->path,
+                                              watcher->watcherData.mask)) == -1) {
             rv = 1;
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierInit",
-                     errno, strerror(errno), "Inotify_add_watch returned -1 for '%s' path", watcher->path);
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierInit", errno,
+                     strerror(errno), "Inotify_add_watch returned -1 for '%s' path", watcher->path);
             break;
         }
     }
@@ -51,31 +52,29 @@ notifierInit(Notifier *notifier)
     return rv;
 }
 
-void
-notifierClose(Notifier *notifier)
+void notifierClose(Notifier *notifier)
 {
     Array *watchers = NULL;
     Watcher *watcher = NULL;
-    int len, fd, rv;
+    int len, fd = -1, rv = -1;
 
     assert(notifier);
-    rv = fd = -1;
+
     watchers = notifier->watchers;
     fd = *notifier->fd;
     len = watchers ? watchers->size : 0;
     for (int i = 0; i < len; i++) {
         watcher = arrayGet(watchers, i);
         if ((rv = inotify_rm_watch(fd, *watcher->wd)) == -1 && errno != EINVAL) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierClose",
-                     errno, strerror(errno), "Inotify_rm_watch func returned -1 for %s path",
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "notifierClose", errno,
+                     strerror(errno), "Inotify_rm_watch func returned -1 for %s path",
                      watcher->path);
         }
     }
     close(fd);
 }
 
-static bool
-isEmptyFolder(const char *pathFolder)
+static bool isEmptyFolder(const char *pathFolder)
 {
     bool ret = true;
 
@@ -95,8 +94,7 @@ isEmptyFolder(const char *pathFolder)
                 /* The files "." and ".." are already discarded by glob.
                  * We only discard backup and swap files.
                  */
-                if (!stringEndsWithChr(entry, '~') &&
-                    !stringEndsWithStr(entry, ".swp") &&
+                if (!stringEndsWithChr(entry, '~') && !stringEndsWithStr(entry, ".swp") &&
                     !stringEndsWithStr(entry, ".swpx")) {
                     ret = false;
                     break;
@@ -110,8 +108,7 @@ isEmptyFolder(const char *pathFolder)
     return ret;
 }
 
-static void
-checkUnitChanging(const char *eventName)
+static void checkUnitChanging(const char *eventName)
 {
     char *unitName = getUnitName(eventName);
     if (unitName) {
@@ -119,18 +116,16 @@ checkUnitChanging(const char *eventName)
         Unit *unit = getUnitByName(UNITD_DATA->units, unitName);
         if (unit) {
             if ((rv = pthread_mutex_lock(&NOTIFIER_MUTEX)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging",
-                         rv, strerror(rv), "Unable to lock the notifier mutex!");
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging", rv,
+                         strerror(rv), "Unable to lock the notifier mutex!");
                 kill(UNITD_PID, SIGTERM);
             }
-
             unit->isChanged = true;
             if (UNITD_DEBUG)
                 syslog(LOG_DAEMON | LOG_DEBUG, "Unit '%s' is changed!!\n", unitName);
-
             if ((rv = pthread_mutex_unlock(&NOTIFIER_MUTEX)) != 0) {
-                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging",
-                         rv, strerror(rv), "Unable to unlock the notifier mutex!");
+                logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging", rv,
+                         strerror(rv), "Unable to unlock the notifier mutex!");
                 kill(UNITD_PID, SIGTERM);
             }
         }
@@ -138,8 +133,7 @@ checkUnitChanging(const char *eventName)
     }
 }
 
-static bool
-checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
+static bool checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
 {
     char *completeEventName = NULL;
     bool execUnit = false;
@@ -149,27 +143,27 @@ checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
     assert(eventName);
 
     switch (watcherType) {
-        case PATH_EXISTS_WATCHER:
-            if (access(unit->pathExists, F_OK) == 0)
-                execUnit = true;
-            break;
-        case PATH_EXISTS_GLOB_WATCHER:
-            completeEventName = stringNew(unit->pathExistsGlobMonitor);
-            stringAppendStr(&completeEventName, eventName);
-            if (fnmatch(unit->pathExistsGlob, completeEventName, 0) == 0)
-                execUnit = true;
-            break;
-        case PATH_RESOURCE_CHANGED_WATCHER:
-            completeEventName = stringNew(unit->pathResourceChangedMonitor);
-            stringAppendStr(&completeEventName, eventName);
-            if (stringEquals(completeEventName, unit->pathResourceChanged))
-                execUnit = true;
-            break;
-        case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
-            execUnit = !isEmptyFolder(unit->pathDirectoryNotEmptyMonitor);
-            break;
-        default:
-            break;
+    case PATH_EXISTS_WATCHER:
+        if (access(unit->pathExists, F_OK) == 0)
+            execUnit = true;
+        break;
+    case PATH_EXISTS_GLOB_WATCHER:
+        completeEventName = stringNew(unit->pathExistsGlobMonitor);
+        stringAppendStr(&completeEventName, eventName);
+        if (fnmatch(unit->pathExistsGlob, completeEventName, 0) == 0)
+            execUnit = true;
+        break;
+    case PATH_RESOURCE_CHANGED_WATCHER:
+        completeEventName = stringNew(unit->pathResourceChangedMonitor);
+        stringAppendStr(&completeEventName, eventName);
+        if (stringEquals(completeEventName, unit->pathResourceChanged))
+            execUnit = true;
+        break;
+    case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
+        execUnit = !isEmptyFolder(unit->pathDirectoryNotEmptyMonitor);
+        break;
+    default:
+        break;
     }
     if (execUnit) {
         *unit->processData->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
@@ -181,8 +175,7 @@ checkUnitExecution(Unit *unit, WatcherType watcherType, const char *eventName)
     return execUnit;
 }
 
-static WatcherType
-getWatcherTypeByWd(Array *watchers, int eventWd)
+static WatcherType getWatcherTypeByWd(Array *watchers, int eventWd)
 {
     Watcher *watcher = NULL;
     int len = watchers ? watchers->size : 0;
@@ -191,11 +184,11 @@ getWatcherTypeByWd(Array *watchers, int eventWd)
         if (*watcher->wd == eventWd)
             return watcher->watcherData.watcherType;
     }
+
     return -1;
 }
 
-Notifier*
-notifierNew()
+Notifier *notifierNew()
 {
     Notifier *notifier = NULL;
     int *fd = NULL;
@@ -203,24 +196,20 @@ notifierNew()
     /* Notifier */
     notifier = calloc(1, sizeof(Notifier));
     assert(notifier);
-
     /* Fd */
     fd = calloc(1, sizeof(int));
     assert(fd);
     *fd = -1;
     notifier->fd = fd;
-
     /* Pipe */
     notifier->pipe = pipeNew();
-
     /* Watchers */
     notifier->watchers = arrayNew(watcherRelease);
 
     return notifier;
 }
 
-void
-notifierRelease(Notifier **notifier)
+void notifierRelease(Notifier **notifier)
 {
     Notifier *notifierTemp = *notifier;
     if (notifierTemp) {
@@ -232,8 +221,7 @@ notifierRelease(Notifier **notifier)
     }
 }
 
-Watcher*
-watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
+Watcher *watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
 {
     Watcher *watcher = NULL;
 
@@ -243,13 +231,10 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
 
     watcher = calloc(1, sizeof(Watcher));
     assert(watcher);
-
     /* Path */
     watcher->path = stringNew(path);
-
     /* Watcher data */
     watcher->watcherData = WATCHER_DATA_ITEMS[watcherType];
-
     /* Watcher fd */
     int *wd = calloc(1, sizeof(int));
     assert(wd);
@@ -259,8 +244,7 @@ watcherNew(Notifier *notifier, const char *path, WatcherType watcherType)
     return watcher;
 }
 
-void
-watcherRelease(Watcher **watcher)
+void watcherRelease(Watcher **watcher)
 {
     if (*watcher) {
         objectRelease(&(*watcher)->wd);
@@ -269,12 +253,10 @@ watcherRelease(Watcher **watcher)
     }
 }
 
-void*
-startNotifierThread(void *arg)
+void *startNotifierThread(void *arg)
 {
-    int rv, length, i, input, maxFd, allEvents;
-    int *fd, *fdPipe;
-    char buffer[EVENT_BUF_LEN] = {0};
+    int rv = 0, length = 0, i = 0, input, maxFd = -1, allEvents = 0, *fd, *fdPipe;
+    char buffer[EVENT_BUF_LEN] = { 0 };
     fd_set fds;
     Pipe *pipe = NULL;
     Array *watchers = NULL;
@@ -282,10 +264,9 @@ startNotifierThread(void *arg)
     Unit *unit = NULL;
     bool executedUnit = false;
 
-    rv = i = length = allEvents = 0;
-    maxFd = -1;
     unit = (Unit *)arg;
     notifier = unit ? unit->notifier : NOTIFIER;
+
     assert(notifier);
 
     /* Get notifier data */
@@ -293,14 +274,12 @@ startNotifierThread(void *arg)
     fd = notifier->fd;
     watchers = notifier->watchers;
     assert(watchers);
-
     /* Lock pipe mutex */
     if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                 rv, strerror(rv), "Unable to acquire the pipe mutex lock");
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
+                 strerror(rv), "Unable to acquire the pipe mutex lock");
         kill(UNITD_PID, SIGTERM);
     }
-
     /* Before to start, we wait for system is up.
      * We check if ctrl+alt+del is pressed as well.
     */
@@ -308,14 +287,12 @@ startNotifierThread(void *arg)
         msleep(50);
     if (SHUTDOWN_COMMAND != NO_COMMAND)
         goto out;
-
     fdPipe = &pipe->fds[0];
     maxFd = getMaxFileDesc(fd, fdPipe);
-
     /* At least one watcher must be here. */
     if ((length = watchers->size) == 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                 rv, strerror(rv), "No watcher found!");
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
+                 strerror(rv), "No watcher found!");
         kill(UNITD_PID, SIGTERM);
         goto out;
     }
@@ -323,12 +300,11 @@ startNotifierThread(void *arg)
     for (i = 0; i < length; i++)
         allEvents |= ((Watcher *)arrayGet(watchers, i))->watcherData.mask;
     if (allEvents == 0) {
-        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                 rv, strerror(rv), "No event found!");
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
+                 strerror(rv), "No event found!");
         kill(UNITD_PID, SIGTERM);
         goto out;
     }
-
     while (1) {
         FD_ZERO(&fds);
         FD_SET(*fdPipe, &fds);
@@ -345,14 +321,13 @@ startNotifierThread(void *arg)
             }
             if (input == THREAD_EXIT)
                 goto out;
-        }
-        else if (FD_ISSET(*fd, &fds)) {
+        } else if (FD_ISSET(*fd, &fds)) {
             if ((length = uRead(*fd, buffer, EVENT_BUF_LEN)) == -1) {
                 logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                         errno, strerror(errno), "Unable to read from inotify fd for the notifier!");
+                         errno, strerror(errno),
+                         "Unable to read from inotify fd for the notifier!");
                 kill(UNITD_PID, SIGTERM);
             }
-
             /* Evaluating all events defined by watchers. */
             i = 0;
             while (i < length) {
@@ -366,20 +341,21 @@ startNotifierThread(void *arg)
                 if (event->len && (event->mask & allEvents)) {
                     WatcherType watcherType = getWatcherTypeByWd(watchers, event->wd);
                     switch (watcherType) {
-                        case UNITD_WATCHER:
-                            checkUnitChanging(event->name);
-                            break;
-                        case PATH_EXISTS_WATCHER:
-                        case PATH_EXISTS_GLOB_WATCHER:
-                        case PATH_RESOURCE_CHANGED_WATCHER:
-                        case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
-                            executedUnit = checkUnitExecution(unit, watcherType, event->name);
-                            break;
-                        default:
-                            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                                     EPERM, strerror(EPERM), "No watcher type (%d) found!", watcherType);
-                            kill(UNITD_PID, SIGTERM);
-                            break;
+                    case UNITD_WATCHER:
+                        checkUnitChanging(event->name);
+                        break;
+                    case PATH_EXISTS_WATCHER:
+                    case PATH_EXISTS_GLOB_WATCHER:
+                    case PATH_RESOURCE_CHANGED_WATCHER:
+                    case PATH_DIRECTORY_NOT_EMPTY_WATCHER:
+                        executedUnit = checkUnitExecution(unit, watcherType, event->name);
+                        break;
+                    default:
+                        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c",
+                                 "startNotifierThread", EPERM, strerror(EPERM),
+                                 "No watcher type (%d) found!", watcherType);
+                        kill(UNITD_PID, SIGTERM);
+                        break;
                     }
                 }
                 i += EVENT_SIZE + event->len;
@@ -387,19 +363,18 @@ startNotifierThread(void *arg)
         }
     }
 
-    out:
-        /* Unlock pipe mutex */
-        if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread",
-                     rv, strerror(rv), "Unable to unlock the pipe mutex");
-        }
-        if (UNITD_DEBUG)
-            logInfo(CONSOLE | SYSTEM, "Notifier thread exited successfully\n");
-        pthread_exit(0);
+out:
+    /* Unlock pipe mutex */
+    if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
+        logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
+                 strerror(rv), "Unable to unlock the pipe mutex");
+    }
+    if (UNITD_DEBUG)
+        logInfo(CONSOLE | SYSTEM, "Notifier thread exited successfully\n");
+    pthread_exit(0);
 }
 
-void
-setUnitdNotifier()
+void setUnitdNotifier()
 {
     int rv = 0;
     assert(!NOTIFIER);
@@ -416,8 +391,7 @@ setUnitdNotifier()
         kill(UNITD_PID, SIGTERM);
 }
 
-int
-startNotifier(Unit *unit)
+int startNotifier(Unit *unit)
 {
     int rv = 0;
     pthread_t thread;
@@ -427,11 +401,9 @@ startNotifier(Unit *unit)
     if (!unit) {
         setUnitdNotifier();
         notifier = NOTIFIER;
-    }
-    else
+    } else
         notifier = unit->notifier;
     assert(notifier);
-
     if ((rv = pthread_attr_init(&attr)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifier", errno,
                  strerror(errno), "pthread_attr_init returned %d exit code", rv);
@@ -446,19 +418,18 @@ startNotifier(Unit *unit)
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifier", rv,
                  strerror(rv), "Unable to create detached thread");
         kill(UNITD_PID, SIGTERM);
-    }
-    else {
+    } else {
         if (UNITD_DEBUG)
             logInfo(CONSOLE | SYSTEM, "Thread created successfully for the notifier\n");
     }
     pthread_attr_destroy(&attr);
     if (unit && rv == 0)
         *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
+
     return rv;
 }
 
-int
-stopNotifier(Unit *unit)
+int stopNotifier(Unit *unit)
 {
     int rv = 0, output = THREAD_EXIT;
     Notifier *notifier = !unit ? NOTIFIER : unit->notifier;
@@ -466,19 +437,20 @@ stopNotifier(Unit *unit)
     if (notifier) {
         Pipe *pipe = notifier->pipe;
         if ((rv = uWrite(pipe->fds[1], &output, sizeof(int))) == -1) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier",
-                     errno, strerror(errno), "Unable to write into pipe for the notifier");
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier", errno,
+                     strerror(errno), "Unable to write into pipe for the notifier");
         }
         /* Lock pipe mutex */
         if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier",
-                     rv, strerror(rv), "Unable to acquire the pipe mutex lock");
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier", rv,
+                     strerror(rv), "Unable to acquire the pipe mutex lock");
         }
         /* Unlock pipe mutex */
         if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
-            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier",
-                     rv, strerror(rv), "Unable to unlock the pipe mutex");
+            logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier", rv,
+                     strerror(rv), "Unable to unlock the pipe mutex");
         }
     }
+
     return rv;
 }

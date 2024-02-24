@@ -26,32 +26,27 @@ typedef enum {
     OPTION = 2,
 } Keys;
 
-static const char*
-asStr(Keys key)
+static const char *asStr(Keys key)
 {
     assert(key >= COMMAND);
     switch (key) {
-        case COMMAND:
-            return "Command";
-        case ARG:
-            return "Arg";
-        case OPTION:
-            return "Option";
-        default:
-            return "";
+    case COMMAND:
+        return "Command";
+    case ARG:
+        return "Arg";
+    case OPTION:
+        return "Option";
+    default:
+        return "";
     }
 }
 
-char*
-marshallRequest(SockMessageIn *sockMessageIn)
+char *marshallRequest(SockMessageIn *sockMessageIn)
 {
-    char *buffer = NULL;
-    const char *arg, *optionKey;
-    char commandStr[10];
+    char *buffer = NULL, commandStr[10];
+    const char *arg = NULL, *optionKey = NULL;
     Array *options = NULL;
     int len = 0;
-
-    arg = optionKey = NULL;
 
     assert(sockMessageIn);
     assert(sockMessageIn->command != NO_COMMAND);
@@ -85,21 +80,16 @@ marshallRequest(SockMessageIn *sockMessageIn)
     return buffer;
 }
 
-int
-unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
+int unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
 {
-    Array *entries, **options, *keyval;
-    int rv, len;
-    char *value, *entry, *key;
-
-    rv = len = 0;
-    entries = NULL;
-    value = entry = key = NULL;
+    Array *entries = NULL, **options, *keyval;
+    int rv = 0, len = 0;
+    char *value = NULL, *entry = NULL, *key = NULL;
 
     assert(buffer);
     assert(sockMessageIn);
-    options = &(*sockMessageIn)->options;
 
+    options = &(*sockMessageIn)->options;
     /* Get the entries */
     entries = stringSplit(buffer, TOKEN, true);
     len = (entries ? entries->size : 0);
@@ -130,12 +120,12 @@ unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
         rv = EPERM;
         goto out;
 
-        next:
-            arrayRelease(&keyval);
-            continue;
+next:
+        arrayRelease(&keyval);
+        continue;
     }
 
-    out:
-        arrayRelease(&entries);
-        return rv;
+out:
+    arrayRelease(&entries);
+    return rv;
 }

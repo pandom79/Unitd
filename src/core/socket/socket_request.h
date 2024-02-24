@@ -6,5 +6,5 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-char* marshallRequest(SockMessageIn *);
+char *marshallRequest(SockMessageIn *);
 int unmarshallRequest(char *, SockMessageIn **);

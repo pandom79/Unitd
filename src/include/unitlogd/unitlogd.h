@@ -33,9 +33,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 typedef struct {
     char *bootId;
     Time *start;
-    char  *startOffset;
+    char *startOffset;
     Time *stop;
-    char  *stopOffset;
+    char *stopOffset;
 } IndexEntry;
 
 /**

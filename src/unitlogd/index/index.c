@@ -8,24 +8,20 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitlogd_impl.h"
 
-IndexEntry*
-indexEntryNew(bool isStarting, const char *bootIdStr)
+IndexEntry *indexEntryNew(bool isStarting, const char *bootIdStr)
 {
     IndexEntry *indexEntry = NULL;
 
     indexEntry = calloc(1, sizeof(IndexEntry));
     assert(indexEntry);
-
     if (bootIdStr) {
         indexEntry->bootId = stringNew(bootIdStr);
         assert(indexEntry->bootId);
     }
-
     if (isStarting) {
         indexEntry->start = timeNew(NULL);
         assert(indexEntry->start);
-    }
-    else {
+    } else {
         indexEntry->stop = timeNew(NULL);
         assert(indexEntry->stop);
     }
@@ -45,34 +41,28 @@ void indexEntryRelease(IndexEntry **indexEntry)
     }
 }
 
-int
-getIndex(Array **index, bool isIndex)
+int getIndex(Array **index, bool isIndex)
 {
-    char *line, *bootId;
+    char *line = NULL, *bootId = NULL;
     FILE *fp = NULL;
     size_t len = 0;
     int rv = 0, numline = 0;
     Array *values = NULL;
     bool isStartEntry = false;
 
-    line = bootId = NULL;
-
     /* Open file */
     if (isIndex) {
         unitlogdOpenIndex("r");
         assert(UNITLOGD_INDEX_FILE);
         fp = UNITLOGD_INDEX_FILE;
-    }
-    else {
+    } else {
         unitlogdOpenLog("r");
         assert(UNITLOGD_LOG_FILE);
         fp = UNITLOGD_LOG_FILE;
     }
     assert(fp);
-
     assert(!(*index));
     *index = arrayNew(indexEntryRelease);
-
     while (getline(&line, &len, fp) != -1) {
         IndexEntry *indexEntry = NULL;
         off_t offset = 0;
@@ -89,8 +79,7 @@ getIndex(Array **index, bool isIndex)
                 isStartEntry = false;
             else
                 rv = 1;
-        }
-        else {
+        } else {
             if (numline >= 1 && !isStartEntry && stringStartsWithStr(line, ENTRY_STARTED))
                 isStartEntry = true;
             else if (numline > 1 && isStartEntry && stringStartsWithStr(line, ENTRY_FINISHED))
@@ -100,33 +89,29 @@ getIndex(Array **index, bool isIndex)
             else
                 rv = 1;
         }
-
         if (rv == 1) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv, strerror(rv),
-                     "An error has occurred at %d line (%s).", numline, isIndex ? "index" : "log");
+            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex",
+                     rv, strerror(rv), "An error has occurred at %d line (%s).", numline,
+                     isIndex ? "index" : "log");
             goto out;
         }
-
         /* Retrieve row offset when we get it from log */
         if (!isIndex) {
             if ((offset = ftello(fp)) == -1) {
                 rv = 1;
-                logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", errno,
-                         strerror(errno), "Ftello func returned -1");
+                logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
+                         "getIndex", errno, strerror(errno), "Ftello func returned -1");
                 goto out;
             }
             offset -= strlen(line);
         }
-
         values = stringSplit(line, TOKEN_ENTRY, true);
         for (IndexEnum indexEnum = TYPE_ENTRY; indexEnum <= OFFSET; indexEnum++) {
             char *value = NULL;
-
             /* Get the value */
             value = arrayGet(values, indexEnum);
             if (value)
                 stringTrim(value, NULL);
-
             switch (indexEnum) {
             case TYPE_ENTRY:
                 if (isStartEntry)
@@ -142,9 +127,11 @@ getIndex(Array **index, bool isIndex)
                  * 'bootId' value of the just previous start entry */
                 if (!isStartEntry && !stringEquals(value, bootId)) {
                     rv = 1;
-                    logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
-                             strerror(rv), "The '%s' bootId at line %d doesn't match the previous '%s' bootId at line %d",
-                             value, numline, bootId, numline - 1);
+                    logError(
+                        CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
+                        "getIndex", rv, strerror(rv),
+                        "The '%s' bootId at line %d doesn't match the previous '%s' bootId at line %d",
+                        value, numline, bootId, numline - 1);
                     goto out;
                 }
                 indexEntry->bootId = stringNew(value);
@@ -158,11 +145,11 @@ getIndex(Array **index, bool isIndex)
                     else
                         timeSet(&indexEntry->stop, currentTime);
                     timeRelease(&currentTime);
-                }
-                else {
+                } else {
                     rv = 1;
-                    logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
-                             strerror(rv), "The timestamp '%s' at line '%d' is not valid", value, numline);
+                    logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
+                             "getIndex", rv, strerror(rv),
+                             "The timestamp '%s' at line '%d' is not valid", value, numline);
                     goto out;
                 }
                 break;
@@ -173,16 +160,15 @@ getIndex(Array **index, bool isIndex)
                             stringSet(&indexEntry->startOffset, value);
                         else
                             stringSet(&indexEntry->stopOffset, value);
-                    }
-                    else {
+                    } else {
                         rv = 1;
-                        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
-                                 strerror(rv), "The offset '%s' at line '%d' is not valid", value, numline);
+                        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
+                                 "getIndex", rv, strerror(rv),
+                                 "The offset '%s' at line '%d' is not valid", value, numline);
                         goto out;
                     }
-                }
-                else {
-                    char offsetStr[50] = {0};
+                } else {
+                    char offsetStr[50] = { 0 };
                     sprintf(offsetStr, "%lu", offset);
                     if (isStartEntry)
                         stringSet(&indexEntry->startOffset, offsetStr);
@@ -197,61 +183,49 @@ getIndex(Array **index, bool isIndex)
         arrayRelease(&values);
     }
 
-    out:
-        arrayRelease(&values);
-        objectRelease(&bootId);
-        objectRelease(&line);
-        if (isIndex) {
-            unitlogdCloseIndex();
-            assert(!UNITLOGD_INDEX_FILE);
-        }
-        else {
-            unitlogdCloseLog();
-            assert(!UNITLOGD_LOG_FILE);
-        }
-
-        return rv;
+out:
+    arrayRelease(&values);
+    objectRelease(&bootId);
+    objectRelease(&line);
+    if (isIndex) {
+        unitlogdCloseIndex();
+        assert(!UNITLOGD_INDEX_FILE);
+    } else {
+        unitlogdCloseLog();
+        assert(!UNITLOGD_LOG_FILE);
+    }
+    return rv;
 }
 
-int
-writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
+int writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
 {
-    int rv, lastline;
-    char *buffer = NULL;
-    char timeStr[50] = {0};
+    int rv = 0;
+    char *buffer = NULL, timeStr[50] = { 0 };
 
     assert(isIndex ? UNITLOGD_INDEX_FILE : UNITLOGD_LOG_FILE);
 
-    rv = lastline = 0;
-
     /* Building the buffer */
     buffer = stringNew(isStarting ? ENTRY_STARTED : ENTRY_FINISHED);
-
     if (isStarting)
         /* For the indentation */
         stringAppendStr(&buffer, " ");
-
     /* BOOT ID */
     stringAppendStr(&buffer, TOKEN_ENTRY);
     stringAppendStr(&buffer, indexEntry->bootId);
     stringAppendStr(&buffer, TOKEN_ENTRY);
-
     if (isStarting) {
         /* START TIME */
         sprintf(timeStr, "%lu", *indexEntry->start->sec);
         stringAppendStr(&buffer, timeStr);
-
         /* START OFFSET */
         if (isIndex) {
             stringAppendStr(&buffer, TOKEN_ENTRY);
             stringAppendStr(&buffer, indexEntry->startOffset);
         }
-    }
-    else {
+    } else {
         /* STOP TIME */
         sprintf(timeStr, "%lu", *indexEntry->stop->sec);
         stringAppendStr(&buffer, timeStr);
-
         /* STOP OFFSET */
         if (isIndex) {
             stringAppendStr(&buffer, TOKEN_ENTRY);
@@ -260,30 +234,24 @@ writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
     }
     /* NEW LINE */
     stringAppendStr(&buffer, NEW_LINE);
-
     logEntry(isIndex ? &UNITLOGD_INDEX_FILE : &UNITLOGD_LOG_FILE, buffer);
 
     /* Release resources */
     objectRelease(&buffer);
-
     return rv;
 }
 
-int
-indexIntegrityCheck()
+int indexIntegrityCheck()
 {
-    int rv, len;
+    int rv = 0, len = 0;
     Array *index = NULL;
     IndexEntry *indexEntry = NULL;
     bool isStart = false;
     char *bootId = NULL;
 
-    rv = len = 0;
-
     /* Get array from index */
     if ((rv = getIndex(&index, true)) != 0)
         goto out;
-
     /* For each index entry must be there a log entry according the offset value */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
@@ -300,7 +268,6 @@ indexIntegrityCheck()
     }
     unitlogdCloseLog();
     assert(!UNITLOGD_LOG_FILE);
-
     /* If len is odd, it means that unitlog daemon has not been properly stopped.
      * In this case, we append the index 'stop' entry to index and log file before to start.
     */
@@ -320,31 +287,27 @@ indexIntegrityCheck()
         unitlogdOpenIndex("a");
         assert(UNITLOGD_INDEX_FILE);
         /* Write the index entry */
-        if (writeEntry(false, indexEntry, true) != 0 ||
-            writeEntry(false, indexEntry, false) != 0) {
+        if (writeEntry(false, indexEntry, true) != 0 || writeEntry(false, indexEntry, false) != 0) {
             rv = 1;
             goto err;
         }
         indexEntryRelease(&indexEntry);
     }
-
     goto out;
 
-    err:
-        indexEntryRelease(&indexEntry);
+err:
+    indexEntryRelease(&indexEntry);
 
-    out:
-        arrayRelease(&index);
-        unitlogdCloseLog();
-        assert(!UNITLOGD_LOG_FILE);
-        unitlogdCloseIndex();
-        assert(!UNITLOGD_INDEX_FILE);
-
-        return rv;
+out:
+    arrayRelease(&index);
+    unitlogdCloseLog();
+    assert(!UNITLOGD_LOG_FILE);
+    unitlogdCloseIndex();
+    assert(!UNITLOGD_INDEX_FILE);
+    return rv;
 }
 
-int
-getMaxIdx(Array **index)
+int getMaxIdx(Array **index)
 {
     int max = -1;
     int len = (*index) ? (*index)->size : 0;
@@ -354,21 +317,22 @@ getMaxIdx(Array **index)
         else
             max = (len - 1) / 2;
     }
+
     return max;
 }
 
-void
-setIndexErr(bool isIndex)
+void setIndexErr(bool isIndex)
 {
     if (isIndex) {
         logErrorStr(CONSOLE | SYSTEM, "The index file '%s' is corrupt!\n", UNITLOGD_INDEX_PATH);
         logInfo(CONSOLE | SYSTEM, "Please, run 'unitlogctl index-repair' to repair it.\n");
-    }
-    else {
+    } else {
         logErrorStr(CONSOLE | SYSTEM, "The log file '%s' is corrupt!\n", UNITLOGD_LOG_PATH);
-        logInfo(CONSOLE | SYSTEM, "Please, run the following steps:\n"
-                                  "[1] Stop unitlog daemon.\n"
-                                  "[2] Run 'rm -rf %s'.\n"
-                                  "[3] Restart the system.\n", UNITLOGD_PATH);
+        logInfo(CONSOLE | SYSTEM,
+                "Please, run the following steps:\n"
+                "[1] Stop unitlog daemon.\n"
+                "[2] Run 'rm -rf %s'.\n"
+                "[3] Restart the system.\n",
+                UNITLOGD_PATH);
     }
 }

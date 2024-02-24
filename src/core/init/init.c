@@ -10,15 +10,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 /* Options */
 OptionData OPTIONS_DATA[] = {
-    { FORCE_OPT, "force" },
-    { RESTART_OPT, "restart" },
-    { RUN_OPT, "run" },
-    { REQUIRES_OPT, "requires" },
-    { CONFLICTS_OPT, "conflicts" },
-    { STATES_OPT, "states" },
-    { NO_WTMP_OPT, "no-wtmp" },
-    { ANALYZE_OPT, "analyze" },
-    { RE_ENABLE_OPT, "re-enable" },
+    { FORCE_OPT, "force" },       { RESTART_OPT, "restart" },     { RUN_OPT, "run" },
+    { REQUIRES_OPT, "requires" }, { CONFLICTS_OPT, "conflicts" }, { STATES_OPT, "states" },
+    { NO_WTMP_OPT, "no-wtmp" },   { ANALYZE_OPT, "analyze" },     { RE_ENABLE_OPT, "re-enable" },
     { RESET_OPT, "reset" }
 };
 int OPTIONS_LEN = 10;
@@ -60,23 +54,18 @@ int COMMANDS_LEN = 30;
 
 /* List Filter */
 const ListFilterData LIST_FILTER_DATA[] = {
-    { ENABLED_FILTER, "enable" },
-    { DISABLED_FILTER, "disable" },
-    { STARTED_FILTER, "started" },
-    { DEAD_FILTER, "dead" },
-    { FAILED_FILTER, "failed" },
-    { RESTARTABLE_FILTER, "restartable" },
-    { RESTARTED_FILTER, "restarted" },
-    { TIMERS_FILTER, "timers" },
+    { ENABLED_FILTER, "enable" },      { DISABLED_FILTER, "disable" },
+    { STARTED_FILTER, "started" },     { DEAD_FILTER, "dead" },
+    { FAILED_FILTER, "failed" },       { RESTARTABLE_FILTER, "restartable" },
+    { RESTARTED_FILTER, "restarted" }, { TIMERS_FILTER, "timers" },
     { UPATH_FILTER, "upath" }
 };
 int LIST_FILTER_LEN = 9;
 
 /* Unitd errors */
-const UnitdErrorsData UNITD_ERRORS_ITEMS[] = {
-    { UNITD_GENERIC_ERR, "An error has occurred!" },
-    { UNITD_SOCKBUF_ERR, "Unable to receive the data!" }
-};
+const UnitdErrorsData UNITD_ERRORS_ITEMS[] = { { UNITD_GENERIC_ERR, "An error has occurred!" },
+                                               { UNITD_SOCKBUF_ERR,
+                                                 "Unable to receive the data!" } };
 /* Unitd messages */
 const UnitdMessagesData UNITD_MESSAGES_ITEMS[] = {
     { UNITD_SYSTEM_LOG_MSG, "Please, check the system log for details." },
@@ -100,8 +89,8 @@ char *STATE_USER_DIR;
 pthread_mutex_t START_MUTEX;
 pthread_mutex_t NOTIFIER_MUTEX;
 
-static void
-addBootUnits(Array **bootUnits, Array **units) {
+static void addBootUnits(Array **bootUnits, Array **units)
+{
     if (!(*bootUnits))
         *bootUnits = arrayNew(unitRelease);
     int len = (*units ? (*units)->size : 0);
@@ -109,25 +98,21 @@ addBootUnits(Array **bootUnits, Array **units) {
         arrayAdd(*bootUnits, unitNew(arrayGet(*units, i), PARSE_SOCK_RESPONSE_UNITLIST));
 }
 
-int
-unitdInit(UnitdData **unitdData, bool isAggregate)
+int unitdInit(UnitdData **unitdData, bool isAggregate)
 {
-    int rv, lenUnits;
-    char *initStateDir, *destDefStateSyml, *finalStateDir;
-    Array **initUnits, **finalUnits, **units, **shutDownUnits, **bootUnits;
-    char *shutDownStateStr = NULL;
-
-    rv = lenUnits = 0;
-    initStateDir = destDefStateSyml = finalStateDir = NULL;
-    initUnits = finalUnits = bootUnits = NULL;
+    int rv = 0;
+    char *initStateDir = NULL, *destDefStateSyml = NULL, *finalStateDir = NULL,
+         *shutDownStateStr = NULL;
+    Array **initUnits = NULL, **finalUnits = NULL, **units = NULL, **shutDownUnits = NULL,
+          **bootUnits = NULL;
 
     assert(*unitdData);
+
     initUnits = &(*unitdData)->initUnits;
     units = &(*unitdData)->units;
     shutDownUnits = &(*unitdData)->shutDownUnits;
     finalUnits = &(*unitdData)->finalUnits;
     bootUnits = &(*unitdData)->bootUnits;
-
     if (UNITD_DEBUG) {
         logInfo(CONSOLE, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
         logInfo(CONSOLE, "Units path = %s\n", UNITS_PATH);
@@ -136,11 +121,9 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         logInfo(CONSOLE, "Unitd Log path = %s\n", UNITD_LOG_PATH);
         logInfo(CONSOLE, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
     }
-
     /* For each terminated state, we check if "SHUTDOWN_COMMAND" is set by signal handler.
      * If so (Ctrl+Alt+Del pressed), we start the reboot phase
     */
-
     //*************************** INIT STATE *********************************
     /* Parsing and starting the initialization units.
      * For the initialization state, we always aggregate the errors to allow
@@ -149,11 +132,11 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
 #ifndef UNITD_TEST
     initStateDir = stringNew(STATE_DATA_ITEMS[INIT].desc);
     stringAppendStr(&initStateDir, ".state/units");
-    if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir,
-                        INIT, true, NULL, PARSE_UNIT, true)) != 0) {
+    if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir, INIT, true, NULL, PARSE_UNIT,
+                        true)) != 0) {
         /* Show unit configuration error and emergency shell */
         logError(ALL, "src/core/init/init.c", "unitdInit", rv,
-                      "An error has occurred in loadUnits for init.state", NULL);
+                 "An error has occurred in loadUnits for init.state", NULL);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
@@ -166,7 +149,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
 #endif
-
     assert(!UNITD_BOOT_LOG_FILE);
     unitdOpenLog("w");
     /* Start the cleaner */
@@ -189,7 +171,7 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     if (STATE_DEFAULT == NO_STATE) {
         /* If we are here then the symlink points to a bad destination */
         logErrorStr(CONSOLE, "The default state symlink points to a bad destination (%s)\n",
-                         destDefStateSyml);
+                    destDefStateSyml);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
         /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
@@ -198,19 +180,17 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     assert(STATE_DEFAULT != NO_STATE);
     if (UNITD_DEBUG)
         logInfo(UNITD_BOOT_LOG, "The default.state symlink points to %s\n",
-                     STATE_DATA_ITEMS[STATE_DEFAULT].desc);
-
+                STATE_DATA_ITEMS[STATE_DEFAULT].desc);
     /* Parsing the units for the cmdline or default state */
     if (STATE_CMDLINE_DIR) {
         if (UNITD_DEBUG)
             logInfo(UNITD_BOOT_LOG, "The state of the cmdline is %s\n",
-                         STATE_DATA_ITEMS[STATE_CMDLINE].desc);
-        rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR,
-                       STATE_CMDLINE, isAggregate, NULL, PARSE_UNIT, true);
-    }
-    else {
-        rv = loadUnits(units, UNITS_ENAB_PATH, DEF_STATE_SYML_NAME,
-                       STATE_DEFAULT, isAggregate, NULL, PARSE_UNIT, true);
+                    STATE_DATA_ITEMS[STATE_CMDLINE].desc);
+        rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR, STATE_CMDLINE, isAggregate, NULL,
+                       PARSE_UNIT, true);
+    } else {
+        rv = loadUnits(units, UNITS_ENAB_PATH, DEF_STATE_SYML_NAME, STATE_DEFAULT, isAggregate,
+                       NULL, PARSE_UNIT, true);
     }
     /* Zero units are not allowed in this state (default/cmdline) */
     if (rv == GLOB_NOMATCH) {
@@ -219,7 +199,6 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
-
     /* We put the pipes to listen before to start processes to be ready for restart. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
@@ -228,88 +207,82 @@ unitdInit(UnitdData **unitdData, bool isAggregate)
     addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
-    shutdown:
-        /* Shutdown start */
-        SHUTDOWN_START = timeNew(NULL);
-        /* Open the log in append mode if it is closed */
-        if (!UNITD_BOOT_LOG_FILE)
-            unitdOpenLog("a");
-        /* Stop the cleaner */
-        stopCleaner();
-        /* Stop the notifiers */
-        stopNotifier(NULL);
-        //******************* POWEROFF (HALT) / REBOOT STATE **********************
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "%sSystem is going down ...%s\n", WHITE_COLOR, DEFAULT_COLOR);
-        if (SHUTDOWN_COMMAND == HALT_COMMAND) {
-            shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);
-            stringAppendStr(&shutDownStateStr, ".state");
-        }
-        else {
-            shutDownStateStr = stringNew(COMMANDS_DATA[SHUTDOWN_COMMAND].name);
-            stringAppendStr(&shutDownStateStr, ".state");
-        }
-        STATE_SHUTDOWN = getStateByStr(shutDownStateStr);
-        loadUnits(shutDownUnits, UNITS_ENAB_PATH, shutDownStateStr,
-                  STATE_SHUTDOWN, isAggregate, NULL, PARSE_UNIT, true);
-        startProcesses(shutDownUnits, NULL);
-
-        //********************* STOPPING UNITS **********************************
-        closePipes(units, NULL);
-        stopProcesses(units, NULL);
-        stopProcesses(shutDownUnits, NULL);
-        stopProcesses(initUnits, NULL);
-        unitdCloseLog();
-        /* Write a wtmp 'shutdown' record */
-        if (!NO_WTMP)
-            rv = writeWtmp(false);
-
-        //********************* FINAL STATE ************************************
-        /* Parsing and starting the finalization units.
-         * For the finalization state, we always aggregate the errors to allow
-         * to fix them in an one shot.
-        */
+shutdown:
+    /* Shutdown start */
+    SHUTDOWN_START = timeNew(NULL);
+    /* Open the log in append mode if it is closed */
+    if (!UNITD_BOOT_LOG_FILE)
+        unitdOpenLog("a");
+    /* Stop the cleaner */
+    stopCleaner();
+    /* Stop the notifiers */
+    stopNotifier(NULL);
+    //******************* POWEROFF (HALT) / REBOOT STATE **********************
+    logInfo(CONSOLE | UNITD_BOOT_LOG, "%sSystem is going down ...%s\n", WHITE_COLOR, DEFAULT_COLOR);
+    if (SHUTDOWN_COMMAND == HALT_COMMAND) {
+        shutDownStateStr = stringNew(COMMANDS_DATA[POWEROFF_COMMAND].name);
+        stringAppendStr(&shutDownStateStr, ".state");
+    } else {
+        shutDownStateStr = stringNew(COMMANDS_DATA[SHUTDOWN_COMMAND].name);
+        stringAppendStr(&shutDownStateStr, ".state");
+    }
+    STATE_SHUTDOWN = getStateByStr(shutDownStateStr);
+    loadUnits(shutDownUnits, UNITS_ENAB_PATH, shutDownStateStr, STATE_SHUTDOWN, isAggregate, NULL,
+              PARSE_UNIT, true);
+    startProcesses(shutDownUnits, NULL);
+    //********************* STOPPING UNITS **********************************
+    closePipes(units, NULL);
+    stopProcesses(units, NULL);
+    stopProcesses(shutDownUnits, NULL);
+    stopProcesses(initUnits, NULL);
+    unitdCloseLog();
+    /* Write a wtmp 'shutdown' record */
+    if (!NO_WTMP) {
+        rv = writeWtmp(false);
+    }
+    //********************* FINAL STATE ************************************
+    /* Parsing and starting the finalization units.
+     * For the finalization state, we always aggregate the errors to allow
+     * to fix them in an one shot.
+     */
 #ifndef UNITD_TEST
-        finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);
-        stringAppendStr(&finalStateDir, ".state/units");
-        if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir,
-                            FINAL, true, NULL, PARSE_UNIT, true)) != 0) {
-            /* Show unit configuration error and emergency shell */
-            logError(ALL, "src/core/init/init.c", "unitdInit", rv,
-                          "An error has occurred in loadUnits for final.state", NULL);
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-            goto out;
-        }
-        if ((rv = startProcesses(finalUnits, NULL)) != 0)
-            execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+    finalStateDir = stringNew(STATE_DATA_ITEMS[FINAL].desc);
+    stringAppendStr(&finalStateDir, ".state/units");
+    if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir, FINAL, true, NULL, PARSE_UNIT,
+                        true)) != 0) {
+        /* Show unit configuration error and emergency shell */
+        logError(ALL, "src/core/init/init.c", "unitdInit", rv,
+                 "An error has occurred in loadUnits for final.state", NULL);
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
+        goto out;
+    }
+    if ((rv = startProcesses(finalUnits, NULL)) != 0)
+        execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
 #endif
 
-    out:
-        assert(!UNITD_BOOT_LOG_FILE);
-        objectRelease(&initStateDir);
-        objectRelease(&destDefStateSyml);
-        objectRelease(&shutDownStateStr);
-        objectRelease(&finalStateDir);
-        return rv;
+out:
+    assert(!UNITD_BOOT_LOG_FILE);
+    objectRelease(&initStateDir);
+    objectRelease(&destDefStateSyml);
+    objectRelease(&shutDownStateStr);
+    objectRelease(&finalStateDir);
+    return rv;
 }
 
-int
-unitdUserInit(UnitdData **unitdData, bool isAggregate)
+int unitdUserInit(UnitdData **unitdData, bool isAggregate)
 {
     int rv = 0;
-    Array **units, **bootUnits;
-
-    units = bootUnits = NULL;
+    Array **units = NULL, **bootUnits = NULL;
 
     assert(*unitdData);
+
     units = &(*unitdData)->units;
     if (!(*units))
         *units = arrayNew(unitRelease);
     bootUnits = &(*unitdData)->bootUnits;
-
     if (UNITD_DEBUG) {
         logInfo(UNITD_BOOT_LOG, "%s starting as pid %d\n", PROJECT_USER_NAME, UNITD_PID);
         logInfo(UNITD_BOOT_LOG, "Units user path = %s\n", UNITS_USER_PATH);
@@ -320,21 +293,18 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
         logInfo(UNITD_BOOT_LOG, "socket user path = %s\n", SOCKET_USER_PATH);
         logInfo(UNITD_BOOT_LOG, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
     }
-
     /* Start the cleaner */
     startCleaner();
     /* Start the notifiers */
     startNotifier(NULL);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-
     //******************* USER STATE ************************
     /* Parsing the units for the user state */
     STATE_USER_DIR = stringNew(STATE_DATA_ITEMS[USER].desc);
     stringAppendStr(&STATE_USER_DIR, ".state");
-    rv = loadUnits(units, UNITS_USER_ENAB_PATH, STATE_USER_DIR,
-                   STATE_USER, isAggregate, NULL, PARSE_UNIT, true);
-
+    rv = loadUnits(units, UNITS_USER_ENAB_PATH, STATE_USER_DIR, STATE_USER, isAggregate, NULL,
+                   PARSE_UNIT, true);
     /* We put the pipes to listen before to start processes to be ready for restart. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
@@ -343,32 +313,29 @@ unitdUserInit(UnitdData **unitdData, bool isAggregate)
     addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-
     /* Unitd is blocked here listening the client requests */
     listenSocketRequest();
 
-    shutdown:
-        /* Shutdown start */
-        SHUTDOWN_START = timeNew(NULL);
-        /* Open the log in append mode if it is closed */
-        if (!UNITD_BOOT_LOG_FILE)
-            unitdOpenLog("a");
-        /* Stop the cleaner */
-        stopCleaner();
-        /* Stop the notifiers */
-        stopNotifier(NULL);
-        //********************* STOPPING UNITS **********************************
-        closePipes(units, NULL);
-        stopProcesses(units, NULL);
+shutdown:
+    /* Shutdown start */
+    SHUTDOWN_START = timeNew(NULL);
+    /* Open the log in append mode if it is closed */
+    if (!UNITD_BOOT_LOG_FILE)
+        unitdOpenLog("a");
+    /* Stop the cleaner */
+    stopCleaner();
+    /* Stop the notifiers */
+    stopNotifier(NULL);
+    //********************* STOPPING UNITS **********************************
+    closePipes(units, NULL);
+    stopProcesses(units, NULL);
 
-        /* Release resources */
-        objectRelease(&STATE_USER_DIR);
-
-        return rv;
+    /* Release resources */
+    objectRelease(&STATE_USER_DIR);
+    return rv;
 }
 
-void
-unitdEnd(UnitdData **unitdData)
+void unitdEnd(UnitdData **unitdData)
 {
     int rv = 0;
     arrayRelease(&UNITD_ENV_VARS);

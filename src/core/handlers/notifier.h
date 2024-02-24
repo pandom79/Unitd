@@ -29,13 +29,13 @@ extern const WatcherData WATCHER_DATA_ITEMS[];
 extern Notifier *NOTIFIER;
 extern bool NOTIFIER_WORKING;
 
-Notifier* notifierNew();
+Notifier *notifierNew();
 int notifierInit(Notifier *);
 void notifierRelease(Notifier **);
 void notifierClose(Notifier *);
-Watcher* watcherNew(Notifier *, const char *, WatcherType);
+Watcher *watcherNew(Notifier *, const char *, WatcherType);
 void watcherRelease(Watcher **);
 void setUnitdNotifier();
 int startNotifier(Unit *);
-void* startNotifierThread(void *);
+void *startNotifierThread(void *);
 int stopNotifier(Unit *);

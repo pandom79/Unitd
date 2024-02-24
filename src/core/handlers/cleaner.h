@@ -6,7 +6,7 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#define CLEANER_TIMEOUT         10
+#define CLEANER_TIMEOUT 10
 
 typedef struct {
     Pipe *pipe;
@@ -14,8 +14,8 @@ typedef struct {
 
 extern Cleaner *CLEANER;
 
-Cleaner* cleanerNew();
+Cleaner *cleanerNew();
 void cleanerRelease(Cleaner **);
 void startCleaner();
-void* startCleanerThread(void *);
+void *startCleanerThread(void *);
 void stopCleaner();

@@ -1,0 +1,4 @@
+Unitd.*
+src/include/unitd_config.h
+.cache
+.vscode

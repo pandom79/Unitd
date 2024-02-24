@@ -127,114 +127,105 @@ typedef enum {
     DURATIONH = 35
 } Keys;
 
-static const char*
-asStr(Keys key)
+static const char *asStr(Keys key)
 {
     assert(key >= UNIT_SEC);
     switch (key) {
-        case UNIT_SEC:
-            return "[Unit]";
-        case PDATAHISTORY_SEC:
-            return "[PDataHistory]";
-        case MESSAGE:
-            return "Message";
-        case ERROR:
-            return "Error";
-        case NAME:
-            return "Name";
-        case ENABLED:
-            return "Enabled";
-        case PID:
-            return "Pid";
-        case PSTATE:
-            return "PState";
-        case FINALSTATUS:
-            return "FinalStatus";
-        case DESC:
-            return "Desc";
-        case DURATION:
-            return "Duration";
-        case RESTARTNUM:
-            return "RestartNum";
-        case RESTARTABLE:
-            return "Restartable";
-        case TYPE:
-            return "Type";
-        case NEXTTIMEDATE:
-            return "NextTimeDate";
-        case LEFTTIMEDURATION:
-            return "LeftTimeDuration";
-        case TIMERNAME:
-            return "TimerName";
-        case TIMERPSTATE:
-            return "TimerPState";
-        case PATHUNITNAME:
-            return "PathUnitName";
-        case PATHUNITPSTATE:
-            return "PathUnitPState";
-        case PATH:
-            return "Path";
-        case RESTARTMAX:
-            return "RestartMax";
-        case UNITERROR:
-            return "UnitError";
-        case EXITCODE:
-            return "ExitCode";
-        case SIGNALNUM:
-            return "SignalNum";
-        case DATETIMESTART:
-            return "DateTimeStart";
-        case DATETIMESTOP:
-            return "DateTimeStop";
-        case INTERVAL:
-            return "Interval";
-        case PIDH:
-            return "PidH";
-        case EXITCODEH:
-            return "ExitCodeH";
-        case PSTATEH:
-            return "PStateH";
-        case SIGNALNUMH:
-            return "SignalNumH";
-        case FINALSTATUSH:
-            return "FinalStatusH";
-        case DATETIMESTARTH:
-            return "DateTimeStartH";
-        case DATETIMESTOPH:
-            return "DateTimeStopH";
-        case DURATIONH:
-            return "DurationH";
-        default:
-            return "";
+    case UNIT_SEC:
+        return "[Unit]";
+    case PDATAHISTORY_SEC:
+        return "[PDataHistory]";
+    case MESSAGE:
+        return "Message";
+    case ERROR:
+        return "Error";
+    case NAME:
+        return "Name";
+    case ENABLED:
+        return "Enabled";
+    case PID:
+        return "Pid";
+    case PSTATE:
+        return "PState";
+    case FINALSTATUS:
+        return "FinalStatus";
+    case DESC:
+        return "Desc";
+    case DURATION:
+        return "Duration";
+    case RESTARTNUM:
+        return "RestartNum";
+    case RESTARTABLE:
+        return "Restartable";
+    case TYPE:
+        return "Type";
+    case NEXTTIMEDATE:
+        return "NextTimeDate";
+    case LEFTTIMEDURATION:
+        return "LeftTimeDuration";
+    case TIMERNAME:
+        return "TimerName";
+    case TIMERPSTATE:
+        return "TimerPState";
+    case PATHUNITNAME:
+        return "PathUnitName";
+    case PATHUNITPSTATE:
+        return "PathUnitPState";
+    case PATH:
+        return "Path";
+    case RESTARTMAX:
+        return "RestartMax";
+    case UNITERROR:
+        return "UnitError";
+    case EXITCODE:
+        return "ExitCode";
+    case SIGNALNUM:
+        return "SignalNum";
+    case DATETIMESTART:
+        return "DateTimeStart";
+    case DATETIMESTOP:
+        return "DateTimeStop";
+    case INTERVAL:
+        return "Interval";
+    case PIDH:
+        return "PidH";
+    case EXITCODEH:
+        return "ExitCodeH";
+    case PSTATEH:
+        return "PStateH";
+    case SIGNALNUMH:
+        return "SignalNumH";
+    case FINALSTATUSH:
+        return "FinalStatusH";
+    case DATETIMESTARTH:
+        return "DateTimeStartH";
+    case DATETIMESTOPH:
+        return "DateTimeStopH";
+    case DURATIONH:
+        return "DurationH";
+    default:
+        return "";
     }
-
 }
 
-char*
-marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
+char *marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
 {
     char *buffer = NULL;
-    Array *messages, *errors, *units, *unitErrors, *pDataHistory;
-    int len, lenUnitErrors, lenPdataHistory;
-    const char *msgKey, *errKey, *unitDesc, *unitPath, *dateTimeStart, *dateTimeStop,
-               *unitErrorKey, *pDataHistorySecKey, *pidHKey, *exitCodeHKey,
-               *pStateHKey, *signalNumHKey, *finalStatusHKey, *datetimeStartHKey,
-               *datetimeStopHKey, *duration, *durationKey;
+    Array *messages = NULL, *errors = NULL, *units = NULL, *unitErrors = NULL, *pDataHistory = NULL;
+    int len = 0, lenUnitErrors = 0, lenPdataHistory = 0;
+    const char *msgKey = NULL, *errKey = NULL, *unitDesc = NULL, *unitPath, *dateTimeStart,
+               *dateTimeStop, *unitErrorKey = NULL, *pDataHistorySecKey = NULL, *pidHKey = NULL,
+               *exitCodeHKey = NULL, *pStateHKey = NULL, *signalNumHKey = NULL,
+               *finalStatusHKey = NULL, *datetimeStartHKey = NULL, *datetimeStopHKey = NULL,
+               *duration, *durationKey = NULL;
     Unit *unit = NULL;
     ProcessData *pData = NULL;
-
-    messages = errors = units = unitErrors = pDataHistory = NULL;
-    len = lenUnitErrors = lenPdataHistory = 0;
-    msgKey = errKey = unitDesc = unitErrorKey = pDataHistorySecKey =
-    pidHKey = exitCodeHKey = pStateHKey = signalNumHKey =
-    finalStatusHKey = datetimeStartHKey = datetimeStopHKey = durationKey = NULL;
 
     assert(sockMessageOut);
 
     /* The following data (messages and errors) are in common between
     * PARSE_SOCK_RESPONSE_UNITLIST and PARSE_SOCK_RESPONSE
     */
-
     /* Messages */
     messages = sockMessageOut->messages;
     len = (messages ? messages->size : 0);
@@ -250,7 +241,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringAppendStr(&buffer, arrayGet(messages, i));
         stringAppendStr(&buffer, TOKEN);
     }
-
     /* Errors */
     errors = sockMessageOut->errors;
     len = (errors ? errors->size : 0);
@@ -266,7 +256,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringAppendStr(&buffer, arrayGet(errors, i));
         stringAppendStr(&buffer, TOKEN);
     }
-
     /* Units */
     units = sockMessageOut->unitsDisplay;
     len = (units ? units->size : 0);
@@ -274,19 +263,15 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         unit = arrayGet(units, i);
         /* Process Data */
         pData = unit->processData;
-
         /* Unit section */
         if (i == 0 && !buffer)
             buffer = stringNew(asStr(UNIT_SEC));
         else
             stringAppendStr(&buffer, asStr(UNIT_SEC));
-
         stringAppendStr(&buffer, TOKEN);
-
         /* The following data are in common between
          * PARSE_SOCK_RESPONSE_UNITLIST and PARSE_SOCK_RESPONSE
         */
-
         /* Name */
         stringAppendStr(&buffer, asStr(NAME));
         stringAppendStr(&buffer, ASSIGNER);
@@ -331,8 +316,7 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                 stringAppendStr(&buffer, diff);
                 timeRelease(&currentTimeStop);
                 objectRelease(&diff);
-            }
-            else
+            } else
                 stringAppendStr(&buffer, NONE);
         }
         stringAppendStr(&buffer, TOKEN);
@@ -373,7 +357,6 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, *pData->signalNum);
         stringAppendStr(&buffer, TOKEN);
-
         if (funcType == PARSE_SOCK_RESPONSE) {
             /* Timer name */
             char *timerName = unit->timerName;
@@ -531,28 +514,21 @@ marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
     return buffer;
 }
 
-int
-unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
+int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
 {
-
-    int rv, len;
-    Array *entries, **unitsDisplay, **unitErrors, **messages,
-          **sockErrors, **pDatasHistory, *keyval;
-    char *value, *key, *entry;
+    int rv = 0, len = 0;
+    Array *entries = NULL, **unitsDisplay, **unitErrors, **messages, **sockErrors, **pDatasHistory,
+          *keyval = NULL;
+    char *value = NULL, *key = NULL, *entry = NULL;
     Unit *unitDisplay = NULL;
-    ProcessData *pData, *pDataHistory;
-
-    rv = len = 0;
-    entries = keyval = NULL;
-    pData = pDataHistory = NULL;
-    value = key = entry = NULL;
+    ProcessData *pData = NULL, *pDataHistory = NULL;
 
     assert(buffer);
     assert(*sockMessageOut);
+
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     messages = &(*sockMessageOut)->messages;
     sockErrors = &(*sockMessageOut)->errors;
-
     /* Get the entries */
     entries = stringSplit(buffer, TOKEN, true);
     len = (entries ? entries->size : 0);
@@ -564,13 +540,11 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
             // Section
             key = entry;
             value = NULL;
-        }
-        else {
+        } else {
             // Property
             key = arrayGet(keyval, 0);
             value = arrayGet(keyval, 1);
         }
-
         if (!value) {
             // SECTIONS
             if (stringEquals(key, asStr(UNIT_SEC))) {
@@ -594,14 +568,13 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                 goto next;
             }
             // Should never happen
-            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse", EPERM,
-                     strerror(EPERM), "Section %s not found!", key);
+            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse",
+                     EPERM, strerror(EPERM), "Section %s not found!", key);
             arrayRelease(&keyval);
             rv = 1;
             goto out;
 
-        }
-        else {
+        } else {
             // PROPERTIES
             if (stringEquals(key, asStr(MESSAGE))) {
                 if (!(*messages))
@@ -651,7 +624,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                 goto next;
             }
             if (stringEquals(key, asStr(TIMERPSTATE))) {
-                unitDisplay->timerPState = calloc(1, sizeof (PState));
+                unitDisplay->timerPState = calloc(1, sizeof(PState));
                 assert(unitDisplay->timerPState);
                 *unitDisplay->timerPState = atoi(value);
                 goto next;
@@ -661,7 +634,7 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                 goto next;
             }
             if (stringEquals(key, asStr(PATHUNITPSTATE))) {
-                unitDisplay->pathUnitPState = calloc(1, sizeof (PState));
+                unitDisplay->pathUnitPState = calloc(1, sizeof(PState));
                 assert(unitDisplay->pathUnitPState);
                 *unitDisplay->pathUnitPState = atoi(value);
                 goto next;
@@ -795,20 +768,19 @@ unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                 goto next;
             }
             // Should never happen
-            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse", EPERM,
-                     strerror(EPERM), "Property %s not found!", key);
+            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse",
+                     EPERM, strerror(EPERM), "Property %s not found!", key);
             arrayRelease(&keyval);
             rv = EPERM;
             goto out;
         }
 
-        next:
-            arrayRelease(&keyval);
-            continue;
+next:
+        arrayRelease(&keyval);
+        continue;
     }
 
-    out:
-        arrayRelease(&entries);
-        return rv;
+out:
+    arrayRelease(&entries);
+    return rv;
 }
-

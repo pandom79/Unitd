@@ -17,40 +17,38 @@ char *UNITD_USER_TIMER_DATA_PATH;
 char *UNITD_USER_LOG_PATH;
 char *SOCKET_USER_PATH;
 
-static bool
-getSkipCheckAdmin(Command command)
+static bool getSkipCheckAdmin(Command command)
 {
     switch (command) {
-        case STATUS_COMMAND:
-        case LIST_REQUIRES_COMMAND:
-        case LIST_CONFLICTS_COMMAND:
-        case LIST_STATES_COMMAND:
-        case CAT_COMMAND:
-        case LIST_COMMAND:
-        case LIST_ENABLED_COMMAND:
-        case LIST_DISABLED_COMMAND:
-        case LIST_STARTED_COMMAND:
-        case LIST_DEAD_COMMAND:
-        case LIST_FAILED_COMMAND:
-        case LIST_RESTARTABLE_COMMAND:
-        case LIST_RESTARTED_COMMAND:
-        case LIST_TIMERS_COMMAND:
-        case LIST_UPATH_COMMAND:
-        case ANALYZE_COMMAND:
-        case GET_DEFAULT_STATE_COMMAND:
-            return true;
-        default:
-            return false;
+    case STATUS_COMMAND:
+    case LIST_REQUIRES_COMMAND:
+    case LIST_CONFLICTS_COMMAND:
+    case LIST_STATES_COMMAND:
+    case CAT_COMMAND:
+    case LIST_COMMAND:
+    case LIST_ENABLED_COMMAND:
+    case LIST_DISABLED_COMMAND:
+    case LIST_STARTED_COMMAND:
+    case LIST_DEAD_COMMAND:
+    case LIST_FAILED_COMMAND:
+    case LIST_RESTARTABLE_COMMAND:
+    case LIST_RESTARTED_COMMAND:
+    case LIST_TIMERS_COMMAND:
+    case LIST_UPATH_COMMAND:
+    case ANALYZE_COMMAND:
+    case GET_DEFAULT_STATE_COMMAND:
+        return true;
+    default:
+        return false;
     }
 }
 
-static void
-showUsage()
+static void showUsage()
 {
+    // clang-format off
     fprintf(stdout,
             "Usage for %s instance: unitctl [COMMAND] [OPTIONS] ... \n\n",
             !USER_INSTANCE ? "system" : "user");
-
     /* Commands */
     fprintf(stdout,
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
@@ -95,7 +93,6 @@ showUsage()
             "set-default        Set the default state\n"
         );
     }
-
     /* Options */
     fprintf(stdout,
             WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
@@ -114,84 +111,78 @@ showUsage()
             "-u, --user         Connect to user unitd instance\n"
         );
     }
+    // clang-format on
     printf("\n");
 }
 
-int main(int argc, char **argv) {
-    int c, rv, userId;
-    bool force, run, noWtmp, onlyWtmp, noWall, skipCheckAdmin, usage, reset, version;
+int main(int argc, char **argv)
+{
+    int c = 0, rv = 0, userId = 0;
+    bool force = false, run = false, noWtmp = false, onlyWtmp = false, noWall = false,
+         skipCheckAdmin = false, usage = false, reset = false, version = false;
     const char *shortopts = "hrfdnowuev";
     Command command = NO_COMMAND;
-    const char *commandName, *arg;
+    const char *commandName = NULL, *arg = NULL;
     SockMessageOut *sockMessageOut = NULL;
-    const struct option longopts[] = {
-        { "help", no_argument, NULL, 'h' },
-        { "run", optional_argument, NULL, 'r' },
-        { "no-wtmp", optional_argument, NULL, 'n' },
-        { "only-wtmp", optional_argument, NULL, 'o' },
-        { "no-wall", optional_argument, NULL, 'w' },
-        { "force", optional_argument, NULL, 'f' },
-        { "debug", optional_argument, NULL, 'd' },
-        { "user", optional_argument, NULL, 'u' },
-        { "reset", optional_argument, NULL, 'e' },
-        { "version", optional_argument, NULL, 'v' },
-        { 0, 0, 0, 0 }
-    };
-
-    c = rv = userId = 0;
-    commandName = arg = NULL;
-    force = run = noWtmp = onlyWtmp = noWall = skipCheckAdmin = usage = reset = version = false;
+    const struct option longopts[] = { { "help", no_argument, NULL, 'h' },
+                                       { "run", optional_argument, NULL, 'r' },
+                                       { "no-wtmp", optional_argument, NULL, 'n' },
+                                       { "only-wtmp", optional_argument, NULL, 'o' },
+                                       { "no-wall", optional_argument, NULL, 'w' },
+                                       { "force", optional_argument, NULL, 'f' },
+                                       { "debug", optional_argument, NULL, 'd' },
+                                       { "user", optional_argument, NULL, 'u' },
+                                       { "reset", optional_argument, NULL, 'e' },
+                                       { "version", optional_argument, NULL, 'v' },
+                                       { 0, 0, 0, 0 } };
 
     /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
-            case 'h':
-                usage = true;
-                break;
-            case 'r':
-                run = true;
-                break;
-            case 'f':
-                force = true;
-                break;
-            case 'n':
-                noWtmp = true;
-                break;
-            case 'o':
-                onlyWtmp = true;
-                break;
-            case 'w':
-                noWall = true;
-                break;
-            case 'd':
-                UNITCTL_DEBUG = true;
-                break;
-            case 'u':
-                USER_INSTANCE = true;
-                break;
-            case 'e':
-                reset = true;
-                break;
-            case 'v':
-                version = true;
-                break;
-            default:
-                usage = true;
-                rv = 1;
-                break;
+        case 'h':
+            usage = true;
+            break;
+        case 'r':
+            run = true;
+            break;
+        case 'f':
+            force = true;
+            break;
+        case 'n':
+            noWtmp = true;
+            break;
+        case 'o':
+            onlyWtmp = true;
+            break;
+        case 'w':
+            noWall = true;
+            break;
+        case 'd':
+            UNITCTL_DEBUG = true;
+            break;
+        case 'u':
+            USER_INSTANCE = true;
+            break;
+        case 'e':
+            reset = true;
+            break;
+        case 'v':
+            version = true;
+            break;
+        default:
+            usage = true;
+            rv = 1;
+            break;
         }
     }
-
     if (usage) {
         showUsage();
         goto out;
     }
-
     if (version) {
         showVersion();
         goto out;
     }
-
     /* Get the command */
     if ((commandName = argv[optind])) {
         command = getCommand(commandName);
@@ -201,7 +192,6 @@ int main(int argc, char **argv) {
             goto out;
         }
     }
-
     /* Check instance */
     userId = getuid();
     assert(userId >= 0);
@@ -218,183 +208,170 @@ int main(int argc, char **argv) {
             rv = checkAdministrator(argv);
             goto out;
         }
-    }
-    else {
+    } else {
         /* Set user data */
         struct passwd *userInfo = NULL;
         if ((rv = setUserData(userId, &userInfo)) != 0)
             goto out;
     }
-
     /* Command handling */
     switch (command) {
-        case NO_COMMAND:
-            if (argc > 4 ||
-               (argc > 1 && !UNITCTL_DEBUG && !onlyWtmp && !USER_INSTANCE)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            else {
-                if (onlyWtmp) {
-                    if (!USER_INSTANCE) {
-                        /* Write a wtmp/utmp 'reboot' record and exit */
-                        rv = writeWtmp(true);
-                    }
-                    else {
-                        showUsage();
-                        rv = 1;
-                        goto out;
-                    }
-                }
-                else
-                    /* List command as default */
-                    rv = showUnitList(&sockMessageOut, NO_FILTER);
-            }
-            break;
-        case REBOOT_COMMAND:
-        case POWEROFF_COMMAND:
-        case HALT_COMMAND:
-        case KEXEC_COMMAND:
-            if (!USER_INSTANCE) {
-                if (argc > 6 ||
-                   (argc > 2 && !force && !UNITCTL_DEBUG && !noWtmp && !noWall)) {
+    case NO_COMMAND:
+        if (argc > 4 || (argc > 1 && !UNITCTL_DEBUG && !onlyWtmp && !USER_INSTANCE)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        } else {
+            if (onlyWtmp) {
+                if (!USER_INSTANCE) {
+                    /* Write a wtmp/utmp 'reboot' record and exit */
+                    rv = writeWtmp(true);
+                } else {
                     showUsage();
                     rv = 1;
                     goto out;
                 }
-                if (command == KEXEC_COMMAND && !isKexecLoaded()) {
-                    rv = 1;
-                    logErrorStr(CONSOLE, "Kexec is not loaded!\n");
-                    logInfo(CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
-                    goto out;
-                }
+            } else
+                /* List command as default */
+                rv = showUnitList(&sockMessageOut, NO_FILTER);
+        }
+        break;
+    case REBOOT_COMMAND:
+    case POWEROFF_COMMAND:
+    case HALT_COMMAND:
+    case KEXEC_COMMAND:
+        if (!USER_INSTANCE) {
+            if (argc > 6 || (argc > 2 && !force && !UNITCTL_DEBUG && !noWtmp && !noWall)) {
+                showUsage();
+                rv = 1;
+                goto out;
             }
-            else {
-                /* We only use POWEROFF_COMMAND to shutdown an unitd user instance.
+            if (command == KEXEC_COMMAND && !isKexecLoaded()) {
+                rv = 1;
+                logErrorStr(CONSOLE, "Kexec is not loaded!\n");
+                logInfo(CONSOLE, "Please, run 'unitctl reboot' to reboot the system.\n");
+                goto out;
+            }
+        } else {
+            /* We only use POWEROFF_COMMAND to shutdown an unitd user instance.
                  * We don't allow force, noWtmp and noWall option.
                 */
-                if (argc > 4 || command != POWEROFF_COMMAND ||
-                   (argc > 2 && (force || noWtmp || noWall))) {
-                    showUsage();
-                    rv = 1;
-                    goto out;
-                }
+            if (argc > 4 || command != POWEROFF_COMMAND ||
+                (argc > 2 && (force || noWtmp || noWall))) {
+                showUsage();
+                rv = 1;
+                goto out;
             }
-            rv = unitdShutdown(command, force, noWtmp, noWall);
-            break;
-        case LIST_COMMAND:
-        case LIST_ENABLED_COMMAND:
-        case LIST_DISABLED_COMMAND:
-        case LIST_STARTED_COMMAND:
-        case LIST_DEAD_COMMAND:
-        case LIST_FAILED_COMMAND:
-        case LIST_RESTARTABLE_COMMAND:
-        case LIST_RESTARTED_COMMAND:
-        case LIST_TIMERS_COMMAND:
-        case LIST_UPATH_COMMAND:
-        case ANALYZE_COMMAND:
+        }
+        rv = unitdShutdown(command, force, noWtmp, noWall);
+        break;
+    case LIST_COMMAND:
+    case LIST_ENABLED_COMMAND:
+    case LIST_DISABLED_COMMAND:
+    case LIST_STARTED_COMMAND:
+    case LIST_DEAD_COMMAND:
+    case LIST_FAILED_COMMAND:
+    case LIST_RESTARTABLE_COMMAND:
+    case LIST_RESTARTED_COMMAND:
+    case LIST_TIMERS_COMMAND:
+    case LIST_UPATH_COMMAND:
+    case ANALYZE_COMMAND:
+    case GET_DEFAULT_STATE_COMMAND:
+        if (argc > 4 || (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+            (command == GET_DEFAULT_STATE_COMMAND && USER_INSTANCE)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+        switch (command) {
         case GET_DEFAULT_STATE_COMMAND:
-            if (argc > 4 ||
-               (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
-               (command == GET_DEFAULT_STATE_COMMAND && USER_INSTANCE)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            switch (command) {
-                case GET_DEFAULT_STATE_COMMAND:
-                    rv = showData(command, &sockMessageOut, NULL, false, false, false, false, false);
-                    break;
-                case ANALYZE_COMMAND:
-                    rv = showBootAnalyze(&sockMessageOut);
-                    break;
-                case LIST_TIMERS_COMMAND:
-                    rv = showTimersList(&sockMessageOut, TIMERS_FILTER);
-                    break;
-                default:
-                    rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
-                    break;
-            }
+            rv = showData(command, &sockMessageOut, NULL, false, false, false, false, false);
             break;
-        case STATUS_COMMAND:
-        case STOP_COMMAND:
-        case LIST_REQUIRES_COMMAND:
-        case LIST_CONFLICTS_COMMAND:
-        case LIST_STATES_COMMAND:
-        case SET_DEFAULT_STATE_COMMAND:
-            if (argc < 3 || argc > 5 ||
-               (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
-               (command == SET_DEFAULT_STATE_COMMAND && USER_INSTANCE)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            arg = argv[argc - 1];
-            if (command == STATUS_COMMAND)
-                rv = showUnitStatus(&sockMessageOut, arg);
-            else
-                rv = showData(command, &sockMessageOut, arg, false, false, false, false, false);
+        case ANALYZE_COMMAND:
+            rv = showBootAnalyze(&sockMessageOut);
             break;
-        case START_COMMAND:
-        case RESTART_COMMAND:
-            if (argc < 3 || argc > 7 ||
-               (argc > 3 && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            arg = argv[argc - 1];
-            rv = showData(command, &sockMessageOut, arg, force,
-                          command == START_COMMAND ? false : true,
-                          false, false, reset);
+        case LIST_TIMERS_COMMAND:
+            rv = showTimersList(&sockMessageOut, TIMERS_FILTER);
             break;
-        case DISABLE_COMMAND:
-            if (argc < 3 || argc > 6 ||
-               (argc > 3 && !run && !UNITCTL_DEBUG && !USER_INSTANCE)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            arg = argv[argc - 1];
-            rv = showData(command, &sockMessageOut, arg, false, false, run, false, false);
-            break;
-        case RE_ENABLE_COMMAND:
-        case ENABLE_COMMAND:
-            if (argc < 3 || argc > 8 ||
-               (argc > 3 && !run && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            arg = argv[argc - 1];
-            rv = showData(command, &sockMessageOut, arg, force, false, run,
-                          command == ENABLE_COMMAND ? false : true, reset);
-            break;
-        case CAT_COMMAND:
-        case EDIT_COMMAND:
-        case CREATE_COMMAND:
-            if (argc < 3 || argc > 5 ||
-               (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE)) {
-                showUsage();
-                rv = 1;
-                goto out;
-            }
-            arg = argv[argc -1];
-            if (command == CREATE_COMMAND) {
-                if ((rv = createUnit(arg)) != 0)
-                    goto out;
-                else
-                    /* Edit the unit */
-                    command = EDIT_COMMAND;
-            }
-            rv = catEditUnit(command, arg);
+        default:
+            rv = showUnitList(&sockMessageOut, getListFilterByCommand(command));
             break;
         }
+        break;
+    case STATUS_COMMAND:
+    case STOP_COMMAND:
+    case LIST_REQUIRES_COMMAND:
+    case LIST_CONFLICTS_COMMAND:
+    case LIST_STATES_COMMAND:
+    case SET_DEFAULT_STATE_COMMAND:
+        if (argc < 3 || argc > 5 || (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+            (command == SET_DEFAULT_STATE_COMMAND && USER_INSTANCE)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+        arg = argv[argc - 1];
+        if (command == STATUS_COMMAND)
+            rv = showUnitStatus(&sockMessageOut, arg);
+        else
+            rv = showData(command, &sockMessageOut, arg, false, false, false, false, false);
+        break;
+    case START_COMMAND:
+    case RESTART_COMMAND:
+        if (argc < 3 || argc > 7 ||
+            (argc > 3 && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+        arg = argv[argc - 1];
+        rv = showData(command, &sockMessageOut, arg, force, command == START_COMMAND ? false : true,
+                      false, false, reset);
+        break;
+    case DISABLE_COMMAND:
+        if (argc < 3 || argc > 6 || (argc > 3 && !run && !UNITCTL_DEBUG && !USER_INSTANCE)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+        arg = argv[argc - 1];
+        rv = showData(command, &sockMessageOut, arg, false, false, run, false, false);
+        break;
+    case RE_ENABLE_COMMAND:
+    case ENABLE_COMMAND:
+        if (argc < 3 || argc > 8 ||
+            (argc > 3 && !run && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+        arg = argv[argc - 1];
+        rv = showData(command, &sockMessageOut, arg, force, false, run,
+                      command == ENABLE_COMMAND ? false : true, reset);
+        break;
+    case CAT_COMMAND:
+    case EDIT_COMMAND:
+    case CREATE_COMMAND:
+        if (argc < 3 || argc > 5 || (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE)) {
+            showUsage();
+            rv = 1;
+            goto out;
+        }
+        arg = argv[argc - 1];
+        if (command == CREATE_COMMAND) {
+            if ((rv = createUnit(arg)) != 0)
+                goto out;
+            else
+                /* Edit the unit */
+                command = EDIT_COMMAND;
+        }
+        rv = catEditUnit(command, arg);
+        break;
+    }
 
-    out:
-        /* Release resources */
-        userDataRelease();
+out:
+    /* Release resources */
+    userDataRelease();
 
-        return rv;
+    return rv;
 }

@@ -13,8 +13,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define INTERNAL_MARK LOG_MAKEPRI(LOG_NFACILITIES, 0) /* mark "facility" */
 
 typedef struct {
-  char	*name;
-  int	val;
+    char *name;
+    int val;
 } Code;
 
 typedef struct {

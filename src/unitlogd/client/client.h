@@ -9,14 +9,14 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#define PADDING             3
-#define WIDTH_IDX           3
-#define WIDTH_BOOT_ID       7
-#define WIDTH_STARTED       7
-#define WIDTH_FINISHED      8
-#define WIDTH_DATE          19
-#define RANGE_TOKEN         ".."
-#define TMP_SUFFIX          ".tmp"
+#define PADDING 3
+#define WIDTH_IDX 3
+#define WIDTH_BOOT_ID 7
+#define WIDTH_STARTED 7
+#define WIDTH_FINISHED 8
+#define WIDTH_DATE 19
+#define RANGE_TOKEN ".."
+#define TMP_SUFFIX ".tmp"
 
 typedef enum {
     NO_UL_COMMAND = -1,
@@ -30,7 +30,7 @@ typedef enum {
 } UlCommand;
 typedef struct {
     UlCommand ulCommand;
-    const char* name;
+    const char *name;
 } UlCommandData;
 
 UlCommand getUlCommand(const char *);

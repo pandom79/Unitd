@@ -16,7 +16,7 @@ typedef enum {
     OFFSET = 3,
 } IndexEnum;
 
-IndexEntry* indexEntryNew(bool, const char *bootIdStr);
+IndexEntry *indexEntryNew(bool, const char *bootIdStr);
 void indexEntryRelease(IndexEntry **);
 int writeEntry(bool, IndexEntry *, bool);
 int indexIntegrityCheck();

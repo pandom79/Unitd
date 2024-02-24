@@ -8,13 +8,13 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #define BUFFER_SIZE 16384
 
-SocketThread* socketThreadNew();
+SocketThread *socketThreadNew();
 void socketThreadRelease(SocketThread **);
 int startSockets(Array *);
-void* startSocket(void *);
-void* startUnixThread(void *);
+void *startSocket(void *);
+void *startUnixThread(void *);
 int getSocketFd(struct sockaddr_un *, const char *);
 int stopSockets(Array *);
-void* stopSocket(void *);
+void *stopSocket(void *);
 
 extern const char *DEV_LOG_NAME;

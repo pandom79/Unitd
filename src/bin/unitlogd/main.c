@@ -20,12 +20,11 @@ FILE *UNITLOGD_KMSG_FILE = NULL;
 char *BOOT_ID_STR = NULL;
 bool UNITLOGD_EXIT = false;
 
-static void __attribute__((noreturn))
-usage(bool fail)
+static void __attribute__((noreturn)) usage(bool fail)
 {
+    // clang-format off
     fprintf(stdout,
             "Usage: unitlogd [OPTIONS] \n\n"
-
             WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
             "-l, --log          Log the system messages\n"
             "-k, --kernel       Enable the kernel messages forward\n"
@@ -34,10 +33,10 @@ usage(bool fail)
             "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
+    // clang-format on
 }
 
-static void
-addSocketThread(Array **socketThreads, const char *devName)
+static void addSocketThread(Array **socketThreads, const char *devName)
 {
     assert(*socketThreads);
     assert(devName);
@@ -50,10 +49,10 @@ addSocketThread(Array **socketThreads, const char *devName)
     arrayAdd(*socketThreads, socketThread);
 }
 
-static int
-createResources()
+static int createResources()
 {
     int rv = 0;
+
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
@@ -67,87 +66,79 @@ createResources()
     /* Exec script */
     rv = execUlScript(&envVars, "create");
     arrayRelease(&envVars);
+
     return rv;
 }
 
-int main(int argc, char **argv) {
-
-    int c, rv, input;
+int main(int argc, char **argv)
+{
+    int c = 0, rv = 0, input = 0;
     const char *shortopts = "lkhdv";
-    bool log, kernel;
+    bool log = false, kernel = false;
     Array *socketThreads = arrayNew(socketThreadRelease);
     const struct option longopts[] = {
-        { "log", no_argument, NULL, 'l' },
-        { "kernel", no_argument, NULL, 'k' },
-        { "debug", optional_argument, NULL, 'd' },
-        { "version", no_argument, NULL, 'v' },
-        { "help", no_argument, NULL, 'h' },
-        { 0, 0, 0, 0 }
+        { "log", no_argument, NULL, 'l' },         { "kernel", no_argument, NULL, 'k' },
+        { "debug", optional_argument, NULL, 'd' }, { "version", no_argument, NULL, 'v' },
+        { "help", no_argument, NULL, 'h' },        { 0, 0, 0, 0 }
     };
-    c = rv = input = 0;
-    log = kernel = false;
 
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
-            case 'l':
-                log = true;
-                break;
-            case 'k':
-                kernel = true;
-                break;
-            case 'd':
-                UNITLOGD_DEBUG = true;
-                break;
-            case 'v':
-                showVersion();
-                exit(EXIT_SUCCESS);
-                break;
-            case 'h':
-                usage(false);
-                break;
-            default:
-                usage(true);
-                break;
+        case 'l':
+            log = true;
+            break;
+        case 'k':
+            kernel = true;
+            break;
+        case 'd':
+            UNITLOGD_DEBUG = true;
+            break;
+        case 'v':
+            showVersion();
+            exit(EXIT_SUCCESS);
+            break;
+        case 'h':
+            usage(false);
+            break;
+        default:
+            usage(true);
+            break;
         }
     }
+
+    /* Assert the macros */
+    assertMacros();
 
     /* Check user id and options */
     if (getuid() != 0) {
         rv = 1;
         logErrorStr(CONSOLE, "Please, run this program as administrator.\n");
         goto out;
-    }
-    else if (!log && !kernel) {
+    } else if (!log && !kernel) {
         rv = 1;
         logErrorStr(CONSOLE, "Nothing to do!\n");
         logInfo(CONSOLE, "Please, provide at least one of the following options: "
                          "\nlog\nkernel\n");
         goto out;
     }
-
-    /* Assert the macros */
-    assertMacros();
-
     /* Set pid */
     UNITLOGD_PID = getpid();
-
     if (log) {
         /* Create dir and files */
         if ((rv = createResources()) != 0)
             goto out;
-
         /* Open the boot log */
         if (unitlogdOpenBootLog("w")) {
             rv = 1;
             goto out;
         }
         assert(UNITLOGD_BOOT_LOG_FILE);
-
         if (UNITLOGD_DEBUG) {
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd path = %s\n", UNITLOGD_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd data path = %s\n", UNITLOGD_DATA_PATH);
-            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd boot log path = %s\n", UNITLOGD_BOOT_LOG_PATH);
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd boot log path = %s\n",
+                    UNITLOGD_BOOT_LOG_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd log path = %s\n", UNITLOGD_LOG_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd lock path = %s\n", UNITLOGD_LOCK_PATH);
@@ -158,52 +149,42 @@ int main(int argc, char **argv) {
     /* Set sigaction */
     if ((rv = setUnitlogdSigAction()) != 0)
         goto out;
-
     /* Self pipe */
     if ((rv = pipe(SELF_PIPE)) != 0) {
         logError(CONSOLE | SYSTEM, "src/bin/unitlogd/main.c", "main", errno, strerror(errno),
                  "Pipe func returned %d", rv);
         goto out;
     }
-
     /* Set the number of threads */
     if (log)
         addSocketThread(&socketThreads, DEV_LOG_NAME);
     if (kernel)
         addSocketThread(&socketThreads, DEV_KMSG_NAME);
-
     /* The index management is useful only if we have to log the messages (log option).
      * No need that for the forwarders.
     */
     if (log && (rv = unitlogdInit()) != 0)
         goto out;
-
     /* Start sockets */
     if ((rv = startSockets(socketThreads)) != 0)
         goto out;
-
     /* Close boot log */
     if (log) {
         unitlogdCloseBootLog();
         assert(!UNITLOGD_BOOT_LOG_FILE);
     }
-
     while (true) {
         /* Unitlogd is blocked here waiting for a signal */
         if ((rv = uRead(SELF_PIPE[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/bin/unitlogd/main.c", "main", errno,
                      strerror(errno), "Unable to read from the self pipe. Rv = %d.", rv);
             goto out;
-        }
-        else
+        } else
             rv = 0;
-
         if (input == THREAD_EXIT)
             break;
     }
-
     /*************** SHUTDOWN ********************/
-
     /* Open the boot log */
     if (log) {
         if (unitlogdOpenBootLog("a")) {
@@ -212,24 +193,22 @@ int main(int argc, char **argv) {
         }
         assert(UNITLOGD_BOOT_LOG_FILE);
     }
-
     /* Stop sockets */
     rv = stopSockets(socketThreads);
-
     if (log && (rv = unitlogdShutdown()) != 0)
         goto out;
 
-    out:
-        /* Release resources */
-        close(SELF_PIPE[0]);
-        close(SELF_PIPE[1]);
-        objectRelease(&BOOT_ID_STR);
-        arrayRelease(&socketThreads);
-        if (UNITLOGD_DEBUG)
-            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd exited with rv = %d.\n", rv);
-        if (log) {
-            unitlogdCloseBootLog();
-            assert(!UNITLOGD_BOOT_LOG_FILE);
-        }
-        return rv;
+out:
+    /* Release resources */
+    close(SELF_PIPE[0]);
+    close(SELF_PIPE[1]);
+    objectRelease(&BOOT_ID_STR);
+    arrayRelease(&socketThreads);
+    if (UNITLOGD_DEBUG)
+        logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd exited with rv = %d.\n", rv);
+    if (log) {
+        unitlogdCloseBootLog();
+        assert(!UNITLOGD_BOOT_LOG_FILE);
+    }
+    return rv;
 }

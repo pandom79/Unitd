@@ -28,18 +28,18 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "file/file.h"
 #include "logger/logger.h"
 
-#define PROJECT_NAME                "Unitd init system"
-#define PROJECT_USER_NAME           "Unitd user instance"
-#define DEF_STATE_SYML_NAME         "default.state"
+#define PROJECT_NAME "Unitd init system"
+#define PROJECT_USER_NAME "Unitd user instance"
+#define DEF_STATE_SYML_NAME "default.state"
 
 #ifndef UNITD_TEST
-#define PROC_CMDLINE_PATH           "/proc/cmdline"
+#define PROC_CMDLINE_PATH "/proc/cmdline"
 #else
-#define PROC_CMDLINE_PATH           "/home/domenico/Scrivania/cmdline.txt"
+#define PROC_CMDLINE_PATH "/home/domenico/Scrivania/cmdline.txt"
 #endif
 
-#define PROC_CMDLINE_UNITD_DEBUG    "unitd_debug=true"
-#define PATH_ENV_VAR                "/usr/bin:/usr/sbin:/bin:/sbin"
+#define PROC_CMDLINE_UNITD_DEBUG "unitd_debug=true"
+#define PATH_ENV_VAR "/usr/bin:/usr/sbin:/bin:/sbin"
 
 #define UNUSED __attribute__((unused))
 
@@ -73,10 +73,7 @@ extern pthread_mutex_t START_MUTEX;
 extern pthread_mutex_t NOTIFIER_MUTEX;
 
 /* Errors */
-typedef enum {
-    UNITD_GENERIC_ERR = 0,
-    UNITD_SOCKBUF_ERR = 1
-} UnitdErrorsEnum;
+typedef enum { UNITD_GENERIC_ERR = 0, UNITD_SOCKBUF_ERR = 1 } UnitdErrorsEnum;
 typedef struct {
     UnitdErrorsEnum errorEnum;
     const char *desc;
@@ -84,10 +81,7 @@ typedef struct {
 extern const UnitdErrorsData UNITD_ERRORS_ITEMS[];
 
 /* Messages */
-typedef enum {
-    UNITD_SYSTEM_LOG_MSG = 0,
-    UNITD_SOCKBUF_MSG = 1
-} UnitdMessagesEnum;
+typedef enum { UNITD_SYSTEM_LOG_MSG = 0, UNITD_SOCKBUF_MSG = 1 } UnitdMessagesEnum;
 typedef struct {
     UnitdMessagesEnum errorEnum;
     const char *desc;

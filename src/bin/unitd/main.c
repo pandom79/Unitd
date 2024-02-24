@@ -42,25 +42,25 @@ char *STATE_USER_DIR = NULL;
 char *SOCKET_USER_PATH = NULL;
 pthread_mutex_t START_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
-static void __attribute__((noreturn))
-usage(bool fail)
+static void __attribute__((noreturn)) usage(bool fail)
 {
+    // clang-format off
     fprintf(stdout,
         "Usage: unitd [OPTION] \n\n"
-
         WHITE_UNDERLINE_COLOR"OPTIONS\n"DEFAULT_COLOR
         "-v, --version      Show the version\n"
         "-d, --debug        Enable the debug\n"
         "-h, --help         Show usage\n\n"
     );
     exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
+    // clang-format off
 }
 
 int main(int argc, char **argv) {
 
-    int c, rv, userId;
+    int c = 0, rv = 0, userId = 0;
     UnitdData *unitdData = NULL;
-    bool showEmergencyShell, hasError, version;
+    bool showEmergencyShell = false, hasError = false, version = false;
     const char *shortopts = "hdv";
     const struct option longopts[] = {
         { "help", no_argument, NULL, 'h' },
@@ -68,9 +68,6 @@ int main(int argc, char **argv) {
         { "version", optional_argument, NULL, 'v' },
         { 0, 0, 0, 0 }
     };
-
-    c = rv = userId = 0;
-    showEmergencyShell = hasError = version = false;
 
     assert(OS_NAME);
     assert(UNITS_PATH);
@@ -96,12 +93,10 @@ int main(int argc, char **argv) {
                 usage(true);
         }
     }
-
     if (version) {
         showVersion();
         exit(EXIT_SUCCESS);
     }
-
     /* Check user id.
      * If UNITD_TEST macro is defined then we want the root user.
     */
@@ -114,10 +109,8 @@ int main(int argc, char **argv) {
         goto out;
     }
 #endif
-
     /* Boot start */
     BOOT_START = timeNew(NULL);
-
     /* Set PID */
     UNITD_PID = setsid();
     if (UNITD_PID != 1) {
@@ -126,10 +119,8 @@ int main(int argc, char **argv) {
 #endif
         UNITD_PID = getpid();
     }
-
     /* Unmask the file mode */
     umask(0);
-
     if (!USER_INSTANCE) {
         /* Change the current working directory to root */
         if ((rv = chdir("/")) == -1) {
@@ -138,22 +129,18 @@ int main(int argc, char **argv) {
             showEmergencyShell = hasError = true;
             goto out;
         }
-
         /* Parsing /proc/cmdline file */
         if ((rv = parseProcCmdLine()) == 1) {
             showEmergencyShell = hasError = true;
             goto out;
         }
-
         /* We check if a state is defined on the command line */
         if (STATE_CMDLINE != NO_STATE) {
             STATE_CMDLINE_DIR = stringNew(STATE_DATA_ITEMS[STATE_CMDLINE].desc);
             stringAppendStr(&STATE_CMDLINE_DIR, ".state");
         }
-
         /* Welcome msg */
         logInfo(CONSOLE, "%sWelcome to %s!%s\n", WHITE_COLOR, OS_NAME, DEFAULT_COLOR);
-
         /* Detecting virtualization environment */
         Array *envVars = arrayNew(objectRelease);
         addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
@@ -191,28 +178,23 @@ int main(int argc, char **argv) {
             hasError = true;
             goto out;
         }
-
         /* Get userId as string */
         char userIdStr[20] = {0};
         sprintf(userIdStr, "%d", userId);
-
         /* Check the user directories are there and the instance is not already running for this user */
         if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0) {
             hasError = true;
             goto out;
         }
-
         /* For the user instance we never show the emrgency shell and we put whatever error into log which
          * can be already opened in this case (disk already mounted) */
         assert(!UNITD_LOG_FILE);
         unitdOpenLog("w");
     }
-
     /* Starting from an heap pointer */
     unitdData = calloc(1, sizeof(UnitdData));
     assert(unitdData);
     UNITD_DATA = unitdData;
-
     /* Set sigaction */
     if ((rv = setSigAction()) != 0) {
         if (!USER_INSTANCE)
@@ -220,16 +202,13 @@ int main(int argc, char **argv) {
         hasError = true;
         goto out;
     }
-
     /* Init */
     if (!USER_INSTANCE)
         rv = unitdInit(&unitdData, false);
     else
         rv = unitdUserInit(&unitdData, false);
-
     /* Release all */
     unitdEnd(&unitdData);
-
     if (SHUTDOWN_START) {
         /* Print Shutdown time */
         SHUTDOWN_STOP = timeNew(NULL);
@@ -241,7 +220,6 @@ int main(int argc, char **argv) {
         timeRelease(&SHUTDOWN_START);
         timeRelease(&SHUTDOWN_STOP);
     }
-
     if (!USER_INSTANCE) {
         /* The system is going down */
 #ifndef UNITD_TEST
@@ -272,13 +250,11 @@ int main(int argc, char **argv) {
     out:
         if (showEmergencyShell)
             execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-
         if (hasError)
             unitdEnd(&unitdData);
-
         if (!USER_INSTANCE) {
 #ifndef UNITD_TEST
-            logInfo(CONSOLE, "Reboot the system ...\n");
+            logInfo(CONSOLE, "System reboot ...\n");
             sync();
             reboot(RB_AUTOBOOT);
 #endif

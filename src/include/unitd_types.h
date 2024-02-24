@@ -32,13 +32,7 @@
 /**
  * This enumerator represents the process state.<br>
  */
-typedef enum {
-    DEAD = 0,
-    EXITED = 1,
-    KILLED = 2,
-    RUNNING = 3,
-    RESTARTING = 4
-} PState;
+typedef enum { DEAD = 0, EXITED = 1, KILLED = 2, RUNNING = 3, RESTARTING = 4 } PState;
 
 /**
  * @struct PStateData
@@ -53,24 +47,16 @@ typedef struct {
     const char *desc;
 } PStateData;
 
-static const PStateData PSTATE_DATA_ITEMS[] = {
-    { DEAD, "Dead" },
-    { EXITED, "Exited" },
-    { KILLED, "Killed" },
-    { RUNNING, "Running" },
-    { RESTARTING, "Restarting" }
-};
+static const PStateData PSTATE_DATA_ITEMS[] = { { DEAD, "Dead" },
+                                                { EXITED, "Exited" },
+                                                { KILLED, "Killed" },
+                                                { RUNNING, "Running" },
+                                                { RESTARTING, "Restarting" } };
 
 /**
  * This enumerator represents the process type.<br>
  */
-typedef enum {
-    NO_PROCESS_TYPE = -1,
-    DAEMON = 0,
-    ONESHOT = 1,
-    TIMER = 2,
-    UPATH = 3
-} PType;
+typedef enum { NO_PROCESS_TYPE = -1, DAEMON = 0, ONESHOT = 1, TIMER = 2, UPATH = 3 } PType;
 
 /**
  * @struct PTypeData
@@ -165,18 +151,16 @@ typedef struct {
     const char *desc;
 } StateData;
 
-static const StateData STATE_DATA_ITEMS[] = {
-    { INIT, "init" },
-    { POWEROFF, "poweroff" },
-    { SINGLE_USER, "single-user" },
-    { MULTI_USER, "multi-user" },
-    { MULTI_USER_NET, "multi-user-net" },
-    { CUSTOM, "custom" },
-    { GRAPHICAL, "graphical" },
-    { REBOOT, "reboot" },
-    { FINAL, "final" },
-    { USER, "user" }
-};
+static const StateData STATE_DATA_ITEMS[] = { { INIT, "init" },
+                                              { POWEROFF, "poweroff" },
+                                              { SINGLE_USER, "single-user" },
+                                              { MULTI_USER, "multi-user" },
+                                              { MULTI_USER_NET, "multi-user-net" },
+                                              { CUSTOM, "custom" },
+                                              { GRAPHICAL, "graphical" },
+                                              { REBOOT, "reboot" },
+                                              { FINAL, "final" },
+                                              { USER, "user" } };
 
 /* Units */
 
@@ -548,6 +532,6 @@ typedef enum {
     TIMERS_FILTER = 7,
     /** List the path units. */
     UPATH_FILTER = 8
-} ListFilter ;
+} ListFilter;
 
 #endif //UNITD_TYPES_H

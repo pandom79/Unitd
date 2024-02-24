@@ -18,12 +18,12 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #include "logline/logline.h"
 #include "client/client.h"
 
-#define BOOT_ID_SIZE        20
-#define BOOT_ID_CHARSET     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-#define ENTRY_STARTED       "Started"
-#define ENTRY_FINISHED      "Finished"
-#define TOKEN_ENTRY         " | "
-#define NEW_LINE            "\n"
+#define BOOT_ID_SIZE 20
+#define BOOT_ID_CHARSET "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+#define ENTRY_STARTED "Started"
+#define ENTRY_FINISHED "Finished"
+#define TOKEN_ENTRY " | "
+#define NEW_LINE "\n"
 
 extern bool UNITLOGD_DEBUG;
 extern bool UNITLOGCTL_DEBUG;

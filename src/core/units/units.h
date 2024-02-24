@@ -6,7 +6,7 @@ it under the terms of the GNU General Public License version 3.
 See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 
-#define UNITD_DATA_PATH_CMD_VAR  "$UNITD_DATA_PATH"
+#define UNITD_DATA_PATH_CMD_VAR "$UNITD_DATA_PATH"
 
 extern int UNITS_SECTIONS_ITEMS_LEN;
 extern SectionData UNITS_SECTIONS_ITEMS[];
@@ -80,25 +80,25 @@ extern const ListFilterData LIST_FILTER_DATA[];
 extern int LIST_FILTER_LEN;
 
 /* Functions */
-Unit* unitNew(Unit *, ParserFuncType);
+Unit *unitNew(Unit *, ParserFuncType);
 void unitRelease(Unit **);
-ProcessData* processDataNew(ProcessData *, ParserFuncType);
+ProcessData *processDataNew(ProcessData *, ParserFuncType);
 void resetPDataForRestart(ProcessData **);
 void processDataRelease(ProcessData **);
-int loadUnits(Array **, const char *, const char *, State,
-              bool, const char *, ParserFuncType, bool);
+int loadUnits(Array **, const char *, const char *, State, bool, const char *, ParserFuncType,
+              bool);
 int parseUnit(Array **units, Unit **, bool, State);
 int checkConflicts(Unit **, const char *, bool);
 int checkRequires(Array **, Unit **, bool);
 int checkWantedBy(Unit **, State, bool);
 int checkAndSetUnitPath(Unit **, State);
 bool isEnabledUnit(const char *, State);
-char* getUnitName(const char *);
-Unit* getUnitByName(Array *, const char *);
-Unit* getUnitByPid(Array *, pid_t);
-Unit* getUnitByFailurePid(Array *, pid_t);
+char *getUnitName(const char *);
+Unit *getUnitByName(Array *, const char *);
+Unit *getUnitByPid(Array *, pid_t);
+Unit *getUnitByFailurePid(Array *, pid_t);
 PType getPTypeByPTypeStr(const char *);
-Pipe* pipeNew();
+Pipe *pipeNew();
 void pipeRelease(Pipe **);
 PType getPTypeByUnitName(const char *);
 int loadOtherUnits(Array **, const char *, const char *, bool, bool, ListFilter);
