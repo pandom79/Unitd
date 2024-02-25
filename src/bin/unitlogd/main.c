@@ -20,7 +20,7 @@ FILE *UNITLOGD_KMSG_FILE = NULL;
 char *BOOT_ID_STR = NULL;
 bool UNITLOGD_EXIT = false;
 
-static void __attribute__((noreturn)) usage(bool fail)
+static void usage()
 {
     // clang-format off
     fprintf(stdout,
@@ -32,7 +32,6 @@ static void __attribute__((noreturn)) usage(bool fail)
             "-v, --version      Show the version\n"
             "-h, --help         Show usage\n\n"
     );
-    exit(fail ? EXIT_FAILURE : EXIT_SUCCESS);
     // clang-format on
 }
 
@@ -95,14 +94,14 @@ int main(int argc, char **argv)
             break;
         case 'v':
             showVersion();
-            exit(EXIT_SUCCESS);
-            break;
+            goto out;
         case 'h':
-            usage(false);
-            break;
+            usage();
+            goto out;
         default:
-            usage(true);
-            break;
+            usage();
+            rv = 1;
+            goto out;
         }
     }
 
