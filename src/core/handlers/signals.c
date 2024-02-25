@@ -8,7 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-bool UNITD_DEBUG;
 UnitdData *UNITD_DATA;
 
 int signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
@@ -60,7 +59,7 @@ int signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                     *finalStatus = FINAL_STATUS_FAILURE;
                     *pStateData = PSTATE_DATA_ITEMS[EXITED];
                     setStopAndDuration(&pData);
-                    if (UNITD_DEBUG) {
+                    if (DEBUG) {
                         logInfo(SYSTEM,
                                 "The process %s with pid %d is exited with the following values: "
                                 "Exit code = %d, status = %s, finalStatus = %d, type = %s, "
@@ -85,7 +84,7 @@ int signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                     *pStateData = PSTATE_DATA_ITEMS[KILLED];
                     *pData->signalNum = info->si_status;
                     setStopAndDuration(&pData);
-                    if (UNITD_DEBUG) {
+                    if (DEBUG) {
                         logInfo(
                             SYSTEM,
                             "The process %s with pid %d is terminated with the following values: "

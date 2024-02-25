@@ -45,8 +45,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 extern pid_t UNITD_PID;
 extern UnitdData *UNITD_DATA;
-extern bool UNITD_DEBUG;
-extern bool UNITCTL_DEBUG;
+extern bool DEBUG;
 extern Command SHUTDOWN_COMMAND;
 extern bool NO_WTMP;
 extern Array *UNITD_ENV_VARS;

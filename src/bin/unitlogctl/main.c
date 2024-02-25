@@ -8,7 +8,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitlogd/unitlogd_impl.h"
 
-bool UNITLOGCTL_DEBUG = false;
+bool DEBUG = false;
 
 static void showUsage()
 {
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
             pager = true;
             break;
         case 'd':
-            UNITLOGCTL_DEBUG = true;
+            DEBUG = true;
             break;
         case 'h':
             showUsage();
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     /* Command handling */
     switch (ulCommand) {
     case SHOW_LOG:
-        if (argc > 5 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager && !follow)) {
+        if (argc > 5 || (argc > 3 && !DEBUG && !pager && !follow)) {
             showUsage();
             rv = 1;
             goto out;
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
         rv = showLog(pager, follow);
         break;
     case LIST_BOOTS:
-        if (argc > 3 || (argc > 2 && !UNITLOGCTL_DEBUG)) {
+        if (argc > 3 || (argc > 2 && !DEBUG)) {
             showUsage();
             rv = 1;
             goto out;
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
         rv = showBootsList();
         break;
     case SHOW_BOOT:
-        if (argc < 3 || argc > 6 || (argc > 3 && !UNITLOGCTL_DEBUG && !pager && !follow)) {
+        if (argc < 3 || argc > 6 || (argc > 3 && !DEBUG && !pager && !follow)) {
             showUsage();
             rv = 1;
             goto out;
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
         rv = showBoot(pager, follow, arg);
         break;
     case INDEX_REPAIR:
-        if (argc < 2 || argc > 3 || (argc > 2 && !UNITLOGCTL_DEBUG)) {
+        if (argc < 2 || argc > 3 || (argc > 2 && !DEBUG)) {
             showUsage();
             rv = 1;
             goto out;
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
             logSuccess(CONSOLE, "Index file repaired successfully.\n");
         break;
     case VACUUM:
-        if (argc < 3 || argc > 4 || (argc > 3 && !UNITLOGCTL_DEBUG)) {
+        if (argc < 3 || argc > 4 || (argc > 3 && !DEBUG)) {
             showUsage();
             rv = 1;
             goto out;
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
         rv = vacuum(arg);
         break;
     case SHOW_SIZE:
-        if (argc < 2 || argc > 3 || (argc == 3 && !UNITLOGCTL_DEBUG)) {
+        if (argc < 2 || argc > 3 || (argc == 3 && !DEBUG)) {
             showUsage();
             rv = 1;
             goto out;
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
         printLogSizeInfo(-1, -1, getFileSize(UNITLOGD_LOG_PATH));
         break;
     case SHOW_CURRENT:
-        if (argc < 2 || argc > 5 || (argc > 2 && !UNITLOGCTL_DEBUG && !pager && !follow)) {
+        if (argc < 2 || argc > 5 || (argc > 2 && !DEBUG && !pager && !follow)) {
             showUsage();
             rv = 1;
             goto out;

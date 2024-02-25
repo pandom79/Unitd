@@ -79,7 +79,7 @@ out:
         logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleanerThread", rv,
                  strerror(rv), "Unable to unlock the pipe mutex");
     }
-    if (UNITD_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE | SYSTEM, "Cleaner thread exited successfully\n");
     pthread_exit(0);
 }
@@ -107,7 +107,7 @@ void startCleaner()
                  "Unable to create the start cleaner thread (detached)");
         kill(UNITD_PID, SIGTERM);
     } else {
-        if (UNITD_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE | SYSTEM, "Thread created successfully for the cleaner\n");
     }
     pthread_attr_destroy(&attr);

@@ -310,7 +310,7 @@ int parseProcCmdLine()
             stringTrim(value, NULL);
             /* Unitd debug */
             if (stringEquals(value, PROC_CMDLINE_UNITD_DEBUG)) {
-                UNITD_DEBUG = true;
+                DEBUG = true;
                 continue;
             }
             /* Single */
@@ -408,7 +408,7 @@ int setUserData(int userId, struct passwd **userInfo)
     SOCKET_USER_PATH = stringNew(xdgRunTimeDir);
     stringAppendStr(&SOCKET_USER_PATH, "/unitd.sock");
     assert(SOCKET_USER_PATH);
-    if (UNITCTL_DEBUG) {
+    if (DEBUG) {
         logInfo(CONSOLE, "Units user path = %s\n", UNITS_USER_PATH);
         logInfo(CONSOLE, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
         logInfo(CONSOLE, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);

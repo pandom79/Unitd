@@ -121,7 +121,7 @@ static void checkUnitChanging(const char *eventName)
                 kill(UNITD_PID, SIGTERM);
             }
             unit->isChanged = true;
-            if (UNITD_DEBUG)
+            if (DEBUG)
                 syslog(LOG_DAEMON | LOG_DEBUG, "Unit '%s' is changed!!\n", unitName);
             if ((rv = pthread_mutex_unlock(&NOTIFIER_MUTEX)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "checkUnitChanging", rv,
@@ -335,7 +335,7 @@ void *startNotifierThread(void *arg)
                 if (executedUnit)
                     break;
                 struct inotify_event *event = (struct inotify_event *)&buffer[i];
-                if (UNITD_DEBUG)
+                if (DEBUG)
                     logInfo(SYSTEM, "Event: name = %s, length = %d, wd = %d, mask = %d",
                             event->name, event->len, event->wd, event->mask);
                 if (event->len && (event->mask & allEvents)) {
@@ -369,7 +369,7 @@ out:
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
                  strerror(rv), "Unable to unlock the pipe mutex");
     }
-    if (UNITD_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE | SYSTEM, "Notifier thread exited successfully\n");
     pthread_exit(0);
 }
@@ -419,7 +419,7 @@ int startNotifier(Unit *unit)
                  strerror(rv), "Unable to create detached thread");
         kill(UNITD_PID, SIGTERM);
     } else {
-        if (UNITD_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE | SYSTEM, "Thread created successfully for the notifier\n");
     }
     pthread_attr_destroy(&attr);

@@ -190,7 +190,7 @@ int socketDispatchRequest(char *buffer, int *socketFd)
 
     sockMessageIn = sockMessageInNew();
     sockMessageOut = sockMessageOutNew();
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SocketDispatchRequest::Buffer received (%lu): \n%s",
                strlen(buffer), buffer);
     /* Unmarshalling */
@@ -364,7 +364,7 @@ out:
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
         bufferLen = strlen(buffer);
     }
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%d): \n%s", bufferLen,
                buffer);
     /* Sending the response */
@@ -504,7 +504,7 @@ int getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn,
 out:
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatusServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
     /* Sending the response */
@@ -615,7 +615,7 @@ out:
     /* Marshall response */
     if (sendResponse) {
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-        if (UNITD_DEBUG)
+        if (DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "StopUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
         /* Sending the response */
@@ -835,7 +835,7 @@ out:
     if (sendResponse && !isTimer) {
         /* Marshall response */
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-        if (UNITD_DEBUG)
+        if (DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "StartUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
         /* Sending the response */
@@ -985,7 +985,7 @@ out:
     if (sendResponse) {
         /* Marshall response */
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-        if (UNITD_DEBUG)
+        if (DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
         /* Sending the response */
@@ -1267,7 +1267,7 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
 out:
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnitServer::Buffer sent (%lu): \n%s", strlen(buffer),
                buffer);
     /* Sending the response */
@@ -1364,7 +1364,7 @@ int getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
 out:
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitDataServer::Buffer sent (%lu): \n%s", strlen(buffer),
                buffer);
     /* Sending the response */
@@ -1405,7 +1405,7 @@ int getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn,
     }
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
     /* Sending the response */
@@ -1457,7 +1457,7 @@ int setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn,
     }
     /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
     /* Sending the response */

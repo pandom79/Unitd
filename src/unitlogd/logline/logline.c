@@ -134,7 +134,7 @@ static void writeLogLine(char *buffer, LogLine **logLine)
     /* Adding new line */
     if (!stringEndsWithStr(line, NEW_LINE))
         stringAppendStr(&line, NEW_LINE);
-    if (UNITLOGD_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE, "Log line: \n%s\n", line);
     /* Open file and write the log line */
     unitlogdOpenLog("a");
@@ -167,7 +167,7 @@ int processLine(char *buffer)
     setHostName(&logLine);
     /* Set time stamp */
     logLine->timeStamp = stringGetTimeStamp(NULL, false, "%d %b %Y %H:%M:%S");
-    if (UNITLOGD_DEBUG) {
+    if (DEBUG) {
         logInfo(CONSOLE, "\nFacility = %s\n", logLine->fac);
         logInfo(CONSOLE, "Priority = %s\n", logLine->pri);
         logInfo(CONSOLE, "hostName = %s\n", logLine->hostName);

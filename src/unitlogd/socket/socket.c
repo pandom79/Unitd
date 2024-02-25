@@ -47,7 +47,7 @@ static int forwardToLog(char *buffer)
     while ((rv = connect(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un))) ==
                -1 &&
            !UNITLOGD_EXIT) {
-        if (UNITLOGD_DEBUG)
+        if (DEBUG)
             logWarning(CONSOLE | SYSTEM, "%s is down! Retry to connect .....\n", DEV_LOG_NAME);
         if (!terminate) {
             msleep(1000);
@@ -316,7 +316,7 @@ void *startSocket(void *arg)
                  "startSocket", rv, strerror(rv),
                  "Unable to create the socket thread (detached) (%s)", devName);
     } else {
-        if (UNITLOGD_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM,
                     "Socket thread (detached) created successfully (%s)\n", devName);
     }
@@ -345,7 +345,7 @@ int startSockets(Array *socketThreads)
                      "Unable to create the thread for the '%s' dev", devName);
             kill(UNITLOGD_PID, SIGTERM);
         } else {
-            if (UNITLOGD_DEBUG)
+            if (DEBUG)
                 logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM,
                         "Thread created (Start) succesfully for the '%s' dev\n", devName);
         }
@@ -359,7 +359,7 @@ int startSockets(Array *socketThreads)
                      devName);
             kill(UNITLOGD_PID, SIGTERM);
         } else {
-            if (UNITLOGD_DEBUG)
+            if (DEBUG)
                 logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM,
                         "Thread joined (Start) successfully for the '%s' dev! Return code = %d\n",
                         devName, *rvThread);
@@ -439,7 +439,7 @@ int stopSockets(Array *socketThreads)
             logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
                      strerror(rv), "Unable to create the thread for the '%s' dev", devName);
         } else {
-            if (UNITLOGD_DEBUG)
+            if (DEBUG)
                 logInfo(CONSOLE | UNITLOGD_BOOT_LOG,
                         "Thread created (Stop) succesfully for the '%s' dev\n", devName);
         }
@@ -451,7 +451,7 @@ int stopSockets(Array *socketThreads)
             logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
                      strerror(rv), "Unable to join the thread for the '%s' dev", devName);
         } else {
-            if (UNITLOGD_DEBUG)
+            if (DEBUG)
                 logInfo(CONSOLE | UNITLOGD_BOOT_LOG,
                         "Thread joined (Stop) successfully for the '%s' dev! Return code = %d\n",
                         devName, *rvThread);

@@ -13,7 +13,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
  * in the translation unit.
 */
 pid_t UNITD_PID = 0;
-bool UNITD_DEBUG = false;
+bool DEBUG = false;
 FILE *UNITD_LOG_FILE = NULL;
 State STATE_DEFAULT = NO_STATE;
 State STATE_NEW_DEFAULT = NO_STATE;
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
                 usage(false);
                 break;
             case 'd':
-                UNITD_DEBUG = true;
+                DEBUG = true;
                 break;
             case 'v':
                 version = true;

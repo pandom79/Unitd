@@ -8,7 +8,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../../core/unitd_impl.h"
 
-bool UNITCTL_DEBUG = false;
+bool DEBUG = false;
 bool USER_INSTANCE;
 char *UNITS_USER_LOCAL_PATH;
 char *UNITS_USER_ENAB_PATH;
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
             noWall = true;
             break;
         case 'd':
-            UNITCTL_DEBUG = true;
+            DEBUG = true;
             break;
         case 'u':
             USER_INSTANCE = true;
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
     /* Command handling */
     switch (command) {
     case NO_COMMAND:
-        if (argc > 4 || (argc > 1 && !UNITCTL_DEBUG && !onlyWtmp && !USER_INSTANCE)) {
+        if (argc > 4 || (argc > 1 && !DEBUG && !onlyWtmp && !USER_INSTANCE)) {
             showUsage();
             rv = 1;
             goto out;
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
     case HALT_COMMAND:
     case KEXEC_COMMAND:
         if (!USER_INSTANCE) {
-            if (argc > 6 || (argc > 2 && !force && !UNITCTL_DEBUG && !noWtmp && !noWall)) {
+            if (argc > 6 || (argc > 2 && !force && !DEBUG && !noWtmp && !noWall)) {
                 showUsage();
                 rv = 1;
                 goto out;
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
     case LIST_UPATH_COMMAND:
     case ANALYZE_COMMAND:
     case GET_DEFAULT_STATE_COMMAND:
-        if (argc > 4 || (argc > 2 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+        if (argc > 4 || (argc > 2 && !DEBUG && !USER_INSTANCE) ||
             (command == GET_DEFAULT_STATE_COMMAND && USER_INSTANCE)) {
             showUsage();
             rv = 1;
@@ -304,7 +304,7 @@ int main(int argc, char **argv)
     case LIST_CONFLICTS_COMMAND:
     case LIST_STATES_COMMAND:
     case SET_DEFAULT_STATE_COMMAND:
-        if (argc < 3 || argc > 5 || (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE) ||
+        if (argc < 3 || argc > 5 || (argc > 3 && !DEBUG && !USER_INSTANCE) ||
             (command == SET_DEFAULT_STATE_COMMAND && USER_INSTANCE)) {
             showUsage();
             rv = 1;
@@ -318,8 +318,7 @@ int main(int argc, char **argv)
         break;
     case START_COMMAND:
     case RESTART_COMMAND:
-        if (argc < 3 || argc > 7 ||
-            (argc > 3 && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
+        if (argc < 3 || argc > 7 || (argc > 3 && !force && !DEBUG && !USER_INSTANCE && !reset)) {
             showUsage();
             rv = 1;
             goto out;
@@ -329,7 +328,7 @@ int main(int argc, char **argv)
                       false, false, reset);
         break;
     case DISABLE_COMMAND:
-        if (argc < 3 || argc > 6 || (argc > 3 && !run && !UNITCTL_DEBUG && !USER_INSTANCE)) {
+        if (argc < 3 || argc > 6 || (argc > 3 && !run && !DEBUG && !USER_INSTANCE)) {
             showUsage();
             rv = 1;
             goto out;
@@ -340,7 +339,7 @@ int main(int argc, char **argv)
     case RE_ENABLE_COMMAND:
     case ENABLE_COMMAND:
         if (argc < 3 || argc > 8 ||
-            (argc > 3 && !run && !force && !UNITCTL_DEBUG && !USER_INSTANCE && !reset)) {
+            (argc > 3 && !run && !force && !DEBUG && !USER_INSTANCE && !reset)) {
             showUsage();
             rv = 1;
             goto out;
@@ -352,7 +351,7 @@ int main(int argc, char **argv)
     case CAT_COMMAND:
     case EDIT_COMMAND:
     case CREATE_COMMAND:
-        if (argc < 3 || argc > 5 || (argc > 3 && !UNITCTL_DEBUG && !USER_INSTANCE)) {
+        if (argc < 3 || argc > 5 || (argc > 3 && !DEBUG && !USER_INSTANCE)) {
             showUsage();
             rv = 1;
             goto out;

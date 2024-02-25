@@ -113,13 +113,13 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
     shutDownUnits = &(*unitdData)->shutDownUnits;
     finalUnits = &(*unitdData)->finalUnits;
     bootUnits = &(*unitdData)->bootUnits;
-    if (UNITD_DEBUG) {
+    if (DEBUG) {
         logInfo(CONSOLE, "%s starting as pid %d\n", PROJECT_NAME, UNITD_PID);
         logInfo(CONSOLE, "Units path = %s\n", UNITS_PATH);
         logInfo(CONSOLE, "Units enab path = %s\n", UNITS_ENAB_PATH);
         logInfo(CONSOLE, "Unitd data path = %s\n", UNITD_DATA_PATH);
         logInfo(CONSOLE, "Unitd Log path = %s\n", UNITD_LOG_PATH);
-        logInfo(CONSOLE, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+        logInfo(CONSOLE, "Debug = %s\n", DEBUG ? "True" : "False");
     }
     /* For each terminated state, we check if "SHUTDOWN_COMMAND" is set by signal handler.
      * If so (Ctrl+Alt+Del pressed), we start the reboot phase
@@ -178,12 +178,12 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
         goto shutdown;
     }
     assert(STATE_DEFAULT != NO_STATE);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         logInfo(UNITD_BOOT_LOG, "The default.state symlink points to %s\n",
                 STATE_DATA_ITEMS[STATE_DEFAULT].desc);
     /* Parsing the units for the cmdline or default state */
     if (STATE_CMDLINE_DIR) {
-        if (UNITD_DEBUG)
+        if (DEBUG)
             logInfo(UNITD_BOOT_LOG, "The state of the cmdline is %s\n",
                     STATE_DATA_ITEMS[STATE_CMDLINE].desc);
         rv = loadUnits(units, UNITS_ENAB_PATH, STATE_CMDLINE_DIR, STATE_CMDLINE, isAggregate, NULL,
@@ -283,7 +283,7 @@ int unitdUserInit(UnitdData **unitdData, bool isAggregate)
     if (!(*units))
         *units = arrayNew(unitRelease);
     bootUnits = &(*unitdData)->bootUnits;
-    if (UNITD_DEBUG) {
+    if (DEBUG) {
         logInfo(UNITD_BOOT_LOG, "%s starting as pid %d\n", PROJECT_USER_NAME, UNITD_PID);
         logInfo(UNITD_BOOT_LOG, "Units user path = %s\n", UNITS_USER_PATH);
         logInfo(UNITD_BOOT_LOG, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
@@ -291,7 +291,7 @@ int unitdUserInit(UnitdData **unitdData, bool isAggregate)
         logInfo(UNITD_BOOT_LOG, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
         logInfo(UNITD_BOOT_LOG, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
         logInfo(UNITD_BOOT_LOG, "socket user path = %s\n", SOCKET_USER_PATH);
-        logInfo(UNITD_BOOT_LOG, "Debug = %s\n", UNITD_DEBUG ? "True" : "False");
+        logInfo(UNITD_BOOT_LOG, "Debug = %s\n", DEBUG ? "True" : "False");
     }
     /* Start the cleaner */
     startCleaner();

@@ -634,7 +634,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
         }
     }
     /* Executing the glob function */
-    if (UNITD_DEBUG && currentState != NO_STATE)
+    if (DEBUG && currentState != NO_STATE)
         logWarning(UNITD_BOOT_LOG, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         /* Aggregate the patterns if unitname is null */
@@ -650,7 +650,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
         assert(lenResults > 0);
         if (!(*units))
             *units = arrayNew(unitRelease);
-        if (UNITD_DEBUG && currentState != NO_STATE)
+        if (DEBUG && currentState != NO_STATE)
             logInfo(UNITD_BOOT_LOG, "Found %d units in %s/%s!\n", lenResults, path, dirName);
         for (size_t i = 0; i < lenResults; i++) {
             /* Get the unit path */
@@ -675,7 +675,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                 /* Set enabled/disabled */
                 unit->enabled =
                     (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
-                if (UNITD_DEBUG)
+                if (DEBUG)
                     logInfo(UNITD_BOOT_LOG, "Unit name = '%s', path = '%s'. Parsing it ...\n",
                             unitName, unitPath);
                 /* Parse the Unit file */
@@ -744,7 +744,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                     }
                 }
             } else {
-                if (UNITD_DEBUG) {
+                if (DEBUG) {
                     logWarning(UNITD_BOOT_LOG, "\n[*] CONFIGURATION ERRORS\n");
                     for (size_t i = 0; i < lenResults; i++) {
                         unit = arrayGet(*units, i);
@@ -760,7 +760,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
             logError(CONSOLE, "src/core/units/units.c", "loadUnits", GLOB_NOMATCH, "GLOB_NOMATCH",
                      "Zero units found for %s state", STATE_DATA_ITEMS[currentState].desc);
         else {
-            if (UNITD_DEBUG)
+            if (DEBUG)
                 logWarning(UNITD_BOOT_LOG, "Zero units found for %s state\n",
                            STATE_DATA_ITEMS[currentState].desc);
         }

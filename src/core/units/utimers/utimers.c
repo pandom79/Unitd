@@ -107,7 +107,7 @@ void setNextTimeDate(Unit **unit)
     /* Set next time (Date) */
     char *nextTimeDate = stringGetTimeStamp(nextTime, false, "%d-%m-%Y %H:%M:%S");
     assert(stringCopy((*unit)->nextTimeDate, nextTimeDate));
-    if (UNITD_DEBUG)
+    if (DEBUG)
         logInfo(SYSTEM, "%s: next time in seconds = %lu, Date = %s\n", unitName, *nextTime->sec,
                 nextTimeDate);
 
@@ -135,7 +135,7 @@ void setLeftTimeAndDuration(Unit **unit)
     char *leftTimeDuration = *leftTime <= 0 ? stringNew("expired") :
                                               stringGetDiffTime(nextTime, current);
     assert(stringCopy((*unit)->leftTimeDuration, leftTimeDuration));
-    if (UNITD_DEBUG)
+    if (DEBUG)
         logInfo(SYSTEM, "%s: Left time in seconds = %lu, Duration = %s\n", unitName, *leftTime,
                 leftTimeDuration);
 
@@ -642,7 +642,7 @@ void *startTimerUnitThread(void *arg)
     rv = setNextTimeFromDisk(&unit);
     if (rv != 0 || *leftTime <= 0) {
         if (rv == 0) {
-            if (UNITD_DEBUG)
+            if (DEBUG)
                 logInfo(SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
                         unitName);
             /* Unit execution management. */
@@ -652,7 +652,7 @@ void *startTimerUnitThread(void *arg)
                 goto out;
             }
         }
-        if (UNITD_DEBUG)
+        if (DEBUG)
             logInfo(SYSTEM, "%s: generating the 'nextTime' by interval ...", unitName);
         setNextTimeFromInterval(&unit);
         assert(unit->nextTime && *leftTime != -1);
@@ -767,7 +767,7 @@ int startTimerUnit(Unit *unit)
                  strerror(rv), "Unable to create the unit timer thread for '%s'", unitName);
         kill(UNITD_PID, SIGTERM);
     } else {
-        if (UNITD_DEBUG)
+        if (DEBUG)
             logInfo(SYSTEM, "unit timer thread created successfully for '%s'\n", unitName);
     }
 
@@ -849,7 +849,7 @@ int executeUnit(Unit *otherUnit, PType pType)
         Unit *unit = getUnitByName(units, unitName);
         if (unit) {
             int finalStatus = *unit->processData->finalStatus;
-            if (UNITD_DEBUG)
+            if (DEBUG)
                 logInfo(SYSTEM, "%s: Final status for '%s' = %d ...", otherUnitName, unitName,
                         finalStatus);
             if (finalStatus == FINAL_STATUS_SUCCESS) {

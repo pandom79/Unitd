@@ -23,10 +23,10 @@ void reapPendingChild()
     pid_t p;
     do {
         p = uWaitPid(-1, NULL, WNOHANG);
-        if (p > 0 && UNITD_DEBUG)
+        if (p > 0 && DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "The pid %d has been reaped!\n", p);
     } while (p != (pid_t)0 && p != (pid_t)-1);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "reapPendingChild terminated! Res = %d\n", p);
 }
 
@@ -99,8 +99,8 @@ int execProcess(const char *command, char **argv, Unit **unit)
         if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
             arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
             /* For the initialization and finalization units we pass
-                 * the environment variables to the scripts
-                 */
+             * the environment variables to the scripts
+             */
             (void)execve(command, argv, (char **)UNITD_ENV_VARS->arr);
         } else
             (void)execv(command, argv);
@@ -179,7 +179,7 @@ int execProcess(const char *command, char **argv, Unit **unit)
         }
         break;
     }
-    if (UNITD_DEBUG) {
+    if (DEBUG) {
         logInfo(UNITD_BOOT_LOG,
                 "The %s unit with the %s command returned the following values:\n"
                 "type = %s\n"
@@ -279,7 +279,7 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
         waitPidRes = uWaitPid(pid, &status, WNOHANG);
         if (waitPidRes == 0) {
             if (command && argv) {
-                if (UNITD_DEBUG)
+                if (DEBUG)
                     logInfo(UNITD_BOOT_LOG, "To stop the %s unit will be used a COMMAND\n",
                             unitName);
                 child = fork();
@@ -288,8 +288,8 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
                     if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
                         arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
                         /* For the initialization and finalization units we pass
-                            * the environment variables to the scripts
-                            */
+                         * the environment variables to the scripts
+                         */
                         (void)execve(command, argv, (char **)UNITD_ENV_VARS->arr);
                     } else
                         (void)execv(command, argv);
@@ -301,7 +301,7 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
                     return EXIT_FAILURE;
                 }
             } else {
-                if (UNITD_DEBUG)
+                if (DEBUG)
                     logInfo(UNITD_BOOT_LOG, "To stop the %s unit will be used a SIGTERM signal\n",
                             unitName);
                 kill(pid, SIGTERM);
@@ -338,7 +338,7 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
     *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
     *pData->signalNum = SIGKILL;
     setStopAndDuration(&pData);
-    if (UNITD_DEBUG)
+    if (DEBUG)
         logInfo(UNITD_BOOT_LOG,
                 "The %s unit has been stopped with the following values:\n"
                 "type = %s\n"

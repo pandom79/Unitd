@@ -12,7 +12,7 @@ const char *DEV_LOG_NAME = "/dev/log";
 const char *DEV_KMSG_NAME = "/proc/kmsg";
 int SELF_PIPE[2];
 int UNITLOGD_PID = 0;
-bool UNITLOGD_DEBUG = false;
+bool DEBUG = false;
 FILE *UNITLOGD_INDEX_FILE = NULL;
 FILE *UNITLOGD_LOG_FILE = NULL;
 FILE *UNITLOGD_BOOT_LOG_FILE = NULL;
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
             kernel = true;
             break;
         case 'd':
-            UNITLOGD_DEBUG = true;
+            DEBUG = true;
             break;
         case 'v':
             showVersion();
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
             goto out;
         }
         assert(UNITLOGD_BOOT_LOG_FILE);
-        if (UNITLOGD_DEBUG) {
+        if (DEBUG) {
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd starting as pid %d\n", UNITLOGD_PID);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd path = %s\n", UNITLOGD_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd data path = %s\n", UNITLOGD_DATA_PATH);
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd index path = %s\n", UNITLOGD_INDEX_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd lock path = %s\n", UNITLOGD_LOCK_PATH);
             logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd kmesg path = %s\n", UNITLOGD_KMSG_PATH);
-            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Debug = %s\n", UNITLOGD_DEBUG ? "True" : "False");
+            logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Debug = %s\n", DEBUG ? "True" : "False");
         }
     }
     /* Set sigaction */
@@ -204,7 +204,7 @@ out:
     close(SELF_PIPE[1]);
     objectRelease(&BOOT_ID_STR);
     arrayRelease(&socketThreads);
-    if (UNITLOGD_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE | UNITLOGD_BOOT_LOG, "Unitlogd exited with rv = %d.\n", rv);
     if (log) {
         unitlogdCloseBootLog();

@@ -267,7 +267,7 @@ int handleLockFile(bool lock)
             rv = 1;
             goto out;
         }
-        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE, "Try to get lock ...\n");
         if (fcntl(FD_LOCK, F_SETLKW, FLOCK) == -1) {
             rv = errno;
@@ -275,13 +275,13 @@ int handleLockFile(bool lock)
                      strerror(errno), "Fcntl func returned -1 exit code (lock)");
             goto out;
         }
-        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE, "Got lock!\n");
     } else {
         assert(FLOCK);
         assert(FD_LOCK > 0);
         FLOCK->l_type = F_UNLCK; /* set to unlock same region */
-        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE, "Try to unlock ...\n");
         if (fcntl(FD_LOCK, F_SETLK, FLOCK) == -1) {
             rv = errno;
@@ -289,7 +289,7 @@ int handleLockFile(bool lock)
                      strerror(errno), "Fcntl func returned -1 exit code (unlock)");
             goto out;
         }
-        if (UNITLOGD_DEBUG || UNITLOGCTL_DEBUG)
+        if (DEBUG)
             logInfo(CONSOLE, "Unlocked!\n");
     }
 

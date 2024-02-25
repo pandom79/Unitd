@@ -20,7 +20,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define WIDTH_DATE 19
 #define MAX_LEN_KEY 13
 
-bool UNITCTL_DEBUG;
+bool DEBUG;
 
 static void printOtherDataForUnit(Unit *otherUnit, PType pType)
 {
@@ -594,7 +594,7 @@ int unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
         goto out;
     /* Marshalling */
     buffer = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "UnitdShutdown::Buffer sent (%lu): \n%s", strlen(buffer),
                buffer);
     /* Sending the message */
@@ -630,7 +630,7 @@ int getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter li
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -644,7 +644,7 @@ int getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter li
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
     /* Unmarshall the response */
@@ -958,7 +958,7 @@ int getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatus::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -972,7 +972,7 @@ int getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatus::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
     /* Unmarshall the response */
@@ -1212,7 +1212,7 @@ int stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StopUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -1226,7 +1226,7 @@ int stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StopUnit::Buffer received (%lu): \n%s", strlen(bufferRes),
                bufferRes);
     /* Unmarshall the response */
@@ -1273,7 +1273,7 @@ int startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StartUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -1287,7 +1287,7 @@ int startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StartUnit::Buffer received (%lu): \n%s", strlen(bufferRes),
                bufferRes);
     /* Unmarshall the response */
@@ -1323,7 +1323,7 @@ int disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -1337,7 +1337,7 @@ int disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnit::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
     /* Unmarshall the response */
@@ -1389,7 +1389,7 @@ int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -1403,7 +1403,7 @@ int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnit::Buffer received (%lu): \n%s", strlen(bufferRes),
                bufferRes);
     /* Unmarshall the response */
@@ -1450,7 +1450,7 @@ int getUnitData(SockMessageOut **sockMessageOut, const char *unitName, bool requ
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitData::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
     /* Sending the request */
@@ -1464,7 +1464,7 @@ int getUnitData(SockMessageOut **sockMessageOut, const char *unitName, bool requ
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitData::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
     /* Unmarshall the response */
@@ -1493,7 +1493,7 @@ int getDefaultState(SockMessageOut **sockMessageOut)
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultState::Buffer sent (%lu): \n%s",
                strlen(bufferReq), bufferReq);
     /* Sending the request */
@@ -1507,7 +1507,7 @@ int getDefaultState(SockMessageOut **sockMessageOut)
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultState::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
     /* Unmarshall the response */
@@ -1556,7 +1556,7 @@ int setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
         goto out;
     /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer sent (%lu): \n%s",
                strlen(bufferReq), bufferReq);
     /* Sending the request */
@@ -1570,7 +1570,7 @@ int setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
     assert(bufferRes);
     if ((rv = readMessage(&socketConnection, &bufferRes, &bufferSize)) == -1)
         goto out;
-    if (UNITCTL_DEBUG)
+    if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
     /* Unmarshall the response */

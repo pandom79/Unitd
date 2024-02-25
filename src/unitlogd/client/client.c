@@ -8,8 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitlogd_impl.h"
 
-bool UNITLOGCTL_DEBUG;
-
 UlCommandData UL_COMMAND_DATA[] = {
     { SHOW_LOG, "show-log" },         { LIST_BOOTS, "list-boots" }, { SHOW_BOOT, "show-boot" },
     { INDEX_REPAIR, "index-repair" }, { VACUUM, "vacuum" },         { SHOW_SIZE, "show-size" },
@@ -178,7 +176,7 @@ int sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
         fn(startOffset, stopOffset);
     } else { /* parent */
         /* For the debug, we show the line number */
-        char *args[] = { "less", UNITLOGCTL_DEBUG ? "-RSX#3NM~g" : "-RSX#3M~g", NULL };
+        char *args[] = { "less", DEBUG ? "-RSX#3NM~g" : "-RSX#3M~g", NULL };
         close(pfds[1]);
         dup2(pfds[0], STDIN_FILENO);
         close(pfds[0]);
@@ -197,7 +195,7 @@ int followLog()
 {
     int rv = 0;
 
-    if (UNITLOGCTL_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE, "\n\n-- Follow the log --\n\n");
     /* Env vars */
     Array *envVars = arrayNew(objectRelease);
@@ -296,7 +294,7 @@ int showBoot(bool pager, bool follow, const char *bootIdx)
                 startOffset = atol(startIndexEntry->startOffset);
                 if (stopIndexEntry)
                     stopOffset = atol(stopIndexEntry->stopOffset);
-                if (UNITLOGCTL_DEBUG) {
+                if (DEBUG) {
                     logInfo(CONSOLE, "Start - Boot id = (%d - %s), Offset = %lu\n", idx,
                             startIndexEntry->bootId, startOffset);
                     if (stopIndexEntry)
@@ -574,7 +572,7 @@ int vacuum(const char *bootIdx)
         indexEntry = arrayGet(index, startIdx * 2);
     assert(indexEntry);
     startOffset = atol(indexEntry->startOffset);
-    if (UNITLOGCTL_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE, "Boot id = %s, startOffset  = %lu\n", indexEntry->bootId, startOffset);
     /* Get 'stop' offset according stopIdx */
     if (stopIdx != -1)
@@ -583,7 +581,7 @@ int vacuum(const char *bootIdx)
         indexEntry = arrayGet(index, startIdx * 2 + 1);
     assert(indexEntry);
     stopOffset = atol(indexEntry->stopOffset);
-    if (UNITLOGCTL_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE, "Boot id = %s, stopOffset  = %lu\n", indexEntry->bootId, stopOffset);
     /* Lock
      * We cannot cut the log if the unitlog daemon is writing it!
@@ -601,7 +599,7 @@ int vacuum(const char *bootIdx)
                 /* Get current log size */
                 if ((currentLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
                     freedLogSize = prevLogSize - currentLogSize;
-                    if (UNITLOGCTL_DEBUG) {
+                    if (DEBUG) {
                         logInfo(CONSOLE, "Previous log size = %lu\n", prevLogSize);
                         logInfo(CONSOLE, "Current log size  = %lu\n", currentLogSize);
                         logInfo(CONSOLE, "Freed log size    = %lu\n", freedLogSize);

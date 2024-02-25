@@ -8,7 +8,7 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../core/unitd_impl.h"
 
-bool UNITLOGD_DEBUG;
+bool DEBUG;
 int SELF_PIPE[2];
 bool UNITLOGD_EXIT;
 
@@ -16,7 +16,7 @@ void exitSignal(int signo, siginfo_t *info UNUSED, void *context UNUSED)
 {
     int rv = 0, output = THREAD_EXIT;
 
-    if (UNITLOGD_DEBUG)
+    if (DEBUG)
         logInfo(CONSOLE, "Unitlogd received %d signal, exiting ....\n", signo);
     UNITLOGD_EXIT = true;
     if ((rv = uWrite(SELF_PIPE[1], &output, sizeof(int))) == -1) {
