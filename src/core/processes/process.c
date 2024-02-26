@@ -365,8 +365,7 @@ void *stopProcess(void *arg)
     Unit *unit = NULL;
     const char *unitName = NULL;
     char **cmdline = NULL, *command = NULL;
-    int statusThread, *finalStatus, rv = 0;
-    int *rvThread = NULL;
+    int statusThread, *finalStatus, rv = 0, *rvThread = NULL;
     ProcessData *pData = NULL;
     pthread_mutex_t *unitMutex = NULL;
 
@@ -395,10 +394,14 @@ void *stopProcess(void *arg)
             if (stringContainsStr(command, PID_CMD_VAR)) {
                 char pidStr[30] = { 0 };
                 sprintf(pidStr, "%d", *pData->pid);
-                stringReplaceStr(&command, PID_CMD_VAR, pidStr);
-            }
-            /* Split cmdline */
-            cmdline = cmdlineSplit(command);
+                char *replacedStopCmd = stringNew(command);
+                stringReplaceStr(&replacedStopCmd, PID_CMD_VAR, pidStr);
+                /* Split cmdline */
+                cmdline = cmdlineSplit(replacedStopCmd);
+                objectRelease(&replacedStopCmd);
+            } else
+                /* Split cmdline */
+                cmdline = cmdlineSplit(command);
             assert(cmdline);
             /* Execute the command */
             statusThread = stopDaemon(cmdline[0], cmdline, &unit);

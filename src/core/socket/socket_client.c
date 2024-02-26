@@ -20,8 +20,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define WIDTH_DATE 19
 #define MAX_LEN_KEY 13
 
-bool DEBUG;
-
 static void printOtherDataForUnit(Unit *otherUnit, PType pType)
 {
     PState *pState = NULL;

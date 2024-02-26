@@ -8,7 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../core/unitd_impl.h"
 
-bool DEBUG;
 int SELF_PIPE[2];
 bool UNITLOGD_EXIT;
 
