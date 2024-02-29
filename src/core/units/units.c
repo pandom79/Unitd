@@ -80,7 +80,6 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { DEFAULT_SYML_SET_ERR, "The default state is already set to '%s'!" },
     { UNIT_CHANGED_ERR, "The unit content is changed!" },
     { UNIT_ENABLE_STATE_ERR, "Unable to perform the enabling!" },
-    { UNITS_LIST_EMPTY_ERR, "There are no units!" },
     { UNIT_EXIST_ERR, "'%s' already exists!" },
     { UTIMER_INTERVAL_ERR, "At least one criterion must be defined for the interval!" },
     { UPATH_WELL_FORMED_PATH_ERR, "The '%s' property path is not well formed!" },
@@ -102,7 +101,7 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
       "The 'wantedBy' property should contain at least one of the following states :\n%s" },
     { UNIT_CHANGED_RE_ENABLE_MSG, "Please, use '--run' or '-r' option to run this operation." },
     { UNIT_RE_ENABLE_MSG, "Please, run 'unitctl re-enable %s%s' to re-enable it." },
-    { UNIT_NO_DATA_FOUND, "No data found." }
+    { UNIT_NO_DATA_FOUND_MSG, "No data found." }
 };
 
 /* Return the unit name by unit path */

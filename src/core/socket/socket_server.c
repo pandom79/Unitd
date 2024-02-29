@@ -329,12 +329,9 @@ int getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     }
     /* unitsDisplay could be empty */
     if (!bootAnalyze && unitsDisplay->size == 0) {
-        /* We put this simple msg to satisfy the buffer check.
-         * Actually, will be shown the empty list
-        */
-        if (!(*errors))
-            *errors = arrayNew(objectRelease);
-        arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNITS_LIST_EMPTY_ERR].desc));
+        if (!(*messages))
+            *messages = arrayNew(objectRelease);
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND_MSG].desc));
         goto out;
     }
     /* Sorting the array by name */
@@ -1359,7 +1356,7 @@ int getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (!(*messages))
         *messages = arrayNew(objectRelease);
     if ((*messages)->size == 0)
-        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND].desc));
+        arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND_MSG].desc));
 
 out:
     /* Marshall response */

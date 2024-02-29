@@ -707,7 +707,7 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                 printf("\n");
             }
             /* Display unit list */
-            if (lenErr == 0) {
+            if (lenErr == 0 && lenMes == 0) {
                 unitsDisplay = (*sockMessageOut)->unitsDisplay;
                 maxLenName = getMaxLen(unitsDisplay, "name");
                 maxLenDesc = getMaxLen(unitsDisplay, "desc");
