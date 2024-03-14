@@ -82,50 +82,50 @@ char *marshallRequest(SockMessageIn *sockMessageIn)
 
 int unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
 {
-    Array *entries = NULL, **options, *keyval;
-    int rv = 0, len = 0;
-    char *value = NULL, *entry = NULL, *key = NULL;
+    Array **options;
+    int rv = 0, lenBuffer = 0;
+    char key[BUFSIZ] = { 0 }, *value = NULL, entries[BUFSIZ] = { 0 }, c = 0;
 
     assert(buffer);
     assert(sockMessageIn);
 
     options = &(*sockMessageIn)->options;
-    /* Get the entries */
-    entries = stringSplit(buffer, TOKEN, true);
-    len = (entries ? entries->size : 0);
-    for (int i = 0; i < len; i++) {
-        entry = arrayGet(entries, i);
-        /* Each entry has "Key(0)=Value(1)" format. */
-        keyval = stringSplit(entry, ASSIGNER, false);
-        key = arrayGet(keyval, 0);
-        value = arrayGet(keyval, 1);
-        if (stringEquals(asStr(COMMAND), key)) {
-            (*sockMessageIn)->command = atoi(value);
-            goto next;
+    lenBuffer = buffer ? strlen(buffer) : 0;
+    for (int i = 0; i < lenBuffer; i++) {
+        c = buffer[i];
+        if (c != TOKEN[0]) {
+            char chrStr[] = { c, '\0' };
+            strcat(entries, chrStr);
+            continue;
+        } else {
+            value = strstr(entries, ASSIGNER) + 1;
+            memmove(key, entries, strlen(entries) - strlen(value) - 1);
+            if (stringEquals(asStr(COMMAND), key)) {
+                (*sockMessageIn)->command = atoi(value);
+                goto next;
+            }
+            if (stringEquals(asStr(ARG), key)) {
+                (*sockMessageIn)->arg = stringNew(value);
+                goto next;
+            }
+            if (stringEquals(asStr(OPTION), key)) {
+                if (!(*options))
+                    *options = arrayNew(objectRelease);
+                arrayAdd(*options, stringNew(value));
+                goto next;
+            }
+            // Should never happen
+            logError(CONSOLE | SYSTEM, "src/core/socket/socket_request.c", "unmarshallRequest",
+                     EPERM, strerror(EPERM), "Property %s not found!", key);
+            rv = EPERM;
+            goto out;
         }
-        if (stringEquals(asStr(ARG), key)) {
-            (*sockMessageIn)->arg = stringNew(value);
-            goto next;
-        }
-        if (stringEquals(asStr(OPTION), key)) {
-            if (!(*options))
-                *options = arrayNew(objectRelease);
-            arrayAdd(*options, stringNew(value));
-            goto next;
-        }
-        // Should never happen
-        logError(CONSOLE | SYSTEM, "src/core/socket/socket_request.c", "unmarshallRequest", EPERM,
-                 strerror(EPERM), "Property %s not found!", key);
-        arrayRelease(&keyval);
-        rv = EPERM;
-        goto out;
-
 next:
-        arrayRelease(&keyval);
+        memset(entries, 0, BUFSIZ);
+        memset(key, 0, BUFSIZ);
         continue;
     }
 
 out:
-    arrayRelease(&entries);
     return rv;
 }

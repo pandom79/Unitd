@@ -516,10 +516,9 @@ char *marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
 
 int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
 {
-    int rv = 0, len = 0;
-    Array *entries = NULL, **unitsDisplay, **unitErrors, **messages, **sockErrors, **pDatasHistory,
-          *keyval = NULL;
-    char *value = NULL, *key = NULL, *entry = NULL;
+    int rv = 0, lenBuffer = 0;
+    Array **unitsDisplay, **unitErrors, **messages, **sockErrors, **pDatasHistory;
+    char *value = NULL, key[BUFSIZ] = { 0 }, c = 0, entries[BUFSIZ] = { 0 };
     Unit *unitDisplay = NULL;
     ProcessData *pData = NULL, *pDataHistory = NULL;
 
@@ -529,258 +528,255 @@ int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     messages = &(*sockMessageOut)->messages;
     sockErrors = &(*sockMessageOut)->errors;
-    /* Get the entries */
-    entries = stringSplit(buffer, TOKEN, true);
-    len = (entries ? entries->size : 0);
-    for (int i = 0; i < len; i++) {
-        entry = arrayGet(entries, i);
-        /* Each entry has "Key(0)=Value(1)" format. */
-        keyval = stringSplit(entry, ASSIGNER, false);
-        if (!keyval) {
-            // Section
-            key = entry;
-            value = NULL;
+    lenBuffer = buffer ? strlen(buffer) : 0;
+    for (int i = 0; i < lenBuffer; i++) {
+        c = buffer[i];
+        if (c != TOKEN[0]) {
+            char chrStr[] = { c, '\0' };
+            strcat(entries, chrStr);
+            continue;
         } else {
-            // Property
-            key = arrayGet(keyval, 0);
-            value = arrayGet(keyval, 1);
+            value = strstr(entries, ASSIGNER);
+            if (value) {
+                value++;
+                memmove(key, entries, strlen(entries) - strlen(value) - 1);
+            } else
+                stringCopy(key, entries);
+            if (!value) {
+                // SECTIONS
+                if (stringEquals(key, asStr(UNIT_SEC))) {
+                    /* Create the array */
+                    if (!(*unitsDisplay))
+                        *unitsDisplay = arrayNew(unitRelease);
+                    /* Create the unit */
+                    unitDisplay = unitNew(NULL, PARSE_SOCK_RESPONSE);
+                    pData = unitDisplay->processData;
+                    pDatasHistory = &unitDisplay->processDataHistory;
+                    unitErrors = &unitDisplay->errors;
+                    /* Adding the unit to array */
+                    arrayAdd(*unitsDisplay, unitDisplay);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PDATAHISTORY_SEC))) {
+                    if (!(*pDatasHistory))
+                        *pDatasHistory = arrayNew(processDataRelease);
+                    pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
+                    arrayAdd(*pDatasHistory, pDataHistory);
+                    goto next;
+                }
+                // Should never happen
+                logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c",
+                         "unmarshallResponse", EPERM, strerror(EPERM), "Section %s not found!",
+                         key);
+                rv = 1;
+                goto out;
+            } else {
+                // PROPERTIES
+                if (stringEquals(key, asStr(MESSAGE))) {
+                    if (!(*messages))
+                        *messages = arrayNew(objectRelease);
+                    arrayAdd(*messages, stringNew(value));
+                    goto next;
+                }
+                if (stringEquals(key, asStr(ERROR))) {
+                    if (!(*sockErrors))
+                        *sockErrors = arrayNew(objectRelease);
+                    arrayAdd(*sockErrors, stringNew(value));
+                    goto next;
+                }
+                if (stringEquals(key, asStr(NAME))) {
+                    unitDisplay->name = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DESC))) {
+                    if (stringEquals(value, NONE))
+                        unitDisplay->desc = NULL;
+                    else
+                        unitDisplay->desc = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PATH))) {
+                    unitDisplay->path = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(ENABLED))) {
+                    unitDisplay->enabled = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(RESTARTABLE))) {
+                    unitDisplay->restart = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(NEXTTIMEDATE))) {
+                    unitDisplay->nextTimeDate = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(LEFTTIMEDURATION))) {
+                    unitDisplay->leftTimeDuration = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(TIMERNAME))) {
+                    unitDisplay->timerName = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(TIMERPSTATE))) {
+                    unitDisplay->timerPState = calloc(1, sizeof(PState));
+                    assert(unitDisplay->timerPState);
+                    *unitDisplay->timerPState = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PATHUNITNAME))) {
+                    unitDisplay->pathUnitName = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PATHUNITPSTATE))) {
+                    unitDisplay->pathUnitPState = calloc(1, sizeof(PState));
+                    assert(unitDisplay->pathUnitPState);
+                    *unitDisplay->pathUnitPState = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(RESTARTNUM))) {
+                    unitDisplay->restartNum = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(RESTARTMAX))) {
+                    if (stringEquals(value, NONE))
+                        unitDisplay->restartMax = -1;
+                    else
+                        unitDisplay->restartMax = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(TYPE))) {
+                    unitDisplay->type = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(UNITERROR))) {
+                    if (!(*unitErrors))
+                        *unitErrors = arrayNew(objectRelease);
+                    arrayAdd(*unitErrors, stringNew(value));
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PID))) {
+                    if (stringEquals(value, NONE))
+                        *pData->pid = -1;
+                    else
+                        *pData->pid = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(EXITCODE))) {
+                    if (stringEquals(value, NONE))
+                        *pData->exitCode = -1;
+                    else
+                        *pData->exitCode = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PSTATE))) {
+                    *pData->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
+                    goto next;
+                }
+                if (stringEquals(key, asStr(SIGNALNUM))) {
+                    if (stringEquals(value, NONE))
+                        *pData->signalNum = -1;
+                    else
+                        *pData->signalNum = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(FINALSTATUS))) {
+                    if (stringEquals(value, NONE))
+                        *pData->finalStatus = FINAL_STATUS_READY;
+                    else
+                        *pData->finalStatus = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DATETIMESTART))) {
+                    if (stringEquals(value, NONE))
+                        pData->dateTimeStartStr = NULL;
+                    else
+                        pData->dateTimeStartStr = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DATETIMESTOP))) {
+                    if (stringEquals(value, NONE))
+                        pData->dateTimeStopStr = NULL;
+                    else
+                        pData->dateTimeStopStr = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DURATION))) {
+                    if (stringEquals(value, NONE))
+                        pData->duration = NULL;
+                    else
+                        pData->duration = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(INTERVAL))) {
+                    unitDisplay->intervalStr = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PIDH))) {
+                    if (stringEquals(value, NONE))
+                        *pDataHistory->pid = -1;
+                    else
+                        *pDataHistory->pid = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(EXITCODEH))) {
+                    if (stringEquals(value, NONE))
+                        *pDataHistory->exitCode = -1;
+                    else
+                        *pDataHistory->exitCode = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(PSTATEH))) {
+                    *pDataHistory->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
+                    goto next;
+                }
+                if (stringEquals(key, asStr(SIGNALNUMH))) {
+                    if (stringEquals(value, NONE))
+                        *pDataHistory->signalNum = -1;
+                    else
+                        *pDataHistory->signalNum = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(FINALSTATUSH))) {
+                    if (stringEquals(value, NONE))
+                        *pDataHistory->finalStatus = FINAL_STATUS_READY;
+                    else
+                        *pDataHistory->finalStatus = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DATETIMESTARTH))) {
+                    pDataHistory->dateTimeStartStr = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DATETIMESTOPH))) {
+                    if (stringEquals(value, NONE))
+                        pDataHistory->dateTimeStopStr = NULL;
+                    else
+                        pDataHistory->dateTimeStopStr = stringNew(value);
+                    goto next;
+                }
+                if (stringEquals(key, asStr(DURATIONH))) {
+                    if (stringEquals(value, NONE))
+                        pDataHistory->duration = NULL;
+                    else
+                        pDataHistory->duration = stringNew(value);
+                    goto next;
+                }
+                // Should never happen
+                logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c",
+                         "unmarshallResponse", EPERM, strerror(EPERM), "Property %s not found!",
+                         key);
+                rv = EPERM;
+                goto out;
+            }
         }
-        if (!value) {
-            // SECTIONS
-            if (stringEquals(key, asStr(UNIT_SEC))) {
-                /* Create the array */
-                if (!(*unitsDisplay))
-                    *unitsDisplay = arrayNew(unitRelease);
-                /* Create the unit */
-                unitDisplay = unitNew(NULL, PARSE_SOCK_RESPONSE);
-                pData = unitDisplay->processData;
-                pDatasHistory = &unitDisplay->processDataHistory;
-                unitErrors = &unitDisplay->errors;
-                /* Adding the unit to array */
-                arrayAdd(*unitsDisplay, unitDisplay);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PDATAHISTORY_SEC))) {
-                if (!(*pDatasHistory))
-                    *pDatasHistory = arrayNew(processDataRelease);
-                pDataHistory = processDataNew(NULL, PARSE_SOCK_RESPONSE);
-                arrayAdd(*pDatasHistory, pDataHistory);
-                goto next;
-            }
-            // Should never happen
-            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse",
-                     EPERM, strerror(EPERM), "Section %s not found!", key);
-            arrayRelease(&keyval);
-            rv = 1;
-            goto out;
-
-        } else {
-            // PROPERTIES
-            if (stringEquals(key, asStr(MESSAGE))) {
-                if (!(*messages))
-                    *messages = arrayNew(objectRelease);
-                arrayAdd(*messages, stringNew(value));
-                goto next;
-            }
-            if (stringEquals(key, asStr(ERROR))) {
-                if (!(*sockErrors))
-                    *sockErrors = arrayNew(objectRelease);
-                arrayAdd(*sockErrors, stringNew(value));
-                goto next;
-            }
-            if (stringEquals(key, asStr(NAME))) {
-                unitDisplay->name = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DESC))) {
-                if (stringEquals(value, NONE))
-                    unitDisplay->desc = NULL;
-                else
-                    unitDisplay->desc = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PATH))) {
-                unitDisplay->path = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(ENABLED))) {
-                unitDisplay->enabled = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(RESTARTABLE))) {
-                unitDisplay->restart = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(NEXTTIMEDATE))) {
-                unitDisplay->nextTimeDate = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(LEFTTIMEDURATION))) {
-                unitDisplay->leftTimeDuration = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(TIMERNAME))) {
-                unitDisplay->timerName = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(TIMERPSTATE))) {
-                unitDisplay->timerPState = calloc(1, sizeof(PState));
-                assert(unitDisplay->timerPState);
-                *unitDisplay->timerPState = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PATHUNITNAME))) {
-                unitDisplay->pathUnitName = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PATHUNITPSTATE))) {
-                unitDisplay->pathUnitPState = calloc(1, sizeof(PState));
-                assert(unitDisplay->pathUnitPState);
-                *unitDisplay->pathUnitPState = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(RESTARTNUM))) {
-                unitDisplay->restartNum = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(RESTARTMAX))) {
-                if (stringEquals(value, NONE))
-                    unitDisplay->restartMax = -1;
-                else
-                    unitDisplay->restartMax = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(TYPE))) {
-                unitDisplay->type = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(UNITERROR))) {
-                if (!(*unitErrors))
-                    *unitErrors = arrayNew(objectRelease);
-                arrayAdd(*unitErrors, stringNew(value));
-                goto next;
-            }
-            if (stringEquals(key, asStr(PID))) {
-                if (stringEquals(value, NONE))
-                    *pData->pid = -1;
-                else
-                    *pData->pid = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(EXITCODE))) {
-                if (stringEquals(value, NONE))
-                    *pData->exitCode = -1;
-                else
-                    *pData->exitCode = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PSTATE))) {
-                *pData->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
-                goto next;
-            }
-            if (stringEquals(key, asStr(SIGNALNUM))) {
-                if (stringEquals(value, NONE))
-                    *pData->signalNum = -1;
-                else
-                    *pData->signalNum = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(FINALSTATUS))) {
-                if (stringEquals(value, NONE))
-                    *pData->finalStatus = FINAL_STATUS_READY;
-                else
-                    *pData->finalStatus = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DATETIMESTART))) {
-                if (stringEquals(value, NONE))
-                    pData->dateTimeStartStr = NULL;
-                else
-                    pData->dateTimeStartStr = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DATETIMESTOP))) {
-                if (stringEquals(value, NONE))
-                    pData->dateTimeStopStr = NULL;
-                else
-                    pData->dateTimeStopStr = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DURATION))) {
-                if (stringEquals(value, NONE))
-                    pData->duration = NULL;
-                else
-                    pData->duration = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(INTERVAL))) {
-                unitDisplay->intervalStr = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PIDH))) {
-                if (stringEquals(value, NONE))
-                    *pDataHistory->pid = -1;
-                else
-                    *pDataHistory->pid = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(EXITCODEH))) {
-                if (stringEquals(value, NONE))
-                    *pDataHistory->exitCode = -1;
-                else
-                    *pDataHistory->exitCode = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(PSTATEH))) {
-                *pDataHistory->pStateData = PSTATE_DATA_ITEMS[atoi(value)];
-                goto next;
-            }
-            if (stringEquals(key, asStr(SIGNALNUMH))) {
-                if (stringEquals(value, NONE))
-                    *pDataHistory->signalNum = -1;
-                else
-                    *pDataHistory->signalNum = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(FINALSTATUSH))) {
-                if (stringEquals(value, NONE))
-                    *pDataHistory->finalStatus = FINAL_STATUS_READY;
-                else
-                    *pDataHistory->finalStatus = atoi(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DATETIMESTARTH))) {
-                pDataHistory->dateTimeStartStr = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DATETIMESTOPH))) {
-                if (stringEquals(value, NONE))
-                    pDataHistory->dateTimeStopStr = NULL;
-                else
-                    pDataHistory->dateTimeStopStr = stringNew(value);
-                goto next;
-            }
-            if (stringEquals(key, asStr(DURATIONH))) {
-                if (stringEquals(value, NONE))
-                    pDataHistory->duration = NULL;
-                else
-                    pDataHistory->duration = stringNew(value);
-                goto next;
-            }
-            // Should never happen
-            logError(CONSOLE | SYSTEM, "src/core/socket/socket_response.c", "unmarshallResponse",
-                     EPERM, strerror(EPERM), "Property %s not found!", key);
-            arrayRelease(&keyval);
-            rv = EPERM;
-            goto out;
-        }
-
 next:
-        arrayRelease(&keyval);
+        memset(entries, 0, BUFSIZ);
+        memset(key, 0, BUFSIZ);
         continue;
     }
 
 out:
-    arrayRelease(&entries);
     return rv;
 }
