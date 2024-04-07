@@ -1055,7 +1055,10 @@ int showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 duration = pData->duration;
                 printf("%s%s%s", WHITE_UNDERLINE_COLOR, "UNIT DATA", DEFAULT_COLOR);
                 /* Name */
-                printf("\n%*s %s (%s)\n", MAX_LEN_KEY, "Name :", unit->name, unit->path);
+                printf("\n%*s %s\n", MAX_LEN_KEY, "Name :", unit->name);
+                /* Path */
+                unit->path[stringLastIndexOfChr(unit->path, '/')] = '\0';
+                printf("%*s %s\n", MAX_LEN_KEY, "Path :", unit->path);
                 /* Description */
                 if (desc)
                     printf("%*s %s\n", MAX_LEN_KEY, "Description :", desc);
