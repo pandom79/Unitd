@@ -238,7 +238,6 @@ install_data('completion/bash/unitd', install_dir: bash_comp_path)
 
 # Install zzz script
 install_data('external/zzz', install_dir: sbin_path)
-run_command('ln', '-s', prefix/sbin_path/'zzz', prefix/sbin_path/'ZZZ', check: false)
 
 # Install man pages
 install_subdir('man/man8', install_dir: mandir)
@@ -256,14 +255,6 @@ install_data('artwork/upath.svg', install_dir: prefix/datadir/'icons'/'hicolor'/
 # Install unitd logo
 install_data('artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
 
-# Execute 'unitd-check' initialization unit to create the folders tree
-env = environment()
-env.set('UNITS_PATH', units_path)
-env.set('UNITS_USER_PATH', units_user_path)
-env.set('UNITS_ENAB_PATH', units_enab_path)
-env.set('UNITD_TIMER_DATA_PATH', unitd_timer_data_path)
-r = run_command('src/extra/init.state/scripts/unitd-check.sh', env: env, check: false)
-if r.returncode() != 0
-    message(r.stderr().strip())
-    error('An error has occurred')
-endif
+# Execute install script
+meson.add_install_script('install.sh', prefix, sbin_path, units_path, units_user_path, units_enab_path,
+                         unitd_timer_data_path)

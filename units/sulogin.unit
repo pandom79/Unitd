@@ -1,0 +1,9 @@
+[Unit]
+Description = Super user login
+Restart = true
+
+[Command]
+Run = /sbin/sulogin
+
+[State]
+WantedBy = single-user
