@@ -81,6 +81,7 @@ Please note that if you use a different distro or build options then you should 
 
 According the default options, you should see the following folders:<br>
 
+**System instance**
 - /usr/lib64/unitd/units        (system units path)
 - /usr/lib64/unitd/units/user   (user units path)
 - /etc/unitd/units              (system units enabling path)
@@ -93,17 +94,15 @@ According the default options, you should see the following folders:<br>
     - reboot.state
     - single-user.state
 
-As you can see, the first boot will bring the system into **multi-user-net** state.<br/>
-Every state requires at least one unit which is normally a terminal.<br/>
-For this reason, I suggest you to copy this [unit](https://github.com/pandom79/Unitd/blob/master/units/agetty-1.unit) in **/usr/lib64/unitd/units**.<br>
-After that, check the **Run** property of the **Command** section works and enable this unit via the following command:<br>
-```
-ln -s /usr/lib64/unitd/units/agetty-1.unit /etc/unitd/units/multi-user-net.state/.
-```
-You should repeat this operation for all the states except **reboot** and **poweroff**.<br/>
+As you can see, the first boot will bring the system into **multi-user-net** state.<br>
+Every state will have an unit named **agetty-1.unit** which is a terminal.<br>
+The single user state instead, will have an unit named **sulogin.unit** which allows you<br>
+to enter as root for system maintenance.<br>
+Check that the **Run** property of the **Command** section works for both units.<br>
 
 About the user instance, you should see the following folders:<br>
 
+**User instance**
 - $HOME/.config/unitd/units         (local user units path)
 - $HOME/.local/share/unitd/units    (user units enabling path)
 
