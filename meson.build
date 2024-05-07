@@ -257,4 +257,4 @@ install_data('artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
 
 # Execute install script
 meson.add_install_script('install.sh', prefix, sbin_path, units_path, units_user_path, units_enab_path,
-                         unitd_timer_data_path)
+                         unitd_timer_data_path, sysconfdir)

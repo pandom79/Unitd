@@ -8,7 +8,8 @@ VALID_STATES="custom.state graphical.state multi-user-net.state multi-user.state
 
 reset_symlink() {
     rm -rf "$UNITS_ENAB_PATH/$DEF_SYML" || true
-    ln -s "$UNITS_ENAB_PATH/$DEF_STATE" "$UNITS_ENAB_PATH/$DEF_SYML"
+    cd "$UNITS_ENAB_PATH"
+    ln -s "$DEF_STATE" "$DEF_SYML"
 }
 
 # Check UNITS_PATH
