@@ -49,23 +49,6 @@ PropertyData UPATH_PROPERTIES_ITEMS[] = {
 // clang-format on
 //END PARSER CONFIGURATION
 
-int checkWellFormedPath(Unit **unit, const char *path, int propertyNameEnum)
-{
-    assert(*unit);
-    assert(path);
-    assert(propertyNameEnum >= 0);
-
-    /* The paths must be absolute, must not have a double slash and must not terminate with slash. */
-    if (!stringStartsWithChr(path, '/') || stringContainsStr(path, "//") ||
-        stringEndsWithChr(path, '/')) {
-        arrayAdd((*unit)->errors, getMsg(-1, UNITS_ERRORS_ITEMS[UPATH_WELL_FORMED_PATH_ERR].desc,
-                                         UPATH_PROPERTIES_ITEMS[propertyNameEnum].property.desc));
-        return 1;
-    }
-
-    return 0;
-}
-
 int checkWatchers(Unit **unit, bool isAggregate)
 {
     int rv = 0;
@@ -109,8 +92,7 @@ int checkWatchers(Unit **unit, bool isAggregate)
         if (watchPath) {
             if (!watcherFound)
                 watcherFound = true;
-            /* Check if 'watchPath' is well formed */
-            if ((rv = checkWellFormedPath(unit, watchPath, propertyName)) == 0) {
+            if (watchPath[0] == '/') {
                 /* Extract the level up folder */
                 if (!(*watchMonitorPath))
                     *watchMonitorPath =
@@ -132,6 +114,13 @@ int checkWatchers(Unit **unit, bool isAggregate)
                     if (!isAggregate)
                         goto out;
                 }
+            } else {
+                rv = 1;
+                arrayAdd((*unit)->errors,
+                         getMsg(-1, UNITS_ERRORS_ITEMS[UPATH_WELL_FORMED_PATH_ERR].desc,
+                                UPATH_PROPERTIES_ITEMS[propertyName].property.desc));
+                if (!isAggregate)
+                    goto out;
             }
         }
     }

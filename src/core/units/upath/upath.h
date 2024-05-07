@@ -12,6 +12,5 @@ extern int UPATH_PROPERTIES_ITEMS_LEN;
 extern PropertyData UPATH_PROPERTIES_ITEMS[];
 
 int parsePathUnit(Array **, Unit **, bool);
-int checkWellFormedPath(Unit **, const char *, int);
 int checkWatchers(Unit **, bool);
 void addWatchers(Unit **);
