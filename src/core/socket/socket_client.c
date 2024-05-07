@@ -1058,6 +1058,9 @@ int showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                 printf("\n%*s %s\n", MAX_LEN_KEY, "Name :", unit->name);
                 /* Path */
                 unit->path[stringLastIndexOfChr(unit->path, '/')] = '\0';
+                stringReplaceAllStr(&unit->path, "../", "");
+                if (unit->path[0] != '/')
+                    stringPrependChr(&unit->path, '/');
                 printf("%*s %s\n", MAX_LEN_KEY, "Path :", unit->path);
                 /* Description */
                 if (desc)

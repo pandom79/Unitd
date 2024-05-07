@@ -445,12 +445,16 @@ int checkAndSetUnitPath(Unit **currentUnit, State state)
         if (rv == 2)
             hasError = true;
         else {
+            /**
+             * Relative symlinks don't start with UNITS_PATH, UNITS_USER_PATH ...
+             * At most, they can contain these paths.
+            */
             if (!USER_INSTANCE) {
-                if (!stringStartsWithStr(wherePoints, UNITS_PATH))
+                if (!stringContainsStr(wherePoints, UNITS_PATH))
                     hasError = true;
             } else {
-                if (!stringStartsWithStr(wherePoints, UNITS_USER_PATH) &&
-                    !stringStartsWithStr(wherePoints, UNITS_USER_LOCAL_PATH))
+                if (!stringContainsStr(wherePoints, UNITS_USER_PATH) &&
+                    !stringContainsStr(wherePoints, UNITS_USER_LOCAL_PATH))
                     hasError = true;
             }
         }

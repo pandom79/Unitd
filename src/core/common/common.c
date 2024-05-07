@@ -38,6 +38,8 @@ int readSymLink(const char *symLink, char **wherePoints)
     nbytes = readlink(symLink, *wherePoints, bufsiz);
     if (nbytes == -1)
         rv = 2;
+    else
+        rv = 0;
 
 out:
     return rv;
