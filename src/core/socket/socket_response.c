@@ -441,6 +441,7 @@ char *marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
                 stringAppendStr(&buffer, asStr(INTERVAL));
                 stringAppendStr(&buffer, ASSIGNER);
                 stringAppendStr(&buffer, intervalStr);
+                stringAppendStr(&buffer, TOKEN);
             }
             /* Process Data history */
             pDataHistory = unit->processDataHistory;
