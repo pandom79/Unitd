@@ -519,13 +519,14 @@ int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
 {
     int rv = 0, lenBuffer = 0;
     Array **unitsDisplay, **unitErrors, **messages, **sockErrors, **pDatasHistory;
-    char *value = NULL, key[BUFSIZ] = { 0 }, c = 0, entries[BUFSIZ] = { 0 };
+    char *value = NULL, key[BUFSIZ], c = 0, entries[BUFSIZ];
     Unit *unitDisplay = NULL;
     ProcessData *pData = NULL, *pDataHistory = NULL;
 
     assert(buffer);
     assert(*sockMessageOut);
 
+    stringCopy(entries, "");
     unitsDisplay = &(*sockMessageOut)->unitsDisplay;
     messages = &(*sockMessageOut)->messages;
     sockErrors = &(*sockMessageOut)->errors;
@@ -540,7 +541,7 @@ int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
             value = strstr(entries, ASSIGNER);
             if (value) {
                 value++;
-                memmove(key, entries, strlen(entries) - strlen(value) - 1);
+                stringCopyN(key, entries, strlen(entries) - strlen(value) - 1);
             } else
                 stringCopy(key, entries);
             if (!value) {
@@ -773,8 +774,8 @@ int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
             }
         }
 next:
-        memset(entries, 0, BUFSIZ);
-        memset(key, 0, BUFSIZ);
+        stringCopy(entries, "");
+        stringCopy(key, "");
         continue;
     }
 

@@ -84,11 +84,12 @@ int unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
 {
     Array **options;
     int rv = 0, lenBuffer = 0;
-    char key[BUFSIZ] = { 0 }, *value = NULL, entries[BUFSIZ] = { 0 }, c = 0;
+    char key[BUFSIZ], *value = NULL, entries[BUFSIZ], c = 0;
 
     assert(buffer);
     assert(sockMessageIn);
 
+    stringCopy(entries, "");
     options = &(*sockMessageIn)->options;
     lenBuffer = buffer ? strlen(buffer) : 0;
     for (int i = 0; i < lenBuffer; i++) {
@@ -99,7 +100,7 @@ int unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
             continue;
         } else {
             value = strstr(entries, ASSIGNER) + 1;
-            memmove(key, entries, strlen(entries) - strlen(value) - 1);
+            stringCopyN(key, entries, strlen(entries) - strlen(value) - 1);
             if (stringEquals(asStr(COMMAND), key)) {
                 (*sockMessageIn)->command = atoi(value);
                 goto next;
@@ -121,8 +122,8 @@ int unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
             goto out;
         }
 next:
-        memset(entries, 0, BUFSIZ);
-        memset(key, 0, BUFSIZ);
+        stringCopy(entries, "");
+        stringCopy(key, "");
         continue;
     }
 
