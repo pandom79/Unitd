@@ -71,7 +71,7 @@ const UnitsErrorsData UNITS_ERRORS_ITEMS[] = {
     { WANTEDBY_INIT_FINAL_ERR, "The '%s' and '%s' states are not allowed!" },
     { UNIT_PATH_INIT_FINAL_ERR, "The '%s' and '%s' states can't contain symbolic links!" },
     { UNIT_PATH_ERR, "'%s' is not a valid symbolic link!" },
-    { UNIT_NOT_EXIST_ERR, "'%s' doesn't exist!" },
+    { UNIT_NOT_EXIST_ERR, "Unable to find '%s' file!" },
     { UNIT_TIMEOUT_ERR, "Timeout expired for '%s'!" },
     { UNIT_ALREADY_ERR, "The unit is already %s!" },
     { DEFAULT_SYML_MISSING_ERR, "The default state symlink is missing!" },
