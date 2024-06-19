@@ -4,14 +4,15 @@
 #
 # Copyright © 2022 Domenico Panella <pandom79@gmail.com>
 
-__contains_word () {
-    local w word=$1; shift
+__contains_word() {
+    local w word=$1
+    shift
     for w in "$@"; do
         [[ $w = "$word" ]] && return
     done
 }
 
-_unitlogd () {
+_unitlogd() {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local line=${COMP_WORDS[*]}
     local -A OPTS=(
@@ -30,8 +31,7 @@ _unitlogd () {
     entries=${OPTS[SYSTEM]}
 
     # Remove duplicate entries
-    for entry in ${entries};
-    do
+    for entry in ${entries}; do
         if ! __contains_word "$entry" ${line}; then
             new_entries+="$entry "
         fi
@@ -39,9 +39,8 @@ _unitlogd () {
     comps=${new_entries}
 
     # Show data
-    COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
+    COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
     return 0
 }
 
 complete -F _unitlogd unitlogd
-

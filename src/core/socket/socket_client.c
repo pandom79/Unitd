@@ -435,8 +435,8 @@ static void printStatus(PState pState, const char *status, int finalStatus, bool
         if (pState == DEAD)
             printf("%s%s%s", GREY_COLOR, status, DEFAULT_COLOR);
         /* The timers can have a restarting state and a final status equal to success.
-             * Read the comment in startTimerUnitThread. (Restart case).
-            */
+         * Read the comment in startTimerUnitThread. (Restart case).
+        */
         else if (pState == RESTARTING)
             logWarning(CONSOLE, "%s", status);
         else
@@ -738,11 +738,12 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     ProcessData *pData = unitDisplay->processData;
                     PStateData *pStateData = pData->pStateData;
                     PState pState = pStateData->pState;
-                    /* Unit name
-                     * Warning: don't color unit name because the bash completion fails
-                    */
+                    /* The restarted or "continuated" units require attention */
                     unitName = unitDisplay->name;
-                    printf("%s", unitName);
+                    if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT)
+                        logWarning(CONSOLE, "%s", unitName);
+                    else
+                        printf("%s", unitName);
                     len = strlen(unitName);
                     if (maxLenName < len)
                         maxLenName = len;
@@ -762,11 +763,7 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                         pidStr[1] = '\0';
                     } else
                         sprintf(pidStr, "%d", *pid);
-                    /* The restarted or "continuated" units require attention */
-                    if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT)
-                        logWarning(CONSOLE, "%s", pidStr);
-                    else
-                        printf("%s", pidStr);
+                    printf("%s", pidStr);
                     printf("%*s", 8 - (int)strlen(pidStr) + PADDING, "");
                     /* STATUS */
                     finalStatus = pData->finalStatus;
@@ -885,9 +882,6 @@ int showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     ProcessData *pData = unitDisplay->processData;
                     PStateData *pStateData = pData->pStateData;
                     PState pState = pStateData->pState;
-                    /* Unit name
-                 * Warning: don't color unit name because the bash completion fails
-                */
                     unitName = unitDisplay->name;
                     printf("%s", unitName);
                     len = strlen(unitName);

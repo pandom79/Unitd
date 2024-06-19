@@ -9,18 +9,19 @@ RANGES=
 
 __unitlogctl() {
     case $COMMAND in
-        "show-boot")
-            unitlogctl list-boots | head -n -2 | tail -n +2 | awk '{print $1}'
+    "show-boot")
+        unitlogctl list-boots | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-        "vacuum")
-            # The last boot idx (terminated or not) is always excluded.
-            unitlogctl list-boots | head -n -3 | tail -n +2 | awk '{print $1}'
+    "vacuum")
+        # The last boot idx (terminated or not) is always excluded.
+        unitlogctl list-boots | head -n -3 | tail -n +2 | awk '{print $1}'
         ;;
-    esac;
+    esac
 }
 
-__contains_word () {
-    local w word=$1; shift
+__contains_word() {
+    local w word=$1
+    shift
     for w in "$@"; do
         [[ $w = "$word" ]] && return
     done
@@ -29,8 +30,9 @@ __contains_word () {
 __get_boot_idx() { { __unitlogctl; } | { while read -r a; do echo "$a"; done; }; }
 
 __set_ranges() {
-    local idx_list=$1; shift
-    local new_idx_list;
+    local idx_list=$1
+    shift
+    local new_idx_list
     for idx in ${idx_list[*]}; do
         for curr_idx in ${idx_list[*]}; do
             if [ $curr_idx -gt $idx ]; then
@@ -41,7 +43,7 @@ __set_ranges() {
     RANGES=("$new_idx_list")
 }
 
-_unitlogctl () {
+_unitlogctl() {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local line=${COMP_WORDS[*]}
     local -A COMMANDS=(
@@ -64,37 +66,30 @@ _unitlogctl () {
     entries+=${OPTS[SYSTEM]}
 
     # Command handling
-    if __contains_word "show-log" ${line}; then
-         COMMAND="show-log"
-    elif __contains_word "list-boots" ${line}; then
-        COMMAND="list-boots"
-    elif __contains_word "show-boot" ${line}; then
-        COMMAND="show-boot"
-    elif __contains_word "index-repair" ${line}; then
-        COMMAND="index-repair"
-    elif __contains_word "vacuum" ${line}; then
-        COMMAND="vacuum"
-    elif __contains_word "show-size" ${line}; then
-        COMMAND="show-size"
-    elif __contains_word "show-current" ${line}; then
-        COMMAND="show-current"
-    fi
+    case ${line} in
+    *" show-log "*) COMMAND="show-log" ;;
+    *" list-boots "*) COMMAND="list-boots" ;;
+    *" show-boot "*) COMMAND="show-boot" ;;
+    *" index-repair "*) COMMAND="index-repair" ;;
+    *" vacuum "*) COMMAND="vacuum" ;;
+    *" show-size "*) COMMAND="show-size" ;;
+    *" show-current "*) COMMAND="show-current" ;;
+    esac
 
-     if [ ! -z $COMMAND ]; then
+    if [ ! -z $COMMAND ]; then
         entries=()
         if [ $COMMAND == 'show-boot' -o $COMMAND == 'vacuum' ]; then
-            entries=$( __get_boot_idx )
+            entries=$(__get_boot_idx)
             if [ $COMMAND == 'vacuum' ]; then
                 __set_ranges "$entries"
                 entries+=" $RANGES"
             fi
         fi
         entries+=${OPTS[SYSTEM]}
-     fi
+    fi
 
     # Remove duplicate entries
-    for entry in ${entries};
-    do
+    for entry in ${entries}; do
         if ! __contains_word "$entry" ${line}; then
             new_entries+="$entry "
         fi
@@ -102,11 +97,10 @@ _unitlogctl () {
     comps=${new_entries}
 
     # Show data
-    COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
+    COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
     unset COMMAND
     unset RANGES
     return 0
 }
 
 complete -F _unitlogctl unitlogctl
-

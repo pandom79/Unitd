@@ -7,37 +7,56 @@
 COMMAND=
 
 __unitctl() {
-    local mode=$1; shift 1
+    local mode=$1
+    shift 1
     case $COMMAND in
-        "enable")
-           unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
+    "enable")
+        unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-        "disable")
-           unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
+    "disable")
+        unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-        "re-enable"|"restart"|"status"|"list-requires"|"list-conflicts"|"list-states"|"cat"|"edit")
-           unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
+    "re-enable" | "restart" | "status" | "list-requires" | "list-conflicts" | "list-states" | "cat" | "edit")
+        unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-        "start")
-           unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
+    "start")
+        unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-        "stop")
-           unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
-           unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
+    "stop")
+        unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
+            unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
         ;;
-    esac;
+    esac
 }
 
-__contains_word () {
-    local w word=$1; shift
+__contains_word() {
+    local w word=$1
+    shift
     for w in "$@"; do
         [[ $w = "$word" ]] && return
     done
 }
 
-__get_units() { { __unitctl $1; } | { while read -r a; do echo "$a"; done; }; }
+print_value() {
+    local code="[[1;33m" equals=1 value="$1"
+    shift
+    local len=${#code}
+    for ((i = 1; i < $len; i++)); do
+        if [ "${value:$i:1}" != "${code:$i:1}" ]; then
+            equals=0
+            break
+        fi
+    done
+    if [ $equals -eq 1 ]; then
+        value="${value:7}"
+        value="${value::-4}"
+    fi
+    printf "${value}\n"
+}
 
-_unitctl () {
+__get_units() { { __unitctl $1; } | { while read -r a; do print_value "$a"; done; }; }
+
+_unitctl() {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local line=${COMP_WORDS[*]}
     local -A COMMANDS=(
@@ -70,67 +89,42 @@ _unitctl () {
     fi
 
     # Command handling
-    if __contains_word "enable" ${line}; then
-         COMMAND="enable"
-    elif __contains_word "re-enable" ${line}; then
-        COMMAND="re-enable"
-    elif __contains_word "disable" ${line}; then
-        COMMAND="disable"
-    elif __contains_word "restart" ${line}; then
-        COMMAND="restart"
-    elif __contains_word "start" ${line}; then
-        COMMAND="start"
-    elif __contains_word "stop" ${line}; then
-        COMMAND="stop"
-    elif __contains_word "status" ${line}; then
-        COMMAND="status"
-    elif __contains_word "list-requires" ${line}; then
-        COMMAND="list-requires"
-    elif __contains_word "list-conflicts" ${line}; then
-        COMMAND="list-conflicts"
-    elif __contains_word "list-states" ${line}; then
-        COMMAND="list-states"
-    elif __contains_word "cat" ${line}; then
-        COMMAND="cat"
-    elif __contains_word "edit" ${line}; then
-        COMMAND="edit"
-    elif __contains_word "set-default" ${line}; then
-        local -a states=('reboot poweroff multi-user multi-user-net graphical custom single-user')
+    case ${line} in
+    *" enable "*) COMMAND="enable" ;;
+    *" re-enable "*) COMMAND="re-enable" ;;
+    *" disable "*) COMMAND="disable" ;;
+    *" restart "*) COMMAND="restart" ;;
+    *" start "*) COMMAND="start" ;;
+    *" stop "*) COMMAND="stop" ;;
+    *" status "*) COMMAND="status" ;;
+    *" list-requires "*) COMMAND="list-requires" ;;
+    *" list-conflicts "*) COMMAND="list-conflicts" ;;
+    *" list-states "*) COMMAND="list-states" ;;
+    *" cat "*) COMMAND="cat" ;;
+    *" edit "*) COMMAND="edit" ;;
+    *" set-default "*)
+        local -a states=('multi-user multi-user-net graphical custom single-user')
         entries=${states}
-    elif __contains_word "get-default" ${line}; then
-        COMMAND="get-default"
-    elif __contains_word "create" ${line}; then
-        COMMAND="create"
-    elif __contains_word "list" ${line}; then
-        COMMAND="list"
-    elif __contains_word "list-enabled" ${line}; then
-        COMMAND="list-enabled"
-    elif __contains_word "list-disabled" ${line}; then
-        COMMAND="list-disabled"
-    elif __contains_word "list-started" ${line}; then
-        COMMAND="list-started"
-    elif __contains_word "list-dead" ${line}; then
-        COMMAND="list-dead"
-    elif __contains_word "list-failed" ${line}; then
-        COMMAND="list-failed"
-    elif __contains_word "list-restartable" ${line}; then
-        COMMAND="list-restartable"
-    elif __contains_word "list-restarted" ${line}; then
-        COMMAND="list-restarted"
-    elif __contains_word "analyze" ${line}; then
-        COMMAND="analyze"
-    elif __contains_word "poweroff" ${line}; then
-        COMMAND="poweroff"
-    elif __contains_word "reboot" ${line}; then
-        COMMAND="reboot"
-    elif __contains_word "halt" ${line}; then
-        COMMAND="halt"
-    elif __contains_word "kexec" ${line}; then
-        COMMAND="kexec"
-    fi
+        ;;
+    *" get-default "*) COMMAND="get-default" ;;
+    *" create "*) COMMAND="create" ;;
+    *" list "*) COMMAND="list" ;;
+    *" list-enabled "*) COMMAND="list-enabled" ;;
+    *" list-disabled "*) COMMAND="list-disabled" ;;
+    *" list-started "*) COMMAND="list-started" ;;
+    *" list-dead "*) COMMAND="list-dead" ;;
+    *" list-failed "*) COMMAND="list-failed" ;;
+    *" list-restartable "*) COMMAND="list-restartable" ;;
+    *" list-restarted "*) COMMAND="list-restarted" ;;
+    *" analyze "*) COMMAND="analyze" ;;
+    *" poweroff "*) COMMAND="poweroff" ;;
+    *" reboot "*) COMMAND="reboot" ;;
+    *" halt "*) COMMAND="halt" ;;
+    *" kexec "*) COMMAND="kexec" ;;
+    esac
 
     if [ ! -z $COMMAND ]; then
-        entries=$( __get_units $mode )
+        entries=$(__get_units $mode)
         if [[ "$mode" = '--user' ]]; then
             entries+=${OPTS[USER]}
         else
@@ -139,8 +133,7 @@ _unitctl () {
     fi
 
     # Remove duplicate entries
-    for entry in ${entries};
-    do
+    for entry in ${entries}; do
         if ! __contains_word "$entry" ${line}; then
             new_entries+="$entry "
         fi
@@ -148,10 +141,9 @@ _unitctl () {
     comps=${new_entries}
 
     # Show data
-    COMPREPLY=( $(compgen -o filenames -W '$comps' -- "$cur_orig" ) )
+    COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
     unset COMMAND
     return 0
 }
 
 complete -F _unitctl unitctl
-
