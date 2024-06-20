@@ -120,12 +120,12 @@ int signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
                     } else
                         logWarning(
                             SYSTEM,
-                            "'%s' with '%d' pid has received a SIGSTOP! Sending a SIGCONT signal to it ...",
+                            "Unit '%s' (pid = %d) received a SIGSTOP signal! Sending a SIGCONT signal ...",
                             unitName, infoPid);
                     break;
                 case CLD_CONTINUED:
-                    logWarning(SYSTEM, "'%s' with '%d' pid has received a SIGCONT signal!",
-                               unitName, infoPid);
+                    logWarning(SYSTEM, "Unit '%s' (pid = %d) received a SIGCONT signal!", unitName,
+                               infoPid);
                     *pData->signalNum = SIGCONT;
                     break;
                 }
