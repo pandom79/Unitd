@@ -2,7 +2,7 @@
 
 export PATH=$PATH
 
-[ -n "$VIRTUALIZATION" ] && exit 0
+[ ! -z "$VIRTUALIZATION" ] && exit 0
 # Do not try to load modules if kernel does not support them.
 [ ! -e /proc/modules ] && exit 0
 

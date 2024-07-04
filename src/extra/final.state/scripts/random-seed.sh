@@ -3,5 +3,5 @@
 export PATH=$PATH
 
 if [ -z "$VIRTUALIZATION" ]; then
-    seedrng > /dev/null
+    seedrng >/dev/null
 fi

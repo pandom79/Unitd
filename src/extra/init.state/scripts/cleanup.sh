@@ -2,6 +2,10 @@
 
 export PATH=$PATH
 
+if [ ! -e "$OUR_WTMP_FILE" ]; then
+    install -m0664 -o root -g utmp /dev/null "$OUR_WTMP_FILE"
+fi
+
 if [ ! -e /var/log/btmp ]; then
     install -m0600 -o root -g utmp /dev/null /var/log/btmp
 fi

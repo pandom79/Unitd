@@ -16,16 +16,16 @@ if [ -z "$VIRTUALIZATION" ]; then
     _cgroupv2=""
 
     case "${CGROUP_MODE:-hybrid}" in
-        legacy)
-            _cgroupv1="/sys/fs/cgroup"
-            ;;
-        hybrid)
-            _cgroupv1="/sys/fs/cgroup"
-            _cgroupv2="${_cgroupv1}/unified"
-            ;;
-        unified)
-            _cgroupv2="/sys/fs/cgroup"
-            ;;
+    legacy)
+        _cgroupv1="/sys/fs/cgroup"
+        ;;
+    hybrid)
+        _cgroupv1="/sys/fs/cgroup"
+        _cgroupv2="${_cgroupv1}/unified"
+        ;;
+    unified)
+        _cgroupv2="/sys/fs/cgroup"
+        ;;
     esac
 
     # cgroup v1
@@ -36,7 +36,7 @@ if [ -z "$VIRTUALIZATION" ]; then
             _controller="${_cgroupv1}/${_subsys_name}"
             mkdir -p "$_controller"
             mountpoint -q "$_controller" || mount -t cgroup -o "$_subsys_name" cgroup "$_controller"
-        done < /proc/cgroups
+        done </proc/cgroups
     fi
 
     # cgroup v2
@@ -45,4 +45,3 @@ if [ -z "$VIRTUALIZATION" ]; then
         mountpoint -q "$_cgroupv2" || mount -t cgroup2 -o nsdelegate cgroup2 "$_cgroupv2"
     fi
 fi
-
