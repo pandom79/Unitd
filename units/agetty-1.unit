@@ -1,5 +1,6 @@
 [Unit]
 Description = Terminal 1
+Restart = true
 
 [Command]
 Run = /sbin/agetty --noclear 38400 tty1 linux

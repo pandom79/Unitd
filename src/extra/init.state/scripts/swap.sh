@@ -2,6 +2,6 @@
 
 export PATH=$PATH
 
-[ ! -z "$VIRTUALIZATION" ] && exit 0
+[ -n "$VIRTUALIZATION" ] && exit 0
 
 swapon -a

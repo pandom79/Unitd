@@ -3,6 +3,6 @@
 export PATH=$PATH
 
 # Configure kernel parameters:
-if [ -x /sbin/sysctl -a -z "$VIRTUALIZATION" ]; then
+if [ -x /sbin/sysctl ]; then
     sysctl -e --system >/dev/null
 fi

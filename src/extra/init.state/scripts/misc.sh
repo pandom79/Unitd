@@ -8,16 +8,16 @@ install -m0664 -o root -g utmp /dev/null $OUR_UTMP_FILE
 unitctl -o # Write a utmp/wtmp 'reboot' record
 
 if [ -z "$VIRTUALIZATION" ]; then
-    seedrng >/dev/null
+    seedrng >/dev/null || true
 fi
 
 ip link set up dev lo
 
 [ -r /etc/hostname ] && read -r HOSTNAME </etc/hostname
-if [ ! -z "$HOSTNAME" ]; then
+if [ -n "$HOSTNAME" ]; then
     printf "%s" "$HOSTNAME" >/proc/sys/kernel/hostname
 fi
 
-if [ ! -z "$TIMEZONE" ]; then
+if [ -n "$TIMEZONE" ]; then
     ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
 fi

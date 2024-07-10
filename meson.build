@@ -58,11 +58,11 @@ if (bash_comp_path == '')
 endif
 our_utmp_file = get_option('OUR_UTMP_FILE')
 if (our_utmp_file == '')
-    our_utmp_file = localstatedir/'run'/'utmp'
+    our_utmp_file = '/run/utmp'
 endif
 our_wtmp_file = get_option('OUR_WTMP_FILE')
 if (our_wtmp_file == '')
-    our_wtmp_file = localstatedir/'log'/'wtmp'
+    our_wtmp_file = localstatedir/'log/wtmp'
 endif
 
 # Configuration

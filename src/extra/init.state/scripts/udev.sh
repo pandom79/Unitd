@@ -2,7 +2,7 @@
 
 export PATH=$PATH
 
-[ ! -z "$VIRTUALIZATION" ] && exit 0
+[ -n "$VIRTUALIZATION" ] && exit 0
 
 if [ -x /usr/lib/systemd/systemd-udevd ]; then
     _udevd=/usr/lib/systemd/systemd-udevd
@@ -12,7 +12,7 @@ else
     msg_warn "cannot find udevd!"
 fi
 
-if [ ! -z "${_udevd}" ]; then
+if [ -n "${_udevd}" ]; then
     ${_udevd} --daemon
     udevadm trigger --action=add --type=subsystems
     udevadm trigger --action=add --type=devices

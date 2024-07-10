@@ -2,7 +2,7 @@
 
 export PATH=$PATH
 
-[ ! -z "$VIRTUALIZATION" ] && exit 0
+[ -n "$VIRTUALIZATION" ] && exit 0
 
 LIBMOUNT_FORCE_MOUNT2=always mount -o remount,ro /
 
