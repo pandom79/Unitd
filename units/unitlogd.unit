@@ -1,0 +1,12 @@
+[Unit]
+Description = Unitlog daemon
+Restart = true 
+
+[Command]
+Run = /usr/sbin/unitlogd --log --kernel 
+
+[State]
+WantedBy = multi-user
+WantedBy = multi-user-net
+WantedBy = custom
+WantedBy = graphical
