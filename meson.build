@@ -4,10 +4,10 @@
 #it under the terms of the GNU General Public License version 3.
 #See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #
-project('Unitd', 'c', version: '6.1.9', default_options: ['warning_level=3', 'prefix=/usr'] )
+project('Unitd', 'c', version: '6.2.0', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments('-Wno-incompatible-pointer-types', language: 'c')
 
-ver = '6.1.9'
+ver = '6.2.0'
 so_ver = '6'
 ulib_ver = '4.1.9'
 project_name = 'unitd'
@@ -97,6 +97,8 @@ run_command('/bin/cp', 'build/unitd_config.h', 'src/include/.', check: true)
 rt_dep = meson.get_compiler('c').find_library('rt', required : true)
 deps = [dependency('threads'), dependency('ulib', version: ulib_ver), rt_dep]
 # Checking commands/packages dependencies
+# Less
+find_program('less', required: true)
 # Awk
 find_program('awk', required: true)
 # Pkill and pgrep (procps-ng package)
