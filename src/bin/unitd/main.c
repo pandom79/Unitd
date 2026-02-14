@@ -14,7 +14,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 pid_t UNITD_PID = 0;
 bool DEBUG = false;
-FILE *UNITD_LOG_FILE = NULL;
 State STATE_DEFAULT = NO_STATE;
 State STATE_NEW_DEFAULT = NO_STATE;
 State STATE_CMDLINE = NO_STATE;
@@ -36,7 +35,6 @@ char *UNITS_USER_LOCAL_PATH = NULL;
 char *UNITS_USER_ENAB_PATH = NULL;
 char *UNITD_USER_CONF_PATH = NULL;
 char *UNITD_USER_TIMER_DATA_PATH = NULL;
-char *UNITD_USER_LOG_PATH = NULL;
 State STATE_USER = USER;
 char *STATE_USER_DIR = NULL;
 char *SOCKET_USER_PATH = NULL;
@@ -73,7 +71,6 @@ int main(int argc, char **argv) {
     assert(UNITS_PATH);
     assert(UNITS_USER_PATH);
     assert(UNITS_ENAB_PATH);
-    assert(UNITD_LOG_PATH);
     assert(UNITD_DATA_PATH);
     assert(UNITD_CONF_PATH);
 
@@ -186,10 +183,6 @@ int main(int argc, char **argv) {
             hasError = true;
             goto out;
         }
-        /* For the user instance we never show the emrgency shell and we put whatever error into log which
-         * can be already opened in this case (disk already mounted) */
-        assert(!UNITD_LOG_FILE);
-        unitdOpenLog("w");
     }
     /* Starting from an heap pointer */
     unitdData = calloc(1, sizeof(UnitdData));
@@ -214,7 +207,7 @@ int main(int argc, char **argv) {
         SHUTDOWN_STOP = timeNew(NULL);
         char *diff = stringGetDiffTime(SHUTDOWN_STOP, SHUTDOWN_START);
         char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);
-        logInfo(CONSOLE | UNITD_BOOT_LOG, "%s%s%s\n", WHITE_COLOR, msg, DEFAULT_COLOR);
+        logInfo(CONSOLE, "%s%s%s\n", WHITE_COLOR, msg, DEFAULT_COLOR);
         objectRelease(&diff);
         objectRelease(&msg);
         timeRelease(&SHUTDOWN_START);
@@ -262,8 +255,6 @@ int main(int argc, char **argv) {
         else {
             syslog(LOG_DAEMON | LOG_INFO, "Unitd instance for %d userId exited with %d (%s) exit code.\n",
                                           userId, rv, strerror(rv));
-            unitdCloseLog();
-            assert(!UNITD_LOG_FILE);
         }
 
         return rv;

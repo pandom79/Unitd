@@ -300,8 +300,8 @@ int parseProcCmdLine()
 
     if ((fp = fopen(PROC_CMDLINE_PATH, "r")) == NULL) {
         rv = 1;
-        logError(CONSOLE | UNITD_BOOT_LOG, "src/core/common/common.c", "parseProcCmdLine", errno,
-                 strerror(errno), "Unable to open %s", PROC_CMDLINE_PATH, NULL);
+        logError(CONSOLE, "src/core/common/common.c", "parseProcCmdLine", errno, strerror(errno),
+                 "Unable to open %s", PROC_CMDLINE_PATH, NULL);
         return rv;
     }
     while (getline(&line, &len, fp) != -1) {
@@ -354,8 +354,8 @@ int setSigAction()
     if (sigaction(SIGTERM, &act, NULL) == -1 || sigaction(SIGINT, &act, NULL) == -1 ||
         sigaction(SIGALRM, &act, NULL) == -1 || sigaction(SIGCHLD, &act, NULL) == -1) {
         rv = -1;
-        logError(CONSOLE | UNITD_BOOT_LOG, "src/core/common/common.c", "setSigAction", errno,
-                 strerror(errno), "Sigaction returned -1 exit code");
+        logError(CONSOLE, "src/core/common/common.c", "setSigAction", errno, strerror(errno),
+                 "Sigaction returned -1 exit code");
     }
 
     return rv;
@@ -391,13 +391,10 @@ int setUserData(int userId, struct passwd **userInfo)
     stringAppendStr(&UNITD_USER_CONF_PATH, "/.local/share/unitd");
     UNITD_USER_TIMER_DATA_PATH = stringNew(UNITD_USER_CONF_PATH);
     stringAppendStr(&UNITD_USER_TIMER_DATA_PATH, "/timer");
-    UNITD_USER_LOG_PATH = stringNew(UNITD_USER_CONF_PATH);
-    stringAppendStr(&UNITD_USER_LOG_PATH, "/unitd.log");
     UNITS_USER_ENAB_PATH = stringNew(UNITD_USER_CONF_PATH);
     stringAppendStr(&UNITS_USER_ENAB_PATH, "/units");
     assert(UNITS_USER_LOCAL_PATH);
     assert(UNITD_USER_CONF_PATH);
-    assert(UNITD_USER_LOG_PATH);
     assert(UNITS_USER_ENAB_PATH);
     /* Set user socket path */
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
@@ -414,7 +411,6 @@ int setUserData(int userId, struct passwd **userInfo)
         logInfo(CONSOLE, "Units user path = %s\n", UNITS_USER_PATH);
         logInfo(CONSOLE, "Units user local path = %s\n", UNITS_USER_LOCAL_PATH);
         logInfo(CONSOLE, "Units user conf path = %s\n", UNITD_USER_CONF_PATH);
-        logInfo(CONSOLE, "Unitd user log path = %s\n", UNITD_USER_LOG_PATH);
         logInfo(CONSOLE, "Units user enab path = %s\n", UNITS_USER_ENAB_PATH);
         logInfo(CONSOLE, "socket user path = %s\n", SOCKET_USER_PATH);
     }
@@ -428,7 +424,6 @@ void userDataRelease()
     objectRelease(&UNITS_USER_LOCAL_PATH);
     objectRelease(&UNITD_USER_CONF_PATH);
     objectRelease(&UNITD_USER_TIMER_DATA_PATH);
-    objectRelease(&UNITD_USER_LOG_PATH);
     objectRelease(&UNITS_USER_ENAB_PATH);
     objectRelease(&SOCKET_USER_PATH);
 }

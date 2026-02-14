@@ -8,8 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-FILE *UNITD_BOOT_LOG_FILE = NULL;
-char *UNITD_USER_LOG_PATH;
 FILE *UNITLOGD_BOOT_LOG_FILE;
 FILE *UNITLOGD_INDEX_FILE;
 FILE *UNITLOGD_LOG_FILE;
@@ -19,7 +17,7 @@ static void writeFile(FILE **file, const char *color, const char *format, va_lis
     if (*file && format) {
         fflush(*file);
         fprintf(*file, color);
-        vfprintf(*file, format, args);
+        vfprintf(*file, format, *args);
         fprintf(*file, DEFAULT_COLOR);
         fflush(*file);
     }
@@ -44,7 +42,7 @@ static void writeErrorFile(FILE **file, const char *transUnit, const char *funcN
         fprintf(*file, "\nDescription: ");
         fprintf(*file, errDesc);
         fprintf(*file, "\n");
-        vfprintf(*file, format, args);
+        vfprintf(*file, format, *args);
         fprintf(*file, "\n");
         fprintf(*file, DEFAULT_COLOR);
         fflush(*file);
@@ -79,11 +77,6 @@ void logInfo(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
-        va_end(args);
-    }
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
         writeFile(&UNITLOGD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
@@ -107,11 +100,6 @@ void logWarning(int options, const char *format, ...)
         printf(DEFAULT_COLOR);
         va_end(args);
         fflush(stdout);
-    }
-    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
-        va_end(args);
     }
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
@@ -137,11 +125,6 @@ void logErrorStr(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITD_BOOT_LOG_FILE, RED_COLOR, format, &args);
-        va_end(args);
-    }
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
         writeFile(&UNITLOGD_BOOT_LOG_FILE, RED_COLOR, format, &args);
@@ -165,11 +148,6 @@ void logSuccess(int options, const char *format, ...)
         printf(DEFAULT_COLOR);
         va_end(args);
         fflush(stdout);
-    }
-    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
-        va_end(args);
     }
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);
@@ -209,12 +187,6 @@ void logError(int options, const char *transUnit, const char *funcName, int retu
         printf(DEFAULT_COLOR);
         va_end(args);
         fflush(stdout);
-    }
-    if (UNITD_BOOT_LOG_FILE && (options & UNITD_BOOT_LOG)) {
-        va_start(args, format);
-        writeErrorFile(&UNITD_BOOT_LOG_FILE, transUnit, funcName, returnValue, returnValueStr,
-                       errDesc, format, &args);
-        va_end(args);
     }
     if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
         va_start(args, format);

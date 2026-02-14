@@ -47,12 +47,12 @@ void *startProcess(void *arg)
         goto out;
     }
     if (DEBUG)
-        logWarning(UNITD_BOOT_LOG, "\n[*] STARTING '%s' ... \n", unitName);
+        logWarning(ALL, "\n[*] STARTING '%s' ... \n", unitName);
     /* If the errors already exist then exit */
     if (unit->errors->size > 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
         if (DEBUG)
-            logErrorStr(UNITD_BOOT_LOG, "'%s' has some configuration errors. Exit!\n", unitName);
+            logErrorStr(ALL, "'%s' has some configuration errors. Exit!\n", unitName);
         goto out;
     }
     /* Check the conflicts.
@@ -74,7 +74,7 @@ void *startProcess(void *arg)
                                               unitName, unitNameconflict));
                 *finalStatus = FINAL_STATUS_FAILURE;
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "'%s' has a conflict with '%s'. Exit!\n", unitName,
+                    logInfo(ALL, "'%s' has a conflict with '%s'. Exit!\n", unitName,
                             unitNameconflict);
                 goto out;
             }
@@ -84,7 +84,7 @@ void *startProcess(void *arg)
     requires = unit->requires;
     lenDeps = (requires ? requires->size : 0);
     if (DEBUG)
-        logInfo(UNITD_BOOT_LOG, "'%s' has to wait for %d dependencies!\n", unitName, lenDeps);
+        logInfo(ALL, "'%s' has to wait for %d dependencies!\n", unitName, lenDeps);
     for (int i = 0; i < lenDeps; i++) {
         /* Get the dependency as string */
         unitNameDep = arrayGet(requires, i);
@@ -96,7 +96,7 @@ void *startProcess(void *arg)
                                           unitNameDep, unitName));
             *finalStatus = FINAL_STATUS_FAILURE;
             if (DEBUG)
-                logInfo(UNITD_BOOT_LOG,
+                logInfo(ALL,
                         "The dependency '%s' for '%s' doesn't exist "
                         "or has any errors. Exit!\n",
                         unitNameDep, unitName);
@@ -104,7 +104,7 @@ void *startProcess(void *arg)
         } else {
             if (DEBUG)
                 logInfo(
-                    UNITD_BOOT_LOG,
+                    ALL,
                     "The dependency name for '%s' = '%s' have no errors and is enabled. Go on!\n",
                     unitName, unitNameDep);
             /* Get the dependency process Data */
@@ -121,7 +121,7 @@ void *startProcess(void *arg)
                 } else {
                     while (*finalStatusDep == FINAL_STATUS_READY) {
                         if (DEBUG)
-                            logInfo(UNITD_BOOT_LOG,
+                            logInfo(ALL,
                                     "The dependency '%s' for '%s' is not started yet. "
                                     "Waiting for the broadcast signal...!\n",
                                     unitNameDep, unitName);
@@ -136,7 +136,7 @@ void *startProcess(void *arg)
                         }
                         if (DEBUG)
                             logInfo(
-                                UNITD_BOOT_LOG,
+                                ALL,
                                 "The dependency '%s' for '%s' sent the broadcast signal! Final status = %d\n",
                                 unitNameDep, unitName, *finalStatusDep);
                     }
@@ -149,8 +149,7 @@ void *startProcess(void *arg)
                     }
                 } //unitDep mutex locked
             } else if (DEBUG)
-                logInfo(UNITD_BOOT_LOG,
-                        "The dependency '%s' for '%s' is already started! Final status = %d\n",
+                logInfo(ALL, "The dependency '%s' for '%s' is already started! Final status = %d\n",
                         unitNameDep, unitName, *finalStatusDep);
             if (*finalStatusDep != FINAL_STATUS_SUCCESS) {
                 /* Set the unsatisfied dependency error into current unit */
@@ -160,8 +159,8 @@ void *startProcess(void *arg)
                 *finalStatus = FINAL_STATUS_FAILURE;
                 *pData->pStateData = PSTATE_DATA_ITEMS[DEAD];
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "The dependency '%s' for '%s' went to an ABEND!\n",
-                            unitNameDep, unitName);
+                    logInfo(ALL, "The dependency '%s' for '%s' went to an ABEND!\n", unitNameDep,
+                            unitName);
                 goto out;
             }
         } //dependency exist
@@ -175,7 +174,7 @@ void *startProcess(void *arg)
         cmdline = cmdlineSplit(command);
         assert(cmdline);
         if (DEBUG)
-            logInfo(UNITD_BOOT_LOG, "Executing '%s' command for '%s' ...!\n", command, unitName);
+            logInfo(ALL, "Executing '%s' command for '%s' ...!\n", command, unitName);
         /* Execute the command */
         statusThread = execProcess(cmdline[0], cmdline, &unit);
         if (statusThread != EXIT_SUCCESS && statusThread != -1) {
@@ -244,7 +243,7 @@ out:
         kill(UNITD_PID, SIGTERM);
     }
     if (DEBUG)
-        logInfo(UNITD_BOOT_LOG, "'%s' sent the broadcast signal!\n", unitName);
+        logInfo(ALL, "'%s' sent the broadcast signal!\n", unitName);
     if ((rv = pthread_mutex_unlock(unitMutex)) != 0) {
         *finalStatus = FINAL_STATUS_FAILURE;
         logError(ALL, "src/core/processes/process.c", "startProcess", rv, strerror(rv),
@@ -254,11 +253,11 @@ out:
     /* show the result */
     if (unit->showResult) {
         if (*finalStatus == FINAL_STATUS_SUCCESS) {
-            logInfo(CONSOLE | UNITD_BOOT_LOG, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
-                    WHITE_COLOR, (desc ? desc : ""), DEFAULT_COLOR);
+            logInfo(CONSOLE, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR, WHITE_COLOR,
+                    (desc ? desc : ""), DEFAULT_COLOR);
         } else
-            logInfo(CONSOLE | UNITD_BOOT_LOG, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR,
-                    WHITE_COLOR, (desc ? desc : ""), DEFAULT_COLOR);
+            logInfo(CONSOLE, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR, WHITE_COLOR,
+                    (desc ? desc : ""), DEFAULT_COLOR);
     }
 
     /* Return value. It will be freed by StartProcesses function */
@@ -281,7 +280,7 @@ int startProcesses(Array **units, Unit *singleUnit)
     if (numThreads > 0) {
         UnitThreadData unitsThreadsData[numThreads];
         if (DEBUG)
-            logWarning(UNITD_BOOT_LOG, "\n[*] CREATING %d THREADS (STARTING)\n", numThreads);
+            logWarning(ALL, "\n[*] CREATING %d THREADS (STARTING)\n", numThreads);
         for (int i = 0; i < numThreads; i++) {
             UnitThreadData *unitThreadData = &unitsThreadsData[i];
             /* Get the unit */
@@ -294,18 +293,18 @@ int startProcesses(Array **units, Unit *singleUnit)
             assert(unit);
             unitName = unit->name;
             if (DEBUG)
-                logInfo(UNITD_BOOT_LOG, "Creating the '%s' thread\n", unitName);
+                logInfo(ALL, "Creating the '%s' thread\n", unitName);
             /* Set the unit thread data */
             unitThreadData->units = *units;
             unitThreadData->unit = unit;
             if ((rv = pthread_create(&unitThreadData->thread, NULL, startProcess,
                                      unitThreadData)) != 0) {
-                logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "startProcesses", rv,
-                         strerror(rv), "Unable to create the thread for '%s'", unitName);
+                logError(ALL, "src/core/processes/process.c", "startProcesses", rv, strerror(rv),
+                         "Unable to create the thread for '%s'", unitName);
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "Thread created succesfully for '%s'\n", unitName);
+                    logInfo(ALL, "Thread created succesfully for '%s'\n", unitName);
             }
         }
         /* Waiting for all threads to terminate */
@@ -314,14 +313,13 @@ int startProcesses(Array **units, Unit *singleUnit)
             unit = unitThreadData->unit;
             unitName = unit->name;
             if ((rv = pthread_join(unitThreadData->thread, (void **)&rvThread)) != 0) {
-                logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "startProcesses", rv,
-                         strerror(rv), "Unable to join the thread for '%s'", unitName);
+                logError(ALL, "src/core/processes/process.c", "startProcesses", rv, strerror(rv),
+                         "Unable to join the thread for '%s'", unitName);
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG,
-                            "Thread joined successfully for '%s'! Return code = %d\n", unitName,
-                            *rvThread);
+                    logInfo(ALL, "Thread joined successfully for '%s'! Return code = %d\n",
+                            unitName, *rvThread);
             }
             if (*rvThread == 1)
                 result = 1;
@@ -466,11 +464,11 @@ void *stopProcess(void *arg)
 out:
     if (unit->showResult) {
         if (*finalStatus == FINAL_STATUS_SUCCESS) {
-            logInfo(CONSOLE | UNITD_BOOT_LOG, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR,
-                    WHITE_COLOR, unit->desc, DEFAULT_COLOR);
+            logInfo(CONSOLE, "[   %sOK%s   ] %s%s%s\n", GREEN_COLOR, DEFAULT_COLOR, WHITE_COLOR,
+                    unit->desc, DEFAULT_COLOR);
         } else
-            logInfo(CONSOLE | UNITD_BOOT_LOG, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR,
-                    WHITE_COLOR, unit->desc, DEFAULT_COLOR);
+            logInfo(CONSOLE, "[ %sFAILED%s ] %s%s%s\n", RED_COLOR, DEFAULT_COLOR, WHITE_COLOR,
+                    unit->desc, DEFAULT_COLOR);
     }
 
     /* Return value. It will be freed by StopProcesses function */
@@ -498,7 +496,7 @@ int stopProcesses(Array **units, Unit *unitArg)
     if (numThreads > 0) {
         UnitThreadData unitsThreadsData[numThreads];
         if (DEBUG)
-            logWarning(UNITD_BOOT_LOG, "\n[*] CREATING %d THREADS (STOPPING) \n", numThreads);
+            logWarning(ALL, "\n[*] CREATING %d THREADS (STOPPING) \n", numThreads);
         for (int i = 0; i < numThreads; i++) {
             UnitThreadData *unitThreadData = &unitsThreadsData[i];
             /* Get the unit */
@@ -508,17 +506,17 @@ int stopProcesses(Array **units, Unit *unitArg)
                 unit->showResult = false;
             unitName = unit->name;
             if (DEBUG)
-                logInfo(UNITD_BOOT_LOG, "Creating '%s' thread\n", unitName);
+                logInfo(ALL, "Creating '%s' thread\n", unitName);
             /* Set the unit */
             unitThreadData->unit = unit;
             if ((rv = pthread_create(&unitThreadData->thread, NULL, stopProcess, unitThreadData)) !=
                 0) {
-                logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "stopProcesses", rv,
-                         strerror(rv), "Unable to create the thread for '%s'", unitName);
+                logError(ALL, "src/core/processes/process.c", "stopProcesses", rv, strerror(rv),
+                         "Unable to create the thread for '%s'", unitName);
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "Thread created succesfully for '%s'\n", unitName);
+                    logInfo(ALL, "Thread created succesfully for '%s'\n", unitName);
             }
         }
         /* Waiting for all threads to terminate */
@@ -527,14 +525,13 @@ int stopProcesses(Array **units, Unit *unitArg)
             unit = unitThreadData->unit;
             unitName = unit->name;
             if ((rv = pthread_join(unitThreadData->thread, (void **)&rvThread)) != 0) {
-                logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "stopProcesses", rv,
-                         strerror(rv), "Unable to join the thread for '%s'", unitName);
+                logError(ALL, "src/core/processes/process.c", "stopProcesses", rv, strerror(rv),
+                         "Unable to join the thread for '%s'", unitName);
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG,
-                            "Thread joined successfully for '%s'! Return code = %d\n", unitName,
-                            *rvThread);
+                    logInfo(ALL, "Thread joined successfully for '%s'! Return code = %d\n",
+                            unitName, *rvThread);
             }
             if (*rvThread == 1)
                 rv = 1;
@@ -708,15 +705,14 @@ int listenPipes(Array **units, Unit *unitArg)
         pthread_t threads[numThreads];
         pthread_attr_t attr[numThreads];
         if (DEBUG)
-            logWarning(UNITD_BOOT_LOG, "\n[*] CREATING %d DETACHED THREADS (listen pipe) \n",
-                       numThreads);
+            logWarning(ALL, "\n[*] CREATING %d DETACHED THREADS (listen pipe) \n", numThreads);
         for (int i = 0; i < numThreads; i++) {
             /* Get the unit */
             unit = arrayGet(restartableUnits, i);
             assert(unit);
             unitName = unit->name;
             if (DEBUG)
-                logInfo(UNITD_BOOT_LOG, "Creating '%s' detached thread (listen pipe)\n", unitName);
+                logInfo(ALL, "Creating '%s' detached thread (listen pipe)\n", unitName);
             /* Set pthread attributes and start */
             if ((rv = pthread_attr_init(&attr[i])) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "listenPipes", errno,
@@ -739,8 +735,7 @@ int listenPipes(Array **units, Unit *unitArg)
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG,
-                            "Detached thread created succesfully for '%s' (listen pipe)\n",
+                    logInfo(ALL, "Detached thread created succesfully for '%s' (listen pipe)\n",
                             unitName);
             }
             /* We assure us that the pipes are listening. */
@@ -813,23 +808,21 @@ int closePipes(Array **units, Unit *unitArg)
     if (numThreads > 0) {
         pthread_t threads[numThreads];
         if (DEBUG)
-            logWarning(UNITD_BOOT_LOG, "\n[*] CREATING %d THREADS (close pipe)\n", numThreads);
+            logWarning(ALL, "\n[*] CREATING %d THREADS (close pipe)\n", numThreads);
         for (int i = 0; i < numThreads; i++) {
             /* Get the unit */
             unit = arrayGet(restartableUnits, i);
             assert(unit);
             unitName = unit->name;
             if (DEBUG)
-                logInfo(UNITD_BOOT_LOG, "Creating '%s' thread (close pipe)\n", unitName);
+                logInfo(ALL, "Creating '%s' thread (close pipe)\n", unitName);
             if ((rv = pthread_create(&threads[i], NULL, closePipe, unit)) != 0) {
-                logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "closePipes", rv,
-                         strerror(rv), "Unable to create the thread for '%s' (close pipe)",
-                         unitName);
+                logError(ALL, "src/core/processes/process.c", "closePipes", rv, strerror(rv),
+                         "Unable to create the thread for '%s' (close pipe)", unitName);
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "Thread created succesfully for '%s' (close pipe)\n",
-                            unitName);
+                    logInfo(ALL, "Thread created succesfully for '%s' (close pipe)\n", unitName);
             }
         }
         /* Waiting for all threads to terminate */
@@ -839,12 +832,12 @@ int closePipes(Array **units, Unit *unitArg)
             assert(unit);
             unitName = unit->name;
             if ((rv = pthread_join(threads[i], (void **)&rvThread)) != 0) {
-                logError(UNITD_BOOT_LOG, "src/core/processes/process.c", "closePipes", rv,
-                         strerror(rv), "Unable to join the thread for '%s' (close pipe)", unitName);
+                logError(ALL, "src/core/processes/process.c", "closePipes", rv, strerror(rv),
+                         "Unable to join the thread for '%s' (close pipe)", unitName);
                 kill(UNITD_PID, SIGTERM);
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG,
+                    logInfo(ALL,
                             "Thread joined successfully for '%s' (close pipe)! Return code = %d\n",
                             unitName, *rvThread);
             }

@@ -143,7 +143,7 @@ void addWatchers(Unit **unit)
     /* Check and set notifier */
     notifier = (*unit)->notifier;
     if (!notifier) {
-        notifier = notifierNew(*unit);
+        notifier = notifierNew();
         (*unit)->notifier = notifier;
     }
     assert(notifier);

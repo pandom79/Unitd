@@ -7,7 +7,7 @@
 project('Unitd', 'c', version: '6.2.0', default_options: ['warning_level=3', 'prefix=/usr'] )
 add_global_arguments('-Wno-incompatible-pointer-types', language: 'c')
 
-ver = '6.2.0'
+ver = '7.0.0'
 so_ver = '6'
 ulib_ver = '4.1.9'
 project_name = 'unitd'
@@ -36,7 +36,6 @@ units_user_path = units_path/'user'
 units_enab_path = unitd_conf_path/'units'
 unitd_data_path = prefix/datadir/project_name
 unitd_timer_data_path = unitd_data_path/'timer'
-unitd_log_path = localstatedir/'log'/project_name+'.log'
 
 # Setting unitlogd macro path
 unitlogd_path = localstatedir/'log'/unitlogd_name
@@ -78,7 +77,6 @@ conf_data.set('UNITS_ENAB_PATH', units_enab_path)
 conf_data.set('UNITD_DATA_PATH', unitd_data_path)
 conf_data.set('UNITD_TIMER_DATA_PATH', unitd_timer_data_path)
 conf_data.set('UNITD_CONF_PATH', unitd_conf_path)
-conf_data.set('UNITD_LOG_PATH', unitd_log_path)
 conf_data.set('UNITD_TEST', get_option('UNITD_TEST'))
 # Unitlogd
 conf_data.set('UNITLOGD_PATH', unitlogd_path)
@@ -160,9 +158,7 @@ sources = files(
                 'src/core/socket/socket_request.c',
                 'src/core/socket/socket_request.h',
                 'src/core/socket/socket_response.c',
-                'src/core/socket/socket_response.h',
-                'src/core/file/file.c',
-                'src/core/file/file.h'
+                'src/core/socket/socket_response.h'
                 )
 
 # Unitd lib
@@ -258,5 +254,5 @@ install_data('artwork/upath.svg', install_dir: prefix/datadir/'icons'/'hicolor'/
 install_data('artwork/unitd-logo.svg', install_dir: unitd_data_path/'artwork')
 
 # Execute install script
-meson.add_install_script('install.sh', prefix, sbin_path, units_path, units_user_path, units_enab_path,
-                         unitd_timer_data_path, sysconfdir)
+# meson.add_install_script('install.sh', prefix, sbin_path, units_path, units_user_path, units_enab_path,
+#                          unitd_timer_data_path, sysconfdir)

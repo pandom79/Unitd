@@ -59,15 +59,15 @@ int execScript(const char *unitdDataDir, const char *relScriptName, char **argv,
             (void)execv(command, argv);
         _exit(errno);
     case -1:
-        logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "execScript", errno,
-                 strerror(errno), "Unable to execute fork");
+        logError(ALL, "src/core/commands/commands.c", "execScript", errno, strerror(errno),
+                 "Unable to execute fork");
         return EXIT_FAILURE;
     }
     uWaitPid(child, &status, 0);
     if (WIFEXITED(status))
         exitCode = WEXITSTATUS(status);
     if (exitCode == -1) {
-        logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "execScript", -1,
+        logError(ALL, "src/core/commands/commands.c", "execScript", -1,
                  "Bad exit code for the %s script", relScriptName);
     }
 
@@ -107,8 +107,8 @@ int execProcess(const char *command, char **argv, Unit **unit)
 
         _exit(errno);
     case -1:
-        logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "execProcess", errno,
-                 strerror(errno), "Unable to execute fork");
+        logError(ALL, "src/core/commands/commands.c", "execProcess", errno, strerror(errno),
+                 "Unable to execute fork");
         *pData->exitCode = EXIT_FAILURE;
         return EXIT_FAILURE;
     }
@@ -172,15 +172,14 @@ int execProcess(const char *command, char **argv, Unit **unit)
             *pData->signalNum = SIGKILL;
             setStopAndDuration(&pData);
             if ((*unit)->showResult)
-                logErrorStr(CONSOLE | UNITD_BOOT_LOG, "Timeout expired for %s unit!\n",
-                            (*unit)->name);
+                logErrorStr(CONSOLE, "Timeout expired for %s unit!\n", (*unit)->name);
             arrayAdd((*unit)->errors,
                      getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_TIMEOUT_ERR].desc, (*unit)->name));
         }
         break;
     }
     if (DEBUG) {
-        logInfo(UNITD_BOOT_LOG,
+        logInfo(ALL,
                 "The %s unit with the %s command returned the following values:\n"
                 "type = %s\n"
                 "pid = %d\n"
@@ -280,8 +279,7 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
         if (waitPidRes == 0) {
             if (command && argv) {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "To stop the %s unit will be used a COMMAND\n",
-                            unitName);
+                    logInfo(ALL, "To stop the %s unit will be used a COMMAND\n", unitName);
                 child = fork();
                 switch (child) {
                 case 0:
@@ -295,15 +293,14 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
                         (void)execv(command, argv);
                     _exit(errno);
                 case -1:
-                    logError(UNITD_BOOT_LOG, "src/core/commands/commands.c", "stopDaemon", errno,
+                    logError(ALL, "src/core/commands/commands.c", "stopDaemon", errno,
                              strerror(errno), "Unable to execute fork");
                     *pData->exitCode = EXIT_FAILURE;
                     return EXIT_FAILURE;
                 }
             } else {
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "To stop the %s unit will be used a SIGTERM signal\n",
-                            unitName);
+                    logInfo(ALL, "To stop the %s unit will be used a SIGTERM signal\n", unitName);
                 kill(pid, SIGTERM);
             }
         }
@@ -339,7 +336,7 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
     *pData->signalNum = SIGKILL;
     setStopAndDuration(&pData);
     if (DEBUG)
-        logInfo(UNITD_BOOT_LOG,
+        logInfo(ALL,
                 "The %s unit has been stopped with the following values:\n"
                 "type = %s\n"
                 "pid = %d\n"

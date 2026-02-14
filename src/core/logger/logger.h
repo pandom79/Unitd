@@ -22,15 +22,12 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
  * 0x1000
  * ....
  * 0x11111 (ALL)
- * To get these values more short, convert them in hex mode.
+ * Convert them in hex mode.
 */
 #define CONSOLE 0x1
-#define UNITD_BOOT_LOG 0x2
-#define SYSTEM 0x4
-#define UNITLOGD_BOOT_LOG 0x8
+#define SYSTEM 0x2
+#define UNITLOGD_BOOT_LOG 0x4
 #define ALL 0x1F
-
-extern FILE *UNITD_BOOT_LOG_FILE;
 
 void logInfo(int options, const char *format, ...);
 void logWarning(int options, const char *format, ...);

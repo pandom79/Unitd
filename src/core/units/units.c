@@ -638,15 +638,15 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
     }
     /* Executing the glob function */
     if (DEBUG && currentState != NO_STATE)
-        logWarning(UNITD_BOOT_LOG, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
+        logWarning(ALL, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         /* Aggregate the patterns if unitname is null */
         if (!unitNameArg) {
             if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0)
-                logWarning(UNITD_BOOT_LOG, "No timers found for %s state.\n",
+                logWarning(SYSTEM, "No timers found for %s state.\n",
                            STATE_DATA_ITEMS[currentState].desc);
             if ((rv = glob(patternPath, GLOB_APPEND, NULL, &results)) != 0)
-                logWarning(UNITD_BOOT_LOG, "No path units found for %s state.\n",
+                logWarning(SYSTEM, "No path units found for %s state.\n",
                            STATE_DATA_ITEMS[currentState].desc);
         }
         lenResults = results.gl_pathc;
@@ -654,7 +654,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
         if (!(*units))
             *units = arrayNew(unitRelease);
         if (DEBUG && currentState != NO_STATE)
-            logInfo(UNITD_BOOT_LOG, "Found %d units in %s/%s!\n", lenResults, path, dirName);
+            logInfo(ALL, "Found %d units in %s/%s!\n", lenResults, path, dirName);
         for (size_t i = 0; i < lenResults; i++) {
             /* Get the unit path */
             unitPath = results.gl_pathv[i];
@@ -679,8 +679,8 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                 unit->enabled =
                     (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
                 if (DEBUG)
-                    logInfo(UNITD_BOOT_LOG, "Unit name = '%s', path = '%s'. Parsing it ...\n",
-                            unitName, unitPath);
+                    logInfo(ALL, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName,
+                            unitPath);
                 /* Parse the Unit file */
                 if (parse) {
                     switch (unit->type) {
@@ -748,11 +748,11 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                 }
             } else {
                 if (DEBUG) {
-                    logWarning(UNITD_BOOT_LOG, "\n[*] CONFIGURATION ERRORS\n");
+                    logWarning(ALL, "\n[*] CONFIGURATION ERRORS\n");
                     for (size_t i = 0; i < lenResults; i++) {
                         unit = arrayGet(*units, i);
-                        logInfo(UNITD_BOOT_LOG, "Unit name = '%s'\n", unit->name);
-                        arrayPrint(UNITD_BOOT_LOG, &((Unit *)arrayGet(*units, i))->errors, true);
+                        logInfo(ALL, "Unit name = '%s'\n", unit->name);
+                        arrayPrint(ALL, &((Unit *)arrayGet(*units, i))->errors, true);
                     }
                 }
             }
@@ -764,7 +764,7 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                      "Zero units found for %s state", STATE_DATA_ITEMS[currentState].desc);
         else {
             if (DEBUG)
-                logWarning(UNITD_BOOT_LOG, "Zero units found for %s state\n",
+                logWarning(ALL, "Zero units found for %s state\n",
                            STATE_DATA_ITEMS[currentState].desc);
         }
     }

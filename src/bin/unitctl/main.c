@@ -14,7 +14,6 @@ char *UNITS_USER_LOCAL_PATH;
 char *UNITS_USER_ENAB_PATH;
 char *UNITD_USER_CONF_PATH;
 char *UNITD_USER_TIMER_DATA_PATH;
-char *UNITD_USER_LOG_PATH;
 char *SOCKET_USER_PATH;
 
 static bool getSkipCheckAdmin(Command command)
