@@ -9,8 +9,8 @@ FROM="$2"
 TO="$3"
 
 if [ $OPERATION == "remove" ]; then
-    rm -rf $TO || true
+	rm -rf $TO || true
 elif [ $OPERATION == "add" ]; then
-    rm -rf $TO || true
-    ln -s $FROM $TO
+	rm -rf $TO || true
+	ln -s $FROM $TO
 fi

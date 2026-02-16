@@ -3,5 +3,5 @@
 export PATH=$PATH
 
 if [ -z "$VIRTUALIZATION" ]; then
-    udevadm control --exit
+	udevadm control --exit
 fi

@@ -8,99 +8,99 @@ COMMAND=
 RANGES=
 
 __unitlogctl() {
-    case $COMMAND in
-    "show-boot")
-        unitlogctl list-boots | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-    "vacuum")
-        # The last boot idx (terminated or not) is always excluded.
-        unitlogctl list-boots | head -n -3 | tail -n +2 | awk '{print $1}'
-        ;;
-    esac
+	case $COMMAND in
+	"show-boot")
+		unitlogctl list-boots | head -n -2 | tail -n +2 | awk '{print $1}'
+		;;
+	"vacuum")
+		# The last boot idx (terminated or not) is always excluded.
+		unitlogctl list-boots | head -n -3 | tail -n +2 | awk '{print $1}'
+		;;
+	esac
 }
 
 __contains_word() {
-    local w word=$1
-    shift
-    for w in "$@"; do
-        [[ $w = "$word" ]] && return
-    done
+	local w word=$1
+	shift
+	for w in "$@"; do
+		[[ $w = "$word" ]] && return
+	done
 }
 
 __get_boot_idx() { { __unitlogctl; } | { while read -r a; do echo "$a"; done; }; }
 
 __set_ranges() {
-    local idx_list=$1
-    shift
-    local new_idx_list
-    for idx in ${idx_list[*]}; do
-        for curr_idx in ${idx_list[*]}; do
-            if [ $curr_idx -gt $idx ]; then
-                new_idx_list+="$idx..$curr_idx "
-            fi
-        done
-    done
-    RANGES=("$new_idx_list")
+	local idx_list=$1
+	shift
+	local new_idx_list
+	for idx in ${idx_list[*]}; do
+		for curr_idx in ${idx_list[*]}; do
+			if [ $curr_idx -gt $idx ]; then
+				new_idx_list+="$idx..$curr_idx "
+			fi
+		done
+	done
+	RANGES=("$new_idx_list")
 }
 
 _unitlogctl() {
-    local cur=${COMP_WORDS[COMP_CWORD]}
-    local line=${COMP_WORDS[*]}
-    local -A COMMANDS=(
-        [SYSTEM]='show-log list-boots show-boot index-repair vacuum show-size show-current'
-    )
-    local -A OPTS=(
-        [SYSTEM]=' --follow --pager --debug --help --version'
-    )
-    local comps cur_orig
-    local -a entries new_entries
+	local cur=${COMP_WORDS[COMP_CWORD]}
+	local line=${COMP_WORDS[*]}
+	local -A COMMANDS=(
+		[SYSTEM]='show-log list-boots show-boot index-repair vacuum show-size show-current'
+	)
+	local -A OPTS=(
+		[SYSTEM]=' --follow --pager --debug --help --version'
+	)
+	local comps cur_orig
+	local -a entries new_entries
 
-    cur_orig=$cur
-    if [[ $cur =~ '\\' ]]; then
-        cur="$(echo $cur | xargs echo)"
-    else
-        cur_orig="$(printf '%q' $cur)"
-    fi
+	cur_orig=$cur
+	if [[ $cur =~ '\\' ]]; then
+		cur="$(echo $cur | xargs echo)"
+	else
+		cur_orig="$(printf '%q' $cur)"
+	fi
 
-    entries=${COMMANDS[SYSTEM]}
-    entries+=${OPTS[SYSTEM]}
+	entries=${COMMANDS[SYSTEM]}
+	entries+=${OPTS[SYSTEM]}
 
-    # Command handling
-    case ${line} in
-    *" show-log "*) COMMAND="show-log" ;;
-    *" list-boots "*) COMMAND="list-boots" ;;
-    *" show-boot "*) COMMAND="show-boot" ;;
-    *" index-repair "*) COMMAND="index-repair" ;;
-    *" vacuum "*) COMMAND="vacuum" ;;
-    *" show-size "*) COMMAND="show-size" ;;
-    *" show-current "*) COMMAND="show-current" ;;
-    esac
+	# Command handling
+	case ${line} in
+	*" show-log "*) COMMAND="show-log" ;;
+	*" list-boots "*) COMMAND="list-boots" ;;
+	*" show-boot "*) COMMAND="show-boot" ;;
+	*" index-repair "*) COMMAND="index-repair" ;;
+	*" vacuum "*) COMMAND="vacuum" ;;
+	*" show-size "*) COMMAND="show-size" ;;
+	*" show-current "*) COMMAND="show-current" ;;
+	esac
 
-    if [ ! -z $COMMAND ]; then
-        entries=()
-        if [ $COMMAND == 'show-boot' -o $COMMAND == 'vacuum' ]; then
-            entries=$(__get_boot_idx)
-            if [ $COMMAND == 'vacuum' ]; then
-                __set_ranges "$entries"
-                entries+=" $RANGES"
-            fi
-        fi
-        entries+=${OPTS[SYSTEM]}
-    fi
+	if [ ! -z $COMMAND ]; then
+		entries=()
+		if [ $COMMAND == 'show-boot' -o $COMMAND == 'vacuum' ]; then
+			entries=$(__get_boot_idx)
+			if [ $COMMAND == 'vacuum' ]; then
+				__set_ranges "$entries"
+				entries+=" $RANGES"
+			fi
+		fi
+		entries+=${OPTS[SYSTEM]}
+	fi
 
-    # Remove duplicate entries
-    for entry in ${entries}; do
-        if ! __contains_word "$entry" ${line}; then
-            new_entries+="$entry "
-        fi
-    done
-    comps=${new_entries}
+	# Remove duplicate entries
+	for entry in ${entries}; do
+		if ! __contains_word "$entry" ${line}; then
+			new_entries+="$entry "
+		fi
+	done
+	comps=${new_entries}
 
-    # Show data
-    COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
-    unset COMMAND
-    unset RANGES
-    return 0
+	# Show data
+	COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
+	unset COMMAND
+	unset RANGES
+	return 0
 }
 
 complete -F _unitlogctl unitlogctl

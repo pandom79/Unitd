@@ -12,13 +12,13 @@ UNITS_ENAB_PATH="${DESTDIR}$5"
 UNITD_TIMER_DATA_PATH="${DESTDIR}$6"
 SYSCONFDIR="${7:1}"
 
-# Export like environment variables to satisfy unitd check unit script.
+# Set environment variables to satisfy unitd check unit script.
 export UNITS_PATH="$UNITS_PATH"
 export UNITS_USER_PATH="$UNITS_USER_PATH"
 export UNITS_ENAB_PATH="$UNITS_ENAB_PATH"
 export UNITD_TIMER_DATA_PATH="$UNITD_TIMER_DATA_PATH"
 
-printf "Received the following parameter:\n"
+printf "Received the following parameters:\n"
 printf "DESTDIR=$DESTDIR\n"
 printf "PREFIX=$PREFIX\n"
 printf "SBIN_PATH=$SBIN_PATH\n"
@@ -40,19 +40,19 @@ cp -v ../units/*.unit "$UNITS_PATH"
 
 printf "=> Enabling units ...\n"
 # We have to use relative symlinks to enable units.
-# Let's to find how many levels have to go up.
+# Let's figure out how many levels have to go up.
 cd "$UNITS_PATH"
 [ -z "$DESTDIR" ] && DESTDIR="/"
 while [ $(pwd) != "$DESTDIR" ]; do
-    cd ..
-    LEVELS+="../"
+	cd ..
+	LEVELS+="../"
 done
 # Re-enter in UNITS_PATH to set relative symlinks.
 cd "$UNITS_PATH"
 for state in ${STATES[@]}; do
-    [ "$state" != "single-user.state" ] &&
-    ln -rsfv agetty-1.unit "${LEVELS}${SYSCONFDIR}/unitd/units/$state" ||
-    ln -rsfv sulogin.unit "${LEVELS}${SYSCONFDIR}/unitd/units/$state"
+	[ "$state" != "single-user.state" ] &&
+		ln -rsfv agetty-1.unit "${LEVELS}${SYSCONFDIR}/unitd/units/$state" ||
+		ln -rsfv sulogin.unit "${LEVELS}${SYSCONFDIR}/unitd/units/$state"
 done
 
 printf "Done!\n"

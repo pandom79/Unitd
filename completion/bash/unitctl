@@ -7,143 +7,143 @@
 COMMAND=
 
 __unitctl() {
-    local mode=$1
-    shift 1
-    case $COMMAND in
-    "enable")
-        unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-    "disable")
-        unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-    "re-enable" | "restart" | "status" | "list-requires" | "list-conflicts" | "list-states" | "cat" | "edit")
-        unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-    "start")
-        unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-    "stop")
-        unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
-            unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
-        ;;
-    esac
+	local mode=$1
+	shift 1
+	case $COMMAND in
+	"enable")
+		unitctl $mode list-disabled | head -n -2 | tail -n +2 | awk '{print $1}'
+		;;
+	"disable")
+		unitctl $mode list-enabled | head -n -2 | tail -n +2 | awk '{print $1}'
+		;;
+	"re-enable" | "restart" | "status" | "list-requires" | "list-conflicts" | "list-states" | "cat" | "edit")
+		unitctl $mode list | head -n -2 | tail -n +2 | awk '{print $1}'
+		;;
+	"start")
+		unitctl $mode list-dead | head -n -2 | tail -n +2 | awk '{print $1}'
+		;;
+	"stop")
+		unitctl $mode list-started | head -n -2 | tail -n +2 | awk '{print $1}' &&
+			unitctl $mode list-failed | head -n -2 | tail -n +2 | awk '{print $1}'
+		;;
+	esac
 }
 
 __contains_word() {
-    local w word=$1
-    shift
-    for w in "$@"; do
-        [[ $w = "$word" ]] && return
-    done
+	local w word=$1
+	shift
+	for w in "$@"; do
+		[[ $w = "$word" ]] && return
+	done
 }
 
 print_value() {
-    local code="[[1;33m" equals=1 value="$1"
-    shift
-    local len=${#code}
-    for ((i = 1; i < $len; i++)); do
-        if [ "${value:$i:1}" != "${code:$i:1}" ]; then
-            equals=0
-            break
-        fi
-    done
-    if [ $equals -eq 1 ]; then
-        value="${value:7}"
-        value="${value::-4}"
-    fi
-    printf "${value}\n"
+	local code="[[1;33m" equals=1 value="$1"
+	shift
+	local len=${#code}
+	for ((i = 1; i < $len; i++)); do
+		if [ "${value:$i:1}" != "${code:$i:1}" ]; then
+			equals=0
+			break
+		fi
+	done
+	if [ $equals -eq 1 ]; then
+		value="${value:7}"
+		value="${value::-4}"
+	fi
+	printf "${value}\n"
 }
 
 __get_units() { { __unitctl $1; } | { while read -r a; do print_value "$a"; done; }; }
 
 _unitctl() {
-    local cur=${COMP_WORDS[COMP_CWORD]}
-    local line=${COMP_WORDS[*]}
-    local -A COMMANDS=(
-        [SYSTEM]='enable re-enable disable restart start stop status list-requires list-conflicts list-states cat edit create list list-enabled list-disabled list-started list-dead list-failed list-restartable list-restarted list-timers list-paths analyze poweroff reboot halt kexec get-default set-default'
-        [USER]='enable re-enable disable restart start stop status list-requires list-conflicts list-states cat edit create list list-enabled list-disabled list-started list-dead list-failed list-restartable list-restarted list-timers list-paths analyze poweroff'
-    )
-    local -A OPTS=(
-        [SYSTEM]=' --reset --run --force --debug --help --no-wtmp --only-wtmp --no-wall --user --version '
-        [USER]=' --reset --run --force --debug --help --version '
-    )
-    local mode comps cur_orig
-    local -a entries new_entries
+	local cur=${COMP_WORDS[COMP_CWORD]}
+	local line=${COMP_WORDS[*]}
+	local -A COMMANDS=(
+		[SYSTEM]='enable re-enable disable restart start stop status list-requires list-conflicts list-states cat edit create list list-enabled list-disabled list-started list-dead list-failed list-restartable list-restarted list-timers list-paths analyze poweroff reboot halt kexec get-default set-default'
+		[USER]='enable re-enable disable restart start stop status list-requires list-conflicts list-states cat edit create list list-enabled list-disabled list-started list-dead list-failed list-restartable list-restarted list-timers list-paths analyze poweroff'
+	)
+	local -A OPTS=(
+		[SYSTEM]=' --reset --run --force --debug --help --no-wtmp --only-wtmp --no-wall --user --version '
+		[USER]=' --reset --run --force --debug --help --version '
+	)
+	local mode comps cur_orig
+	local -a entries new_entries
 
-    cur_orig=$cur
-    if [[ $cur =~ '\\' ]]; then
-        cur="$(echo $cur | xargs echo)"
-    else
-        cur_orig="$(printf '%q' $cur)"
-    fi
+	cur_orig=$cur
+	if [[ $cur =~ '\\' ]]; then
+		cur="$(echo $cur | xargs echo)"
+	else
+		cur_orig="$(printf '%q' $cur)"
+	fi
 
-    # Check mode
-    if __contains_word "--user" ${line}; then
-        mode="--user"
-        entries=${COMMANDS[USER]}
-        entries+=${OPTS[USER]}
-    else
-        mode=""
-        entries=${COMMANDS[SYSTEM]}
-        entries+=${OPTS[SYSTEM]}
-    fi
+	# Check mode
+	if __contains_word "--user" ${line}; then
+		mode="--user"
+		entries=${COMMANDS[USER]}
+		entries+=${OPTS[USER]}
+	else
+		mode=""
+		entries=${COMMANDS[SYSTEM]}
+		entries+=${OPTS[SYSTEM]}
+	fi
 
-    # Command handling
-    case ${line} in
-    *" enable "*) COMMAND="enable" ;;
-    *" re-enable "*) COMMAND="re-enable" ;;
-    *" disable "*) COMMAND="disable" ;;
-    *" restart "*) COMMAND="restart" ;;
-    *" start "*) COMMAND="start" ;;
-    *" stop "*) COMMAND="stop" ;;
-    *" status "*) COMMAND="status" ;;
-    *" list-requires "*) COMMAND="list-requires" ;;
-    *" list-conflicts "*) COMMAND="list-conflicts" ;;
-    *" list-states "*) COMMAND="list-states" ;;
-    *" cat "*) COMMAND="cat" ;;
-    *" edit "*) COMMAND="edit" ;;
-    *" set-default "*)
-        local -a states=('multi-user multi-user-net graphical custom single-user')
-        entries=${states}
-        ;;
-    *" get-default "*) COMMAND="get-default" ;;
-    *" create "*) COMMAND="create" ;;
-    *" list "*) COMMAND="list" ;;
-    *" list-enabled "*) COMMAND="list-enabled" ;;
-    *" list-disabled "*) COMMAND="list-disabled" ;;
-    *" list-started "*) COMMAND="list-started" ;;
-    *" list-dead "*) COMMAND="list-dead" ;;
-    *" list-failed "*) COMMAND="list-failed" ;;
-    *" list-restartable "*) COMMAND="list-restartable" ;;
-    *" list-restarted "*) COMMAND="list-restarted" ;;
-    *" analyze "*) COMMAND="analyze" ;;
-    *" poweroff "*) COMMAND="poweroff" ;;
-    *" reboot "*) COMMAND="reboot" ;;
-    *" halt "*) COMMAND="halt" ;;
-    *" kexec "*) COMMAND="kexec" ;;
-    esac
+	# Command handling
+	case ${line} in
+	*" enable "*) COMMAND="enable" ;;
+	*" re-enable "*) COMMAND="re-enable" ;;
+	*" disable "*) COMMAND="disable" ;;
+	*" restart "*) COMMAND="restart" ;;
+	*" start "*) COMMAND="start" ;;
+	*" stop "*) COMMAND="stop" ;;
+	*" status "*) COMMAND="status" ;;
+	*" list-requires "*) COMMAND="list-requires" ;;
+	*" list-conflicts "*) COMMAND="list-conflicts" ;;
+	*" list-states "*) COMMAND="list-states" ;;
+	*" cat "*) COMMAND="cat" ;;
+	*" edit "*) COMMAND="edit" ;;
+	*" set-default "*)
+		local -a states=('multi-user multi-user-net graphical custom single-user')
+		entries=${states}
+		;;
+	*" get-default "*) COMMAND="get-default" ;;
+	*" create "*) COMMAND="create" ;;
+	*" list "*) COMMAND="list" ;;
+	*" list-enabled "*) COMMAND="list-enabled" ;;
+	*" list-disabled "*) COMMAND="list-disabled" ;;
+	*" list-started "*) COMMAND="list-started" ;;
+	*" list-dead "*) COMMAND="list-dead" ;;
+	*" list-failed "*) COMMAND="list-failed" ;;
+	*" list-restartable "*) COMMAND="list-restartable" ;;
+	*" list-restarted "*) COMMAND="list-restarted" ;;
+	*" analyze "*) COMMAND="analyze" ;;
+	*" poweroff "*) COMMAND="poweroff" ;;
+	*" reboot "*) COMMAND="reboot" ;;
+	*" halt "*) COMMAND="halt" ;;
+	*" kexec "*) COMMAND="kexec" ;;
+	esac
 
-    if [ ! -z $COMMAND ]; then
-        entries=$(__get_units $mode)
-        if [[ "$mode" = '--user' ]]; then
-            entries+=${OPTS[USER]}
-        else
-            entries+=${OPTS[SYSTEM]}
-        fi
-    fi
+	if [ ! -z $COMMAND ]; then
+		entries=$(__get_units $mode)
+		if [[ "$mode" = '--user' ]]; then
+			entries+=${OPTS[USER]}
+		else
+			entries+=${OPTS[SYSTEM]}
+		fi
+	fi
 
-    # Remove duplicate entries
-    for entry in ${entries}; do
-        if ! __contains_word "$entry" ${line}; then
-            new_entries+="$entry "
-        fi
-    done
-    comps=${new_entries}
+	# Remove duplicate entries
+	for entry in ${entries}; do
+		if ! __contains_word "$entry" ${line}; then
+			new_entries+="$entry "
+		fi
+	done
+	comps=${new_entries}
 
-    # Show data
-    COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
-    unset COMMAND
-    return 0
+	# Show data
+	COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
+	unset COMMAND
+	return 0
 }
 
 complete -F _unitctl unitctl

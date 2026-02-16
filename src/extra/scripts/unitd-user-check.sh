@@ -15,26 +15,26 @@ USER_NAME="$5"
 
 # Check UNITS_USER_LOCAL_PATH
 if [ ! -d "$UNITS_USER_LOCAL_PATH" ]; then
-    mkdir -p "$UNITS_USER_LOCAL_PATH"
-    chmod 0755 -R "$UNITS_USER_LOCAL_PATH"
+	mkdir -p "$UNITS_USER_LOCAL_PATH"
+	chmod 0755 -R "$UNITS_USER_LOCAL_PATH"
 fi
 
 # Check UNITS_USER_ENAB_PATH
 UNITS_USER_ENAB_PATH="$UNITS_USER_ENAB_PATH/$USER_STATE"
 if [ ! -d "$UNITS_USER_ENAB_PATH" ]; then
-    mkdir -p "$UNITS_USER_ENAB_PATH"
-    chmod 0755 -R "$UNITS_USER_ENAB_PATH"
+	mkdir -p "$UNITS_USER_ENAB_PATH"
+	chmod 0755 -R "$UNITS_USER_ENAB_PATH"
 fi
 
 # Check UNITD_USER_TIMER_PATH
 if [ ! -d "$UNITD_USER_TIMER_PATH" ]; then
-    mkdir -p "$UNITD_USER_TIMER_PATH"
-    chmod 0755 -R "$UNITD_USER_TIMER_PATH"
+	mkdir -p "$UNITD_USER_TIMER_PATH"
+	chmod 0755 -R "$UNITD_USER_TIMER_PATH"
 fi
 
 # Check the instance is not already running for the user.
 # Please note that if we run the instance under valgrind supervision then this check fails!!
 NUM_INSTANCES=$(pgrep -l -u "$USER_UID" -U "$USER_UID" -x unitd | wc -l)
 if [ $NUM_INSTANCES -gt 1 ]; then
-    exit $EUIRUN
+	exit $EUIRUN
 fi

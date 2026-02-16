@@ -5,42 +5,42 @@
 # Copyright © 2022 Domenico Panella <pandom79@gmail.com>
 
 __contains_word() {
-    local w word=$1
-    shift
-    for w in "$@"; do
-        [[ $w = "$word" ]] && return
-    done
+	local w word=$1
+	shift
+	for w in "$@"; do
+		[[ $w = "$word" ]] && return
+	done
 }
 
 _unitlogd() {
-    local cur=${COMP_WORDS[COMP_CWORD]}
-    local line=${COMP_WORDS[*]}
-    local -A OPTS=(
-        [SYSTEM]=' --log --kernel --debug --version --help'
-    )
-    local comps cur_orig
-    local -a entries new_entries
+	local cur=${COMP_WORDS[COMP_CWORD]}
+	local line=${COMP_WORDS[*]}
+	local -A OPTS=(
+		[SYSTEM]=' --log --kernel --debug --version --help'
+	)
+	local comps cur_orig
+	local -a entries new_entries
 
-    cur_orig=$cur
-    if [[ $cur =~ '\\' ]]; then
-        cur="$(echo $cur | xargs echo)"
-    else
-        cur_orig="$(printf '%q' $cur)"
-    fi
+	cur_orig=$cur
+	if [[ $cur =~ '\\' ]]; then
+		cur="$(echo $cur | xargs echo)"
+	else
+		cur_orig="$(printf '%q' $cur)"
+	fi
 
-    entries=${OPTS[SYSTEM]}
+	entries=${OPTS[SYSTEM]}
 
-    # Remove duplicate entries
-    for entry in ${entries}; do
-        if ! __contains_word "$entry" ${line}; then
-            new_entries+="$entry "
-        fi
-    done
-    comps=${new_entries}
+	# Remove duplicate entries
+	for entry in ${entries}; do
+		if ! __contains_word "$entry" ${line}; then
+			new_entries+="$entry "
+		fi
+	done
+	comps=${new_entries}
 
-    # Show data
-    COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
-    return 0
+	# Show data
+	COMPREPLY=($(compgen -o filenames -W '$comps' -- "$cur_orig"))
+	return 0
 }
 
 complete -F _unitlogd unitlogd
