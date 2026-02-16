@@ -148,9 +148,7 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
 #endif
-    /* Start the cleaner */
     startCleaner();
-    /* Start the notifiers */
     startNotifier(NULL);
     //******************* DEFAULT OR CMDLINE STATE ************************
     /* Set the default state variable.
@@ -158,19 +156,15 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
      * unit which makes this job has been already called.
      */
     if (getDefaultStateStr(&destDefStateSyml) != 0) {
-        /* If we are here then the symlink is not valid or missed */
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-        /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
     STATE_DEFAULT = getStateByStr(destDefStateSyml);
     if (STATE_DEFAULT == NO_STATE) {
-        /* If we are here then the symlink points to a bad destination */
         logErrorStr(CONSOLE, "The default state symlink points to a bad destination (%s)\n",
                     destDefStateSyml);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-        /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
@@ -178,7 +172,7 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
     if (DEBUG)
         logInfo(ALL, "The default.state symlink points to %s\n",
                 STATE_DATA_ITEMS[STATE_DEFAULT].desc);
-    /* Parsing the units for the cmdline or default state */
+    /* Parsing the units */
     if (STATE_CMDLINE_DIR) {
         if (DEBUG)
             logInfo(ALL, "The state of the cmdline is %s\n", STATE_DATA_ITEMS[STATE_CMDLINE].desc);
@@ -191,26 +185,23 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
     /* Zero units are not allowed in this state (default/cmdline) */
     if (rv == GLOB_NOMATCH) {
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
-        /* Set the default shutdown command */
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
-    /* We put the pipes to listen before to start processes to be ready for restart. */
+    /* Let's listen to pipes to be ready for restarting. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
     /* Create the boot units array */
     addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-    /* Unitd is blocked here listening the client requests */
+    /* Let's listen to client requests */
     listenSocketRequest();
 
 shutdown:
     /* Shutdown start */
     SHUTDOWN_START = timeNew(NULL);
-    /* Stop the cleaner */
     stopCleaner();
-    /* Stop the notifiers */
     stopNotifier(NULL);
     //******************* POWEROFF (HALT) / REBOOT STATE **********************
     logInfo(CONSOLE, "%sSystem is going down ...%s\n", WHITE_COLOR, DEFAULT_COLOR);
@@ -282,9 +273,7 @@ int unitdUserInit(UnitdData **unitdData, bool isAggregate)
         logInfo(CONSOLE, "socket user path = %s\n", SOCKET_USER_PATH);
         logInfo(CONSOLE, "Debug = %s\n", DEBUG ? "True" : "False");
     }
-    /* Start the cleaner */
     startCleaner();
-    /* Start the notifiers */
     startNotifier(NULL);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
@@ -294,14 +283,14 @@ int unitdUserInit(UnitdData **unitdData, bool isAggregate)
     stringAppendStr(&STATE_USER_DIR, ".state");
     rv = loadUnits(units, UNITS_USER_ENAB_PATH, STATE_USER_DIR, STATE_USER, isAggregate, NULL,
                    PARSE_UNIT, true);
-    /* We put the pipes to listen before to start processes to be ready for restart. */
+    /* Let's listen to pipes to be ready for restarting. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
     /* Create the boot units array */
     addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-    /* Unitd is blocked here listening the client requests */
+    /* Let's listen to client requests */
     listenSocketRequest();
 
 shutdown:

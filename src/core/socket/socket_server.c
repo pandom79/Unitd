@@ -469,7 +469,7 @@ int getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn,
                                        !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
-        /* We lock the mutex for the same reasons explained in listenPipeThread Func.
+        /* We lock the mutex for the same reason explained in listenPipeThread Func.
          * Take a quick look there.
         */
         handleMutex(unit->mutex, true);
