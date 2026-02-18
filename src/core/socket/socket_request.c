@@ -26,20 +26,11 @@ typedef enum {
     OPTION = 2,
 } Keys;
 
-static const char *asStr(Keys key)
-{
-    assert(key >= COMMAND);
-    switch (key) {
-    case COMMAND:
-        return "Command";
-    case ARG:
-        return "Arg";
-    case OPTION:
-        return "Option";
-    default:
-        return "";
-    }
-}
+static const key_value KEY_VALUE[] = {
+    { COMMAND, "Command" },
+    { ARG, "Arg" },
+    { OPTION, "Option" },
+};
 
 char *marshallRequest(SockMessageIn *sockMessageIn)
 {
@@ -52,7 +43,7 @@ char *marshallRequest(SockMessageIn *sockMessageIn)
     assert(sockMessageIn->command != NO_COMMAND);
 
     /* Command */
-    buffer = stringNew(asStr(COMMAND));
+    buffer = stringNew(KEY_VALUE[COMMAND].value);
     stringAppendStr(&buffer, ASSIGNER);
     sprintf(commandStr, "%d", sockMessageIn->command);
     stringAppendStr(&buffer, commandStr);
@@ -60,7 +51,7 @@ char *marshallRequest(SockMessageIn *sockMessageIn)
     /* Unit name */
     arg = sockMessageIn->arg;
     if (sockMessageIn->arg) {
-        stringAppendStr(&buffer, asStr(ARG));
+        stringAppendStr(&buffer, KEY_VALUE[ARG].value);
         stringAppendStr(&buffer, ASSIGNER);
         stringAppendStr(&buffer, arg);
         stringAppendStr(&buffer, TOKEN);
@@ -69,7 +60,7 @@ char *marshallRequest(SockMessageIn *sockMessageIn)
     options = sockMessageIn->options;
     len = (options ? options->size : 0);
     if (len > 0)
-        optionKey = asStr(OPTION);
+        optionKey = KEY_VALUE[OPTION].value;
     for (int i = 0; i < len; i++) {
         stringAppendStr(&buffer, optionKey);
         stringAppendStr(&buffer, ASSIGNER);
@@ -101,15 +92,15 @@ int unmarshallRequest(char *buffer, SockMessageIn **sockMessageIn)
         } else {
             value = strstr(entries, ASSIGNER) + 1;
             stringCopyN(key, entries, strlen(entries) - strlen(value) - 1);
-            if (stringEquals(asStr(COMMAND), key)) {
+            if (stringEquals(KEY_VALUE[COMMAND].value, key)) {
                 (*sockMessageIn)->command = atoi(value);
                 goto next;
             }
-            if (stringEquals(asStr(ARG), key)) {
+            if (stringEquals(KEY_VALUE[ARG].value, key)) {
                 (*sockMessageIn)->arg = stringNew(value);
                 goto next;
             }
-            if (stringEquals(asStr(OPTION), key)) {
+            if (stringEquals(KEY_VALUE[OPTION].value, key)) {
                 if (!(*options))
                     *options = arrayNew(objectRelease);
                 arrayAdd(*options, stringNew(value));

@@ -22,6 +22,11 @@ typedef struct {
     Array *options;
 } SockMessageIn;
 
+typedef struct {
+    int key;
+    const char *value;
+} key_value;
+
 Command getCommand(const char *command);
 int initSocket(struct sockaddr_un *);
 int unitdSockConn(int *, struct sockaddr_un *);
