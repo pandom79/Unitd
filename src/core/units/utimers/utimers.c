@@ -106,7 +106,7 @@ void setNextTimeDate(Unit **unit)
     nextTime = (*unit)->nextTime;
     /* Set next time (Date) */
     char *nextTimeDate = stringGetTimeStamp(nextTime, false, "%d-%m-%Y %H:%M:%S");
-    assert(stringCopy((*unit)->nextTimeDate, nextTimeDate));
+    stringCopy((*unit)->nextTimeDate, nextTimeDate);
     if (DEBUG)
         logInfo(SYSTEM, "%s: next time in seconds = %lu, Date = %s\n", unitName, *nextTime->sec,
                 nextTimeDate);
@@ -134,7 +134,7 @@ void setLeftTimeAndDuration(Unit **unit)
     *nextTime->durationMillisec = 0;
     char *leftTimeDuration = *leftTime <= 0 ? stringNew("expired") :
                                               stringGetDiffTime(nextTime, current);
-    assert(stringCopy((*unit)->leftTimeDuration, leftTimeDuration));
+    stringCopy((*unit)->leftTimeDuration, leftTimeDuration);
     if (DEBUG)
         logInfo(SYSTEM, "%s: Left time in seconds = %lu, Duration = %s\n", unitName, *leftTime,
                 leftTimeDuration);
@@ -361,7 +361,7 @@ int checkInterval(Unit **unit)
         }
         /* Trim and copy */
         stringTrim(interval, NULL);
-        assert(stringCopy(intervalStr, interval));
+        stringCopy(intervalStr, interval);
     }
 
     objectRelease(&interval);
@@ -691,8 +691,8 @@ void *startTimerUnitThread(void *arg)
              * In this way, the requires check is satisfied as well.
             */
             *unit->processData->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
-            assert(stringCopy(unit->nextTimeDate, "-"));
-            assert(stringCopy(unit->leftTimeDuration, "-"));
+            stringCopy(unit->nextTimeDate, "-");
+            stringCopy(unit->leftTimeDuration, "-");
             /* Unlock */
             if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c",
