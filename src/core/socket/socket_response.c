@@ -105,32 +105,32 @@ typedef enum {
     NEXTTIMEDATE = 13,
     LEFTTIMEDURATION = 14,
     SIGNALNUM = 15,
-    TIMERNAME = 16,
-    TIMERPSTATE = 17,
-    PATHUNITNAME = 18,
-    PATHUNITPSTATE = 19,
-    PATH = 20,
-    RESTARTMAX = 21,
-    UNITERROR = 22,
-    EXITCODE = 23,
-    DATETIMESTART = 24,
-    DATETIMESTOP = 25,
-    INTERVAL = 26,
-    PDATAHISTORY_SEC = 27,
-    PIDH = 28,
-    EXITCODEH = 29,
-    PSTATEH = 30,
-    SIGNALNUMH = 31,
-    FINALSTATUSH = 32,
-    DATETIMESTARTH = 33,
-    DATETIMESTOPH = 34,
-    DURATIONH = 35
+    IS_CHANGED = 16,
+    TIMERNAME = 17,
+    TIMERPSTATE = 18,
+    PATHUNITNAME = 19,
+    PATHUNITPSTATE = 20,
+    PATH = 21,
+    RESTARTMAX = 22,
+    UNITERROR = 23,
+    EXITCODE = 24,
+    DATETIMESTART = 25,
+    DATETIMESTOP = 26,
+    INTERVAL = 27,
+    PDATAHISTORY_SEC = 28,
+    PIDH = 29,
+    EXITCODEH = 30,
+    PSTATEH = 31,
+    SIGNALNUMH = 32,
+    FINALSTATUSH = 33,
+    DATETIMESTARTH = 34,
+    DATETIMESTOPH = 35,
+    DURATIONH = 36
 } Keys;
 
 // clang-format off
 static const key_value KEY_VALUE[] = {
     { UNIT_SEC, "[Unit]" },
-    { PDATAHISTORY_SEC, "[PDataHistory]" },
     { MESSAGE, "Message" },
     { ERROR, "Error" },
     { NAME, "Name" },
@@ -146,6 +146,7 @@ static const key_value KEY_VALUE[] = {
     { NEXTTIMEDATE, "NextTimeDate" },
     { LEFTTIMEDURATION, "LeftTimeDuration" },
     { SIGNALNUM, "SignalNum" },
+    { IS_CHANGED, "IsChanged" },
     { TIMERNAME, "TimerName" },
     { TIMERPSTATE, "TimerPState" },
     { PATHUNITNAME, "PathUnitName" },
@@ -157,6 +158,7 @@ static const key_value KEY_VALUE[] = {
     { DATETIMESTART, "DateTimeStart" },
     { DATETIMESTOP, "DateTimeStop" },
     { INTERVAL, "Interval" },
+    { PDATAHISTORY_SEC, "[PDataHistory]" },
     { PIDH, "PidH" },
     { EXITCODEH, "ExitCodeH" },
     { PSTATEH, "PStateH" },
@@ -317,6 +319,13 @@ char *marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
         stringAppendStr(&buffer, ASSIGNER);
         setValueForBuffer(&buffer, *pData->signalNum);
         stringAppendStr(&buffer, TOKEN);
+        /* Unit content is changed */
+        if (unit->isChanged) {
+            stringAppendStr(&buffer, KEY_VALUE[IS_CHANGED].value);
+            stringAppendStr(&buffer, ASSIGNER);
+            stringAppendStr(&buffer, "1");
+            stringAppendStr(&buffer, TOKEN);
+        }
         if (funcType == PARSE_SOCK_RESPONSE) {
             /* Timer name */
             char *timerName = unit->timerName;
@@ -641,6 +650,10 @@ int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
                         *pData->signalNum = -1;
                     else
                         *pData->signalNum = atoi(value);
+                    goto next;
+                }
+                if (stringEquals(key, KEY_VALUE[IS_CHANGED].value)) {
+                    unitDisplay->isChanged = true;
                     goto next;
                 }
                 if (stringEquals(key, KEY_VALUE[FINALSTATUS].value)) {

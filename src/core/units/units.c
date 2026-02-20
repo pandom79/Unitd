@@ -207,6 +207,7 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
     unit->restart = (unitFrom ? unitFrom->restart : false);
     unit->restartMax = (unitFrom ? unitFrom->restartMax : -1);
     unit->type = (unitFrom ? unitFrom->type : DAEMON);
+    unit->isChanged = (unitFrom && unitFrom->isChanged ? true : false);
     //TIMER DATA
     /* The following data are only initialized here but they are allocated by parseUnitTimer() func
      * to avoid to allocate them uselessly when the unit type is different by TIMER except
@@ -335,7 +336,6 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
         /* Set the default values */
         unit->showResult = true;
         unit->isStopping = false;
-        unit->isChanged = false;
         /* Path unit data. */
         unit->pathExists = NULL;
         unit->pathExistsMonitor = NULL;

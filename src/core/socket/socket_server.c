@@ -266,51 +266,52 @@ static void resetListRes(SockMessageOut **sockMessageOut, char **buffer)
 int getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut **sockMessageOut)
 {
     char *buffer = NULL;
-    Array *unitsDisplay = arrayNew(unitRelease), **messages = &(*sockMessageOut)->messages,
-          **errors = &(*sockMessageOut)->errors, *options = sockMessageIn->options;
+    Array **unitsDisplay = &(*sockMessageOut)->unitsDisplay,
+          **messages = &(*sockMessageOut)->messages, **errors = &(*sockMessageOut)->errors,
+          *options = sockMessageIn->options;
     int rv = 0, bufferLen = 0;
     bool bootAnalyze = false;
     socklen_t optlen = sizeof(int);
     ListFilter listFilter = getListFilterByOpt(options);
-    (*sockMessageOut)->unitsDisplay = unitsDisplay;
 
     assert(*socketFd != -1);
 
+    *unitsDisplay = arrayNew(unitRelease);
     //Get bootAnalyze
     bootAnalyze = arrayContainsStr(options, OPTIONS_DATA[ANALYZE_OPT].name);
     if (!bootAnalyze) {
-        fillUnitsDisplayList(&UNITD_DATA->units, &unitsDisplay, listFilter);
+        fillUnitsDisplayList(&UNITD_DATA->units, unitsDisplay, listFilter);
         /* If the filter is TIMER or UPATH then we can pull out the units from glob
          * rather than load all and then to filter.
         */
         if (listFilter == TIMERS_FILTER || listFilter == UPATH_FILTER) {
             if (!USER_INSTANCE) {
                 /* Loading only timer units */
-                loadOtherUnits(&unitsDisplay, UNITS_PATH, NULL, false, true, listFilter);
+                loadOtherUnits(unitsDisplay, UNITS_PATH, NULL, false, true, listFilter);
             } else {
                 /* Loading only timer units */
-                loadOtherUnits(&unitsDisplay, UNITS_USER_PATH, NULL, false, true, listFilter);
-                loadOtherUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, false, true, listFilter);
+                loadOtherUnits(unitsDisplay, UNITS_USER_PATH, NULL, false, true, listFilter);
+                loadOtherUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, false, true, listFilter);
             }
         } else {
             if (!USER_INSTANCE) {
                 /* Loading all the units */
-                loadUnits(&unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, NULL,
+                loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, NULL,
                           PARSE_SOCK_RESPONSE_UNITLIST, true);
             } else {
                 /* Loading all the units */
-                loadUnits(&unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE, false, NULL,
+                loadUnits(unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE, false, NULL,
                           PARSE_SOCK_RESPONSE_UNITLIST, true);
-                loadUnits(&unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE, false, NULL,
+                loadUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE, false, NULL,
                           PARSE_SOCK_RESPONSE_UNITLIST, true);
             }
             /* Try to apply an eventual filter */
             if (listFilter != NO_FILTER)
-                applyListFilter(&unitsDisplay, listFilter);
+                applyListFilter(unitsDisplay, listFilter);
         }
     } else {
-        fillUnitsDisplayList(&UNITD_DATA->bootUnits, &unitsDisplay, NO_FILTER);
-        fillUnitsDisplayList(&UNITD_DATA->initUnits, &unitsDisplay, NO_FILTER);
+        fillUnitsDisplayList(&UNITD_DATA->bootUnits, unitsDisplay, NO_FILTER);
+        fillUnitsDisplayList(&UNITD_DATA->initUnits, unitsDisplay, NO_FILTER);
         /* Adding "boot and system execution time like messages" */
         Time *current = timeNew(NULL);
         /* Computing the duration */
@@ -328,14 +329,14 @@ int getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         timeRelease(&current);
     }
     /* unitsDisplay could be empty */
-    if (!bootAnalyze && unitsDisplay->size == 0) {
+    if (!bootAnalyze && (*unitsDisplay)->size == 0) {
         if (!(*messages))
             *messages = arrayNew(objectRelease);
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND_MSG].desc));
         goto out;
     }
     /* Sorting the array by name */
-    qsort(unitsDisplay->arr, unitsDisplay->size, sizeof(Unit *), sortUnitsByName);
+    qsort((*unitsDisplay)->arr, (*unitsDisplay)->size, sizeof(Unit *), sortUnitsByName);
 
 out:
     /* Marshall response */
@@ -349,7 +350,7 @@ out:
         resetListRes(sockMessageOut, &buffer);
         bufferLen = strlen(buffer);
     } else if (bufferLen >= MAX_SOCKBUF_SIZE) {
-        arrayRelease(&(*sockMessageOut)->unitsDisplay);
+        arrayRelease(unitsDisplay);
         objectRelease(&buffer);
         if (!(*errors))
             *errors = arrayNew(objectRelease);

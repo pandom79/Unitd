@@ -738,9 +738,10 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     ProcessData *pData = unitDisplay->processData;
                     PStateData *pStateData = pData->pStateData;
                     PState pState = pStateData->pState;
-                    /* The restarted or "continuated" units require attention */
+                    /* The restarted, "continued" or changed units require attention */
                     unitName = unitDisplay->name;
-                    if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT)
+                    if (unitDisplay->restartNum > 0 || *pData->signalNum == SIGCONT ||
+                        unitDisplay->isChanged)
                         logWarning(CONSOLE, "%s", unitName);
                     else
                         printf("%s", unitName);
@@ -883,7 +884,10 @@ int showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     PStateData *pStateData = pData->pStateData;
                     PState pState = pStateData->pState;
                     unitName = unitDisplay->name;
-                    printf("%s", unitName);
+                    if (unitDisplay->isChanged)
+                        logWarning(CONSOLE, "%s", unitName);
+                    else
+                        printf("%s", unitName);
                     len = strlen(unitName);
                     if (maxLenName < len)
                         maxLenName = len;
