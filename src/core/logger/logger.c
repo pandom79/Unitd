@@ -19,9 +19,6 @@ static void logSystem(int priority, const char *color, const char *format, va_li
             stringPrependStr(&colorStr, color);
             stringAppendStr(&colorStr, DEFAULT_COLOR);
         }
-        /* To 'va_start' function we pass 'format' to avoid compiler warning.
-         * We can do that because the "args" present in "format", are present in "colorStr" as well.
-         */
         vsyslog(priority, colorStr ? colorStr : format, *args);
         objectRelease(&colorStr);
     }
@@ -143,9 +140,6 @@ void logError(int options, const char *transUnit, const char *funcName, int retu
         stringAppendStr(&all, errDesc);
         stringAppendStr(&all, ". ");
         stringAppendStr(&all, format);
-        /* To 'va_start' function we pass 'format' to avoid compiler warning.
-         * We can do that because the same "args" present in "format", are present in "all" as well.
-         */
         va_start(args, format);
         logSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, all, &args);
         va_end(args);

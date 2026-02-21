@@ -73,7 +73,6 @@ static int writeUnitContent(State defaultState, const char *unitPath, const char
     FILE *fp = NULL;
     const char *propertyName = NULL;
 
-    /* Open unit file in write mode */
     if ((fp = fopen(unitPath, "w")) == NULL) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "writeUnitContent", errno,
                  strerror(errno), "Unable to open (write mode) %s unit", unitPath);
@@ -131,10 +130,6 @@ static int writeUnitContent(State defaultState, const char *unitPath, const char
     propertyName = UNITS_PROPERTIES_ITEMS[9].property.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
-        /* In this case, we don't consider the cmdline state which is an exception
-         * but we set the default state instead.
-         * Anyway, the user can change in whatever way wants.
-        */
         for (State state = POWEROFF; state <= REBOOT; state++) {
             if (state == defaultState)
                 fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
@@ -146,7 +141,6 @@ static int writeUnitContent(State defaultState, const char *unitPath, const char
     fprintf(fp, "\n");
 
 out:
-    /* Close file */
     fclose(fp);
     fp = NULL;
     return rv;
@@ -158,7 +152,6 @@ static int writePathUnitContent(State defaultState, const char *unitPath, const 
     FILE *fp = NULL;
     const char *propertyName = NULL;
 
-    /* Open unit file in write mode */
     if ((fp = fopen(unitPath, "w")) == NULL) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "writePathUnitContent", errno,
                  strerror(errno), "Unable to open (write mode) %s unit", unitPath);
@@ -206,10 +199,6 @@ static int writePathUnitContent(State defaultState, const char *unitPath, const 
     propertyName = UPATH_PROPERTIES_ITEMS[7].property.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
-        /* In this case, we don't consider the cmdline state which is an exception
-         * but we set the default state instead.
-         * Anyway, the user can change in whatever way wants.
-        */
         for (State state = POWEROFF; state <= REBOOT; state++) {
             if (state == defaultState)
                 fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
@@ -221,7 +210,6 @@ static int writePathUnitContent(State defaultState, const char *unitPath, const 
     fprintf(fp, "\n");
 
 out:
-    /* Close file */
     fclose(fp);
     fp = NULL;
     return rv;
@@ -232,7 +220,7 @@ static int writeTimerContent(State defaultState, const char *unitPath, const cha
     int rv = 0;
     FILE *fp = NULL;
     const char *propertyName = NULL;
-    /* Open unit file in write mode */
+
     if ((fp = fopen(unitPath, "w")) == NULL) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "writeTimerContent", errno,
                  strerror(errno), "Unable to open (write mode) %s unit", unitPath);
@@ -299,10 +287,6 @@ static int writeTimerContent(State defaultState, const char *unitPath, const cha
     propertyName = UTIMERS_PROPERTIES_ITEMS[10].property.desc;
     if (!USER_INSTANCE) {
         fprintf(fp, "# '%s' property (required and repeatable).\n", propertyName);
-        /* In this case, we don't consider the cmdline state which is an exception
-         * but we set the default state instead.
-         * Anyway, the user can change in whatever way wants.
-        */
         for (State state = POWEROFF; state <= REBOOT; state++) {
             if (state == defaultState)
                 fprintf(fp, "%s = %s\n", propertyName, STATE_DATA_ITEMS[state].desc);
@@ -314,7 +298,6 @@ static int writeTimerContent(State defaultState, const char *unitPath, const cha
     fprintf(fp, "\n");
 
 out:
-    /* Close file */
     fclose(fp);
     fp = NULL;
     return rv;
@@ -331,7 +314,6 @@ static char *getLastTime(Unit *unit)
 
     assert(unit);
 
-    /* Building the pattern */
     if (!USER_INSTANCE)
         pattern = stringNew(UNITD_TIMER_DATA_PATH);
     else
@@ -339,11 +321,9 @@ static char *getLastTime(Unit *unit)
     stringAppendChr(&pattern, '/');
     stringAppendStr(&pattern, unit->name);
     stringAppendStr(&pattern, "|last|*");
-    /* Executing the glob func */
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         size_t lenResults = results.gl_pathc;
         if (lenResults > 0) {
-            /* Should be there only one file with this pattern. */
             if (lenResults > 1) {
                 rv = 1;
                 logError(SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv, strerror(rv),
@@ -352,7 +332,6 @@ static char *getLastTime(Unit *unit)
             }
             const char *fileName = results.gl_pathv[0];
             assert(fileName);
-            /* Split the data */
             entries = stringSplit((char *)fileName, "|", false);
             assert(entries);
             int lenEntries = entries->size;
@@ -360,7 +339,6 @@ static char *getLastTime(Unit *unit)
             /* The third and fourth represents the last time and final status.*/
             timeStr = arrayGet(entries, 2);
             finalStatusStr = arrayGet(entries, 3);
-            /* Check values */
             if (!isValidNumber(timeStr, false)) {
                 rv = 1;
                 logError(SYSTEM, "src/core/socket/socket_client.c", "getLastTime", rv, strerror(rv),
@@ -373,11 +351,8 @@ static char *getLastTime(Unit *unit)
                          "The final status from '%s' file is not valid!\n", fileName);
                 goto out;
             }
-            /* Set final status as int */
             finalStatus = atoi(finalStatusStr);
-            /* Set the seconds. */
             *lastTime->sec = atol(timeStr);
-            /* Set last Time */
             lastTimeStr = stringGetTimeStamp(lastTime, false, "%d-%m-%Y %H:%M:%S");
             assert(lastTimeStr);
             stringPrependStr(&lastTimeStr, finalStatus == 0 ? GREEN_COLOR : RED_COLOR);
@@ -526,14 +501,10 @@ static int getSockMessageIn(SockMessageIn **sockMessageIn, int *socketConnection
         (*sockMessageIn)->arg = stringNew(arg);
     if (options)
         (*sockMessageIn)->options = options;
-
-    /* Socket initialize */
     if ((*socketConnection = initSocket(&name)) == -1) {
         rv = 1;
         goto out;
     }
-
-    /* Connect */
     rv = unitdSockConn(socketConnection, &name);
 
 out:
@@ -544,15 +515,12 @@ int unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
 {
     assert(command != NO_COMMAND);
 
-    /* The noWall and force options are only allowed for system instance */
     if (!USER_INSTANCE) {
-        /* Write a broadcast message to all users */
         if (!noWall) {
             sendWallMsg(command);
             msleep(5000);
         }
         if (force) {
-            /* Write a wtmp 'shutdown' record */
             if (!noWtmp)
                 writeWtmp(false);
 #ifndef UNITD_TEST
@@ -587,15 +555,12 @@ int unitdShutdown(Command command, bool force, bool noWtmp, bool noWall)
         options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[NO_WTMP_OPT].name));
     }
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, command, NULL, options)) != 0)
         goto out;
-    /* Marshalling */
     buffer = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "UnitdShutdown::Buffer sent (%lu): \n%s", strlen(buffer),
                buffer);
-    /* Sending the message */
     if ((rv = uSend(socketConnection, buffer, strlen(buffer), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "unitdShutdown", errno,
                  strerror(errno), "Send error");
@@ -622,16 +587,13 @@ int getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter li
         arrayAdd(options, stringNew(OPTIONS_DATA[ANALYZE_OPT].name));
     else if (listFilter != NO_FILTER)
         arrayAdd(options, stringNew(LIST_FILTER_DATA[listFilter].desc));
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_COMMAND, NULL, options)) !=
         0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitsList", errno, strerror(errno),
                  "Send error");
@@ -645,7 +607,6 @@ int getUnitList(SockMessageOut **sockMessageOut, bool bootAnalyze, ListFilter li
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitsList::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -668,13 +629,11 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
     bool enabled = false;
     pid_t *pid, pidFork;
 
-    /* Pipe */
     if ((rv = pipe(pfds)) < 0) {
         logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitList", errno,
                  strerror(errno), "Pipe function returned a bad exit code");
         goto out;
     }
-    /* Fork */
     pidFork = fork();
     if (pidFork < 0) {
         rv = errno;
@@ -685,16 +644,13 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
         close(pfds[0]);
         dup2(pfds[1], STDOUT_FILENO);
         close(pfds[1]);
-        /* Filling sockMessageOut */
         if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
-            /* Display the errors */
             Array *sockErrors = (*sockMessageOut)->errors;
             int lenErr = (sockErrors ? sockErrors->size : 0);
             for (int i = 0; i < lenErr; i++) {
                 logErrorStr(CONSOLE, arrayGet(sockErrors, i));
                 printf("\n");
             }
-            /* Display the messages */
             Array *messages = (*sockMessageOut)->messages;
             int lenMes = (messages ? messages->size : 0);
             char *message = NULL;
@@ -706,7 +662,6 @@ int showUnitList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     logInfo(CONSOLE, message);
                 printf("\n");
             }
-            /* Display unit list */
             if (lenErr == 0 && lenMes == 0) {
                 unitsDisplay = (*sockMessageOut)->unitsDisplay;
                 maxLenName = getMaxLen(unitsDisplay, "name");
@@ -807,13 +762,11 @@ int showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
     char *lasTime = NULL;
     pid_t pidFork;
 
-    /* Pipe */
     if ((rv = pipe(pfds)) < 0) {
         logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showTimersList", errno,
                  strerror(errno), "Pipe function returned a bad exit code");
         goto out;
     }
-    /* Fork */
     pidFork = fork();
     if (pidFork < 0) {
         rv = errno;
@@ -824,16 +777,13 @@ int showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
         close(pfds[0]);
         dup2(pfds[1], STDOUT_FILENO);
         close(pfds[1]);
-        /* Filling sockMessageOut */
         if ((rv = getUnitList(sockMessageOut, false, listFilter)) == 0) {
-            /* Display the errors */
             Array *sockErrors = (*sockMessageOut)->errors;
             int lenErr = (sockErrors ? sockErrors->size : 0);
             for (int i = 0; i < lenErr; i++) {
                 logErrorStr(CONSOLE, arrayGet(sockErrors, i));
                 printf("\n");
             }
-            /* Display the messages */
             Array *messages = (*sockMessageOut)->messages;
             int lenMes = (messages ? messages->size : 0);
             char *message = NULL;
@@ -845,7 +795,6 @@ int showTimersList(SockMessageOut **sockMessageOut, ListFilter listFilter)
                     logInfo(CONSOLE, message);
                 printf("\n");
             }
-            /* Display unit list */
             if (lenErr == 0 && lenMes == 0) {
                 unitsDisplay = (*sockMessageOut)->unitsDisplay;
                 lenUnits = (unitsDisplay ? unitsDisplay->size : 0);
@@ -970,16 +919,13 @@ int getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 
     assert(unitName);
 
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, STATUS_COMMAND, unitName,
                                NULL)) != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatus::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitStatus", errno,
                  strerror(errno), "Send error");
@@ -993,7 +939,6 @@ int getUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatus::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1024,13 +969,11 @@ int showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
 
     assert(unitName);
 
-    /* Pipe */
     if ((rv = pipe(pfds)) < 0) {
         logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showUnitStatus", errno,
                  strerror(errno), "Pipe function returned a bad exit code");
         goto out;
     }
-    /* Fork */
     pidFork = fork();
     if (pidFork < 0) {
         rv = errno;
@@ -1042,14 +985,12 @@ int showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
         dup2(pfds[1], STDOUT_FILENO);
         close(pfds[1]);
         if ((rv = getUnitStatus(sockMessageOut, unitName)) == 0) {
-            /* Display the errors */
             sockErrors = (*sockMessageOut)->errors;
             len = (sockErrors ? sockErrors->size : 0);
             for (int i = 0; i < len; i++) {
                 logErrorStr(CONSOLE, arrayGet(sockErrors, i));
                 printf("\n");
             }
-            /* Display the messages */
             messages = (*sockMessageOut)->messages;
             len = (messages ? messages->size : 0);
             for (int i = 0; i < len; i++) {
@@ -1060,7 +1001,6 @@ int showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                     logInfo(CONSOLE, message);
                 printf("\n");
             }
-            /* Display the unit detail */
             units = (*sockMessageOut)->unitsDisplay;
             len = (units ? units->size : 0);
             for (int i = 0; i < len; i++) {
@@ -1097,9 +1037,7 @@ int showUnitStatus(SockMessageOut **sockMessageOut, const char *unitName)
                         printf(" (Max %d)", unit->restartMax);
                     printf("\n");
                 }
-                /* Evetual timer data for the unit */
                 printOtherDataForUnit(unit, TIMER);
-                /* Evetual path unit data for the unit */
                 printOtherDataForUnit(unit, UPATH);
                 /* Timer Unit Data */
                 interval = unit->intervalStr;
@@ -1230,16 +1168,13 @@ int stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
 
     assert(unitName);
 
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, STOP_COMMAND, unitName, NULL)) !=
         0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StopUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "stopUnit", errno, strerror(errno),
                  "Send error");
@@ -1253,7 +1188,6 @@ int stopUnit(SockMessageOut **sockMessageOut, const char *unitName)
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StopUnit::Buffer received (%lu): \n%s", strlen(bufferRes),
                bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1291,16 +1225,13 @@ int startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
             options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[RESET_OPT].name));
     }
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, START_COMMAND, unitName,
                                options)) != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StartUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "startUnit", errno, strerror(errno),
                  "Send error");
@@ -1314,7 +1245,6 @@ int startUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force,
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "StartUnit::Buffer received (%lu): \n%s", strlen(bufferRes),
                bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1341,16 +1271,13 @@ int disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
         options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[RUN_OPT].name));
     }
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, DISABLE_COMMAND, unitName,
                                options)) != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "disableUnit", errno, strerror(errno),
                  "Send error");
@@ -1364,7 +1291,6 @@ int disableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool run)
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnit::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1407,16 +1333,13 @@ int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force
             options = arrayNew(objectRelease);
         arrayAdd(options, stringNew(OPTIONS_DATA[RE_ENABLE_OPT].name));
     }
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, ENABLE_COMMAND, unitName,
                                options)) != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnit::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "enableUnit", errno, strerror(errno),
                  "Send error");
@@ -1430,7 +1353,6 @@ int enableUnit(SockMessageOut **sockMessageOut, const char *unitName, bool force
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnit::Buffer received (%lu): \n%s", strlen(bufferRes),
                bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1456,28 +1378,23 @@ int getUnitData(SockMessageOut **sockMessageOut, const char *unitName, bool requ
 
     if (requires) {
         arrayAdd(options, stringNew(OPTIONS_DATA[REQUIRES_OPT].name));
-        /* Get SockMessageIn struct */
         rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_REQUIRES_COMMAND, unitName,
                               options);
     } else if (conflicts) {
         arrayAdd(options, stringNew(OPTIONS_DATA[CONFLICTS_OPT].name));
-        /* Get SockMessageIn struct */
         rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_CONFLICTS_COMMAND, unitName,
                               options);
     } else if (states) {
         arrayAdd(options, stringNew(OPTIONS_DATA[STATES_OPT].name));
-        /* Get SockMessageIn struct */
         rv = getSockMessageIn(&sockMessageIn, &socketConnection, LIST_STATES_COMMAND, unitName,
                               options);
     }
     if (rv != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitData::Buffer sent (%lu): \n%s", strlen(bufferReq),
                bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getUnitData", errno, strerror(errno),
                  "Send error");
@@ -1491,7 +1408,6 @@ int getUnitData(SockMessageOut **sockMessageOut, const char *unitName, bool requ
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitData::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1511,16 +1427,13 @@ int getDefaultState(SockMessageOut **sockMessageOut)
     int rv = -1, socketConnection = -1, bufferSize = INITIAL_SIZE;
     char *bufferReq = NULL, *bufferRes = NULL;
 
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, GET_DEFAULT_STATE_COMMAND, NULL,
                                NULL)) != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultState::Buffer sent (%lu): \n%s",
                strlen(bufferReq), bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "getDefaultState", errno,
                  strerror(errno), "Send error");
@@ -1534,7 +1447,6 @@ int getDefaultState(SockMessageOut **sockMessageOut)
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultState::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1574,16 +1486,13 @@ int setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
     default:
         break;
     }
-    /* Get SockMessageIn struct */
     if ((rv = getSockMessageIn(&sockMessageIn, &socketConnection, SET_DEFAULT_STATE_COMMAND,
                                defaultStateStr, NULL)) != 0)
         goto out;
-    /* Marshalling the request */
     bufferReq = marshallRequest(sockMessageIn);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer sent (%lu): \n%s",
                strlen(bufferReq), bufferReq);
-    /* Sending the request */
     if ((rv = uSend(socketConnection, bufferReq, strlen(bufferReq), 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_client.c", "setDefaultState", errno,
                  strerror(errno), "Send error");
@@ -1597,7 +1506,6 @@ int setDefaultState(SockMessageOut **sockMessageOut, const char *stateStr)
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultState::Buffer received (%lu): \n%s",
                strlen(bufferRes), bufferRes);
-    /* Unmarshall the response */
     if (!(*sockMessageOut))
         *sockMessageOut = sockMessageOutNew();
     rv = unmarshallResponse(bufferRes, sockMessageOut);
@@ -1654,14 +1562,12 @@ int showData(Command command, SockMessageOut **sockMessageOut, const char *arg, 
         break;
     }
     if (rv == 0) {
-        /* Display the errors */
         sockErrors = (*sockMessageOut)->errors;
         lenErrors = (sockErrors ? sockErrors->size : 0);
         for (int i = 0; i < lenErrors; i++) {
             logErrorStr(CONSOLE, arrayGet(sockErrors, i));
             printf("\n");
         }
-        /* Display the messages */
         messages = (*sockMessageOut)->messages;
         len = (messages ? messages->size : 0);
         for (int i = 0; i < len; i++) {
@@ -1698,16 +1604,12 @@ int catEditUnit(Command command, const char *arg)
 
     unitPath = getUnitPathByName(arg, true);
     if (unitPath) {
-        /* Env vars */
         Array *envVars = arrayNew(objectRelease);
         addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
         addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
         addEnvVar(&envVars, "UNIT_PATH", unitPath);
-        /* Must be null terminated */
         arrayAdd(envVars, NULL);
-        /* Execute the script */
         rv = execUScript(&envVars, command == CAT_COMMAND ? "cat-unit" : "edit-unit");
-        /* Release resources */
         arrayRelease(&envVars);
         objectRelease(&unitPath);
     }
@@ -1723,7 +1625,6 @@ int createUnit(const char *arg)
 
     assert(arg);
 
-    /* Check the unit name not exists */
     unitPath = getUnitPathByName(arg, false);
     if (unitPath) {
         err = getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_EXIST_ERR].desc, arg);
@@ -1731,20 +1632,16 @@ int createUnit(const char *arg)
         rv = 1;
         goto out;
     }
-    /* Get the type */
     PType pType = getPTypeByUnitName(arg);
     assert(pType != NO_PROCESS_TYPE);
-    /* Building unit path */
     unitPath = stringNew(!USER_INSTANCE ? UNITS_PATH : UNITS_USER_LOCAL_PATH);
     stringAppendChr(&unitPath, '/');
     stringAppendStr(&unitPath, arg);
     if (pType == DAEMON && !stringEndsWithStr(arg, ".unit"))
         stringAppendStr(&unitPath, ".unit");
     assert(unitPath);
-    /* Get unit name */
     unitName = getUnitName(unitPath);
     assert(unitName);
-    /* Get the default state for system instance */
     if (!USER_INSTANCE) {
         if (getDefaultStateStr(&destDefStateSyml) != 0) {
             rv = 1;
@@ -1752,7 +1649,6 @@ int createUnit(const char *arg)
         }
         defaultState = getStateByStr(destDefStateSyml);
         if (defaultState == NO_STATE) {
-            /* If we are here then the symlink points to a bad destination */
             logErrorStr(CONSOLE, "The default state symlink points to a bad destination (%s)\n",
                         destDefStateSyml);
             rv = 1;
@@ -1775,7 +1671,6 @@ int createUnit(const char *arg)
     }
 
 out:
-    /* Release resources */
     objectRelease(&unitPath);
     objectRelease(&unitName);
     objectRelease(&err);
@@ -1791,13 +1686,11 @@ int showBootAnalyze(SockMessageOut **sockMessageOut)
     Unit *unitDisplay = NULL;
     pid_t pid;
 
-    /* Pipe */
     if ((rv = pipe(pfds)) < 0) {
         logError(CONSOLE | SYSTEM, "src/core/socket/socket_client.c", "showBootAnalyze", errno,
                  strerror(errno), "Pipe function returned a bad exit code");
         goto out;
     }
-    /* Fork */
     pid = fork();
     if (pid < 0) {
         rv = errno;
@@ -1808,7 +1701,6 @@ int showBootAnalyze(SockMessageOut **sockMessageOut)
         close(pfds[0]);
         dup2(pfds[1], STDOUT_FILENO);
         close(pfds[1]);
-        /* Filling sockMessageOut */
         if ((rv = getUnitList(sockMessageOut, true, NO_FILTER)) == 0) {
             unitsDisplay = (*sockMessageOut)->unitsDisplay;
             messages = (*sockMessageOut)->messages;
@@ -1900,24 +1792,18 @@ int checkAdministrator(char **argv)
 {
     int rv = 0;
 
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "UNITD_DATA_PATH", UNITD_DATA_PATH);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Building command */
     char *cmd = stringNew(UNITD_DATA_PATH);
     stringAppendStr(&cmd, "/scripts/administrator-check.sh");
-    /* Creating script params */
     Array *scriptParams = arrayNew(objectRelease);
     arrayAdd(scriptParams, cmd); //0
     while (*argv) {
         arrayAdd(scriptParams, stringNew(*argv));
         argv++;
     }
-    /* Must be null terminated */
     arrayAdd(scriptParams, NULL); //last
-    /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/administrator-check.sh", scriptParams->arr,
                     envVars->arr);
 

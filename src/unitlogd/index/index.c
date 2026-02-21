@@ -50,7 +50,6 @@ int getIndex(Array **index, bool isIndex)
     Array *values = NULL;
     bool isStartEntry = false;
 
-    /* Open file */
     if (isIndex) {
         unitlogdOpenIndex("r");
         assert(UNITLOGD_INDEX_FILE);
@@ -107,7 +106,6 @@ int getIndex(Array **index, bool isIndex)
         values = stringSplit(line, TOKEN_ENTRY, true);
         for (IndexEnum indexEnum = TYPE_ENTRY; indexEnum <= OFFSET; indexEnum++) {
             char *value = NULL;
-            /* Get the value */
             value = arrayGet(values, indexEnum);
             if (value)
                 stringTrim(value, NULL);
@@ -203,10 +201,8 @@ int writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
 
     assert(isIndex ? UNITLOGD_INDEX_FILE : UNITLOGD_LOG_FILE);
 
-    /* Building the buffer */
     buffer = stringNew(isStarting ? ENTRY_STARTED : ENTRY_FINISHED);
     if (isStarting)
-        /* For the indentation */
         stringAppendStr(&buffer, " ");
     /* BOOT ID */
     stringAppendStr(&buffer, TOKEN_ENTRY);
@@ -235,7 +231,6 @@ int writeEntry(bool isStarting, IndexEntry *indexEntry, bool isIndex)
     stringAppendStr(&buffer, NEW_LINE);
     logEntry(isIndex ? &UNITLOGD_INDEX_FILE : &UNITLOGD_LOG_FILE, buffer);
 
-    /* Release resources */
     objectRelease(&buffer);
     return rv;
 }
@@ -248,7 +243,6 @@ int indexIntegrityCheck()
     bool isStart = false;
     char *bootId = NULL;
 
-    /* Get array from index */
     if ((rv = getIndex(&index, true)) != 0)
         goto out;
     /* For each index entry must be there a log entry according the offset value */

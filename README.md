@@ -315,7 +315,7 @@ WantedBy = graphical
 The **check-script.sh** content must only check that the socket **/var/run/dbus/system_bus_socket** is there.<br>
 After that, we can change the **Requires** property of the *bluetooth.unit* from *dbus* to *check-dbus*.<br>
 At this point, *bluetooth.unit* will start only when that socket is there avoiding the failure<br>
-and an eventual restarting as well.<br>
+and a possible restarting as well.<br>
 You should consider this method to configure all the units.<br>
 The **Restart** or **RestartMax** property should have to be used only when the unit accidentally crashes for some reason.<br>
 

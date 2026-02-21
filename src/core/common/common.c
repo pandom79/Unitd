@@ -12,6 +12,7 @@ char *UNITS_USER_LOCAL_PATH;
 char *UNITS_USER_ENAB_PATH;
 
 /*
+Return value
 0 = Valid symlink
 1 = Symlink missing
 2 = Not a symlink
@@ -28,11 +29,9 @@ int readSymLink(const char *symLink, char **wherePoints)
         rv = 1;
         goto out;
     }
-    /* Set buffer size */
     bufsiz = sb.st_size + 1;
     if (sb.st_size == 0)
         bufsiz = PATH_MAX;
-    /* Read the symlink */
     *wherePoints = calloc(bufsiz, sizeof(char));
     assert(*wherePoints);
     nbytes = readlink(symLink, *wherePoints, bufsiz);
@@ -90,7 +89,6 @@ int getDefaultStateStr(char **destDefStateSyml)
     int rv = 0;
     char *defStateSymlPath = NULL;
 
-    /* Building path */
     defStateSymlPath = stringNew(UNITS_ENAB_PATH);
     stringAppendChr(&defStateSymlPath, '/');
     stringAppendStr(&defStateSymlPath, DEF_STATE_SYML_NAME);
@@ -117,23 +115,18 @@ int setNewDefaultStateSyml(State newDefaultState, Array **messages, Array **erro
     assert(*messages);
     assert(*errors);
 
-    /* Building from */
     from = stringNew(UNITS_ENAB_PATH);
     stringAppendChr(&from, '/');
     stringAppendStr(&from, STATE_DATA_ITEMS[newDefaultState].desc);
     stringAppendStr(&from, ".state");
-    /* Building to */
     to = stringNew(UNITS_ENAB_PATH);
     stringAppendChr(&to, '/');
     stringAppendStr(&to, DEF_STATE_SYML_NAME);
-    /* Creating env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "FROM", from);
     addEnvVar(&envVars, "TO", to);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Execute the script */
     rv = execUScript(&envVars, "default-syml");
     if (rv != 0) {
         arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
@@ -250,16 +243,12 @@ int unitdUserCheck(const char *userIdStr, const char *userName)
     assert(EUIRUN);
 
     sprintf(euirun, "%d", EUIRUN);
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "EUIRUN", euirun);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Building command */
     char *cmd = stringNew(UNITD_DATA_PATH);
     stringAppendStr(&cmd, "/scripts/unitd-user-check.sh");
-    /* Creating script params */
     Array *scriptParams = arrayNew(objectRelease);
     arrayAdd(scriptParams, cmd); //0
     arrayAdd(scriptParams, stringNew(UNITS_USER_LOCAL_PATH)); //1
@@ -267,9 +256,7 @@ int unitdUserCheck(const char *userIdStr, const char *userName)
     arrayAdd(scriptParams, stringNew(UNITD_USER_TIMER_DATA_PATH)); //3
     arrayAdd(scriptParams, stringNew(userIdStr)); //4
     arrayAdd(scriptParams, stringNew(userName)); //5
-    /* Must be null terminated */
     arrayAdd(scriptParams, NULL); //6
-    /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd-user-check.sh", scriptParams->arr,
                     envVars->arr);
     if (rv != 0) {
@@ -310,14 +297,11 @@ int parseProcCmdLine()
         for (int i = 0; i < len; i++) {
             char *value = arrayGet(values, i);
             stringTrim(value, NULL);
-            /* Unitd debug */
             if (stringEquals(value, PROC_CMDLINE_UNITD_DEBUG)) {
                 DEBUG = true;
                 continue;
-            }
-            /* Single */
-            else if (stringEquals(value, "single") ||
-                     stringEquals(value, STATE_DATA_ITEMS[SINGLE_USER].desc)) {
+            } else if (stringEquals(value, "single") ||
+                       stringEquals(value, STATE_DATA_ITEMS[SINGLE_USER].desc)) {
                 STATE_CMDLINE = SINGLE_USER;
                 continue;
             } else {
@@ -365,7 +349,6 @@ int setUserData(int userId, struct passwd **userInfo)
 {
     int rv = 0;
 
-    /* Get user info */
     errno = 0;
     *userInfo = getpwuid(userId);
     if (!(*userInfo)) {
@@ -375,7 +358,6 @@ int setUserData(int userId, struct passwd **userInfo)
         goto out;
     }
     assert(*userInfo);
-    /* Change the current working directory to user home */
     char *userHome = (*userInfo)->pw_dir;
     if ((rv = chdir(userHome)) == -1) {
         logError(CONSOLE | SYSTEM, "src/core/common/common.c", "setUserData", errno,
@@ -384,7 +366,6 @@ int setUserData(int userId, struct passwd **userInfo)
         rv = 1;
         goto out;
     }
-    /* Set user dirs */
     UNITS_USER_LOCAL_PATH = stringNew(userHome);
     stringAppendStr(&UNITS_USER_LOCAL_PATH, "/.config/unitd/units");
     UNITD_USER_CONF_PATH = stringNew(userHome);
@@ -396,7 +377,6 @@ int setUserData(int userId, struct passwd **userInfo)
     assert(UNITS_USER_LOCAL_PATH);
     assert(UNITD_USER_CONF_PATH);
     assert(UNITS_USER_ENAB_PATH);
-    /* Set user socket path */
     const char *xdgRunTimeDir = getenv("XDG_RUNTIME_DIR");
     if (!xdgRunTimeDir) {
         rv = 1;
@@ -484,14 +464,11 @@ int handleMutex(pthread_mutex_t *mutex, bool lock)
 void setStopAndDuration(ProcessData **processData)
 {
     assert(*processData);
-    // Time stop
     timeRelease(&(*processData)->timeStop);
     (*processData)->timeStop = timeNew(NULL);
-    // Date time stop
     objectRelease(&(*processData)->dateTimeStopStr);
     (*processData)->dateTimeStopStr =
         stringGetTimeStamp((*processData)->timeStop, false, "%d-%m-%Y %H:%M:%S");
-    // Duration
     objectRelease(&(*processData)->duration);
     (*processData)->duration =
         stringGetDiffTime((*processData)->timeStop, (*processData)->timeStart);

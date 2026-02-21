@@ -13,7 +13,6 @@ extern SectionData UNITS_SECTIONS_ITEMS[];
 extern int UNITS_PROPERTIES_ITEMS_LEN;
 extern PropertyData UNITS_PROPERTIES_ITEMS[];
 
-/* Specific Errors */
 typedef enum {
     UNABLE_OPEN_UNIT_ERR = 0,
     REQUIRE_ITSELF_ERR = 1,
@@ -49,7 +48,6 @@ typedef struct {
 } UnitsErrorsData;
 extern const UnitsErrorsData UNITS_ERRORS_ITEMS[];
 
-/* Specific Messages */
 typedef enum {
     UNIT_START_MSG = 0,
     UNIT_FORCE_START_CONFLICT_MSG = 1,
@@ -70,7 +68,6 @@ typedef struct {
 } UnitsMessagesData;
 extern const UnitsMessagesData UNITS_MESSAGES_ITEMS[];
 
-/* List filter */
 typedef struct {
     ListFilter listFilter;
     const char *desc;
@@ -78,7 +75,6 @@ typedef struct {
 extern const ListFilterData LIST_FILTER_DATA[];
 extern int LIST_FILTER_LEN;
 
-/* Functions */
 Unit *unitNew(Unit *, ParserFuncType);
 void unitRelease(Unit **);
 ProcessData *processDataNew(ProcessData *, ParserFuncType);

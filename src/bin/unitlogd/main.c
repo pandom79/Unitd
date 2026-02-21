@@ -101,7 +101,6 @@ int main(int argc, char **argv)
     }
 
     assertMacros();
-
     if (getuid() != 0) {
         rv = 1;
         logErrorStr(CONSOLE, "Please, run this program as administrator.\n");

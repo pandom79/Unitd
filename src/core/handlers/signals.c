@@ -21,27 +21,25 @@ int signalsHandler(int signo, siginfo_t *info, void *context UNUSED)
     Pipe *unitPipe = NULL;
 
     if (SHUTDOWN_COMMAND == NO_COMMAND) {
-        /* If unitd (PID=1) receives a SIGINT (ctrl+alt+del) or SIGTERM signal then
+        /**
+         * If unitd (PID=1) receives a SIGINT (ctrl+alt+del) or SIGTERM signal then
          * we start the reboot phase
         */
         if (signo == SIGINT || signo == SIGTERM) {
-            /* Set default shutdown operation. */
             SHUTDOWN_COMMAND = REBOOT_COMMAND;
-            /* If we already are listening then we can invoke unitdShutdown function
-             * simulating the "unitctl" command without force
+            /**
+             * If we're already listening then we can invoke unitdShutdown function
+             * simulating the "unitctl" command without forcing
             */
             if (LISTEN_SOCK_REQUEST)
                 rv = unitdShutdown(SHUTDOWN_COMMAND, false, false, true);
             goto out;
         }
-        /* Get siginfo data */
         infoCode = info->si_code;
         infoPid = info->si_pid;
-        /* Get the unit */
         unit = getUnitByPid(UNITD_DATA->units, infoPid);
         if (unit && !unit->isStopping) {
             unitName = unit->name;
-            /* Get process Data */
             pData = unit->processData;
             pStateData = pData->pStateData;
             finalStatus = pData->finalStatus;

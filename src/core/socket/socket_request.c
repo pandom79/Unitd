@@ -42,13 +42,11 @@ char *marshallRequest(SockMessageIn *sockMessageIn)
     assert(sockMessageIn);
     assert(sockMessageIn->command != NO_COMMAND);
 
-    /* Command */
     buffer = stringNew(KEY_VALUE[COMMAND].value);
     stringAppendStr(&buffer, ASSIGNER);
     sprintf(commandStr, "%d", sockMessageIn->command);
     stringAppendStr(&buffer, commandStr);
     stringAppendStr(&buffer, TOKEN);
-    /* Unit name */
     arg = sockMessageIn->arg;
     if (sockMessageIn->arg) {
         stringAppendStr(&buffer, KEY_VALUE[ARG].value);
@@ -56,7 +54,6 @@ char *marshallRequest(SockMessageIn *sockMessageIn)
         stringAppendStr(&buffer, arg);
         stringAppendStr(&buffer, TOKEN);
     }
-    /* Options */
     options = sockMessageIn->options;
     len = (options ? options->size : 0);
     if (len > 0)

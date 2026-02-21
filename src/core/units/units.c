@@ -10,7 +10,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 //INIT PARSER CONFIGURATION
 enum SectionNameEnum { UNIT = 0, COMMAND = 1, STATE = 2 };
-/* Properties */
 enum PropertyNameEnum {
     DESCRIPTION = 0,
     REQUIRES = 1,
@@ -23,12 +22,10 @@ enum PropertyNameEnum {
     FAILURE = 8,
     WANTEDBY = 9
 };
-/* Sections */
 int UNITS_SECTIONS_ITEMS_LEN = 3;
 SectionData UNITS_SECTIONS_ITEMS[] = { { { UNIT, "[Unit]" }, false, true, 0 },
                                        { { COMMAND, "[Command]" }, false, true, 0 },
                                        { { STATE, "[State]" }, false, true, 0 } };
-/* The accepted values for the properties */
 static const char *TYPE_VALUES[] = { PTYPE_DATA_ITEMS[DAEMON].desc, PTYPE_DATA_ITEMS[ONESHOT].desc,
                                      NULL };
 static const char *BOOL_VALUES[] = { "false", "true", NULL };
@@ -104,7 +101,6 @@ const UnitsMessagesData UNITS_MESSAGES_ITEMS[] = {
     { UNIT_NO_DATA_FOUND_MSG, "No data found." }
 };
 
-/* Return the unit name by unit path */
 char *getUnitName(const char *unitPath)
 {
     char *unitName = NULL;
@@ -209,10 +205,6 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
     unit->type = (unitFrom ? unitFrom->type : DAEMON);
     unit->isChanged = (unitFrom && unitFrom->isChanged ? true : false);
     //TIMER DATA
-    /* The following data are only initialized here but they are allocated by parseUnitTimer() func
-     * to avoid to allocate them uselessly when the unit type is different by TIMER except
-     * when we make copies for the communication between client and server.
-    */
     /* Seconds */
     int *seconds = NULL;
     if (unitFrom && unitFrom->intSeconds) {
@@ -287,13 +279,9 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
         unit->nextTimeDate = NULL;
     //END TIMER DATA
     if (funcType == PARSE_SOCK_RESPONSE || funcType == PARSE_UNIT) {
-        /* Requires */
         unit->requires = (unitFrom ? arrayStrCopy(unitFrom->requires) : NULL);
-        /* Conflicts */
         unit->conflicts = (unitFrom ? arrayStrCopy(unitFrom->conflicts) : NULL);
-        /* Errors */
         unit->errors = (unitFrom ? arrayStrCopy(unitFrom->errors) : NULL);
-        /* Wanted by */
         unit->wantedBy = (unitFrom ? arrayStrCopy(unitFrom->wantedBy) : NULL);
         /* Process Data history */
         Array *pDataHistory = NULL;
@@ -305,9 +293,7 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
                 arrayAdd(pDataHistory, processDataNew(arrayGet(pDataHistoryFrom, i), funcType));
         }
         unit->processDataHistory = pDataHistory;
-        /* Eventual timer name for the unit */
         unit->timerName = (unitFrom && unitFrom->timerName ? stringNew(unitFrom->timerName) : NULL);
-        /* Eventual timer process data for the unit */
         PState *timerPState = NULL;
         if (unitFrom && unitFrom->timerPState) {
             timerPState = calloc(1, sizeof(PState));
@@ -315,10 +301,8 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
             *timerPState = *unitFrom->timerPState;
         }
         unit->timerPState = timerPState;
-        /* Eventual path unit name */
         unit->pathUnitName =
             (unitFrom && unitFrom->pathUnitName ? stringNew(unitFrom->pathUnitName) : NULL);
-        /* Eventual path unit pstate */
         PState *pathUnitPState = NULL;
         if (unitFrom && unitFrom->pathUnitPState) {
             pathUnitPState = calloc(1, sizeof(PState));
@@ -326,8 +310,6 @@ Unit *unitNew(Unit *unitFrom, ParserFuncType funcType)
             *pathUnitPState = *unitFrom->pathUnitPState;
         }
         unit->pathUnitPState = pathUnitPState;
-        // TIMER DATA
-        /* Interval as string */
         unit->intervalStr =
             (unitFrom && unitFrom->intervalStr ? stringNew(unitFrom->intervalStr) : NULL);
         // END TIMER DATA
@@ -431,7 +413,7 @@ int checkAndSetUnitPath(Unit **currentUnit, State state)
     errors = &(*currentUnit)->errors;
     path = (*currentUnit)->path;
     if (state == INIT || state == FINAL) {
-        /* The init and final states can't contain sym links */
+        /* The init and final states can't contain symlinks */
         if ((rv = readSymLink(path, &wherePoints)) == 0) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
@@ -440,15 +422,10 @@ int checkAndSetUnitPath(Unit **currentUnit, State state)
         } else if (rv == 2)
             rv = 0;
     } else {
-        /* Check where the unit is pointing */
         rv = readSymLink(path, &wherePoints);
         if (rv == 2)
             hasError = true;
         else {
-            /**
-             * Relative symlinks don't start with UNITS_PATH, UNITS_USER_PATH ...
-             * At most, they can contain these paths.
-            */
             if (!USER_INSTANCE) {
                 if (!stringContainsStr(wherePoints, UNITS_PATH))
                     hasError = true;
@@ -512,7 +489,6 @@ int checkConflicts(Unit **currentUnit, const char *conflictName, bool isAggregat
 
     assert(*currentUnit);
 
-    /* Get the unit data */
     currentUnitName = (*currentUnit)->name;
     errors = (*currentUnit)->errors;
     /* The unit cannot be in conflict with itself */
@@ -545,7 +521,6 @@ int checkRequires(Array **units, Unit **currentUnit, bool isAggregate)
     assert(*units);
     assert(*currentUnit);
 
-    /* Get the unit data */
     currentUnitName = (*currentUnit)->name;
     deps = (*currentUnit)->requires;
     errors = (*currentUnit)->errors;
@@ -612,7 +587,6 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
 
     assert(path);
 
-    /* Building the pattern */
     pattern = stringNew(path);
     patternTimer = stringNew(path);
     patternPath = stringNew(path);
@@ -636,11 +610,9 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
             stringAppendStr(&pattern, unitNameArg);
         }
     }
-    /* Executing the glob function */
     if (DEBUG && currentState != NO_STATE)
         logWarning(ALL, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
-        /* Aggregate the patterns if unitname is null */
         if (!unitNameArg) {
             if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0)
                 logWarning(SYSTEM, "No timers found for %s state.\n",
@@ -656,32 +628,25 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
         if (DEBUG && currentState != NO_STATE)
             logInfo(ALL, "Found %d units in %s/%s!\n", lenResults, path, dirName);
         for (size_t i = 0; i < lenResults; i++) {
-            /* Get the unit path */
             unitPath = results.gl_pathv[i];
-            /* Set unit name */
             unitName = getUnitName(unitPath);
-            /* If the unit is already in memory then skip it. (to avoid duplicates in unit list function) */
             if (currentState != NO_STATE || getUnitByName(*units, unitName) == NULL) {
-                /* Create the unit */
                 unit = unitNew(NULL, funcType);
                 unit->name = unitName;
                 unit->type = getPTypeByUnitName(unitName);
                 assert(unit->type != NO_PROCESS_TYPE);
                 unit->path = stringNew(unitPath);
-                /* Check unit path */
                 if (currentState != NO_STATE) {
                     /* We always aggregate this eventual error regardless isAggregate value to allow
                      * unitctl status command to display the correct data
                     */
                     checkAndSetUnitPath(&unit, currentState);
                 }
-                /* Set enabled/disabled */
                 unit->enabled =
                     (currentState != NO_STATE ? true : isEnabledUnit(unitName, NO_STATE));
                 if (DEBUG)
                     logInfo(ALL, "Unit name = '%s', path = '%s'. Parsing it ...\n", unitName,
                             unitPath);
-                /* Parse the Unit file */
                 if (parse) {
                     switch (unit->type) {
                     case DAEMON:
@@ -706,7 +671,6 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                     if ((rv == 0 || isAggregate) && currentState != NO_STATE)
                         checkWantedBy(&unit, currentState, isAggregate);
                 }
-                /* Create the pipe */
                 if (currentState != INIT && currentState != FINAL && currentState != REBOOT &&
                     currentState != POWEROFF && funcType == PARSE_UNIT && unit->errors &&
                     unit->errors->size == 0) {
@@ -730,7 +694,6 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
                         break;
                     }
                 }
-                /* Adding the unit to the array */
                 arrayAdd(*units, unit);
             } else
                 objectRelease(&unitName);
@@ -776,7 +739,6 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
     return rv;
 }
 
-/* We load the units which have a suffix different by ".unit". */
 int loadOtherUnits(Array **units, const char *path, const char *dirName, bool isAggregate,
                    bool parse, ListFilter listFilter)
 {
@@ -789,7 +751,6 @@ int loadOtherUnits(Array **units, const char *path, const char *dirName, bool is
     assert(path);
     assert(listFilter == TIMERS_FILTER || listFilter == UPATH_FILTER);
 
-    /* Building the pattern */
     pattern = stringNew(path);
     stringAppendChr(&pattern, '/');
     stringAppendStr(&pattern, dirName);
@@ -809,21 +770,15 @@ int loadOtherUnits(Array **units, const char *path, const char *dirName, bool is
         if (!(*units))
             *units = arrayNew(unitRelease);
         for (size_t i = 0; i < lenResults; i++) {
-            /* Get the unit path */
             unitPath = results.gl_pathv[i];
-            /* Set unit name */
             unitName = getUnitName(unitPath);
-            /* If the unit is already in memory then skip it. (to avoid duplicates in unit list function) */
             if (getUnitByName(*units, unitName) == NULL) {
-                /* Create the unit */
                 unit = unitNew(NULL, PARSE_SOCK_RESPONSE_UNITLIST);
                 unit->name = unitName;
                 unit->type = getPTypeByUnitName(unitName);
                 assert(unit->type != NO_PROCESS_TYPE);
                 unit->path = stringNew(unitPath);
-                /* Set enabled/disabled */
                 unit->enabled = isEnabledUnit(unitName, NO_STATE);
-                /* Parse the Unit file */
                 if (parse) {
                     switch (unit->type) {
                     case TIMER:
@@ -836,7 +791,6 @@ int loadOtherUnits(Array **units, const char *path, const char *dirName, bool is
                         break;
                     }
                 }
-                /* Adding the unit to the array */
                 arrayAdd(*units, unit);
             } else
                 objectRelease(&unitName);
@@ -861,10 +815,8 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
 
     assert(*unit);
 
-    /* Initialize the parser */
     parserInit(UNITS_SECTIONS_ITEMS_LEN, UNITS_SECTIONS_ITEMS, UNITS_PROPERTIES_ITEMS_LEN,
                UNITS_PROPERTIES_ITEMS);
-    /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))
         *errors = arrayNew(objectRelease);
@@ -882,7 +834,6 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
     UNITS_PROPERTIES_ITEMS[REQUIRES].notDupValues = requires;
     UNITS_PROPERTIES_ITEMS[CONFLICTS].notDupValues = conflicts;
     UNITS_PROPERTIES_ITEMS[WANTEDBY].notDupValues = wantedBy;
-    /* Open the file */
     if ((fp = fopen(unitPath, "r")) == NULL) {
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNABLE_OPEN_UNIT_ERR].desc, unitPath));
         rv = 1;
@@ -890,7 +841,6 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
     }
     while (getline(&line, &len, fp) != -1) {
         numLine++;
-        /* Parsing the line */
         rv = parseLine(line, numLine, &lineData, &sectionData, &propertyData);
         /* lineData[0] -> Key   (Required)
          * lineData[1] -> Value (Optional: NULL in section case)
@@ -975,9 +925,7 @@ int parseUnit(Array **units, Unit **unit, bool isAggregate, State currentState)
             arrayRelease(&lineData);
         }
     }
-    /* Parser end */
     parserEnd(errors, isAggregate);
-    /* Check the error's size */
     if ((sizeErrs = (*errors)->size) > 0) {
         if (!isAggregate) {
             /* At most we can have two errors because the not valid symlink error is always aggregated.
@@ -1016,7 +964,6 @@ void unitRelease(Unit **unit)
         objectRelease(&unitTemp->failurePid);
         objectRelease(&unitTemp->failureExitCode);
         arrayRelease(&unitTemp->wantedBy);
-        /* Destroy and free the condition variable */
         if ((cv = unitTemp->cv)) {
             if ((rv = pthread_cond_destroy(cv)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/units.c", "unitRelease", rv,
@@ -1024,20 +971,15 @@ void unitRelease(Unit **unit)
             }
             objectRelease(&cv);
         }
-        /* Destroy and free the mutex */
         if ((mutex = unitTemp->mutex)) {
-            /* Destroy and free the mutex */
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/units.c", "unitRelease", rv,
                          strerror(rv), "Unable to run pthread_mutex_destroy");
             }
             objectRelease(&mutex);
         }
-        /* Process Data History */
         arrayRelease(&(unitTemp->processDataHistory));
-        /* Process Data */
         processDataRelease(&(unitTemp->processData));
-        /* Pipe */
         pipeRelease(&unitTemp->pipe);
         /* Eventual timer data for the unit */
         objectRelease(&unitTemp->timerName);
@@ -1069,7 +1011,6 @@ void unitRelease(Unit **unit)
         objectRelease(&unitTemp->pathDirectoryNotEmpty);
         objectRelease(&unitTemp->pathDirectoryNotEmptyMonitor);
         notifierRelease(&unitTemp->notifier);
-        /* Unit */
         objectRelease(unit);
     }
 }
@@ -1087,7 +1028,6 @@ ProcessData *processDataNew(ProcessData *pDataFrom, ParserFuncType funcType)
      * SOCKET_RESPONSE_UNITSLIST_FUNC
      */
 
-    /* Initialize Process Data */
     pDataRet = calloc(1, sizeof(ProcessData));
     assert(pDataRet);
     //Pid
@@ -1197,10 +1137,8 @@ Pipe *pipeNew()
     Pipe *pipeObj = NULL;
     pthread_mutex_t *mutex = NULL;
 
-    /* Pipe */
     pipeObj = calloc(1, sizeof(Pipe));
     assert(pipeObj);
-    /* Mutex */
     mutex = calloc(1, sizeof(pthread_mutex_t));
     assert(mutex);
     pipeObj->mutex = mutex;
@@ -1225,7 +1163,6 @@ void pipeRelease(Pipe **pipe)
     int rv = 0;
 
     if (pipeTemp) {
-        /* Destroy and free the mutex */
         if ((mutex = pipeTemp->mutex)) {
             if ((rv = pthread_mutex_destroy(mutex)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/units.c", "pipeRelease", rv,
@@ -1233,10 +1170,8 @@ void pipeRelease(Pipe **pipe)
             }
             objectRelease(&mutex);
         }
-        /* Close fds */
         close(pipeTemp->fds[0]);
         close(pipeTemp->fds[1]);
-        /* Release pipe */
         objectRelease(pipe);
     }
 }

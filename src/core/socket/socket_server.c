@@ -8,29 +8,13 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-/* This variable represents the stop time */
 Time *BOOT_STOP;
-/* This variable is used by signal handler to invoke unitdShutdown command
- * if Ctrl+alt+del is pressed after that we are listening
-*/
 bool LISTEN_SOCK_REQUEST;
-/* The following variable is useful for unitd daemon to know how it has to
- * poweroff the machine
-*/
 Command SHUTDOWN_COMMAND;
-/* Socket user path for unitd user instance */
 char *SOCKET_USER_PATH;
-/*
-* An array of file descriptors which the server
-* is maintaining in order to talk with the connected clients.
-* Master socket FD is also here.
-*/
 int MONITORED_FD_SET[MAX_CLIENT_SUPPORTED];
-/* This variable represents the max socket buffer size */
 int MAX_SOCKBUF_SIZE = 0;
-/* The following the are some functions which handling
- * the monitored fd set.
-*/
+
 static void initializeMonitoredFdSet()
 {
     for (int i = 0; i < MAX_CLIENT_SUPPORTED; i++)
@@ -96,16 +80,12 @@ int listenSocketRequest()
     fd_set readFds;
     char *buffer = NULL;
 
-    /* Initialize */
     initializeMonitoredFdSet();
-    /* If unitd daemon not properly exited, could have not remove the socket */
     unlinkSocket();
-    /* Connection */
     if ((socketConnection = initSocket(&name)) == -1) {
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
     }
-    /* Binding */
     if ((rv = bind(socketConnection, (const struct sockaddr *)&name, sizeof(struct sockaddr_un))) ==
         -1) {
         logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest", errno,
@@ -113,28 +93,20 @@ int listenSocketRequest()
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
     }
-    /* Listening */
     if ((rv = listen(socketConnection, BACK_LOG)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest", errno,
                  strerror(errno), "Listen error");
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto out;
     }
-    /* Adding the master socket to monitored set of fd */
     addToMonitoredFdSet(socketConnection);
-    /* Stop boot */
     BOOT_STOP = timeNew(NULL);
     /* Main loop */
     while (SHUTDOWN_COMMAND == NO_COMMAND) {
-        /* Copy the entire monitored set of fd to readFds */
         refreshFdSet(&readFds);
         LISTEN_SOCK_REQUEST = true;
-        /* 'Select' is a blocking system call */
         if (select(getMaxFd() + 1, &readFds, NULL, NULL, NULL) == -1 && errno == EINTR)
             continue;
-        /* The data arrive on the master socket only when a new client connects to the server,
-         * that is, when a client performs 'connect' system call.
-        */
         if (FD_ISSET(socketConnection, &readFds)) {
             if ((socketData = accept(socketConnection, NULL, NULL)) == -1 && errno != EAGAIN) {
                 logError(CONSOLE, "src/core/socket/socket_server.c", "listenSocketRequest", errno,
@@ -143,25 +115,17 @@ int listenSocketRequest()
             }
             addToMonitoredFdSet(socketData);
         } else {
-            /* Data arrives on some other client fd
-             * Let's find it
-            */
             for (int i = 0; i < MAX_CLIENT_SUPPORTED; i++) {
                 currentFd = &MONITORED_FD_SET[i];
                 if (*currentFd != -1 && FD_ISSET(*currentFd, &readFds)) {
                     socketFd = *currentFd;
-                    /* Prepare the buffer */
                     bufferSize = INITIAL_SIZE;
                     buffer = calloc(bufferSize, sizeof(char));
                     assert(buffer);
-                    /* Read the message */
                     if ((rv = readMessage(&socketFd, &buffer, &bufferSize)) == -1)
                         goto out;
-                    /* Dispatch the request */
                     rv = socketDispatchRequest(buffer, &socketFd);
-                    /* Release buffer */
                     objectRelease(&buffer);
-                    /* Remove socketFd */
                     removeFromMonitoredFdSet(socketFd);
                     continue;
                 }
@@ -193,7 +157,6 @@ int socketDispatchRequest(char *buffer, int *socketFd)
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SocketDispatchRequest::Buffer received (%lu): \n%s",
                strlen(buffer), buffer);
-    /* Unmarshalling */
     if ((rv = unmarshallRequest(buffer, &sockMessageIn)) == 0) {
         command = sockMessageIn->command;
         switch (command) {
@@ -277,7 +240,6 @@ int getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     assert(*socketFd != -1);
 
     *unitsDisplay = arrayNew(unitRelease);
-    //Get bootAnalyze
     bootAnalyze = arrayContainsStr(options, OPTIONS_DATA[ANALYZE_OPT].name);
     if (!bootAnalyze) {
         fillUnitsDisplayList(&UNITD_DATA->units, unitsDisplay, listFilter);
@@ -286,60 +248,48 @@ int getUnitListServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         */
         if (listFilter == TIMERS_FILTER || listFilter == UPATH_FILTER) {
             if (!USER_INSTANCE) {
-                /* Loading only timer units */
                 loadOtherUnits(unitsDisplay, UNITS_PATH, NULL, false, true, listFilter);
             } else {
-                /* Loading only timer units */
                 loadOtherUnits(unitsDisplay, UNITS_USER_PATH, NULL, false, true, listFilter);
                 loadOtherUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, false, true, listFilter);
             }
         } else {
             if (!USER_INSTANCE) {
-                /* Loading all the units */
                 loadUnits(unitsDisplay, UNITS_PATH, NULL, NO_STATE, false, NULL,
                           PARSE_SOCK_RESPONSE_UNITLIST, true);
             } else {
-                /* Loading all the units */
                 loadUnits(unitsDisplay, UNITS_USER_PATH, NULL, NO_STATE, false, NULL,
                           PARSE_SOCK_RESPONSE_UNITLIST, true);
                 loadUnits(unitsDisplay, UNITS_USER_LOCAL_PATH, NULL, NO_STATE, false, NULL,
                           PARSE_SOCK_RESPONSE_UNITLIST, true);
             }
-            /* Try to apply an eventual filter */
             if (listFilter != NO_FILTER)
                 applyListFilter(unitsDisplay, listFilter);
         }
     } else {
         fillUnitsDisplayList(&UNITD_DATA->bootUnits, unitsDisplay, NO_FILTER);
         fillUnitsDisplayList(&UNITD_DATA->initUnits, unitsDisplay, NO_FILTER);
-        /* Adding "boot and system execution time like messages" */
         Time *current = timeNew(NULL);
-        /* Computing the duration */
         char *diffBooTime = stringGetDiffTime(BOOT_STOP, BOOT_START);
         char *diffExecTime = stringGetDiffTime(current, BOOT_START);
-        /* Adding the messages */
         if (!(*messages))
             *messages = arrayNew(objectRelease);
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Boot", diffBooTime));
         arrayAdd(*messages,
                  getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Execution", diffExecTime));
-        /* Release resources */
         objectRelease(&diffBooTime);
         objectRelease(&diffExecTime);
         timeRelease(&current);
     }
-    /* unitsDisplay could be empty */
     if (!bootAnalyze && (*unitsDisplay)->size == 0) {
         if (!(*messages))
             *messages = arrayNew(objectRelease);
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND_MSG].desc));
         goto out;
     }
-    /* Sorting the array by name */
     qsort((*unitsDisplay)->arr, (*unitsDisplay)->size, sizeof(Unit *), sortUnitsByName);
 
 out:
-    /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE_UNITLIST);
     bufferLen = strlen(buffer);
     /* Check socket buffer size */
@@ -365,7 +315,6 @@ out:
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "getUnitsListServer::Buffer sent (%d): \n%s", bufferLen,
                buffer);
-    /* Sending the response */
     if ((rv = uSend(*socketFd, buffer, bufferLen, 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitListServer", errno,
                  strerror(errno), "Send func returned -1 exit code!");
@@ -390,11 +339,9 @@ static void setOtherDataForUnit(Unit **unit, PType pType)
     assert(*unit);
     assert(pType == TIMER || pType == UPATH);
 
-    /* Get eventual other data for the unit */
     otherName = getOtherNameByUnitName((*unit)->name, pType);
     otherUnit = getUnitByName(UNITD_DATA->units, otherName);
     if (!otherUnit) {
-        /* The unit is not in memory then let's to find on the disk. */
         tmpUnits = arrayNew(unitRelease);
         errors = arrayNew(objectRelease);
         rv = loadAndCheckUnit(&tmpUnits, false, otherName, false, &errors);
@@ -407,18 +354,14 @@ static void setOtherDataForUnit(Unit **unit, PType pType)
     if (otherUnit) {
         switch (pType) {
         case TIMER:
-            /* Timer name */
             stringSet(&(*unit)->timerName, otherUnit->name);
-            /* Timer PState */
             objectRelease(&(*unit)->timerPState);
             (*unit)->timerPState = calloc(1, sizeof(PState));
             assert((*unit)->timerPState);
             *(*unit)->timerPState = otherUnit->processData->pStateData->pState;
             break;
         case UPATH:
-            /* Path unit name */
             stringSet(&(*unit)->pathUnitName, otherUnit->name);
-            /* Path unit pState */
             objectRelease(&(*unit)->pathUnitPState);
             (*unit)->pathUnitPState = calloc(1, sizeof(PState));
             assert((*unit)->pathUnitPState);
@@ -450,14 +393,10 @@ int getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn,
     assert(sockMessageIn);
     assert(*socketFd != -1);
 
-    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
-    /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);
-    /* Try to get the unit from memory */
     unit = getUnitByName(units, unitName);
     if (unit) {
-        /* Waiting for notifier. */
         handleMutex(&NOTIFIER_MUTEX, true);
         handleMutex(&NOTIFIER_MUTEX, false);
         if (unit->isChanged) {
@@ -470,29 +409,19 @@ int getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn,
                                        !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
-        /* We lock the mutex for the same reason explained in listenPipeThread Func.
-         * Take a quick look there.
-        */
         handleMutex(unit->mutex, true);
         if (unit->type == DAEMON || unit->type == ONESHOT) {
-            /* Set eventual other data for the unit */
             setOtherDataForUnit(&unit, TIMER);
             setOtherDataForUnit(&unit, UPATH);
         }
-        /* Create copy for client */
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
-        /* Unlock */
         handleMutex(unit->mutex, false);
     } else {
-        /* Check and parse unitName. We don't consider the units into memory
-        * because we show only syntax errors, not logic errors.
-        */
         rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
         if (rv == 0) {
             assert((*unitsDisplay)->size == 1);
             unit = arrayGet((*unitsDisplay), 0);
             if (unit->type == DAEMON || unit->type == ONESHOT) {
-                /* Set eventual other data for the unit */
                 setOtherDataForUnit(&unit, TIMER);
                 setOtherDataForUnit(&unit, UPATH);
             }
@@ -500,12 +429,10 @@ int getUnitStatusServer(int *socketFd, SockMessageIn *sockMessageIn,
     }
 
 out:
-    /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitStatusServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
-    /* Sending the response */
     if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitStatusServer", errno,
                  strerror(errno), "Send func returned -1 exit code!");
@@ -535,23 +462,17 @@ int stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut *
     assert(sockMessageIn);
     assert(*socketFd != -1);
 
-    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
-    /* Create the array */
     if (!(*unitsDisplay))
         *unitsDisplay = arrayNew(unitRelease);
-    /* Try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        /* Close eventual pipe except for timer unit which will be closed by stopProcess func. */
         if (unit->pipe && unit->type != TIMER)
             closePipes(NULL, unit);
-        /* Get unit data */
         pData = &unit->processData;
         pState = &(*pData)->pStateData->pState;
         pType = &unit->type;
         unitErrors = &unit->errors;
-        /* Waiting for notifier. */
         handleMutex(&NOTIFIER_MUTEX, true);
         handleMutex(&NOTIFIER_MUTEX, false);
         if (*pState == DEAD) {
@@ -577,7 +498,6 @@ int stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut *
             unit->isStopping = true;
             stopProcesses(NULL, unit);
         }
-        /* Waiting for notifier. */
         handleMutex(&NOTIFIER_MUTEX, true);
         handleMutex(&NOTIFIER_MUTEX, false);
         if (unit->isChanged || *pType == ONESHOT || (unit->errors && unit->errors->size > 0) ||
@@ -591,7 +511,6 @@ int stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut *
                     goto out;
             }
         } else if (sendResponse)
-            /* Create a copy for client */
             arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     } else {
         /* When we come from disabledUnitFunc unitsDisplay is already here */
@@ -610,13 +529,11 @@ int stopUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut *
     }
 
 out:
-    /* Marshall response */
     if (sendResponse) {
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
         if (DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "StopUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
-        /* Sending the response */
         if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "stopUnitServer", errno,
                      strerror(errno), "Send func returned -1 exit code!");
@@ -649,7 +566,6 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     assert(sockMessageIn);
     assert(*socketFd != -1);
 
-    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
     if ((rvMutex = pthread_mutex_lock(&START_MUTEX)) != 0) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer", rv, strerror(rv),
@@ -659,7 +575,6 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     restart = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESTART_OPT].name);
     reset = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RESET_OPT].name);
-    /* Create the array */
     if (!(*unitsDisplay))
         *unitsDisplay = arrayNew(unitRelease);
     unit = getUnitByName(*units, unitName);
@@ -683,7 +598,7 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         } else {
             if (*pState != DEAD || (*pState == DEAD && unit->errors && unit->errors->size > 0))
                 stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false);
-            /* stopUnitServer function could not removed it but it must be always removed */
+            /* StopUnitServer function might not remove it. */
             unit = getUnitByName(*units, unitName);
             if (unit) {
                 /* We always remove the unit */
@@ -693,7 +608,7 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         }
     }
     /* Check unit name.
-     * When we are come from enableUnit func unitDisplay is already checked and parsed.
+     * When we are come from enableUnit func, unitDisplay is already checked and parsed.
     */
     if (sendResponse) {
         rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
@@ -701,14 +616,11 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
             goto out;
     }
     assert((*unitsDisplay)->size == 1);
-    /* Get unitDisplay to retrieve the path */
     unitDisplay = arrayGet(*unitsDisplay, 0);
-    /* We only start the dead unit */
     unit = unitNew(NULL, PARSE_UNIT);
     unit->name = stringNew(unitName);
     unit->path = stringNew(unitDisplay->path);
     unit->enabled = unitDisplay->enabled;
-    /* Aggregate all the errors */
     unit->type = getPTypeByUnitName(unitName);
     assert(unit->type != NO_PROCESS_TYPE);
     switch (unit->type) {
@@ -799,12 +711,10 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         len = stopConflictsArr->size;
         for (int i = 0; i < len; i++) {
             unitConflict = arrayGet(stopConflictsArr, i);
-            /* Waiting for notifier. */
             handleMutex(&NOTIFIER_MUTEX, true);
             handleMutex(&NOTIFIER_MUTEX, false);
             pDataConflict = unitConflict->processData;
             pStateConflict = &pDataConflict->pStateData->pState;
-            /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
                 (unitConflict->errors && unitConflict->errors->size > 0) ||
                 (unitConflict->type == DAEMON &&
@@ -813,15 +723,11 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
         }
         arrayRelease(&stopConflictsArr);
     }
-    /* Adding the unit into memory */
     arrayAdd(*units, unit);
-    /* Creating eventual pipe */
     if (unit->type == TIMER || hasPipe(unit)) {
         unit->pipe = pipeNew();
         if (unit->type != TIMER) {
-            /* Create process data history array accordingly */
             unit->processDataHistory = arrayNew(processDataRelease);
-            /* Put to listen the pipe */
             listenPipes(NULL, unit);
         } else if (unit->type == TIMER && reset)
             resetNextTime(unitName);
@@ -831,12 +737,10 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
 
 out:
     if (sendResponse && !isTimer) {
-        /* Marshall response */
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
         if (DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "StartUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
-        /* Sending the response */
         if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "startUnitServer", errno,
                      strerror(errno), "Send func returned -1 exit code!");
@@ -878,14 +782,11 @@ int disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
     if (unitNameArg)
         unitName = stringNew(unitNameArg);
     else
-        /* Get unit name */
         unitName = getUnitName(sockMessageIn->arg);
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
     reEnable = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RE_ENABLE_OPT].name);
-    /* Create the array */
     if (!(*unitsDisplay))
         *unitsDisplay = arrayNew(unitRelease);
-    /* Try to get the unit from memory */
     unit = getUnitByName(UNITD_DATA->units, unitName);
     if (unit) {
         if (!unit->enabled && !reEnable) {
@@ -895,14 +796,13 @@ int disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     } else {
         /* If we are come from 'enableUnitServer' func then we have to run loadAndCheckUnit
-         * even if its size > 0 because we have to check unitNameArg (conflict name) which is not present into array.
+         * even though its size > 0 because we have to check unitNameArg (conflict name) which is not present into array.
         */
         if (sendResponse || unitNameArg) {
-            /* If the unit is not in memory then check that unitname is valid.
-             * No need to parse unit because 'unitDisplay->enabled' (required later) is already
-             * available with 'false' parameter.
-             * Additionally, we only have to remove a symlink regardless by
-             * its eventual configuration errors.
+            /**
+             * If the unit is not in memory then check that unitname is valid.
+             * No need to parse unit because 'unitDisplay->enabled' (required later) is already available with 'false' value.
+             * Additionally, we only have to remove a symlink regardless by its possible configuration errors.
             */
             rv = loadAndCheckUnit(unitsDisplay, false, unitName, false, errors);
             if (rv != 0)
@@ -910,9 +810,9 @@ int disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         }
     }
     /* If we are come from enableUnitServer func (conflict case) then unitdisplay has index = 1.
-     * To avoid to accumulate unit we always release it.
-     * In this way its index will be always equal to 1.
-     * Additionally, even if run = true, we stop nothing because they will be stopped (parallelized)
+     * To avoid to accumulate unit, we always release it.
+     * In this way its index will be always 1.
+     * Additionally, even though run = true, we stop nothing because they will be stopped (parallelized)
      * in enableUnitServer func to optimize performance.
      */
     if (unitNameArg) {
@@ -951,23 +851,19 @@ int disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
          * We show the message only if it is really there.
         */
         if (isEnabledUnit(unitName, state)) {
-            /* Get script parameters */
             scriptParams = getScriptParams(unitName, stateStr, SYML_REMOVE_OP, unitDisplay->path);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
-            /* Execute the script */
             rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
             if (rv != 0) {
                 arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
                 arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
-                /* Write the details into system log */
                 logError(SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer", rv,
                          strerror(rv), "ExecScript error!");
                 goto out;
             } else {
                 if (unit)
                     unit->enabled = false;
-                /* Put the result into response */
                 arrayAdd(*messages,
                          getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_REMOVED_SYML_MSG].desc, to, from));
             }
@@ -975,18 +871,15 @@ int disableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         }
         objectRelease(&stateStr);
     }
-    /* If 'run' = true then stop it */
     if (run)
         stopUnitServer(socketFd, sockMessageIn, sockMessageOut, false);
 
 out:
     if (sendResponse) {
-        /* Marshall response */
         buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
         if (DEBUG)
             syslog(LOG_DAEMON | LOG_DEBUG, "DisableUnitServer::Buffer sent (%lu): \n%s",
                    strlen(buffer), buffer);
-        /* Sending the response */
         if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
             logError(SYSTEM, "src/core/socket/socket_server.c", "disableUnitServer", errno,
                      strerror(errno), "Send func returned -1 exit code!");
@@ -994,7 +887,6 @@ out:
         objectRelease(&buffer);
     }
 
-    /* Release resources */
     if (unitNameArg)
         arrayRemove(*unitsDisplay, unitDisplay);
     objectRelease(&unitName);
@@ -1028,18 +920,14 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
     messages = &(*sockMessageOut)->messages;
     if (!(*messages))
         *messages = arrayNew(objectRelease);
-    /* Get unit name */
     unitName = getUnitName(sockMessageIn->arg);
     force = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[FORCE_OPT].name);
     run = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RUN_OPT].name);
     reEnable = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[RE_ENABLE_OPT].name);
-    /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);
-    /* try to get the unit from memory */
     unit = getUnitByName(*units, unitName);
     if (unit) {
         if (reEnable) {
-            /* Waiting for notifier. */
             handleMutex(&NOTIFIER_MUTEX, true);
             handleMutex(&NOTIFIER_MUTEX, false);
             if (!run && unit->isChanged) {
@@ -1050,14 +938,14 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
             } else {
                 disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
                 isAlreadyDisabled = true;
-                /* disableUnitServer func could fully release the unit thus retry to get it */
+                /* disableUnitServer func might fully release the unit thus we retry to get it. */
                 unit = getUnitByName(*units, unitName);
                 /* Release and create unitsDisplay array to satisfy loadAndCheckUnit */
                 arrayRelease(unitsDisplay);
                 *unitsDisplay = arrayNew(unitRelease);
             }
         }
-        /* disableUnitServer func could remove the unit */
+        /* disableUnitServer func might remove the unit */
         if (unit) {
             if (unit->enabled) {
                 arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ALREADY_ERR].desc, "enabled"));
@@ -1065,7 +953,6 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
                                            !USER_INSTANCE ? "" : "--user ", unitName));
                 goto out;
             }
-            /* Waiting for notifier. */
             handleMutex(&NOTIFIER_MUTEX, true);
             handleMutex(&NOTIFIER_MUTEX, false);
             if (unit->isChanged) {
@@ -1082,7 +969,6 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
         goto out;
     assert((*unitsDisplay)->size == 1);
     unitDisplay = arrayGet(*unitsDisplay, 0);
-    /* The unit could have some configuration errors */
     unitDisplayErrors = &unitDisplay->errors;
     if (!(*unitDisplayErrors))
         *unitDisplayErrors = arrayNew(objectRelease);
@@ -1099,7 +985,7 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
         goto out;
     } else if (!unit && reEnable && unitDisplay->enabled && !isAlreadyDisabled)
         disableUnitServer(socketFd, sockMessageIn, sockMessageOut, NULL, false);
-    /* Before to perform the checks and enabling, we test that at least a valid state is here */
+    /* Before to perform the checks and enabling, we check that at least a valid state is here */
     wantedBy = unitDisplay->wantedBy;
     if (!USER_INSTANCE) {
         if (!arrayContainsStr(wantedBy, STATE_DATA_ITEMS[REBOOT].desc) &&
@@ -1114,7 +1000,6 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
     }
     if (hasError) {
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNIT_ENABLE_STATE_ERR].desc));
-        /* Building message */
         char *msg = NULL;
         if (!USER_INSTANCE) {
             msg = getMsg(
@@ -1206,12 +1091,10 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
         len = unitsConflicts->size;
         for (int i = 0; i < len; i++) {
             unitConflict = arrayGet(unitsConflicts, i);
-            /* Waiting for notifier. */
             handleMutex(&NOTIFIER_MUTEX, true);
             handleMutex(&NOTIFIER_MUTEX, false);
             pDataConflict = unitConflict->processData;
             pStateConflict = &pDataConflict->pStateData->pState;
-            /* Release */
             if (unitConflict->isChanged || unitConflict->type == ONESHOT ||
                 (unitConflict->errors && unitConflict->errors->size > 0) ||
                 (unitConflict->type == DAEMON &&
@@ -1233,16 +1116,13 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
         assert(state != NO_STATE);
         if (state == STATE_DEFAULT || state == STATE_CMDLINE || state == REBOOT ||
             state == POWEROFF || state == USER) {
-            /* Get script parameter array */
             scriptParams = getScriptParams(unitName, stateStr, SYML_ADD_OP, unitDisplay->path);
             from = arrayGet(scriptParams, 2);
             to = arrayGet(scriptParams, 3);
-            /* Execute the script */
             rv = execScript(UNITD_DATA_PATH, "/scripts/symlink-handle.sh", scriptParams->arr, NULL);
             if (rv != 0) {
                 arrayAdd(*errors, getMsg(-1, UNITD_ERRORS_ITEMS[UNITD_GENERIC_ERR].desc));
                 arrayAdd(*messages, getMsg(-1, UNITD_MESSAGES_ITEMS[UNITD_SYSTEM_LOG_MSG].desc));
-                /* Write the details into system log */
                 logError(SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer", rv,
                          strerror(rv), "ExecScript error!");
                 goto out;
@@ -1250,7 +1130,6 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
                 if (unit)
                     unit->enabled = true;
                 unitDisplay->enabled = true;
-                /* Put the result into response */
                 arrayAdd(*messages,
                          getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_CREATED_SYML_MSG].desc, to, from));
             }
@@ -1258,17 +1137,14 @@ int enableUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut
         }
         objectRelease(&stateStr);
     }
-    /* If 'run' = true then start it */
     if (run)
         startUnitServer(socketFd, sockMessageIn, sockMessageOut, false, false);
 
 out:
-    /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "EnableUnitServer::Buffer sent (%lu): \n%s", strlen(buffer),
                buffer);
-    /* Sending the response */
     if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "enableUnitServer", errno,
                  strerror(errno), "Send func returned -1 exit code!");
@@ -1303,7 +1179,6 @@ int getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
             states = arrayContainsStr(sockMessageIn->options, OPTIONS_DATA[STATES_OPT].name);
     }
     assert(requires || conflicts || states);
-    /* Unit name could contain ".unit" suffix */
     unitName = getUnitName(sockMessageIn->arg);
     if (!unitName)
         unitName = sockMessageIn->arg;
@@ -1311,19 +1186,11 @@ int getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         objectRelease(&sockMessageIn->arg);
         sockMessageIn->arg = unitName;
     }
-    /* Create the array */
     *unitsDisplay = arrayNew(unitRelease);
-    /* If the unit is into memory and the file content is changed then show the error.
-     * That means the data are not synchronized between memory and disk.
-     */
     unit = getUnitByName(*units, unitName);
     if (unit) {
-        /* Waiting for notifier. */
         handleMutex(&NOTIFIER_MUTEX, true);
         handleMutex(&NOTIFIER_MUTEX, false);
-        /* If the unit content is changed then we force the user to stop the unit.
-         * In this way, we will read the data on the disk (updated) which is that we expect.
-         */
         if (unit->isChanged) {
             if (!(*errors))
                 *errors = arrayNew(objectRelease);
@@ -1334,7 +1201,6 @@ int getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
                                        !USER_INSTANCE ? "" : "--user ", unitName));
             goto out;
         }
-        /* Create a copy for client */
         arrayAdd(*unitsDisplay, unitNew(unit, PARSE_SOCK_RESPONSE));
     } else {
         rv = loadAndCheckUnit(unitsDisplay, true, unitName, true, errors);
@@ -1360,12 +1226,10 @@ int getUnitDataServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOu
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[UNIT_NO_DATA_FOUND_MSG].desc));
 
 out:
-    /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetUnitDataServer::Buffer sent (%lu): \n%s", strlen(buffer),
                buffer);
-    /* Sending the response */
     if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "getUnitDataServer", errno,
                  strerror(errno), "Send func returned -1 exit code!");
@@ -1388,25 +1252,20 @@ int getDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn,
 
     messages = &(*sockMessageOut)->messages;
     *messages = arrayNew(objectRelease);
-    /* Default state */
     arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc, "Default",
                                STATE_DATA_ITEMS[STATE_DEFAULT].desc));
-    /* Current state */
     if (STATE_CMDLINE != NO_STATE) {
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc, "Current",
                                    STATE_DATA_ITEMS[STATE_CMDLINE].desc));
     }
-    /* New default state */
     if (STATE_NEW_DEFAULT != NO_STATE) {
         arrayAdd(*messages, getMsg(-1, UNITS_MESSAGES_ITEMS[STATE_MSG].desc, "New default",
                                    STATE_DATA_ITEMS[STATE_NEW_DEFAULT].desc));
     }
-    /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "GetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
-    /* Sending the response */
     if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "getDefaultStateServer", errno,
                  strerror(errno), "Send func returned -1 exit code!");
@@ -1453,12 +1312,10 @@ int setDefaultStateServer(int *socketFd, SockMessageIn *sockMessageIn,
         /* Create symlink */
         rv = setNewDefaultStateSyml(STATE_NEW_DEFAULT, messages, errors);
     }
-    /* Marshall response */
     buffer = marshallResponse(*sockMessageOut, PARSE_SOCK_RESPONSE);
     if (DEBUG)
         syslog(LOG_DAEMON | LOG_DEBUG, "SetDefaultStateServer::Buffer sent (%lu): \n%s",
                strlen(buffer), buffer);
-    /* Sending the response */
     if ((rv = uSend(*socketFd, buffer, strlen(buffer), 0)) == -1) {
         logError(SYSTEM, "src/core/socket/socket_server.c", "setDefaultStateServer", errno,
                  strerror(errno), "Send func returned -1 exit code!");

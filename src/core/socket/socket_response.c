@@ -223,7 +223,6 @@ char *marshallResponse(SockMessageOut *sockMessageOut, ParserFuncType funcType)
     len = (units ? units->size : 0);
     for (int i = 0; i < len; i++) {
         unit = arrayGet(units, i);
-        /* Process Data */
         pData = unit->processData;
         /* Unit section */
         if (i == 0 && !buffer)
@@ -516,15 +515,12 @@ int unmarshallResponse(char *buffer, SockMessageOut **sockMessageOut)
             if (!value) {
                 // SECTIONS
                 if (stringEquals(key, KEY_VALUE[UNIT_SEC].value)) {
-                    /* Create the array */
                     if (!(*unitsDisplay))
                         *unitsDisplay = arrayNew(unitRelease);
-                    /* Create the unit */
                     unitDisplay = unitNew(NULL, PARSE_SOCK_RESPONSE);
                     pData = unitDisplay->processData;
                     pDatasHistory = &unitDisplay->processDataHistory;
                     unitErrors = &unitDisplay->errors;
-                    /* Adding the unit to array */
                     arrayAdd(*unitsDisplay, unitDisplay);
                     goto next;
                 }

@@ -136,7 +136,6 @@ char *getLogOffset()
     ret = stringNew(offsetStr);
 
 out:
-    /* Release resources */
     unitlogdCloseLog();
     assert(!UNITLOGD_LOG_FILE);
     return ret;

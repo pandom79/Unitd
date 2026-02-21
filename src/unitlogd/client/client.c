@@ -93,9 +93,7 @@ int showBootsList()
             objectRelease(&timeStamp);
         } else
             printf("-%*s", WIDTH_DATE - 1, "");
-        /* Increasing idx */
         idx++;
-        /* New line */
         printf("\n");
     }
     printf("\n%d boots found\n", idx);
@@ -116,7 +114,6 @@ int showLogLines(off_t startOffset, off_t stopOffset)
 
     assert(startOffset >= 0);
 
-    /* Open log */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
     /* Set start offset */
@@ -156,13 +153,11 @@ int sendToPager(int (*fn)(off_t, off_t), off_t startOffset, off_t stopOffset)
     int rv = 0, pfds[2];
     pid_t pid;
 
-    /* Pipe */
     if ((rv = pipe(pfds)) < 0) {
         logError(CONSOLE | SYSTEM, "src/unitlogd/client/client.c", "sendToPager", errno,
                  strerror(errno), "Pipe function returned a bad exit code");
         goto out;
     }
-    /* Fork */
     pid = fork();
     if (pid < 0) {
         rv = errno;
@@ -197,13 +192,10 @@ int followLog()
 
     if (DEBUG)
         logInfo(CONSOLE, "\n\n-- Follow the log --\n\n");
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "UNITLOGD_LOG_PATH", UNITLOGD_LOG_PATH);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Exec script */
     rv = execUlScript(&envVars, "follow");
 
     arrayRelease(&envVars);
@@ -233,17 +225,13 @@ int showCurrentBoot(bool pager, bool follow)
     Array *index = NULL;
     char maxIdxStr[10] = { 0 };
 
-    /* Get the index */
     if ((rv = getIndex(&index, true)) != 0) {
         setIndexErr(true);
         goto out;
     }
-    /* Get max idx which is the current. */
     maxIdx = getMaxIdx(&index);
     assert(maxIdx != -1);
-    /* Get max idx as string */
     sprintf(maxIdxStr, "%d", maxIdx);
-    /* Show */
     rv = showBoot(pager, follow, maxIdxStr);
 
 out:
@@ -266,14 +254,12 @@ int showBoot(bool pager, bool follow, const char *bootIdx)
         rv = followLog();
         goto out;
     }
-    /* Get the index */
     if ((rv = getIndex(&index, true)) != 0) {
         setIndexErr(true);
         goto out;
     }
     indexSize = index ? index->size : 0;
     if (indexSize > 0) {
-        /* Find the max idx */
         idxMax = getMaxIdx(&index);
         assert(idxMax != -1);
         if (isValidNumber(bootIdx, true)) {
@@ -328,13 +314,10 @@ int createIndexFile()
 {
     int rv = 0;
 
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "UNITLOGD_INDEX_PATH", UNITLOGD_INDEX_PATH);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Exec script */
     rv = execUlScript(&envVars, "create-index");
 
     arrayRelease(&envVars);
@@ -347,24 +330,19 @@ int indexRepair()
     Array *index = NULL;
     IndexEntry *indexEntry = NULL;
 
-    /* Get the index from log */
     if ((rv = getIndex(&index, false)) != 0) {
         setIndexErr(false);
         goto out;
     }
-    /* Write the index entries */
     indexSize = index ? index->size : 0;
     if (indexSize > 0) {
-        /* Create index file and set the owner and permissions */
         if ((rv = createIndexFile()) != 0)
             goto out;
-        /* Open the index file in append mode */
         if (unitlogdOpenIndex("a") != 0) {
             rv = 1;
             goto out;
         }
         assert(UNITLOGD_INDEX_FILE);
-        /* Writing a new index file content */
         for (int i = 0; i < indexSize; i++) {
             indexEntry = arrayGet(index, i);
             if (i % 2 == 0)
@@ -389,14 +367,11 @@ int runTmpLogOperation(const char *operation)
 
     assert(operation);
 
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "UNITLOGD_LOG_PATH", UNITLOGD_LOG_PATH);
     addEnvVar(&envVars, "TMP_SUFFIX", TMP_SUFFIX);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Exec script */
     rv = execUlScript(&envVars, operation);
 
     arrayRelease(&envVars);
@@ -414,7 +389,6 @@ int cutLog(off_t startOffset, off_t stopOffset)
     assert(startOffset >= 0);
     assert(stopOffset > 0);
 
-    /* Creating the path */
     tmpLogPath = stringNew(UNITLOGD_LOG_PATH);
     stringAppendStr(&tmpLogPath, TMP_SUFFIX);
     /* We create a temporary log file with the new content (UNITLOGD_LOG_PATH.tmp).
@@ -430,7 +404,6 @@ int cutLog(off_t startOffset, off_t stopOffset)
                  "Unable to open '%s' in append mode!", tmpLogPath);
         goto out;
     }
-    /* Open log */
     unitlogdOpenLog("r");
     assert(UNITLOGD_LOG_FILE);
     while (getline(&line, &len, UNITLOGD_LOG_FILE) != -1) {
@@ -447,7 +420,6 @@ int cutLog(off_t startOffset, off_t stopOffset)
             fflush(tmpLogFp);
         }
     }
-    /* Relase and close */
     objectRelease(&line);
     fclose(tmpLogFp);
     tmpLogFp = NULL;
@@ -539,12 +511,10 @@ int vacuum(const char *bootIdx)
             goto out;
         }
     }
-    /* Get index */
     if ((rv = getIndex(&index, true)) != 0) {
         setIndexErr(true);
         goto out;
     }
-    /* Get and check max idx */
     maxIdx = getMaxIdx(&index);
     if (maxIdx > 0) {
         if (startIdx >= maxIdx) {
@@ -590,13 +560,9 @@ int vacuum(const char *bootIdx)
     if ((rv = handleLockFile(true)) != 0)
         goto out;
     /* From this point, whatever error occurred, we don't exit because we must always unlock. */
-    /* Get previous log size */
     if ((prevLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
-        /* Cut the log */
         if ((rv = cutLog(startOffset, stopOffset)) == 0) {
-            /* Repair the index from new log content */
             if ((rv = indexRepair()) == 0) {
-                /* Get current log size */
                 if ((currentLogSize = getFileSize(UNITLOGD_LOG_PATH)) != -1) {
                     freedLogSize = prevLogSize - currentLogSize;
                     if (DEBUG) {
@@ -610,7 +576,6 @@ int vacuum(const char *bootIdx)
             }
         }
     }
-    /* UnLock */
     rv = handleLockFile(false);
 
 out:

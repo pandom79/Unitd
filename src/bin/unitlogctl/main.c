@@ -72,10 +72,7 @@ int main(int argc, char **argv)
         }
     }
 
-    /* Assert the macros */
     assertMacros();
-
-    /* Get the command */
     if ((commandName = argv[optind])) {
         ulCommand = getUlCommand(commandName);
         if (ulCommand == NO_UL_COMMAND) {
@@ -84,10 +81,8 @@ int main(int argc, char **argv)
             goto out;
         }
     }
-    /* Show-log is the default command */
     if (ulCommand == NO_UL_COMMAND)
         ulCommand = SHOW_LOG;
-    /* Check administrator */
     userId = getuid();
     if (userId != 0) {
         if (!getSkipCheckAdmin(ulCommand)) {
@@ -95,7 +90,6 @@ int main(int argc, char **argv)
             goto out;
         }
     }
-    /* Command handling */
     switch (ulCommand) {
     case SHOW_LOG:
         if (argc > 5 || (argc > 3 && !DEBUG && !pager && !follow)) {

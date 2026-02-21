@@ -48,7 +48,6 @@ static void showUsage()
     fprintf(stdout,
             "Usage for %s instance: unitctl [COMMAND] [OPTIONS] ... \n\n",
             !USER_INSTANCE ? "system" : "user");
-    /* Commands */
     fprintf(stdout,
             WHITE_UNDERLINE_COLOR"COMMAND\n"DEFAULT_COLOR
             "enable             Enable the unit\n"
@@ -92,7 +91,6 @@ static void showUsage()
             "set-default        Set the default state\n"
         );
     }
-    /* Options */
     fprintf(stdout,
             WHITE_UNDERLINE_COLOR"\nOPTIONS\n"DEFAULT_COLOR
             "-e, --reset        Reset the timer\n"
@@ -135,7 +133,6 @@ int main(int argc, char **argv)
                                        { "version", optional_argument, NULL, 'v' },
                                        { 0, 0, 0, 0 } };
 
-    /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
         case 'h':
@@ -195,10 +192,11 @@ int main(int argc, char **argv)
     userId = getuid();
     assert(userId >= 0);
     if (!USER_INSTANCE) {
-        /* The interaction commands require the administrator check.
-         * For the consultation commands instead, it is not required.
+        /**
+         * The interaction commands require the administrator check.
+         * That's not true for consultation commands.
         */
-        if (command == NO_COMMAND && !onlyWtmp) //LIST_COMMAND is a default command
+        if (command == NO_COMMAND && !onlyWtmp) //LIST_COMMAND is the default command
             skipCheckAdmin = true;
         else
             skipCheckAdmin = getSkipCheckAdmin(command);
@@ -213,7 +211,6 @@ int main(int argc, char **argv)
         if ((rv = setUserData(userId, &userInfo)) != 0)
             goto out;
     }
-    /* Command handling */
     switch (command) {
     case NO_COMMAND:
         if (argc > 4 || (argc > 1 && !DEBUG && !onlyWtmp && !USER_INSTANCE)) {
@@ -223,7 +220,6 @@ int main(int argc, char **argv)
         } else {
             if (onlyWtmp) {
                 if (!USER_INSTANCE) {
-                    /* Write a wtmp/utmp 'reboot' record and exit */
                     rv = writeWtmp(true);
                 } else {
                     showUsage();
@@ -231,7 +227,6 @@ int main(int argc, char **argv)
                     goto out;
                 }
             } else
-                /* List command as default */
                 rv = showUnitList(&sockMessageOut, NO_FILTER);
         }
         break;
@@ -252,9 +247,10 @@ int main(int argc, char **argv)
                 goto out;
             }
         } else {
-            /* We only use POWEROFF_COMMAND to shutdown an unitd user instance.
-                 * We don't allow force, noWtmp and noWall option.
-                */
+            /**
+             * We only use POWEROFF_COMMAND to shutdown an unitd user instance.
+             * We don't allow "force", "noWtmp" and "noWall" option.
+            */
             if (argc > 4 || command != POWEROFF_COMMAND ||
                 (argc > 2 && (force || noWtmp || noWall))) {
                 showUsage();
@@ -360,7 +356,6 @@ int main(int argc, char **argv)
             if ((rv = createUnit(arg)) != 0)
                 goto out;
             else
-                /* Edit the unit */
                 command = EDIT_COMMAND;
         }
         rv = catEditUnit(command, arg);
@@ -368,7 +363,6 @@ int main(int argc, char **argv)
     }
 
 out:
-    /* Release resources */
     userDataRelease();
 
     return rv;

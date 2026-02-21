@@ -74,7 +74,6 @@ int main(int argc, char **argv) {
     assert(UNITD_DATA_PATH);
     assert(UNITD_CONF_PATH);
 
-    /* Get options */
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (c) {
             case 'h':
@@ -106,9 +105,7 @@ int main(int argc, char **argv) {
         goto out;
     }
 #endif
-    /* Boot start */
     BOOT_START = timeNew(NULL);
-    /* Set PID */
     UNITD_PID = setsid();
     if (UNITD_PID != 1) {
 #ifndef UNITD_TEST
@@ -116,17 +113,14 @@ int main(int argc, char **argv) {
 #endif
         UNITD_PID = getpid();
     }
-    /* Unmask the file mode */
     umask(0);
     if (!USER_INSTANCE) {
-        /* Change the current working directory to root */
         if ((rv = chdir("/")) == -1) {
             logError(ALL, "src/bin/unitd/main.c", "main", errno,
                           strerror(errno), "Chdir (system instance) returned -1 exit code");
             showEmergencyShell = hasError = true;
             goto out;
         }
-        /* Parsing /proc/cmdline file */
         if ((rv = parseProcCmdLine()) == 1) {
             showEmergencyShell = hasError = true;
             goto out;
@@ -141,14 +135,12 @@ int main(int argc, char **argv) {
         /* Detecting virtualization environment */
         Array *envVars = arrayNew(objectRelease);
         addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
-        /* Must be null terminated */
         arrayAdd(envVars, NULL);
         rv = execUScript(&envVars, "virtualization");
         arrayRelease(&envVars);
         if (rv == 0 || rv == 1) {
             if (rv == 1)
                 addEnvVar(&UNITD_ENV_VARS, "VIRTUALIZATION", "1");
-            /* Adding the macro's path as environment variables */
             addEnvVar(&UNITD_ENV_VARS, "PATH", PATH_ENV_VAR);
             addEnvVar(&UNITD_ENV_VARS, "UNITS_PATH", UNITS_PATH);
             addEnvVar(&UNITD_ENV_VARS, "UNITS_USER_PATH", UNITS_USER_PATH);
@@ -158,7 +150,6 @@ int main(int argc, char **argv) {
             addEnvVar(&UNITD_ENV_VARS, "UNITD_TIMER_DATA_PATH", UNITD_TIMER_DATA_PATH);
             addEnvVar(&UNITD_ENV_VARS, "OUR_UTMP_FILE", OUR_UTMP_FILE);
             addEnvVar(&UNITD_ENV_VARS, "OUR_WTMP_FILE", OUR_WTMP_FILE);
-            /* UNITD_ENV_VARS Array must be null terminated */
             arrayAdd(UNITD_ENV_VARS, NULL);
         }
         else {
@@ -170,15 +161,13 @@ int main(int argc, char **argv) {
     }
     else {
         struct passwd *userInfo = NULL;
-        /* Set user data */
         if ((rv = setUserData(userId, &userInfo)) != 0) {
             hasError = true;
             goto out;
         }
-        /* Get userId as string */
         char userIdStr[20] = {0};
         sprintf(userIdStr, "%d", userId);
-        /* Check the user directories are there and the instance is not already running for this user */
+        /* Check the user's directories are there and the instance is not already running for this user */
         if ((rv = unitdUserCheck(userIdStr, userInfo->pw_name)) != 0) {
             hasError = true;
             goto out;
@@ -188,7 +177,6 @@ int main(int argc, char **argv) {
     unitdData = calloc(1, sizeof(UnitdData));
     assert(unitdData);
     UNITD_DATA = unitdData;
-    /* Set sigaction */
     if ((rv = setSigAction()) != 0) {
         if (!USER_INSTANCE)
             showEmergencyShell = true;
@@ -200,10 +188,8 @@ int main(int argc, char **argv) {
         rv = unitdInit(&unitdData, false);
     else
         rv = unitdUserInit(&unitdData, false);
-    /* Release all */
     unitdEnd(&unitdData);
     if (SHUTDOWN_START) {
-        /* Print Shutdown time */
         SHUTDOWN_STOP = timeNew(NULL);
         char *diff = stringGetDiffTime(SHUTDOWN_STOP, SHUTDOWN_START);
         char *msg = getMsg(-1, UNITS_MESSAGES_ITEMS[TIME_MSG].desc, "Shutdown", diff);

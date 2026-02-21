@@ -8,7 +8,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-/* Options */
 OptionData OPTIONS_DATA[] = {
     { FORCE_OPT, "force" },       { RESTART_OPT, "restart" },     { RUN_OPT, "run" },
     { REQUIRES_OPT, "requires" }, { CONFLICTS_OPT, "conflicts" }, { STATES_OPT, "states" },
@@ -17,7 +16,6 @@ OptionData OPTIONS_DATA[] = {
 };
 int OPTIONS_LEN = 10;
 
-/* Commands */
 CommandData COMMANDS_DATA[] = {
     { REBOOT_COMMAND, "reboot" },
     { POWEROFF_COMMAND, "poweroff" },
@@ -52,7 +50,6 @@ CommandData COMMANDS_DATA[] = {
 };
 int COMMANDS_LEN = 30;
 
-/* List Filter */
 const ListFilterData LIST_FILTER_DATA[] = {
     { ENABLED_FILTER, "enable" },      { DISABLED_FILTER, "disable" },
     { STARTED_FILTER, "started" },     { DEAD_FILTER, "dead" },
@@ -62,11 +59,9 @@ const ListFilterData LIST_FILTER_DATA[] = {
 };
 int LIST_FILTER_LEN = 9;
 
-/* Unitd errors */
 const UnitdErrorsData UNITD_ERRORS_ITEMS[] = { { UNITD_GENERIC_ERR, "An error has occurred!" },
                                                { UNITD_SOCKBUF_ERR,
                                                  "Unable to receive the data!" } };
-/* Unitd messages */
 const UnitdMessagesData UNITD_MESSAGES_ITEMS[] = {
     { UNITD_SYSTEM_LOG_MSG, "Please, check the system log for details." },
     { UNITD_SOCKBUF_MSG, "Have been requested '%lu' bytes but only '%lu' are available.\n"
@@ -133,7 +128,6 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
     stringAppendStr(&initStateDir, ".state/units");
     if ((rv = loadUnits(initUnits, UNITD_DATA_PATH, initStateDir, INIT, true, NULL, PARSE_UNIT,
                         true)) != 0) {
-        /* Show unit configuration error and emergency shell */
         logError(ALL, "src/core/init/init.c", "unitdInit", rv,
                  "An error has occurred in loadUnits for init.state", NULL);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
@@ -172,7 +166,6 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
     if (DEBUG)
         logInfo(ALL, "The default.state symlink points to %s\n",
                 STATE_DATA_ITEMS[STATE_DEFAULT].desc);
-    /* Parsing the units */
     if (STATE_CMDLINE_DIR) {
         if (DEBUG)
             logInfo(ALL, "The state of the cmdline is %s\n", STATE_DATA_ITEMS[STATE_CMDLINE].desc);
@@ -188,18 +181,14 @@ int unitdInit(UnitdData **unitdData, bool isAggregate)
         SHUTDOWN_COMMAND = REBOOT_COMMAND;
         goto shutdown;
     }
-    /* Let's listen to pipes to be ready for restarting. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
-    /* Create the boot units array */
     addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-    /* Let's listen to client requests */
     listenSocketRequest();
 
 shutdown:
-    /* Shutdown start */
     SHUTDOWN_START = timeNew(NULL);
     stopCleaner();
     stopNotifier(NULL);
@@ -221,7 +210,6 @@ shutdown:
     stopProcesses(units, NULL);
     stopProcesses(shutDownUnits, NULL);
     stopProcesses(initUnits, NULL);
-    /* Write a wtmp 'shutdown' record */
     if (!NO_WTMP) {
         rv = writeWtmp(false);
     }
@@ -235,7 +223,6 @@ shutdown:
     stringAppendStr(&finalStateDir, ".state/units");
     if ((rv = loadUnits(finalUnits, UNITD_DATA_PATH, finalStateDir, FINAL, true, NULL, PARSE_UNIT,
                         true)) != 0) {
-        /* Show unit configuration error and emergency shell */
         logError(ALL, "src/core/init/init.c", "unitdInit", rv,
                  "An error has occurred in loadUnits for final.state", NULL);
         execScript(UNITD_DATA_PATH, "/scripts/emergency-shell.sh", NULL, NULL);
@@ -278,33 +265,25 @@ int unitdUserInit(UnitdData **unitdData, bool isAggregate)
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
     //******************* USER STATE ************************
-    /* Parsing the units for the user state */
     STATE_USER_DIR = stringNew(STATE_DATA_ITEMS[USER].desc);
     stringAppendStr(&STATE_USER_DIR, ".state");
     rv = loadUnits(units, UNITS_USER_ENAB_PATH, STATE_USER_DIR, STATE_USER, isAggregate, NULL,
                    PARSE_UNIT, true);
-    /* Let's listen to pipes to be ready for restarting. */
     listenPipes(units, NULL);
     startProcesses(units, NULL);
-    /* Create the boot units array */
     addBootUnits(bootUnits, units);
     if (SHUTDOWN_COMMAND == REBOOT_COMMAND)
         goto shutdown;
-    /* Let's listen to client requests */
     listenSocketRequest();
 
 shutdown:
-    /* Shutdown start */
     SHUTDOWN_START = timeNew(NULL);
-    /* Stop the cleaner */
     stopCleaner();
-    /* Stop the notifiers */
     stopNotifier(NULL);
     //********************* STOPPING UNITS **********************************
     closePipes(units, NULL);
     stopProcesses(units, NULL);
 
-    /* Release resources */
     objectRelease(&STATE_USER_DIR);
     return rv;
 }

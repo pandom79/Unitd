@@ -31,13 +31,10 @@ int createKmsgLog()
 {
     int rv = 0;
 
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "UNITLOGD_KMSG_PATH", UNITLOGD_KMSG_PATH);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Exec script */
     rv = execUlScript(&envVars, "create-kmsg-log");
 
     arrayRelease(&envVars);
@@ -75,18 +72,17 @@ int unitlogdInit()
     IndexEntry *indexStartEntry = NULL;
     char *logOffset = NULL;
 
-    /* Index integrity check. If it fails then exit.
+    /**
+     * Index integrity check. If it fails then exit.
      * At this point, unitlogctl should be able to regenerate it reading from unitlogd.log
-     * since it contains the same entries, obviously, if the latter is not corrupt too.
-     * In this case, clear all and restart.
+     * since it contains the same entries if the latter is not corrupt too, otherwise,
+     * clear all and restart.
     */
     if ((rv = indexIntegrityCheck()) != 0) {
         setIndexErr(true);
         goto out;
     }
-    /* Get boot id */
     BOOT_ID_STR = getBootIdStr();
-    /* Get log offset */
     logOffset = getLogOffset();
     if (!logOffset) {
         rv = 1;
@@ -95,7 +91,6 @@ int unitlogdInit()
     /* Creating the index start entry */
     indexStartEntry = indexEntryNew(true, BOOT_ID_STR);
     indexStartEntry->startOffset = logOffset;
-    /* Open unitlogd and index in append mode because have been already created by init script */
     if (unitlogdOpenLog("a") != 0 || unitlogdOpenIndex("a") != 0) {
         rv = 1;
         goto out;
@@ -110,7 +105,6 @@ int unitlogdInit()
     }
 
 out:
-    /* Close index and log */
     unitlogdCloseLog();
     unitlogdCloseIndex();
     assert(!UNITLOGD_LOG_FILE);
@@ -127,7 +121,6 @@ int unitlogdShutdown()
 
     assert(!UNITLOGD_LOG_FILE);
     assert(!UNITLOGD_INDEX_FILE);
-    /* Get log offset */
     logOffset = getLogOffset();
     if (!logOffset) {
         rv = 1;
@@ -136,7 +129,6 @@ int unitlogdShutdown()
     /* Creating the index stop entry */
     indexStopEntry = indexEntryNew(false, BOOT_ID_STR);
     indexStopEntry->stopOffset = logOffset;
-    /* Open unitlogd and index in append */
     if (unitlogdOpenLog("a") != 0 || unitlogdOpenIndex("a") != 0) {
         rv = 1;
         goto out;

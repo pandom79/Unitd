@@ -141,7 +141,6 @@ static void writeLogLine(char *buffer, LogLine **logLine)
     assert(UNITLOGD_LOG_FILE);
     logEntry(&UNITLOGD_LOG_FILE, line);
 
-    /* Release resources */
     unitlogdCloseLog();
     assert(!UNITLOGD_LOG_FILE);
     objectRelease(&other);
@@ -161,11 +160,8 @@ int processLine(char *buffer)
     */
     if (stringEndsWithStr(buffer, NEW_LINE))
         buffer[strlen(buffer) - 1] = '\0';
-    /* Set facility and priority */
     setFacAndPri(buffer, &logLine);
-    /* Set host name */
     setHostName(&logLine);
-    /* Set time stamp */
     logLine->timeStamp = stringGetTimeStamp(NULL, false, "%d %b %Y %H:%M:%S");
     if (DEBUG) {
         logInfo(CONSOLE, "\nFacility = %s\n", logLine->fac);
@@ -173,10 +169,8 @@ int processLine(char *buffer)
         logInfo(CONSOLE, "hostName = %s\n", logLine->hostName);
         logInfo(CONSOLE, "Time stamp = %s\n", logLine->timeStamp);
     }
-    /* Write the line into log */
     writeLogLine(buffer, &logLine);
 
-    /* Release resources */
     logLineRelease(&logLine);
     return rv;
 }

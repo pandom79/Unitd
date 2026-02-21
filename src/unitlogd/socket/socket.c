@@ -38,12 +38,10 @@ static int forwardToLog(char *buffer)
 
     assert(buffer);
 
-    /* Get socket fd */
     if ((socketFd = getSocketFd(&sa, DEV_LOG_NAME)) == -1) {
         rv = 1;
         goto out;
     }
-    /* Connect */
     while ((rv = connect(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un))) ==
                -1 &&
            !UNITLOGD_EXIT) {
@@ -89,7 +87,6 @@ void *startForwarderThread(void *arg)
     socketPipe = socketThread->pipe;
     mutexPipe = socketPipe->mutex;
     devName = socketThread->devName;
-    /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutexPipe)) != 0) {
         logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startForwarderThread", rv,
                  strerror(rv), "Unable to acquire the pipe mutex lock (%s)", devName);
@@ -102,7 +99,6 @@ void *startForwarderThread(void *arg)
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
-    /* Get max fd */
     pipeFd = socketPipe->fds[0];
     maxFd = getMaxFileDesc(&fileFd, &pipeFd);
     while (1) {
@@ -199,41 +195,35 @@ void *startUnixThread(void *arg)
     socketPipe = socketThread->pipe;
     mutexPipe = socketPipe->mutex;
     devName = socketThread->devName;
-    /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutexPipe)) != 0) {
         logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", rv, strerror(rv),
                  "Unable to acquire the pipe mutex lock (%s)", devName);
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
-    /* Get socket fd */
     unlink(socketThread->devName);
     if ((socketFd = getSocketFd(&sa, socketThread->devName)) == -1) {
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
-    /* Binding */
     if (bind(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
         logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", errno, strerror(errno),
                  "Bind error");
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
-    /* Set socket permission */
     if (chmod(socketThread->devName, 666) == -1) {
         logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", errno, strerror(errno),
                  "Chmod error");
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
-    /* Get max fd */
     pipeFd = socketPipe->fds[0];
     maxFd = getMaxFileDesc(&socketFd, &pipeFd);
     while (1) {
         FD_ZERO(&fds);
         FD_SET(pipeFd, &fds);
         FD_SET(socketFd, &fds);
-        /* Wait for data */
         if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
             continue;
         if (FD_ISSET(pipeFd, &fds)) {
@@ -278,7 +268,6 @@ void *startUnixThread(void *arg)
 out:
     close(socketFd);
     unlink(devName);
-    /* Unlock mutex */
     if ((rv = pthread_mutex_unlock(mutexPipe)) != 0) {
         logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", rv, strerror(rv),
                  "Unable to unlock the pipe mutex for (%s)", devName);
@@ -296,10 +285,8 @@ void *startSocket(void *arg)
 
     assert(arg);
 
-    /* Get data */
     socketThread = (SocketThread *)arg;
     devName = socketThread->devName;
-    /* Set pthread attributes and start */
     assert(pthread_attr_init(&attr) == 0);
     assert(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
     rv = pthread_create(&thread, &attr,
@@ -315,7 +302,6 @@ void *startSocket(void *arg)
     }
     pthread_attr_destroy(&attr);
 
-    /* It will be freed in startSockets func */
     rvThread = calloc(1, sizeof(int));
     assert(rvThread);
     *rvThread = rv;
@@ -407,7 +393,6 @@ void *stopSocket(void *arg)
                  "Unable to unlock the pipe mutex for the %s dev", devName);
     }
 
-    /* It will be freed in stopSockets func */
     rvThread = calloc(1, sizeof(int));
     assert(rvThread);
     *rvThread = rv;

@@ -12,7 +12,6 @@ char *UNITD_USER_TIMER_DATA_PATH;
 
 //INIT PARSER CONFIGURATION
 enum SectionNameEnum { UNIT = 0, INTERVAL = 1, STATE = 2 };
-/* Properties */
 enum PropertyNameEnum {
     DESCRIPTION = 0,
     REQUIRES = 1,
@@ -26,12 +25,10 @@ enum PropertyNameEnum {
     MONTHS = 9,
     WANTEDBY = 10
 };
-/* Sections */
 int UTIMERS_SECTIONS_ITEMS_LEN = 3;
 SectionData UTIMERS_SECTIONS_ITEMS[] = { { { UNIT, "[Unit]" }, false, true, 0 },
                                          { { INTERVAL, "[Interval]" }, false, true, 0 },
                                          { { STATE, "[State]" }, false, true, 0 } };
-/* The accepted values for the properties */
 static const char *BOOL_VALUES[] = { "false", "true", NULL };
 static const char *WANTEDBY_VALUES[] = { STATE_DATA_ITEMS[SINGLE_USER].desc,
                                          STATE_DATA_ITEMS[MULTI_USER].desc,
@@ -139,7 +136,6 @@ void setLeftTimeAndDuration(Unit **unit)
         logInfo(SYSTEM, "%s: Left time in seconds = %lu, Duration = %s\n", unitName, *leftTime,
                 leftTimeDuration);
 
-    /* Release resources */
     objectRelease(&leftTimeDuration);
     timeRelease(&current);
 }
@@ -149,7 +145,6 @@ int saveTime(Unit *unit, const char *timerUnitName, Time *currentTime, int final
     char *filePath = NULL, *pattern = NULL;
     int rv = 0;
 
-    /* Building file path ...*/
     if (!USER_INSTANCE)
         filePath = stringNew(UNITD_TIMER_DATA_PATH);
     else
@@ -157,7 +152,6 @@ int saveTime(Unit *unit, const char *timerUnitName, Time *currentTime, int final
     stringAppendChr(&filePath, '/');
     stringAppendStr(&filePath, unit ? unit->name : timerUnitName);
     stringAppendStr(&filePath, unit ? "|next|" : "|last|");
-    /* Create pattern. */
     pattern = stringNew(filePath);
     stringAppendChr(&pattern, '*');
     if (unit) {
@@ -175,14 +169,11 @@ int saveTime(Unit *unit, const char *timerUnitName, Time *currentTime, int final
         sprintf(finalStatusStr, "%d", finalStatus);
         stringAppendStr(&filePath, finalStatusStr);
     }
-    /* Preparing environment variables */
     Array *envVars = NULL;
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "PATTERN", pattern);
     addEnvVar(&envVars, "FILE_PATH", filePath);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Execute the script */
     rv = execUScript(&envVars, "save-time");
 
     arrayRelease(&envVars);
@@ -220,11 +211,8 @@ int setNextTimeFromInterval(Unit **unit)
     if (months > 0)
         tmTime->tm_mon += months;
     time_t start = mktime(tmTime);
-    /* Set the next time */
     *nextTime->sec = start;
-    /* Set next time (Date) */
     setNextTimeDate(unit);
-    /* Set left time and duration */
     setLeftTimeAndDuration(unit);
 
     return rv;
@@ -242,7 +230,6 @@ int setNextTimeFromDisk(Unit **unit)
 
     unitName = (*unit)->name;
     nextTime = (*unit)->nextTime;
-    /* Building the pattern */
     if (!USER_INSTANCE)
         pattern = stringNew(UNITD_TIMER_DATA_PATH);
     else
@@ -250,11 +237,10 @@ int setNextTimeFromDisk(Unit **unit)
     stringAppendChr(&pattern, '/');
     stringAppendStr(&pattern, unitName);
     stringAppendStr(&pattern, "|next*");
-    /* Executing the glob func */
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         size_t lenResults = results.gl_pathc;
         if (lenResults > 0) {
-            /* Should be there only one file with this pattern. */
+            /* There should be only one file with this pattern. */
             if (lenResults > 1) {
                 rv = 1;
                 logError(
@@ -278,9 +264,7 @@ int setNextTimeFromDisk(Unit **unit)
             } else {
                 /* Set the next time */
                 *nextTime->sec = atol(timeStr);
-                /* Set next time (Date) */
                 setNextTimeDate(unit);
-                /* Set left time and duration */
                 setLeftTimeAndDuration(unit);
             }
         }
@@ -381,10 +365,8 @@ int parseTimerUnit(Array **units, Unit **unit, bool isAggregate)
 
     assert(*unit);
 
-    /* Initialize the parser */
     parserInit(UTIMERS_SECTIONS_ITEMS_LEN, UTIMERS_SECTIONS_ITEMS, UTIMERS_PROPERTIES_ITEMS_LEN,
                UTIMERS_PROPERTIES_ITEMS);
-    /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))
         *errors = arrayNew(objectRelease);
@@ -423,7 +405,6 @@ int parseTimerUnit(Array **units, Unit **unit, bool isAggregate)
     UTIMERS_PROPERTIES_ITEMS[REQUIRES].notDupValues = requires;
     UTIMERS_PROPERTIES_ITEMS[CONFLICTS].notDupValues = conflicts;
     UTIMERS_PROPERTIES_ITEMS[WANTEDBY].notDupValues = wantedBy;
-    /* Open the file */
     if ((fp = fopen(unitPath, "r")) == NULL) {
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNABLE_OPEN_UNIT_ERR].desc, unitPath));
         rv = 1;
@@ -431,7 +412,6 @@ int parseTimerUnit(Array **units, Unit **unit, bool isAggregate)
     }
     while (getline(&line, &len, fp) != -1) {
         numLine++;
-        /* Parsing the line */
         rv = parseLine(line, numLine, &lineData, &sectionData, &propertyData);
         /* lineData[0] -> Key   (Required)
          * lineData[1] -> Value (Optional: NULL in section case)
@@ -514,7 +494,6 @@ int parseTimerUnit(Array **units, Unit **unit, bool isAggregate)
             arrayRelease(&lineData);
         }
     }
-    /* Parser end */
     parserEnd(errors, isAggregate);
     /* Check the error's size */
     if ((sizeErrs = (*errors)->size) > 0) {
@@ -566,12 +545,10 @@ void armTimer(Unit *unit)
     assert(unit);
 
     unitName = unit->name;
-    /* Get timer data */
     wakeSystem = unit->wakeSystem && *unit->wakeSystem ? true : false;
     timer = unit->timer;
     timer->eventData->timerUnitName = unitName;
     timer->its->it_value.tv_sec = *unit->leftTime;
-    /* Create timer */
     while (true) {
         rv = timer_create(wakeSystem ? CLOCK_BOOTTIME_ALARM : CLOCK_BOOTTIME, timer->sev,
                           timer->timerId);
@@ -587,7 +564,6 @@ void armTimer(Unit *unit)
         }
         break;
     }
-    /* Start timer */
     rv = timer_settime(*timer->timerId, 0, timer->its, NULL);
     if (rv == -1) {
         logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "armTimer", errno,
@@ -631,9 +607,6 @@ void *startTimerUnitThread(void *arg)
                  strerror(rv), "Unable to acquire the lock of the pipe mutex for '%s'", unitName);
         kill(UNITD_PID, SIGTERM);
     }
-    /* Before to start, we wait for system is up.
-     * We check if ctrl+alt+del is pressed as well.
-    */
     while (!LISTEN_SOCK_REQUEST && SHUTDOWN_COMMAND == NO_COMMAND)
         msleep(50);
     if (SHUTDOWN_COMMAND != NO_COMMAND)
@@ -645,7 +618,6 @@ void *startTimerUnitThread(void *arg)
             if (DEBUG)
                 logInfo(SYSTEM, "%s: the persistent 'nextTime' exists but it is expired.",
                         unitName);
-            /* Unit execution management. */
             if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit, TIMER)) == EUIDOWN) {
                 logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
                            unitName);
@@ -661,9 +633,7 @@ void *startTimerUnitThread(void *arg)
             goto out;
         }
     }
-    /* Arming the timer */
     armTimer(unit);
-    /* Listening the pipe */
     while (true) {
         if ((rv = uRead(unitPipe->fds[0], &input, sizeof(int))) == -1) {
             logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c", "startTimerUnitThread",
@@ -675,10 +645,9 @@ void *startTimerUnitThread(void *arg)
             /* The left time is expired!
              * Lock and unlock the unit mutex to simulate the same
              * behaviour of listenPipeThread() func when the processes restart.
-             * An eventual unit status request will show the restarted or completed data.
+             * A possible unit status request will show the restarted or completed data.
             */
             disarmTimer(unit);
-            /* Lock */
             if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c",
                          "startTimerUnitThread", rv, strerror(rv),
@@ -693,20 +662,17 @@ void *startTimerUnitThread(void *arg)
             *unit->processData->pStateData = PSTATE_DATA_ITEMS[RESTARTING];
             stringCopy(unit->nextTimeDate, "-");
             stringCopy(unit->leftTimeDuration, "-");
-            /* Unlock */
             if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
                 logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c",
                          "startTimerUnitThread", rv, strerror(rv),
                          "Unable to unlock the mutex (restart timer)", unitName);
                 kill(UNITD_PID, SIGTERM);
             }
-            /* Executing the unit ... */
             if (SHUTDOWN_COMMAND != NO_COMMAND || (rv = executeUnit(unit, TIMER)) == EUIDOWN)
                 logWarning(SYSTEM, "Shutting down the unitd instance. Skipped '%s' execution.",
                            unitName);
             else {
                 *unit->processData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
-                /* Lock */
                 if ((rv = pthread_mutex_lock(unit->mutex)) != 0) {
                     logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c",
                              "startTimerUnitThread", rv, strerror(rv),
@@ -717,9 +683,7 @@ void *startTimerUnitThread(void *arg)
                 assert(unit->nextTime && *leftTime != -1);
                 if ((rv = saveTime(unit, NULL, NULL, -1)) != 0)
                     kill(UNITD_PID, SIGTERM);
-                /* Now, we arm the timer because the unit execution could take some seconds. */
                 armTimer(unit);
-                /* Unlock */
                 if ((rv = pthread_mutex_unlock(unit->mutex)) != 0) {
                     logError(CONSOLE | SYSTEM, "src/core/units/utimers/utimers.c",
                              "startTimerUnitThread", rv, strerror(rv),
@@ -820,15 +784,11 @@ int executeUnit(Unit *otherUnit, PType pType)
     assert(otherUnit);
 
     otherUnitName = otherUnit->name;
-    /* Get unit name by other */
     unitName = getUnitNameByOther(otherUnitName, pType);
-    /* Populate sockMessageIn */
     sockMessageIn->arg = unitName;
     sockMessageIn->command = START_COMMAND;
     sockMessageIn->options = options;
-    /* Add restart option. */
     arrayAdd(options, stringNew(OPTIONS_DATA[RESTART_OPT].name));
-    /* Try to get unit from memory */
     Unit *unit = getUnitByName(units, unitName);
     if (unit) {
         if (unit->type == DAEMON && unit->processData->pStateData->pState == RUNNING) {
@@ -842,10 +802,8 @@ int executeUnit(Unit *otherUnit, PType pType)
         rv = EUIDOWN;
         goto out;
     }
-    /* Restart unit */
     rv = startUnitServer(&socketConnection, sockMessageIn, &sockMessageOut, true, true);
     if (rv == 0 && (rv = checkResponse(sockMessageOut)) == 0) {
-        /* Get unit from memory */
         Unit *unit = getUnitByName(units, unitName);
         if (unit) {
             int finalStatus = *unit->processData->finalStatus;
@@ -878,7 +836,6 @@ int resetNextTime(const char *timerName)
     char *pattern = NULL;
     Array *envVars = NULL;
 
-    /* Building pattern ...*/
     if (!USER_INSTANCE)
         pattern = stringNew(UNITD_TIMER_DATA_PATH);
     else
@@ -886,12 +843,9 @@ int resetNextTime(const char *timerName)
     stringAppendChr(&pattern, '/');
     stringAppendStr(&pattern, timerName);
     stringAppendStr(&pattern, "|next|*");
-    /* Preparing environment variables */
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "PATTERN", pattern);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Execute the script */
     rv = execUScript(&envVars, "remove");
 
     arrayRelease(&envVars);

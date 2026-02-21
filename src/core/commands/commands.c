@@ -40,7 +40,6 @@ int execScript(const char *unitdDataDir, const char *relScriptName, char **argv,
     assert(unitdDataDir);
     assert(relScriptName);
 
-    /* Building the command */
     command = stringNew(unitdDataDir);
     stringAppendStr(&command, relScriptName);
     if (!argv) {
@@ -52,7 +51,6 @@ int execScript(const char *unitdDataDir, const char *relScriptName, char **argv,
     child = fork();
     switch (child) {
     case 0:
-        /* Execute the command */
         if (envVar)
             (void)execve(command, argv, envVar);
         else
@@ -95,7 +93,6 @@ int execProcess(const char *command, char **argv, Unit **unit)
     child = fork();
     switch (child) {
     case 0:
-        /* Execute the command */
         if (arrayContainsStr(wantedBy, STATE_DATA_ITEMS[INIT].desc) ||
             arrayContainsStr(wantedBy, STATE_DATA_ITEMS[FINAL].desc)) {
             /* For the initialization and finalization units we pass
@@ -112,7 +109,6 @@ int execProcess(const char *command, char **argv, Unit **unit)
         *pData->exitCode = EXIT_FAILURE;
         return EXIT_FAILURE;
     }
-    /* Assigning the pid */
     *pData->pid = child;
     assert(*pData->pid > 0);
     switch ((*unit)->type) {
@@ -120,7 +116,7 @@ int execProcess(const char *command, char **argv, Unit **unit)
         break;
     case DAEMON:
         while (uWaitPid(child, &status, WNOHANG) == 0) {
-            /* Meanwhile, it could be catched by signal handler and restarts eventually */
+            /* Meanwhile, it could be catched by signal handler which could possibly restarting it. */
             if ((pData->pStateData->pState == DEAD || pData->pStateData->pState == RESTARTING) &&
                 *pData->exitCode == -1)
                 *pData->pStateData = PSTATE_DATA_ITEMS[RUNNING];
@@ -133,12 +129,12 @@ int execProcess(const char *command, char **argv, Unit **unit)
         while (millisec <= TIMEOUT_MS) {
             res = uWaitPid(child, &status, WNOHANG);
             if ((res > 0 && WIFEXITED(status)) || res == -1 || *pData->exitCode != -1) {
-                /* If the values has not been set by signal handler then we set them here */
+                /* If the values have not been set by signal handler then we set them here */
                 if (*pData->exitCode == -1)
                     *pData->exitCode = WEXITSTATUS(status);
                 setStopAndDuration(&pData);
                 *pData->pStateData = PSTATE_DATA_ITEMS[EXITED];
-                /* we communicate the failure result if the unit has a pipe */
+                /* We communicate the failure result to the pipe if the unit has it. */
                 if (unitPipe && *pData->exitCode != EXIT_SUCCESS) {
                     if (uWrite(unitPipe->fds[1], pData->exitCode, sizeof(int)) == -1) {
                         logError(CONSOLE, "src/core/commands/commands.c", "execProcess", errno,
@@ -160,12 +156,10 @@ int execProcess(const char *command, char **argv, Unit **unit)
                 millisec += TIMEOUT_INC_MS;
             }
         }
-        /* If it's not exited yet, kill it */
+        /* If it's not exited yet, kill it! */
         if (res == 0 && pData->pStateData->pState != EXITED) {
             kill(child, SIGKILL);
-            /* After killed, waiting for the pid's status
-             * to avoid zombie process creation
-             */
+            /* After killed it, we wait for the pid status to avoid creating a zombie process. */
             uWaitPid(child, &status, WNOHANG);
             *pData->exitCode = -1;
             *pData->pStateData = PSTATE_DATA_ITEMS[KILLED];
@@ -222,12 +216,11 @@ int execFailure(const char *command, char **argv, Unit **unit)
     }
     assert(child > 0);
     *(*unit)->failurePid = child;
-    /* Timeout */
     millisec = 0;
     while (millisec <= TIMEOUT_MS) {
         res = uWaitPid(child, &status, WNOHANG);
         if ((res > 0 && WIFEXITED(status)) || res == -1 || *failureExitCode != -1) {
-            /* Set the exit code if it hasn't already been set by the signal handler */
+            /* Set the exit code if it hasn't already been set by the signal handler. */
             if (*failureExitCode == -1)
                 *failureExitCode = WEXITSTATUS(status);
             break;
@@ -247,9 +240,7 @@ int execFailure(const char *command, char **argv, Unit **unit)
     /* If it's not exited yet, kill it */
     if (res == 0 && *failureExitCode == -1) {
         kill(child, SIGKILL);
-        /* After killed, waiting for the pid's status
-         * to avoid zombie process creation
-         */
+        /* After killed it, we wait for the pid status to avoid creating a zombie process. */
         uWaitPid(child, &status, WNOHANG);
         *failureExitCode = EXIT_FAILURE;
         logErrorStr(SYSTEM, "%s: timeout expired for '%s' failure command!\n", unitName, command);
@@ -304,12 +295,11 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
                 kill(pid, SIGTERM);
             }
         }
-        /* After the stop command or sigterm signal, we waiting for it to exit/terminate
+        /* After the stop command or sigterm signal, we wait for it to exit/terminate
          * at most for 1 second with a milliseconds resolution to be more precise.
          * We have not to necessarily wait for 1 second !!
         */
         millisec = 0;
-        /* Timeout */
         while (millisec <= TIMEOUT_STOP_MS) {
             res = uWaitPid(pid, &status, WNOHANG);
             if (res > 0) {
@@ -324,9 +314,7 @@ int stopDaemon(const char *command, char **argv, Unit **unit)
         /* If it's not exited yet, kill it! */
         if (res == 0) {
             kill(pid, SIGKILL);
-            /* After killed, waiting for the pid's status
-             * to avoid zombie process creation.
-            */
+            /* After killed it, we wait for the pid status to avoid creating a zombie process. */
             uWaitPid(pid, &status, WNOHANG);
         }
     }
@@ -465,16 +453,12 @@ int execUScript(Array **envVars, const char *operation)
 
     assert(*envVars);
 
-    /* Building command */
     char *cmd = stringNew(UNITD_DATA_PATH);
     stringAppendStr(&cmd, "/scripts/unitd.sh");
-    /* Creating script params */
     Array *scriptParams = arrayNew(objectRelease);
     arrayAdd(scriptParams, cmd); //0
     arrayAdd(scriptParams, stringNew(operation)); //1
-    /* Must be null terminated */
     arrayAdd(scriptParams, NULL);
-    /* Execute the script */
     rv = execScript(UNITD_DATA_PATH, "/scripts/unitd.sh", scriptParams->arr, (*envVars)->arr);
     /* We exclude the following test for "virtualization" operation */
     if (stringEquals(operation, "virtualization") && rv != 0 && rv != 1)

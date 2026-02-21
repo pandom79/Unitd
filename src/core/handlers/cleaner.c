@@ -38,7 +38,6 @@ void *startCleanerThread(void *arg UNUSED)
     fd = pipe->fds[0];
     rv = input = 0;
 
-    /* Lock pipe mutex */
     if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleanerThread", rv,
                  strerror(rv), "Unable to lock the pipe mutex");
@@ -74,7 +73,6 @@ void *startCleanerThread(void *arg UNUSED)
     }
 
 out:
-    /* Unlock mutex */
     if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "startCleanerThread", rv,
                  strerror(rv), "Unable to unlock the pipe mutex");
@@ -122,12 +120,10 @@ void stopCleaner()
             logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "stopCleaner", errno,
                      strerror(errno), "Unable to write into pipe for the cleaner");
         }
-        /* Lock mutex */
         if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "stopCleaner", rv,
                      strerror(rv), "Unable to acquire the pipe mutex lock");
         }
-        /* Unlock mutex */
         if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/cleaner.c", "stopCleaner", rv,
                      strerror(rv), "Unable to unlock the pipe mutex");

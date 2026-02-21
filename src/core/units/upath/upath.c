@@ -10,7 +10,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 //INIT PARSER CONFIGURATION
 enum SectionNameEnum { UNIT = 0, PATH = 1, STATE = 2 };
-/* Properties */
 enum PropertyNameEnum {
     DESCRIPTION = 0,
     REQUIRES = 1,
@@ -21,12 +20,10 @@ enum PropertyNameEnum {
     PATH_DIRECTORY_NOT_EMPTY = 6,
     WANTEDBY = 7
 };
-/* Sections */
 int UPATH_SECTIONS_ITEMS_LEN = 3;
 SectionData UPATH_SECTIONS_ITEMS[] = { { { UNIT, "[Unit]" }, false, true, 0 },
                                        { { PATH, "[Path]" }, false, true, 0 },
                                        { { STATE, "[State]" }, false, true, 0 } };
-/* The accepted values for the properties */
 static const char *WANTEDBY_VALUES[] = { STATE_DATA_ITEMS[SINGLE_USER].desc,
                                          STATE_DATA_ITEMS[MULTI_USER].desc,
                                          STATE_DATA_ITEMS[MULTI_USER_NET].desc,
@@ -105,7 +102,7 @@ int checkWatchers(Unit **unit, bool isAggregate)
                     kill(UNITD_PID, SIGTERM);
                 }
                 /* Check if we can access there in read mode because
-                 * inotify_add_watch func could return an error.
+                 * inotify_add_watch func might return an error.
                 */
                 if ((rv = access(*watchMonitorPath, R_OK)) != 0) {
                     arrayAdd((*unit)->errors,
@@ -140,14 +137,12 @@ void addWatchers(Unit **unit)
 
     assert(*unit);
 
-    /* Check and set notifier */
     notifier = (*unit)->notifier;
     if (!notifier) {
         notifier = notifierNew();
         (*unit)->notifier = notifier;
     }
     assert(notifier);
-    /* Adding the watchers */
     for (WatcherType watcherType = PATH_EXISTS_WATCHER;
          watcherType <= PATH_DIRECTORY_NOT_EMPTY_WATCHER; watcherType++) {
         watchPathMonitor = NULL;
@@ -168,7 +163,6 @@ void addWatchers(Unit **unit)
             break;
         }
         if (watchPathMonitor)
-            /* Adding the watcher */
             arrayAdd(notifier->watchers, watcherNew(notifier, watchPathMonitor, watcherType));
     }
     if (notifierInit(notifier) != 0)
@@ -188,10 +182,8 @@ int parsePathUnit(Array **units, Unit **unit, bool isAggregate)
 
     assert(*unit);
 
-    /* Initialize the parser */
     parserInit(UPATH_SECTIONS_ITEMS_LEN, UPATH_SECTIONS_ITEMS, UPATH_PROPERTIES_ITEMS_LEN,
                UPATH_PROPERTIES_ITEMS);
-    /* Initialize the Unit */
     errors = &(*unit)->errors;
     if (!(*errors))
         *errors = arrayNew(objectRelease);
@@ -209,7 +201,6 @@ int parsePathUnit(Array **units, Unit **unit, bool isAggregate)
     UPATH_PROPERTIES_ITEMS[REQUIRES].notDupValues = requires;
     UPATH_PROPERTIES_ITEMS[CONFLICTS].notDupValues = conflicts;
     UPATH_PROPERTIES_ITEMS[WANTEDBY].notDupValues = wantedBy;
-    /* Open the file */
     if ((fp = fopen(unitPath, "r")) == NULL) {
         arrayAdd(*errors, getMsg(-1, UNITS_ERRORS_ITEMS[UNABLE_OPEN_UNIT_ERR].desc, unitPath));
         rv = 1;
@@ -275,7 +266,6 @@ int parsePathUnit(Array **units, Unit **unit, bool isAggregate)
             arrayRelease(&lineData);
         }
     }
-    /* Parser end */
     parserEnd(errors, isAggregate);
     /* Check the error's size */
     if ((sizeErrs = (*errors)->size) > 0) {

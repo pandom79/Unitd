@@ -63,12 +63,10 @@ int initSocket(struct sockaddr_un *name)
 {
     int socketConnection = -1;
 
-    /* Connection */
     if ((socketConnection = socket(AF_UNIX, SOCK_SEQPACKET, 0)) == -1) {
         logError(CONSOLE, "src/core/socket/socket_server.c", "initSocket", errno, strerror(errno),
                  "Socket error");
     } else {
-        /* Initialize sockaddr_un */
         memset(name, 0, sizeof(struct sockaddr_un));
         name->sun_family = AF_UNIX;
         strncpy(name->sun_path, !USER_INSTANCE ? SOCKET_PATH : SOCKET_USER_PATH,
@@ -143,24 +141,19 @@ Array *getScriptParams(const char *unitName, const char *stateStr, const char *s
     Array *scriptParams = NULL;
     char *command = NULL, *from = NULL, *to = NULL;
 
-    /* Building 'to' parameter */
     from = stringNew(unitPath);
-    /* Building 'from' parameter */
     to = !USER_INSTANCE ? stringNew(UNITS_ENAB_PATH) : stringNew(UNITS_USER_ENAB_PATH);
     stringAppendChr(&to, '/');
     stringAppendStr(&to, stateStr);
     stringAppendChr(&to, '/');
     stringAppendStr(&to, unitName);
-    /* Create the script parameters array */
     scriptParams = arrayNew(objectRelease);
-    /* Building the command which must be the first element */
     command = stringNew(UNITD_DATA_PATH);
     stringAppendStr(&command, "/scripts/symlink-handle.sh");
     arrayAdd(scriptParams, command); //0
     arrayAdd(scriptParams, stringNew(symlOperation)); //1
     arrayAdd(scriptParams, from); //2
     arrayAdd(scriptParams, to); //3
-    /* Must be null terminated */
     arrayAdd(scriptParams, NULL); //4
 
     return scriptParams;
@@ -189,13 +182,10 @@ int sendWallMsg(Command command)
     }
 
     assert(msg);
-    /* Env vars */
     Array *envVars = arrayNew(objectRelease);
     addEnvVar(&envVars, "PATH", PATH_ENV_VAR);
     addEnvVar(&envVars, "MSG", msg);
-    /* Must be null terminated */
     arrayAdd(envVars, NULL);
-    /* Execute the script */
     rv = execUScript(&envVars, "send-wallmsg");
 
     arrayRelease(&envVars);

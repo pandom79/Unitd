@@ -84,7 +84,6 @@ static bool isEmptyFolder(const char *pathFolder)
         const char *entry = NULL;
         char *pattern = NULL;
 
-        /* Building pattern end execute glob */
         pattern = stringNew(pathFolder);
         stringAppendStr(&pattern, "/*");
         if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
@@ -193,17 +192,13 @@ Notifier *notifierNew()
     Notifier *notifier = NULL;
     int *fd = NULL;
 
-    /* Notifier */
     notifier = calloc(1, sizeof(Notifier));
     assert(notifier);
-    /* Fd */
     fd = calloc(1, sizeof(int));
     assert(fd);
     *fd = -1;
     notifier->fd = fd;
-    /* Pipe */
     notifier->pipe = pipeNew();
-    /* Watchers */
     notifier->watchers = arrayNew(watcherRelease);
 
     return notifier;
@@ -231,11 +226,8 @@ Watcher *watcherNew(Notifier *notifier, const char *path, WatcherType watcherTyp
 
     watcher = calloc(1, sizeof(Watcher));
     assert(watcher);
-    /* Path */
     watcher->path = stringNew(path);
-    /* Watcher data */
     watcher->watcherData = WATCHER_DATA_ITEMS[watcherType];
-    /* Watcher fd */
     int *wd = calloc(1, sizeof(int));
     assert(wd);
     *wd = -1;
@@ -269,12 +261,10 @@ void *startNotifierThread(void *arg)
 
     assert(notifier);
 
-    /* Get notifier data */
     pipe = notifier->pipe;
     fd = notifier->fd;
     watchers = notifier->watchers;
     assert(watchers);
-    /* Lock pipe mutex */
     if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
                  strerror(rv), "Unable to acquire the pipe mutex lock");
@@ -310,7 +300,6 @@ void *startNotifierThread(void *arg)
         FD_SET(*fdPipe, &fds);
         FD_SET(*fd, &fds);
         executedUnit = false;
-        /* Wait for data */
         if (select(maxFd, &fds, NULL, NULL, NULL) == -1 && errno == EINTR)
             continue;
         if (FD_ISSET(*fdPipe, &fds)) {
@@ -364,7 +353,6 @@ void *startNotifierThread(void *arg)
     }
 
 out:
-    /* Unlock pipe mutex */
     if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
         logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "startNotifierThread", rv,
                  strerror(rv), "Unable to unlock the pipe mutex");
@@ -440,12 +428,10 @@ int stopNotifier(Unit *unit)
             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier", errno,
                      strerror(errno), "Unable to write into pipe for the notifier");
         }
-        /* Lock pipe mutex */
         if ((rv = pthread_mutex_lock(pipe->mutex)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier", rv,
                      strerror(rv), "Unable to acquire the pipe mutex lock");
         }
-        /* Unlock pipe mutex */
         if ((rv = pthread_mutex_unlock(pipe->mutex)) != 0) {
             logError(CONSOLE | SYSTEM, "src/core/handlers/notifier.c", "stopNotifier", rv,
                      strerror(rv), "Unable to unlock the pipe mutex");
