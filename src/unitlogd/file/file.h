@@ -10,11 +10,9 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 #define FILE_H
 
 int unitlogdOpenLog(const char *);
-int unitlogdOpenBootLog(const char *);
 int unitlogdOpenIndex(const char *);
 int unitlogdOpenKmsg(const char *);
 int unitlogdCloseLog();
-int unitlogdCloseBootLog();
 int unitlogdCloseIndex();
 int unitlogdCloseKmsg();
 void logEntry(FILE **, const char *);

@@ -8,46 +8,8 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 
 #include "../unitd_impl.h"
 
-FILE *UNITLOGD_BOOT_LOG_FILE;
 FILE *UNITLOGD_INDEX_FILE;
 FILE *UNITLOGD_LOG_FILE;
-
-static void writeFile(FILE **file, const char *color, const char *format, va_list *args)
-{
-    if (*file && format) {
-        fflush(*file);
-        fprintf(*file, color);
-        vfprintf(*file, format, *args);
-        fprintf(*file, DEFAULT_COLOR);
-        fflush(*file);
-    }
-}
-
-static void writeErrorFile(FILE **file, const char *transUnit, const char *funcName,
-                           int returnValue, char *returnValueStr, const char *errDesc,
-                           const char *format, va_list *args)
-{
-    if (*file && format) {
-        fflush(*file);
-        if (!(*returnValueStr))
-            sprintf(returnValueStr, "%d", returnValue);
-        fprintf(*file, RED_COLOR);
-        fprintf(*file, "\nAn error has occurred\n");
-        fprintf(*file, "File: ");
-        fprintf(*file, transUnit);
-        fprintf(*file, "\nFunction: ");
-        fprintf(*file, funcName);
-        fprintf(*file, "\nReturn value: ");
-        fprintf(*file, returnValueStr);
-        fprintf(*file, "\nDescription: ");
-        fprintf(*file, errDesc);
-        fprintf(*file, "\n");
-        vfprintf(*file, format, *args);
-        fprintf(*file, "\n");
-        fprintf(*file, DEFAULT_COLOR);
-        fflush(*file);
-    }
-}
 
 static void logSystem(int priority, const char *color, const char *format, va_list *args)
 {
@@ -58,7 +20,7 @@ static void logSystem(int priority, const char *color, const char *format, va_li
             stringAppendStr(&colorStr, DEFAULT_COLOR);
         }
         /* To 'va_start' function we pass 'format' to avoid compiler warning.
-         * We can do that because the same "args" present in "format", are present in "colorStr" as well.
+         * We can do that because the "args" present in "format", are present in "colorStr" as well.
          */
         vsyslog(priority, colorStr ? colorStr : format, *args);
         objectRelease(&colorStr);
@@ -76,11 +38,6 @@ void logInfo(int options, const char *format, ...)
         printf(DEFAULT_COLOR);
         va_end(args);
         fflush(stdout);
-    }
-    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, LIGHT_WHITE_COLOR, format, &args);
-        va_end(args);
     }
     if (options & SYSTEM) {
         va_start(args, format);
@@ -101,11 +58,6 @@ void logWarning(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, YELLOW_COLOR, format, &args);
-        va_end(args);
-    }
     if (options & SYSTEM) {
         va_start(args, format);
         logSystem(LOG_DAEMON | LOG_WARNING, YELLOW_COLOR, format, &args);
@@ -125,11 +77,6 @@ void logErrorStr(int options, const char *format, ...)
         va_end(args);
         fflush(stdout);
     }
-    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, RED_COLOR, format, &args);
-        va_end(args);
-    }
     if (options & SYSTEM) {
         va_start(args, format);
         logSystem(LOG_DAEMON | LOG_ERR, RED_COLOR, format, &args);
@@ -148,11 +95,6 @@ void logSuccess(int options, const char *format, ...)
         printf(DEFAULT_COLOR);
         va_end(args);
         fflush(stdout);
-    }
-    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
-        va_start(args, format);
-        writeFile(&UNITLOGD_BOOT_LOG_FILE, GREEN_COLOR, format, &args);
-        va_end(args);
     }
     if (options & SYSTEM) {
         va_start(args, format);
@@ -187,12 +129,6 @@ void logError(int options, const char *transUnit, const char *funcName, int retu
         printf(DEFAULT_COLOR);
         va_end(args);
         fflush(stdout);
-    }
-    if (UNITLOGD_BOOT_LOG_FILE && (options & UNITLOGD_BOOT_LOG)) {
-        va_start(args, format);
-        writeErrorFile(&UNITLOGD_BOOT_LOG_FILE, transUnit, funcName, returnValue, returnValueStr,
-                       errDesc, format, &args);
-        va_end(args);
     }
     if (options & SYSTEM) {
         if (!(*returnValueStr))

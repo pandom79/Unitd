@@ -34,8 +34,8 @@ int setUnitlogdSigAction()
     if (sigaction(SIGTERM, &act, NULL) == -1 || sigaction(SIGQUIT, &act, NULL) == -1 ||
         sigaction(SIGINT, &act, NULL) == -1) {
         rv = -1;
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/signals/signals.c", "setSigAction",
-                 errno, strerror(errno), "Sigaction returned %d exit code", rv);
+        logError(CONSOLE, "src/unitlogd/signals/signals.c", "setSigAction", errno, strerror(errno),
+                 "Sigaction returned %d exit code", rv);
     }
 
     return rv;

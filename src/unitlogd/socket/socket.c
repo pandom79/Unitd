@@ -109,9 +109,7 @@ void *startForwarderThread(void *arg)
         FD_ZERO(&fds);
         FD_SET(pipeFd, &fds);
         FD_SET(fileFd, &fds);
-        /* Reset the timeout */
         tv.tv_usec = 100000; //100 ms
-        /* Wait for data */
         if (select(maxFd, &fds, NULL, NULL, !kmsgAppended ? &tv : NULL) == -1 && errno == EINTR)
             continue;
         if (FD_ISSET(pipeFd, &fds)) {
@@ -125,7 +123,6 @@ void *startForwarderThread(void *arg)
                 goto out;
         }
         if (FD_ISSET(fileFd, &fds)) {
-            /* Prepare the buffer */
             bufferSize = BUFFER_SIZE;
             buffer = calloc(bufferSize, sizeof(char));
             assert(buffer);
@@ -138,7 +135,7 @@ void *startForwarderThread(void *arg)
              * to append these data if we are restarting unitlog daemon.
              * To fix that, we check if the first record contains "] Linux version" string.
              * If not so, we append kmsg log file content
-             * without lose facilities, priorities and, accordingly, the colours.
+             * without lose facilities, priorities and colors accordingly.
             */
             if (!kmsgAppended) {
                 if (stringContainsStr(buffer, "] Linux version")) {
@@ -179,7 +176,6 @@ void *startForwarderThread(void *arg)
 
 out:
     close(fileFd);
-    /* Unlock mutex */
     if ((rv = pthread_mutex_unlock(mutexPipe)) != 0) {
         logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", rv, strerror(rv),
                  "Unable to unlock the pipe mutex for (%s)", devName);
@@ -205,8 +201,8 @@ void *startUnixThread(void *arg)
     devName = socketThread->devName;
     /* Lock mutex */
     if ((rv = pthread_mutex_lock(mutexPipe)) != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread", rv,
-                 strerror(rv), "Unable to acquire the pipe mutex lock (%s)", devName);
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", rv, strerror(rv),
+                 "Unable to acquire the pipe mutex lock (%s)", devName);
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
@@ -218,15 +214,15 @@ void *startUnixThread(void *arg)
     }
     /* Binding */
     if (bind(socketFd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_un)) == -1) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",
-                 errno, strerror(errno), "Bind error");
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", errno, strerror(errno),
+                 "Bind error");
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
     /* Set socket permission */
     if (chmod(socketThread->devName, 666) == -1) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread",
-                 errno, strerror(errno), "Chmod error");
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", errno, strerror(errno),
+                 "Chmod error");
         kill(UNITLOGD_PID, SIGTERM);
         goto out;
     }
@@ -242,9 +238,8 @@ void *startUnixThread(void *arg)
             continue;
         if (FD_ISSET(pipeFd, &fds)) {
             if ((length = uRead(pipeFd, &input, sizeof(int))) == -1) {
-                logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c",
-                         "startUnixThread", errno, strerror(errno),
-                         "Unable to read from pipe for the dev (%s)!", devName);
+                logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", errno,
+                         strerror(errno), "Unable to read from pipe for the dev (%s)!", devName);
                 kill(UNITLOGD_PID, SIGTERM);
                 goto out;
             }
@@ -256,9 +251,8 @@ void *startUnixThread(void *arg)
             buffer = calloc(bufferSize, sizeof(char));
             assert(buffer);
             if ((rv = uRecv(socketFd, buffer, bufferSize, 0)) == -1) {
-                logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c",
-                         "startUnixThread", errno, strerror(errno),
-                         "Unable to read from socket for the dev (%s)!", devName);
+                logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", errno,
+                         strerror(errno), "Unable to read from socket for the dev (%s)!", devName);
                 kill(UNITLOGD_PID, SIGTERM);
                 goto out;
             }
@@ -286,8 +280,8 @@ out:
     unlink(devName);
     /* Unlock mutex */
     if ((rv = pthread_mutex_unlock(mutexPipe)) != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "startUnixThread", rv,
-                 strerror(rv), "Unable to unlock the pipe mutex for (%s)", devName);
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "startUnixThread", rv, strerror(rv),
+                 "Unable to unlock the pipe mutex for (%s)", devName);
     }
     pthread_exit(0);
 }
@@ -312,13 +306,12 @@ void *startSocket(void *arg)
                         socketThread->sockType == UNIX ? startUnixThread : startForwarderThread,
                         socketThread);
     if (rv != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c",
-                 "startSocket", rv, strerror(rv),
+        logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startSocket", rv, strerror(rv),
                  "Unable to create the socket thread (detached) (%s)", devName);
     } else {
         if (DEBUG)
-            logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM,
-                    "Socket thread (detached) created successfully (%s)\n", devName);
+            logInfo(CONSOLE | SYSTEM, "Socket thread (detached) created successfully (%s)\n",
+                    devName);
     }
     pthread_attr_destroy(&attr);
 
@@ -340,27 +333,25 @@ int startSockets(Array *socketThreads)
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
         if ((rv = pthread_create(&socketThread->thread, NULL, startSocket, socketThread)) != 0) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c",
-                     "startSockets", rv, strerror(rv),
-                     "Unable to create the thread for the '%s' dev", devName);
+            logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "startSockets", rv,
+                     strerror(rv), "Unable to create the thread for the '%s' dev", devName);
             kill(UNITLOGD_PID, SIGTERM);
         } else {
             if (DEBUG)
-                logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM,
-                        "Thread created (Start) succesfully for the '%s' dev\n", devName);
+                logInfo(CONSOLE | SYSTEM, "Thread created (Start) succesfully for the '%s' dev\n",
+                        devName);
         }
     }
     for (int i = 0; i < len; i++) {
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
         if ((rv = pthread_join(socketThread->thread, (void **)&rvThread)) != 0) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/core/processes/process.c",
-                     "startSockets", rv, strerror(rv), "Unable to join the thread for the '%s' dev",
-                     devName);
+            logError(CONSOLE | SYSTEM, "src/core/processes/process.c", "startSockets", rv,
+                     strerror(rv), "Unable to join the thread for the '%s' dev", devName);
             kill(UNITLOGD_PID, SIGTERM);
         } else {
             if (DEBUG)
-                logInfo(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM,
+                logInfo(CONSOLE | SYSTEM,
                         "Thread joined (Start) successfully for the '%s' dev! Return code = %d\n",
                         devName, *rvThread);
         }
@@ -381,9 +372,8 @@ int getSocketFd(struct sockaddr_un *sa, const char *devName)
     sa->sun_family = AF_UNIX;
     strncpy(sa->sun_path, devName, sizeof(sa->sun_path));
     if ((socketFd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/socket/socket.c",
-                 "getSocketFd", errno, strerror(errno), "Unable to get the socket fd for %s dev",
-                 devName);
+        logError(CONSOLE | SYSTEM, "src/unitlogd/socket/socket.c", "getSocketFd", errno,
+                 strerror(errno), "Unable to get the socket fd for %s dev", devName);
         goto out;
     }
 
@@ -405,17 +395,16 @@ void *stopSocket(void *arg)
     mutex = pipe->mutex;
     devName = socketThread->devName;
     if ((rv = uWrite(pipe->fds[1], &output, sizeof(int))) == -1) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSocket", errno,
-                 strerror(errno), "Unable to write into pipe for the %s dev", devName);
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "stopSocket", errno, strerror(errno),
+                 "Unable to write into pipe for the %s dev", devName);
     }
     if ((rv = pthread_mutex_lock(mutex)) != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSocket", rv,
-                 strerror(rv), "Unable to acquire the lock of the pipe mutex for the %s dev",
-                 devName);
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "stopSocket", rv, strerror(rv),
+                 "Unable to acquire the lock of the pipe mutex for the %s dev", devName);
     }
     if ((rv = pthread_mutex_unlock(mutex)) != 0) {
-        logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSocket", rv,
-                 strerror(rv), "Unable to unlock the pipe mutex for the %s dev", devName);
+        logError(CONSOLE, "src/unitlogd/socket/socket.c", "stopSocket", rv, strerror(rv),
+                 "Unable to unlock the pipe mutex for the %s dev", devName);
     }
 
     /* It will be freed in stopSockets func */
@@ -436,23 +425,22 @@ int stopSockets(Array *socketThreads)
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
         if ((rv = pthread_create(&socketThread->thread, NULL, stopSocket, socketThread)) != 0) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
-                     strerror(rv), "Unable to create the thread for the '%s' dev", devName);
+            logError(CONSOLE, "src/unitlogd/socket/socket.c", "stopSockets", rv, strerror(rv),
+                     "Unable to create the thread for the '%s' dev", devName);
         } else {
             if (DEBUG)
-                logInfo(CONSOLE | UNITLOGD_BOOT_LOG,
-                        "Thread created (Stop) succesfully for the '%s' dev\n", devName);
+                logInfo(CONSOLE, "Thread created (Stop) succesfully for the '%s' dev\n", devName);
         }
     }
     for (int i = 0; i < len; i++) {
         socketThread = arrayGet(socketThreads, i);
         devName = socketThread->devName;
         if ((rv = pthread_join(socketThread->thread, (void **)&rvThread)) != 0) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG, "src/unitlogd/socket/socket.c", "stopSockets", rv,
-                     strerror(rv), "Unable to join the thread for the '%s' dev", devName);
+            logError(CONSOLE, "src/unitlogd/socket/socket.c", "stopSockets", rv, strerror(rv),
+                     "Unable to join the thread for the '%s' dev", devName);
         } else {
             if (DEBUG)
-                logInfo(CONSOLE | UNITLOGD_BOOT_LOG,
+                logInfo(CONSOLE,
                         "Thread joined (Stop) successfully for the '%s' dev! Return code = %d\n",
                         devName, *rvThread);
         }

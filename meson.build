@@ -42,7 +42,6 @@ unitlogd_path = localstatedir/'log'/unitlogd_name
 unitlogd_data_path = prefix/datadir/unitlogd_name
 unitlogd_log_path = unitlogd_path/unitlogd_name+'.log'
 unitlogd_index_path = unitlogd_path/'index.dat'
-unitlogd_boot_log_path = unitlogd_path/'boot.log'
 unitlogd_lock_path = unitlogd_path/'.lock'
 unitlogd_kmsg_path = unitlogd_path/'kmsg.log'
 
@@ -83,7 +82,6 @@ conf_data.set('UNITLOGD_PATH', unitlogd_path)
 conf_data.set('UNITLOGD_DATA_PATH', unitlogd_data_path)
 conf_data.set('UNITLOGD_LOG_PATH', unitlogd_log_path)
 conf_data.set('UNITLOGD_INDEX_PATH', unitlogd_index_path)
-conf_data.set('UNITLOGD_BOOT_LOG_PATH', unitlogd_boot_log_path)
 conf_data.set('UNITLOGD_LOCK_PATH', unitlogd_lock_path)
 conf_data.set('UNITLOGD_KMSG_PATH', unitlogd_kmsg_path)
 configure_file(input: 'unitd_config.h.in', output: 'unitd_config.h', configuration: conf_data)

@@ -30,7 +30,6 @@ extern int SELF_PIPE[2];
 extern int UNITLOGD_PID;
 extern FILE *UNITLOGD_INDEX_FILE;
 extern FILE *UNITLOGD_LOG_FILE;
-extern FILE *UNITLOGD_BOOT_LOG_FILE;
 extern FILE *UNITLOGD_KMSG_FILE;
 extern char *BOOT_ID_STR;
 extern bool UNITLOGD_EXIT;

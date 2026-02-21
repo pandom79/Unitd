@@ -65,7 +65,6 @@ void assertMacros()
     assert(UNITLOGD_DATA_PATH);
     assert(UNITLOGD_LOG_PATH);
     assert(UNITLOGD_INDEX_PATH);
-    assert(UNITLOGD_BOOT_LOG_PATH);
     assert(UNITLOGD_LOCK_PATH);
     assert(UNITLOGD_KMSG_PATH);
 }

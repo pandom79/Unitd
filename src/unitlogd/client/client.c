@@ -121,8 +121,8 @@ int showLogLines(off_t startOffset, off_t stopOffset)
     assert(UNITLOGD_LOG_FILE);
     /* Set start offset */
     if (fseeko(UNITLOGD_LOG_FILE, startOffset, SEEK_SET) == -1) {
-        logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "showLogLines", errno,
-                 strerror(errno), "Fseeko func returned -1");
+        logError(CONSOLE, "src/unitlogd/client/client.c", "showLogLines", errno, strerror(errno),
+                 "Fseeko func returned -1");
         rv = errno;
         goto out;
     }
@@ -130,7 +130,7 @@ int showLogLines(off_t startOffset, off_t stopOffset)
         /* Check if we achieved the stop offset */
         if (stopOffset != -1) {
             if ((currentOffset = ftello(UNITLOGD_LOG_FILE)) == -1) {
-                logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "showLogLines", errno,
+                logError(CONSOLE, "src/unitlogd/client/client.c", "showLogLines", errno,
                          strerror(errno), "Ftello func returned -1");
                 rv = errno;
                 goto out;
@@ -436,8 +436,8 @@ int cutLog(off_t startOffset, off_t stopOffset)
     while (getline(&line, &len, UNITLOGD_LOG_FILE) != -1) {
         if ((currentOffset = ftello(UNITLOGD_LOG_FILE)) == -1) {
             rv = errno;
-            logError(UNITLOGD_BOOT_LOG, "src/unitlogd/client/client.c", "cutLog", errno,
-                     strerror(errno), "Ftello func returned -1");
+            logError(CONSOLE, "src/unitlogd/client/client.c", "cutLog", errno, strerror(errno),
+                     "Ftello func returned -1");
             goto out;
         }
         currentOffset -= strlen(line);

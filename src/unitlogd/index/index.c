@@ -90,17 +90,16 @@ int getIndex(Array **index, bool isIndex)
                 rv = 1;
         }
         if (rv == 1) {
-            logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c", "getIndex",
-                     rv, strerror(rv), "An error has occurred at %d line (%s).", numline,
-                     isIndex ? "index" : "log");
+            logError(CONSOLE | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv, strerror(rv),
+                     "An error has occurred at %d line (%s).", numline, isIndex ? "index" : "log");
             goto out;
         }
         /* Retrieve row offset when we get it from log */
         if (!isIndex) {
             if ((offset = ftello(fp)) == -1) {
                 rv = 1;
-                logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
-                         "getIndex", errno, strerror(errno), "Ftello func returned -1");
+                logError(CONSOLE | SYSTEM, "src/unitlogd/index/index.c", "getIndex", errno,
+                         strerror(errno), "Ftello func returned -1");
                 goto out;
             }
             offset -= strlen(line);
@@ -128,8 +127,8 @@ int getIndex(Array **index, bool isIndex)
                 if (!isStartEntry && !stringEquals(value, bootId)) {
                     rv = 1;
                     logError(
-                        CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
-                        "getIndex", rv, strerror(rv),
+                        CONSOLE | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
+                        strerror(rv),
                         "The '%s' bootId at line %d doesn't match the previous '%s' bootId at line %d",
                         value, numline, bootId, numline - 1);
                     goto out;
@@ -147,9 +146,9 @@ int getIndex(Array **index, bool isIndex)
                     timeRelease(&currentTime);
                 } else {
                     rv = 1;
-                    logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
-                             "getIndex", rv, strerror(rv),
-                             "The timestamp '%s' at line '%d' is not valid", value, numline);
+                    logError(CONSOLE | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
+                             strerror(rv), "The timestamp '%s' at line '%d' is not valid", value,
+                             numline);
                     goto out;
                 }
                 break;
@@ -162,9 +161,9 @@ int getIndex(Array **index, bool isIndex)
                             stringSet(&indexEntry->stopOffset, value);
                     } else {
                         rv = 1;
-                        logError(CONSOLE | UNITLOGD_BOOT_LOG | SYSTEM, "src/unitlogd/index/index.c",
-                                 "getIndex", rv, strerror(rv),
-                                 "The offset '%s' at line '%d' is not valid", value, numline);
+                        logError(CONSOLE | SYSTEM, "src/unitlogd/index/index.c", "getIndex", rv,
+                                 strerror(rv), "The offset '%s' at line '%d' is not valid", value,
+                                 numline);
                         goto out;
                     }
                 } else {

@@ -26,7 +26,6 @@ See http://www.gnu.org/licenses/gpl-3.0.html for full license text.
 */
 #define CONSOLE 0x1
 #define SYSTEM 0x2
-#define UNITLOGD_BOOT_LOG 0x4
 #define ALL 0x1F
 
 void logInfo(int options, const char *format, ...);
