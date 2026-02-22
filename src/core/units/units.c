@@ -614,12 +614,10 @@ int loadUnits(Array **units, const char *path, const char *dirName, State curren
         logWarning(ALL, "\n[*] SEARCHING THE UNITS in %s/%s ...\n", path, dirName);
     if ((rv = glob(pattern, 0, NULL, &results)) == 0) {
         if (!unitNameArg) {
-            if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0)
-                logWarning(SYSTEM, "No timers found for %s state.\n",
-                           STATE_DATA_ITEMS[currentState].desc);
-            if ((rv = glob(patternPath, GLOB_APPEND, NULL, &results)) != 0)
-                logWarning(SYSTEM, "No path units found for %s state.\n",
-                           STATE_DATA_ITEMS[currentState].desc);
+            if ((rv = glob(patternTimer, GLOB_APPEND, NULL, &results)) != 0 && DEBUG)
+                logWarning(SYSTEM, "No timers found!\n");
+            if ((rv = glob(patternPath, GLOB_APPEND, NULL, &results)) != 0 && DEBUG)
+                logWarning(SYSTEM, "No path units found!\n");
         }
         lenResults = results.gl_pathc;
         assert(lenResults > 0);

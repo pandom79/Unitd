@@ -645,6 +645,7 @@ int startUnitServer(int *socketFd, SockMessageIn *sockMessageIn, SockMessageOut 
     else
         checkWantedBy(&unit, STATE_USER, true);
     if (unit->errors->size > 0) {
+        arrayRelease(errors);
         *errors = arrayStrCopy(unit->errors);
         unitRelease(&unit);
         goto out;
